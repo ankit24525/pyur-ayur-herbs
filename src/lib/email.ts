@@ -1,31 +1,22 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-// Simple SMTP configuration template
-const host = process.env.SMTP_HOST || "";
-const port = parseInt(process.env.SMTP_PORT || "587", 10);
-const user = process.env.SMTP_USER || "";
-const pass = process.env.SMTP_PASS || "";
+const apiKey = process.env.RESEND_API_KEY || "";
+const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
+// Initialize Resend. Log a warning rather than throwing to prevent startup crashes.
+const resend = apiKey ? new Resend(apiKey) : null;
 
 export async function sendOTPEmail(toEmail: string, otp: string): Promise<boolean> {
-  // If SMTP is not configured, we print a clear notice and return false
-  if (!host || !user || !pass) {
-    console.warn("[EMAIL NOTIFICATION] SMTP credentials missing in .env.local! Email could not be sent.");
+  if (!resend) {
+    console.warn(
+      `[EMAIL NOTIFICATION] RESEND_API_KEY is missing in your environment! Email to ${toEmail} could not be sent. OTP Code: ${otp}`
+    );
     return false;
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465, // true for 465, false for other ports
-      auth: {
-        user,
-        pass,
-      },
-    });
-
-    const info = await transporter.sendMail({
-      from: `"Pyur Ayur Herbs Store" <${user}>`,
+    const { data, error } = await resend.emails.send({
+      from: `Pyur Ayur Herbs Store <${fromEmail}>`,
       to: toEmail,
       subject: "Your OTP Verification Code - Pyur Ayur Herbs",
       html: `
@@ -45,10 +36,16 @@ export async function sendOTPEmail(toEmail: string, otp: string): Promise<boolea
       `,
     });
 
-    console.log(`[EMAIL NOTIFICATION] OTP Email sent successfully to ${toEmail}. Message ID: ${info.messageId}`);
+    if (error) {
+      console.error("[EMAIL NOTIFICATION] Resend SDK returned an error:", error);
+      return false;
+    }
+
+    console.log(`[EMAIL NOTIFICATION] OTP Email sent successfully to ${toEmail}. Message ID: ${data?.id}`);
     return true;
   } catch (error) {
-    console.error("[EMAIL NOTIFICATION] Error sending OTP email:", error);
+    console.error("[EMAIL NOTIFICATION] Error sending OTP email via Resend:", error);
     return false;
   }
 }
+

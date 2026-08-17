@@ -18,7 +18,7 @@ export function trackMetaEvent(eventName: string, customData?: Record<string, an
     console.log(`[Meta Pixel Client Trigger]: ${eventName}`, customData);
   }
 
-  fetch("/api/capi", {
+  fetch("/api/events-sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -26,7 +26,10 @@ export function trackMetaEvent(eventName: string, customData?: Record<string, an
       url: typeof window !== "undefined" ? window.location.href : "",
       clientData: customData,
     }),
-  }).catch((e) => console.error("CAPI dispatch failed:", e));
+  }).catch((e) => {
+    // Use warn instead of error to prevent console/Next.js overlay from popping up on ad-blocker triggers
+    console.warn(`[Meta CAPI] Event dispatch deferred/blocked for ${eventName}:`, e.message || e);
+  });
 }
 
 function PixelTrackerInner() {

@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     const eventData = await request.json();
     const { eventName, url, clientData } = eventData;
 
-    console.log(`[Meta CAPI event logged]: ${eventName}`, {
+    console.log(`[Meta CAPI event logged via events-sync]: ${eventName}`, {
       url,
       timestamp: new Date().toISOString(),
       clientData,

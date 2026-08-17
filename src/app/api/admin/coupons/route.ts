@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB();
   return NextResponse.json({ coupons: db.coupons });
 }
 
 export async function POST(request: Request) {
   try {
     const { code, type, value, status, minCartValue, applicableType, applicableValue } = await request.json();
-    const db = readDB();
+    const db = await readDB();
 
     const exists = db.coupons.some((c) => c.code === code.toUpperCase());
     if (exists) {
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     };
 
     db.coupons.push(newCoupon);
-    writeDB(db);
+    await writeDB(db);
 
     return NextResponse.json({ success: true, coupon: newCoupon });
   } catch (error) {

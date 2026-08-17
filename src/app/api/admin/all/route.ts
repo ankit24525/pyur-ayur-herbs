@@ -3,7 +3,7 @@ import { readDB, writeDB } from "@/lib/db";
 
 export async function GET() {
   try {
-    const db = readDB();
+    const db = await readDB();
     return NextResponse.json(db);
   } catch (error) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -14,23 +14,23 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { action, key, value, data } = body;
-    const db = readDB();
+    const db = await readDB();
 
     if (action === "updateKey" && key && value) {
       (db as any)[key] = value;
-      writeDB(db);
+      await writeDB(db);
       return NextResponse.json({ success: true, message: `${key} updated successfully.` });
     }
 
     if (action === "saveSettings" && data) {
       db.settings = { ...db.settings, ...data };
-      writeDB(db);
+      await writeDB(db);
       return NextResponse.json({ success: true, settings: db.settings });
     }
 
     if (action === "saveSeo" && data) {
       db.seo = { ...db.seo, ...data };
-      writeDB(db);
+      await writeDB(db);
       return NextResponse.json({ success: true, seo: db.seo });
     }
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       const idx = db.orders.findIndex((o) => o.id === body.orderId);
       if (idx !== -1) {
         db.orders[idx].status = body.newStatus;
-        writeDB(db);
+        await writeDB(db);
         return NextResponse.json({ success: true });
       }
     }

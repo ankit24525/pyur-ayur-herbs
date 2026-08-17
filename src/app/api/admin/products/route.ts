@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB();
   return NextResponse.json({ products: db.products });
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const db = readDB();
+    const db = await readDB();
 
     const newProd = {
       id: `${db.products.length + 1}`,
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     };
 
     db.products.push(newProd);
-    writeDB(db);
+    await writeDB(db);
 
     return NextResponse.json({ success: true, product: newProd });
   } catch (error) {

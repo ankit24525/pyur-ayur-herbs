@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 
 export async function GET() {
-  const db = readDB();
+  const db = await readDB();
   return NextResponse.json({ settings: db.settings });
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const db = readDB();
+    const db = await readDB();
 
     db.settings = {
       storeName: body.storeName || db.settings.storeName,
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       taxRate: typeof body.taxRate === "number" ? body.taxRate : db.settings.taxRate,
     };
 
-    writeDB(db);
+    await writeDB(db);
 
     return NextResponse.json({ success: true, settings: db.settings });
   } catch (error) {

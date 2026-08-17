@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Please enter a valid email address." }, { status: 400 });
     }
 
-    const db = readDB();
+    const db = await readDB();
     const users = db.users || [];
 
     const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());

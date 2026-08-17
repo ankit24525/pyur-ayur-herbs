@@ -4,14 +4,14 @@ import { ProductDetailView } from "@/components/ProductDetailView";
 
 export const dynamic = "force-dynamic";
 
-export function generateStaticParams() {
-  const db = readDB();
+export async function generateStaticParams() {
+  const db = await readDB();
   return db.products.map((product: any) => ({ slug: product.slug }));
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const db = readDB();
+  const db = await readDB();
   
   const normalizedSlug = slug.trim().toLowerCase();
 

@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = readDB();
+    const db = await readDB();
 
     const newLead = {
       id: `LD-${Math.floor(500 + Math.random() * 500)}`,
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     };
 
     db.leads.push(newLead);
-    writeDB(db);
+    await writeDB(db);
 
     console.log("[Contact Us lead logged in database]:", newLead);
 

@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Email, OTP code, and new password are required." }, { status: 400 });
     }
 
-    const db = readDB();
+    const db = await readDB();
     
     // Verify OTP matches
     const otps = (db as any).otps || [];
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     if (Date.now() > otpRecord.expiresAt) {
       // Clean up expired OTP
       (db as any).otps = otps.filter((_: any, idx: number) => idx !== otpIndex);
-      writeDB(db);
+      await writeDB(db);
       return NextResponse.json({ success: false, error: "OTP code has expired. Please request a new one." }, { status: 400 });
     }
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     // Clean up OTP record
     (db as any).otps = otps.filter((_: any, idx: number) => idx !== otpIndex);
     
-    writeDB(db);
+    await writeDB(db);
 
     return NextResponse.json({ success: true, message: "Password updated successfully. You can now login!" });
   } catch (error) {

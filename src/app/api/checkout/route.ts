@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = readDB();
+    const db = await readDB();
 
     const discount = paymentMethod === "prepaid" ? Math.round(subtotal * (db.settings.prepaidDiscount / 100)) : 0;
     const shipping = subtotal >= 999 ? 0 : 49;
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     };
 
     db.orders.push(newOrder);
-    writeDB(db);
+    await writeDB(db);
 
     // Simulated Server-Side Meta Conversions API (CAPI) trigger
     try {

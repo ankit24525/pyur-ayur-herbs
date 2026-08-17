@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Email is required." }, { status: 400 });
     }
 
-    const db = readDB();
+    const db = await readDB();
     const users = db.users || [];
 
     // Verify user exists (If unregistered user tries to reset, prevent it!)
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       (o: any) => o.email.toLowerCase() !== email.toLowerCase()
     );
     (db as any).otps = [...otps, { email, otp, expiresAt }];
-    writeDB(db);
+    await writeDB(db);
 
     // In a production environment, send email here. In this demo, we output it in the response and log it!
     console.log(`[AUTH SERVICE] Password reset OTP for ${email}: ${otp}`);

@@ -1,7 +1,7 @@
-import fs from "fs";
-import path from "path";
+import { MongoClient } from "mongodb";
 
-const dbPath = path.join(process.cwd(), "src/lib/db.json");
+const uri = process.env.MONGODB_URI || "";
+const dbName = process.env.MONGODB_DB || "pure_ayur_herbs";
 
 export interface DBData {
   products: any[];
@@ -18,18 +18,49 @@ export interface DBData {
   users?: any[];
 }
 
-export function readDB(): DBData {
+let client: MongoClient | null = null;
+let clientPromise: Promise<MongoClient> | null = null;
+
+async function getMongoClient(): Promise<MongoClient> {
+  if (client) return client;
+  if (clientPromise) return clientPromise;
+
+  if (!uri) {
+    throw new Error("MONGODB_URI environment variable is missing from environment/env files.");
+  }
+
+  client = new MongoClient(uri);
+  clientPromise = client.connect();
+  return clientPromise;
+}
+
+export async function readDB(): Promise<DBData> {
   try {
-    if (!fs.existsSync(dbPath)) {
-      // Re-create from template if it doesn't exist
-      const defaultData = { products: [], orders: [], coupons: [], leads: [], settings: {} };
-      fs.writeFileSync(dbPath, JSON.stringify(defaultData, null, 2), "utf8");
-      return defaultData as any;
+    const activeClient = await getMongoClient();
+    const db = activeClient.db(dbName);
+    const document = await db.collection("store_data").findOne({ _id: "main" as any });
+    
+    if (!document) {
+      return {
+        products: [],
+        orders: [],
+        coupons: [],
+        leads: [],
+        settings: {
+          storeName: "Pyur Ayur Herbs Store",
+          supportEmail: "support@pyurayurherbs.com",
+          codOtpEnabled: true,
+          prepaidDiscount: 5,
+          taxRate: 18,
+        },
+      };
     }
-    const content = fs.readFileSync(dbPath, "utf8");
-    return JSON.parse(content);
+    
+    // Remove MongoDB specific internal fields if they exist
+    const { _id, ...cleanData } = document as any;
+    return cleanData as DBData;
   } catch (error) {
-    console.error("Error reading db.json:", error);
+    console.error("Error reading from MongoDB:", error);
     return {
       products: [],
       orders: [],
@@ -46,12 +77,23 @@ export function readDB(): DBData {
   }
 }
 
-export function writeDB(data: DBData): boolean {
+export async function writeDB(data: DBData): Promise<boolean> {
   try {
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), "utf8");
+    const activeClient = await getMongoClient();
+    const db = activeClient.db(dbName);
+    
+    const dataToSave = { ...data };
+    delete (dataToSave as any)._id; // prevent _id modification issues
+
+    await db.collection("store_data").replaceOne(
+      { _id: "main" as any },
+      dataToSave,
+      { upsert: true }
+    );
     return true;
   } catch (error) {
-    console.error("Error writing to db.json:", error);
+    console.error("Error writing to MongoDB:", error);
     return false;
   }
 }
+

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const db = readDB();
+    const db = await readDB();
     const users = db.users || [];
 
     const exists = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     };
 
     db.users = [...users, newUser];
-    writeDB(db);
+    await writeDB(db);
 
     // Return user details without password hash
     const { passwordHash, ...userResponse } = newUser;

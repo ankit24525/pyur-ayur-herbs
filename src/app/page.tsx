@@ -1,8 +1,286 @@
-import Image from "next/image";
-import HeroSlider from "@/components/HeroSlider";
+"use client";
+
+import { useState, useEffect } from "react";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import SiteHeader from "@/components/SiteHeader";
-import { concerns, products } from "@/lib/store";
+import HeroSlider from "@/components/HeroSlider";
+import ConcernFilter from "@/components/ConcernFilter";
+import ProductRail from "@/components/ProductRail";
+import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
+import TrustSection from "@/components/TrustSection";
+import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
+import TestimonialsSection from "@/components/TestimonialsSection";
+import PressSection from "@/components/PressSection";
 import SiteFooter from "@/components/SiteFooter";
-const routines = [{ title: "Morning cleanse", copy: "Start with amla and triphala for daily gut balance." }, { title: "Lunch support", copy: "Karela jamun drops before meals for mindful sugar care." }, { title: "Night calm", copy: "Ashwagandha and brahmi to unwind without next-day heaviness." }];
-export default function Home() { return <main className="min-h-screen overflow-hidden bg-[#f8faf1] text-[#17231b]"><SiteHeader /><HeroSlider /><section id="concerns" className="border-b border-[#d9dfc7] bg-white py-10"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-black uppercase tracking-[0.2em] text-[#857b4f]">Shop by concern</p><h2 className="mt-2 text-3xl font-black text-[#244f31]">Find your daily herbal support</h2></div><a href="#shop" className="font-black text-[#2d6b3f]">View all products</a></div><div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">{concerns.map((concern) => <a key={concern} href="#shop" className="border border-[#d9dfc7] bg-[#f8faf1] p-5 font-black text-[#244f31] transition hover:border-[#2d6b3f] hover:bg-[#eef5df]">{concern}</a>)}</div></div></section><section id="shop" className="py-16"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-black uppercase tracking-[0.2em] text-[#857b4f]">Best of Pyur</p><h2 className="mt-2 text-4xl font-black text-[#244f31]">Clean formulas, serious results</h2></div><div className="flex gap-2 text-sm font-bold"><button className="border border-[#2d6b3f] bg-[#2d6b3f] px-4 py-2 text-white">All</button><button className="border border-[#b7c89b] bg-white px-4 py-2 text-[#405642]">Juices</button><button className="border border-[#b7c89b] bg-white px-4 py-2 text-[#405642]">Capsules</button></div></div><div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{products.map((product) => <article key={product.slug} className="border border-[#d9dfc7] bg-white shadow-sm"><div className="relative bg-[#eef5df] p-5"><span className="absolute left-4 top-4 bg-[#244f31] px-3 py-1 text-xs font-black uppercase tracking-wide text-white">{product.badge}</span><Image src={product.image} alt={product.name} width={420} height={420} className="aspect-square w-full object-contain" /></div><div className="p-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-[#857b4f]">{product.concern}</p><h3 className="mt-2 text-xl font-black text-[#244f31]">{product.name}</h3><p className="mt-2 text-sm leading-6 text-[#586859]">{product.ingredients.join(" + ")}</p><div className="mt-4 flex items-center justify-between"><p className="font-black text-[#17231b]">Rs. {product.price} <span className="text-sm text-[#7d8878] line-through">Rs. {product.compareAt}</span></p><p className="text-sm font-bold text-[#405642]">{product.rating} ({product.reviews})</p></div><button className="mt-5 w-full bg-[#2d6b3f] px-4 py-3 font-black text-white transition hover:bg-[#215632]">Add to cart</button></div></article>)}</div></div></section><section id="routine" className="border-y border-[#d9dfc7] bg-[#244f31] py-16 text-white"><div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8"><div><p className="text-sm font-black uppercase tracking-[0.2em] text-[#cfdf9b]">Ritual builder</p><h2 className="mt-3 text-4xl font-black">A day-long routine your customers can actually follow.</h2></div><div className="grid gap-4 md:grid-cols-3">{routines.map((routine, index) => <div key={routine.title} className="border border-white/20 bg-white/8 p-6"><p className="text-4xl font-black text-[#cfdf9b]">0{index + 1}</p><h3 className="mt-5 text-xl font-black">{routine.title}</h3><p className="mt-3 leading-7 text-white/78">{routine.copy}</p></div>)}</div></div></section><section id="consult" className="bg-white py-16"><div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:px-8"><div><p className="text-sm font-black uppercase tracking-[0.2em] text-[#857b4f]">Expert backed</p><h2 className="mt-2 text-4xl font-black text-[#244f31]">Make Ayurveda feel guided, not confusing.</h2><p className="mt-4 max-w-xl text-lg leading-8 text-[#586859]">Built-in consultation, WhatsApp capture, subscription prompts, coupons, reviews, and product education give the store the full D2C wellness flow.</p></div><form className="border border-[#d9dfc7] bg-[#f8faf1] p-6"><div className="grid gap-4 sm:grid-cols-2"><input className="border border-[#c9d4b3] bg-white px-4 py-3" placeholder="Full name" /><input className="border border-[#c9d4b3] bg-white px-4 py-3" placeholder="Phone number" /><select className="border border-[#c9d4b3] bg-white px-4 py-3 sm:col-span-2" defaultValue=""><option value="" disabled>Select wellness goal</option>{concerns.map((concern) => <option key={concern}>{concern}</option>)}</select><textarea className="min-h-28 border border-[#c9d4b3] bg-white px-4 py-3 sm:col-span-2" placeholder="Tell us what you are looking for" /></div><button className="mt-5 w-full bg-[#2d6b3f] px-4 py-3 font-black text-white">Book free consultation</button></form></div></section><section id="journal" className="border-t border-[#d9dfc7] py-14"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="grid gap-5 md:grid-cols-3">{["How to choose pure amla", "Ayurvedic sugar care basics", "A calmer night routine"].map((post) => <article key={post} className="border border-[#d9dfc7] bg-white p-6"><p className="text-xs font-black uppercase tracking-[0.18em] text-[#857b4f]">Journal</p><h3 className="mt-4 text-2xl font-black text-[#244f31]">{post}</h3><p className="mt-3 leading-7 text-[#586859]">Short educational content blocks ready for SEO and customer trust.</p></article>)}</div></div></section><footer className="bg-[#17231b] py-10 text-white"><div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"><p className="text-xl font-black">Pyur Ayur Herbs</p><p className="text-sm text-white/70">Storefront, consultation, subscriptions, cart, content, and admin starter.</p></div></footer>      <SiteFooter />
-    </main>; }
+import { products, Product } from "@/lib/store";
+import { X, Smartphone, User, CheckCircle2 } from "lucide-react";
+
+export default function Home() {
+  const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<Product[]>(products);
+  const [cmsData, setCmsData] = useState<any>({
+    announcement: null,
+    heroSlides: [],
+    consultationBanner: null
+  });
+
+  // Load dynamic catalog and CMS layout settings from database on mount
+  useEffect(() => {
+    fetch("/api/admin/all")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.products && data.products.length > 0) {
+          setCatalog(data.products);
+        }
+        if (data.content) {
+          setCmsData(data.content);
+        }
+      })
+      .catch((e) => console.error("Error loading storefront layout:", e));
+  }, []);
+
+  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([
+    { product: products[0], quantity: 1 },
+  ]);
+
+  // Modal States
+  const [appModalOpen, setAppModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [consultationModalOpen, setConsultationModalOpen] = useState(false);
+
+  // Cart Handlers
+  const handleAddToCart = (product: Product) => {
+    setCart((prevCart) => {
+      const existing = prevCart.find((item) => item.product.id === product.id);
+      if (existing) {
+        return prevCart.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [...prevCart, { product, quantity: 1 }];
+    });
+  };
+
+  const handleUpdateQuantity = (productId: string, delta: number) => {
+    setCart((prevCart) =>
+      prevCart
+        .map((item) => {
+          if (item.product.id === productId) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as { product: Product; quantity: number }[]
+    );
+  };
+
+  const handleRemoveItem = (productId: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+  };
+
+  const handleBuyNow = (product: Product) => {
+    handleAddToCart(product);
+    alert(`Proceeding to instant checkout for ${product.name} at ₹${product.price}!`);
+  };
+
+  // Filter products by selected concern if active
+  const filteredProducts = selectedConcern
+    ? catalog.filter((p) => p.concern === selectedConcern)
+    : catalog;
+
+  const sugarProducts = catalog.filter((p) => p.concern === "Sugar Management");
+  const fitnessProducts = catalog.filter(
+    (p) => p.concern === "Gym & Fitness" || p.concern === "Energy & Vitality"
+  );
+  const skinDailyProducts = catalog.filter(
+    (p) => p.concern === "Skin & Hair" || p.concern === "Daily Ayurveda" || p.concern === "Women's Health"
+  );
+
+  return (
+    <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
+      {/* Top Announcement Ticker Bar */}
+      <AnnouncementBar data={cmsData.announcement} onOpenAppModal={() => setAppModalOpen(true)} />
+
+      {/* Main Sticky Header */}
+      <SiteHeader
+        cart={cart}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onOpenAppModal={() => setAppModalOpen(true)}
+        onOpenLoginModal={() => setLoginModalOpen(true)}
+        onOpenConsultationModal={() => setConsultationModalOpen(true)}
+      />
+
+      {/* Hero Banner Slider Carousel */}
+      <HeroSlider slides={cmsData.heroSlides} />
+
+      {/* "SELECT CONCERN" Filter Section */}
+      <ConcernFilter
+        selectedConcern={selectedConcern}
+        onSelectConcern={(concern) => setSelectedConcern(concern)}
+      />
+
+      {/* Main Shop / Products Section */}
+      <div id="shop">
+        {selectedConcern ? (
+          <ProductRail
+            title={`Remedies for ${selectedConcern}`}
+            subtitle={`Showing ${filteredProducts.length} Ayurvedic formulations`}
+            items={filteredProducts}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+          />
+        ) : (
+          <>
+            <ProductRail
+              title="Kapiva-Style Bestselling Remedies"
+              subtitle="Top-rated Ayurvedic juices, resins & elixirs backed by Vaidyas"
+              items={catalog.slice(0, 4)}
+              onAddToCart={handleAddToCart}
+              onBuyNow={handleBuyNow}
+            />
+
+            <ProductRail
+              title="Sugar Management & Metabolic Care"
+              subtitle="11-Herb Ayurvedic solutions for healthy glucose regulation"
+              items={sugarProducts.length > 0 ? sugarProducts : catalog.slice(0, 4)}
+              onAddToCart={handleAddToCart}
+              onBuyNow={handleBuyNow}
+            />
+
+            <ProductRail
+              title="Energy, Stamina & Gym Fitness"
+              subtitle="Pure Himalayan Shilajit and joint mobility formulas"
+              items={fitnessProducts.length > 0 ? fitnessProducts : catalog.slice(2, 6)}
+              onAddToCart={handleAddToCart}
+              onBuyNow={handleBuyNow}
+            />
+
+            <ProductRail
+              title="Skin Radiance & Daily Wellness"
+              subtitle="Kumkumadi Saffron, Amla Vitamin C, and Women's Period Harmony"
+              items={skinDailyProducts.length > 0 ? skinDailyProducts : catalog.slice(4, 8)}
+              onAddToCart={handleAddToCart}
+              onBuyNow={handleBuyNow}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Free Ayurvedic Doctor Consultation Banner */}
+      <DoctorConsultationBanner
+        data={cmsData.consultationBanner}
+        openModalDirectly={consultationModalOpen}
+        onCloseModal={() => setConsultationModalOpen(false)}
+      />
+
+      {/* Why Pyur Ayur Herbs Trust Section */}
+      <TrustSection />
+
+      {/* 2-Minute Health Assessment Quiz */}
+      <AyurvedicQuizModal onAddToCart={handleAddToCart} />
+
+      {/* Customer Reviews & Transformations */}
+      <TestimonialsSection />
+
+      {/* As Featured In Press Bar */}
+      <PressSection />
+
+      {/* Main Footer */}
+      <SiteFooter />
+
+      {/* Get App Modal */}
+      {appModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            onClick={() => setAppModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
+            <button
+              onClick={() => setAppModalOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-1 text-[#666666] hover:bg-[#f8faf1]"
+            >
+              <X className="size-5" />
+            </button>
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#244f31] text-white shadow-md mb-4">
+              <Smartphone className="size-8 text-[#f2c94c]" />
+            </div>
+            <h3 className="text-xl font-black text-[#17231b]">Download Pyur Ayur App</h3>
+            <p className="mt-2 text-xs text-[#666666]">
+              Get 15% OFF on app-first orders & earn 2X Pyur Coins on every purchase!
+            </p>
+            <div className="mt-5 space-y-2">
+              <button
+                onClick={() => {
+                  alert("Redirecting to Google Play Store...");
+                  setAppModalOpen(false);
+                }}
+                className="w-full rounded-xl bg-[#244f31] py-3 text-xs font-bold text-white shadow hover:bg-[#1d3b24]"
+              >
+                DOWNLOAD FOR ANDROID (PLAY STORE)
+              </button>
+              <button
+                onClick={() => {
+                  alert("Redirecting to Apple App Store...");
+                  setAppModalOpen(false);
+                }}
+                className="w-full rounded-xl border border-[#244f31] py-3 text-xs font-bold text-[#244f31] hover:bg-[#eef5df]"
+              >
+                DOWNLOAD FOR iOS (APP STORE)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Login Modal */}
+      {loginModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            onClick={() => setLoginModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <button
+              onClick={() => setLoginModalOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-1 text-[#666666] hover:bg-[#f8faf1]"
+            >
+              <X className="size-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              <User className="size-5 text-[#244f31]" />
+              <h3 className="text-lg font-bold text-[#17231b]">Login to Pyur Ayur</h3>
+            </div>
+            <p className="mt-1 text-xs text-[#666666]">
+              Enter your mobile number to get OTP and manage your orders & Pyur Coins.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                alert("OTP Sent to your mobile number!");
+                setLoginModalOpen(false);
+              }}
+              className="mt-4 space-y-3"
+            >
+              <input
+                type="tel"
+                required
+                maxLength={10}
+                placeholder="Enter 10-digit mobile number"
+                className="w-full rounded-lg border border-[#ddddd9] px-3 py-2.5 text-xs outline-none focus:border-[#244f31]"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-[#244f31] py-3 text-xs font-black tracking-widest text-white shadow hover:bg-[#1d3b24]"
+              >
+                GET OTP & CONTINUE
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

@@ -13,17 +13,12 @@ export default function ProductClickRouter() {
       const clickedButton = target?.closest("button");
       if (clickedButton) return;
 
-      const heading = card.querySelector("h2, h3")?.textContent?.trim();
-      if (!heading) return;
-
-      const slug = slugifyProductName(heading)
-        .replace("amla-glow-juice", "amla-glow-juice")
-        .replace("karela-jamun-drops", "karela-jamun-drops")
-        .replace("ashwagandha-calm-capsules", "ashwagandha-calm-capsules")
-        .replace("triphala-gut-cleanse", "triphala-gut-cleanse");
+      const anchor = card.querySelector("a") as HTMLAnchorElement | null;
+      const href = anchor?.getAttribute("href");
+      if (!href) return;
 
       event.preventDefault();
-      window.location.href = `/products/${slug}`;
+      window.location.href = href;
     }
 
     document.addEventListener("click", onClick);

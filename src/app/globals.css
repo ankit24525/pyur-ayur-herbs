@@ -1,6 +1,92 @@
 @import "tailwindcss";
-:root { --background: #f8faf1; --foreground: #17231b; }
-@theme inline { --color-background: var(--background); --color-foreground: var(--foreground); --font-sans: Arial, Helvetica, sans-serif; --font-mono: "Courier New", Courier, monospace; }
-html { scroll-behavior: smooth; }
-body { background: var(--background); color: var(--foreground); font-family: Arial, Helvetica, sans-serif; }
-::selection { background: #cfdf9b; color: #17231b; }
+
+:root {
+  --background: #f8faf1;
+  --foreground: #17231b;
+  --cr-primary: #244f31;
+  --cr-primary-light: #2d6b3f;
+  --cr-primary-soft: #eef5df;
+  --cr-primary-border: #80a03c;
+  --cr-accent-warm: #c9704c;
+  --cr-accent-amber: #d97736;
+  --cr-gold: #f2c94c;
+  --cr-card-border: #ddddd9;
+  --cr-text-muted: #666666;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--cr-primary);
+  --color-primary-light: var(--cr-primary-light);
+  --color-primary-soft: var(--cr-primary-soft);
+  --color-primary-border: var(--cr-primary-border);
+  --color-accent-warm: var(--cr-accent-warm);
+  --color-gold: var(--cr-gold);
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #cfdf9b;
+  color: #17231b;
+}
+
+/* Custom Hide Scrollbar for horizontal sliders */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Kapiva Search Bar Marquee Animation */
+@keyframes placeholderRotate {
+  0%, 20% { transform: translateY(0%); }
+  25%, 45% { transform: translateY(-20%); }
+  50%, 70% { transform: translateY(-40%); }
+  75%, 95% { transform: translateY(-60%); }
+  100% { transform: translateY(-80%); }
+}
+
+.animate-placeholder-slide {
+  animation: placeholderRotate 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Pulse animation for Live Doctors indicator */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+.animate-pulse-dot {
+  animation: pulseDot 1.8s infinite ease-in-out;
+}
+
+/* Toast fade-in slide-up animation */
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-toast-in {
+  animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

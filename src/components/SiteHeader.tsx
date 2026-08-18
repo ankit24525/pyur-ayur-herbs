@@ -447,61 +447,17 @@ export default function SiteHeader({
 
             <div className="mt-6 flex flex-col gap-4">
               {user ? (
-                <div className="bg-[#f8faf1] p-3 rounded-xl border border-[#ddddd9] flex flex-col gap-2.5">
-                  <div className="flex items-center gap-2 pb-2 border-b border-[#ddddd9]">
+                <div className="bg-[#f8faf1] p-3 rounded-xl border border-[#ddddd9] flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
                     <User className="size-4 text-[#244f31]" />
                     <span className="font-bold text-[#17231b] text-sm">Hello, {user.name}</span>
-                  </div>
-                  <div className="flex flex-col gap-2 pl-6">
-                    <Link
-                      href="/profile?tab=orders"
-                      onClick={() => setMenuOpen(false)}
-                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
-                    >
-                      Orders
-                    </Link>
-                    <Link
-                      href="/profile?tab=wallet"
-                      onClick={() => setMenuOpen(false)}
-                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
-                    >
-                      Wallet
-                    </Link>
-                    <Link
-                      href="/profile?tab=addresses"
-                      onClick={() => setMenuOpen(false)}
-                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
-                    >
-                      Addresses
-                    </Link>
-                    <Link
-                      href="/profile?tab=recently-viewed"
-                      onClick={() => setMenuOpen(false)}
-                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
-                    >
-                      Recently Viewed
-                    </Link>
-                    <Link
-                      href="/profile?tab=settings"
-                      onClick={() => setMenuOpen(false)}
-                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
-                    >
-                      Account Settings
-                    </Link>
-                    <Link
-                      href="/contact-us"
-                      onClick={() => setMenuOpen(false)}
-                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
-                    >
-                      Contact Us
-                    </Link>
                   </div>
                   <button
                     onClick={() => {
                       localStorage.removeItem("pyur_user");
                       window.location.href = "/";
                     }}
-                    className="text-left text-xs font-bold text-red-600 hover:underline border-t border-[#ddddd9] pt-2 mt-1"
+                    className="text-left text-xs font-bold text-red-600 hover:underline"
                   >
                     Logout from account
                   </button>

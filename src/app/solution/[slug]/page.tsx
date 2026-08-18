@@ -119,8 +119,7 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
   };
 
   const handleBuyNow = (product: Product) => {
-    handleAddToCart(product);
-    alert(`Proceeding to instant checkout for ${product.name} at ₹${product.price}!`);
+    window.location.href = `/checkout?productId=${product.id}&quantity=1`;
   };
 
   const details = concernDetailsMap[slug] || {

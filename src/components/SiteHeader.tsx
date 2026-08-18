@@ -277,20 +277,70 @@ export default function SiteHeader({
 
             {/* Login Button / Profile */}
             {user ? (
-              <div className="hidden sm:flex items-center gap-2">
-                <div className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold uppercase text-[#17231b] bg-[#f8faf1] rounded-md border border-[#ddddd9]">
-                  <User className="size-3.5" />
-                  <span>{user.name.split(" ")[0]}</span>
-                </div>
-                <button
-                  onClick={() => {
-                    localStorage.removeItem("pyur_user");
-                    window.location.reload();
-                  }}
-                  className="rounded-md border border-red-600 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-600 transition hover:bg-red-600 hover:text-white"
+              <div className="relative group hidden sm:block">
+                <Link
+                  href="/profile?tab=orders"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase text-[#17231b] bg-[#f8faf1] rounded-md border border-[#ddddd9] hover:bg-[#eef2db] transition"
                 >
-                  LOGOUT
-                </button>
+                  <User className="size-3.5 text-[#244f31]" />
+                  <span>Hi, {user.name.split(" ")[0]}!</span>
+                </Link>
+                
+                {/* Hover Dropdown Menu */}
+                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-[#ddddd9] bg-white p-2 shadow-xl opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200">
+                  <div className="px-3 py-2 border-b border-[#f0f0eb] text-xs font-semibold text-[#666666]">
+                    Hi, {user.name}!
+                  </div>
+                  <div className="flex flex-col py-1">
+                    <Link
+                      href="/profile?tab=orders"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                    >
+                      Orders
+                    </Link>
+                    <Link
+                      href="/profile?tab=wallet"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                    >
+                      Wallet
+                    </Link>
+                    <Link
+                      href="/profile?tab=addresses"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                    >
+                      Addresses
+                    </Link>
+                    <Link
+                      href="/profile?tab=recently-viewed"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                    >
+                      Recently Viewed
+                    </Link>
+                    <Link
+                      href="/profile?tab=settings"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                    >
+                      Account Settings
+                    </Link>
+                    <Link
+                      href="/contact-us"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                    >
+                      Contact Us
+                    </Link>
+                  </div>
+                  <div className="border-t border-[#f0f0eb] pt-1 mt-1">
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem("pyur_user");
+                        window.location.href = "/";
+                      }}
+                      className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
+                    >
+                      SIGN OUT
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <Link
@@ -384,17 +434,61 @@ export default function SiteHeader({
 
             <div className="mt-6 flex flex-col gap-4">
               {user ? (
-                <div className="bg-[#f8faf1] p-3 rounded-xl border border-[#ddddd9] flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
+                <div className="bg-[#f8faf1] p-3 rounded-xl border border-[#ddddd9] flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2 pb-2 border-b border-[#ddddd9]">
                     <User className="size-4 text-[#244f31]" />
                     <span className="font-bold text-[#17231b] text-sm">Hello, {user.name}</span>
+                  </div>
+                  <div className="flex flex-col gap-2 pl-6">
+                    <Link
+                      href="/profile?tab=orders"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
+                    >
+                      Orders
+                    </Link>
+                    <Link
+                      href="/profile?tab=wallet"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
+                    >
+                      Wallet
+                    </Link>
+                    <Link
+                      href="/profile?tab=addresses"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
+                    >
+                      Addresses
+                    </Link>
+                    <Link
+                      href="/profile?tab=recently-viewed"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
+                    >
+                      Recently Viewed
+                    </Link>
+                    <Link
+                      href="/profile?tab=settings"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
+                    >
+                      Account Settings
+                    </Link>
+                    <Link
+                      href="/contact-us"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-xs font-semibold text-[#17231b] hover:text-[#244f31]"
+                    >
+                      Contact Us
+                    </Link>
                   </div>
                   <button
                     onClick={() => {
                       localStorage.removeItem("pyur_user");
-                      window.location.reload();
+                      window.location.href = "/";
                     }}
-                    className="text-left text-xs font-bold text-red-600 hover:underline"
+                    className="text-left text-xs font-bold text-red-600 hover:underline border-t border-[#ddddd9] pt-2 mt-1"
                   >
                     Logout from account
                   </button>

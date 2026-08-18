@@ -47,7 +47,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     { product: products[0], quantity: 1 },
   ]);
 
-  // Track product view event for Meta Ads
+  // Track product view event for Meta Ads & Recently Viewed List
   useEffect(() => {
     trackMetaEvent("ViewContent", {
       content_ids: [product.id],
@@ -55,6 +55,19 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
       value: product.price,
       currency: "INR",
     });
+
+    if (typeof window !== "undefined" && product) {
+      try {
+        const stored = localStorage.getItem("pyur_recently_viewed");
+        let list: string[] = stored ? JSON.parse(stored) : [];
+        list = list.filter((slug) => slug !== product.slug);
+        list.unshift(product.slug);
+        if (list.length > 8) list = list.slice(0, 8);
+        localStorage.setItem("pyur_recently_viewed", JSON.stringify(list));
+      } catch (e) {
+        // ignore
+      }
+    }
   }, [product]);
 
   // Modal Controls

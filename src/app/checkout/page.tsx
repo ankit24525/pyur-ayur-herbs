@@ -71,6 +71,7 @@ function CheckoutForm() {
   const [userEmail, setUserEmail] = useState("");
   const [orderComplete, setOrderComplete] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   // Load logged-in user email from localStorage
   useEffect(() => {
@@ -178,20 +179,70 @@ function CheckoutForm() {
     });
   }, [product, qty, loadingProduct]);
 
-  // Auto fill city/state based on pincode mock
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+          );
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            const street = [addr.suburb, addr.road, addr.neighbourhood].filter(Boolean).join(", ") || addr.amenity || "";
+            const city = addr.city || addr.town || addr.village || addr.county || "";
+            const state = addr.state || "";
+            const pincode = addr.postcode || "";
+
+            setFormData((prev) => ({
+              ...prev,
+              address: [street, addr.subdistrict].filter(Boolean).join(", ") || prev.address,
+              city: city || prev.city,
+              state: state || prev.state,
+              pincode: pincode.replace(/\D/g, "") || prev.pincode,
+            }));
+          } else {
+            alert("Could not retrieve clean address details for your location.");
+          }
+        } catch (e) {
+          console.error(e);
+          alert("Error fetching address details from coordinates.");
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      (error) => {
+        console.error(error);
+        alert("Failed to access your location. Please check your browser permissions.");
+        setDetectingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  // Auto fill city/state based on live pincode lookup
   useEffect(() => {
     if (formData.pincode.length === 6) {
-      if (formData.pincode.startsWith("11")) {
-        setFormData((prev) => ({ ...prev, city: "New Delhi", state: "Delhi" }));
-      } else if (formData.pincode.startsWith("40")) {
-        setFormData((prev) => ({ ...prev, city: "Mumbai", state: "Maharashtra" }));
-      } else if (formData.pincode.startsWith("56")) {
-        setFormData((prev) => ({ ...prev, city: "Bangalore", state: "Karnataka" }));
-      } else if (formData.pincode.startsWith("60")) {
-        setFormData((prev) => ({ ...prev, city: "Chennai", state: "Tamil Nadu" }));
-      } else {
-        setFormData((prev) => ({ ...prev, city: "Noida", state: "Uttar Pradesh" }));
-      }
+      fetch(`https://api.postalpincode.in/pincode/${formData.pincode}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice?.length > 0) {
+            const postOffice = data[0].PostOffice[0];
+            setFormData((prev) => ({
+              ...prev,
+              city: postOffice.District || postOffice.Block || prev.city,
+              state: postOffice.State || prev.state,
+            }));
+          }
+        })
+        .catch((e) => console.error("Error fetching pincode details:", e));
     }
   }, [formData.pincode]);
 
@@ -401,7 +452,21 @@ function CheckoutForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#17231b]">Complete House Address & Street</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-[#17231b]">Complete House Address & Street</label>
+                <button
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={detectingLocation}
+                  className="flex items-center gap-1.5 text-[10px] font-bold text-[#244f31] hover:text-[#80a03c] transition disabled:opacity-50"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span>{detectingLocation ? "Detecting..." : "Use Current Location"}</span>
+                </button>
+              </div>
               <input
                 type="text"
                 required

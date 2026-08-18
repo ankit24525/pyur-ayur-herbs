@@ -42,6 +42,7 @@ function ProfileDashboard() {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [addressForm, setAddressForm] = useState({
     name: "",
     phone: "",
@@ -129,6 +130,73 @@ function ProfileDashboard() {
       }
     }
   }, [activeTab]);
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+          );
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            const street = [addr.suburb, addr.road, addr.neighbourhood].filter(Boolean).join(", ") || addr.amenity || "";
+            const city = addr.city || addr.town || addr.village || addr.county || "";
+            const state = addr.state || "";
+            const pincode = addr.postcode || "";
+
+            setAddressForm((prev) => ({
+              ...prev,
+              street: [street, addr.subdistrict].filter(Boolean).join(", ") || prev.street,
+              city: city || prev.city,
+              state: state || prev.state,
+              pincode: pincode.replace(/\D/g, "") || prev.pincode,
+            }));
+          } else {
+            alert("Could not retrieve clean address details for your location.");
+          }
+        } catch (e) {
+          console.error(e);
+          alert("Error fetching address details from coordinates.");
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      (error) => {
+        console.error(error);
+        alert("Failed to access your location. Please check your browser permissions.");
+        setDetectingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  // Auto fill city/state based on live pincode lookup
+  useEffect(() => {
+    if (addressForm.pincode.length === 6) {
+      fetch(`https://api.postalpincode.in/pincode/${addressForm.pincode}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice?.length > 0) {
+            const postOffice = data[0].PostOffice[0];
+            setAddressForm((prev) => ({
+              ...prev,
+              city: postOffice.District || postOffice.Block || prev.city,
+              state: postOffice.State || prev.state,
+            }));
+          }
+        })
+        .catch((e) => console.error("Error fetching pincode details:", e));
+    }
+  }, [addressForm.pincode]);
 
   if (loading || !user) {
     return (
@@ -527,7 +595,21 @@ function ProfileDashboard() {
                           />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-bold text-[#17231b]">Street Address *</label>
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-[#17231b]">Street Address *</label>
+                            <button
+                              type="button"
+                              onClick={handleDetectLocation}
+                              disabled={detectingLocation}
+                              className="flex items-center gap-1.5 text-[10px] font-bold text-[#244f31] hover:text-[#80a03c] transition disabled:opacity-50"
+                            >
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </span>
+                              <span>{detectingLocation ? "Detecting..." : "Use Current Location"}</span>
+                            </button>
+                          </div>
                           <input
                             type="text"
                             required

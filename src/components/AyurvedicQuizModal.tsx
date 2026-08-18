@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { HelpCircle, CheckCircle2, ArrowRight, RotateCcw, X, Sparkles } from "lucide-react";
 import { products, Product } from "@/lib/store";
@@ -20,6 +20,18 @@ export default function AyurvedicQuizModal({
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState<{ goal?: string; energy?: string; digestion?: string }>({});
   const [recommended, setRecommended] = useState<Product[]>([]);
+  const [catalog, setCatalog] = useState<Product[]>(products);
+
+  useEffect(() => {
+    fetch("/api/admin/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.products && data.products.length > 0) {
+          setCatalog(data.products);
+        }
+      })
+      .catch((e) => console.error("Error loading products for quiz:", e));
+  }, []);
 
   const questions = [
     {
@@ -62,15 +74,15 @@ export default function AyurvedicQuizModal({
       setStep(step + 1);
     } else {
       // Calculate Recommendations
-      let match = products.slice(0, 2);
+      let match = catalog.slice(0, 2);
       if (nextAnswers.goal?.includes("Sugar")) {
-        match = products.filter((p) => p.slug.includes("dia-free") || p.concern === "Sugar Management");
+        match = catalog.filter((p) => p.slug.includes("dia-free") || p.concern === "Sugar Management");
       } else if (nextAnswers.goal?.includes("Energy")) {
-        match = products.filter((p) => p.slug.includes("shilajit") || p.concern === "Energy & Vitality");
+        match = catalog.filter((p) => p.slug.includes("shilajit") || p.concern === "Energy & Vitality");
       } else if (nextAnswers.goal?.includes("Skin")) {
-        match = products.filter((p) => p.slug.includes("kumkumadi") || p.concern === "Skin & Hair");
+        match = catalog.filter((p) => p.slug.includes("kumkumadi") || p.concern === "Skin & Hair");
       }
-      setRecommended(match.length > 0 ? match : products.slice(0, 2));
+      setRecommended(match.length > 0 ? match : catalog.slice(0, 2));
       setStep(4);
     }
   };

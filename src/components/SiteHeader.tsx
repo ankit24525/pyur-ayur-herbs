@@ -54,6 +54,19 @@ export default function SiteHeader({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [catalog, setCatalog] = useState<Product[]>(products);
+
+  useEffect(() => {
+    fetch("/api/admin/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.products && data.products.length > 0) {
+          setCatalog(data.products);
+        }
+      })
+      .catch((e) => console.error("Error loading products for search:", e));
+  }, []);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [pincodeModalOpen, setPincodeModalOpen] = useState(false);
@@ -109,7 +122,7 @@ export default function SiteHeader({
       return;
     }
     const q = searchQuery.toLowerCase();
-    const filtered = products.filter(
+    const filtered = catalog.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.concern.toLowerCase().includes(q) ||
@@ -117,7 +130,7 @@ export default function SiteHeader({
     );
     setSearchResults(filtered);
     setIsSearching(true);
-  }, [searchQuery]);
+  }, [searchQuery, catalog]);
 
   const cartSubtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const freeShippingThreshold = 999;

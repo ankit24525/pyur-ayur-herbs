@@ -72,6 +72,7 @@ function CheckoutForm() {
   const [orderComplete, setOrderComplete] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
+  const [locationError, setLocationError] = useState("");
 
   // Load logged-in user email from localStorage
   useEffect(() => {
@@ -181,11 +182,12 @@ function CheckoutForm() {
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      setLocationError("Geolocation is not supported by your browser.");
       return;
     }
 
     setDetectingLocation(true);
+    setLocationError("");
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -208,19 +210,20 @@ function CheckoutForm() {
               state: state || prev.state,
               pincode: pincode.replace(/\D/g, "") || prev.pincode,
             }));
+            setLocationError("");
           } else {
-            alert("Could not retrieve clean address details for your location.");
+            setLocationError("Could not retrieve address details for your location.");
           }
         } catch (e) {
           console.error(e);
-          alert("Error fetching address details from coordinates.");
+          setLocationError("Error fetching address details from coordinates.");
         } finally {
           setDetectingLocation(false);
         }
       },
       (error) => {
         console.error(error);
-        alert("Failed to access your location. Please check your browser permissions.");
+        setLocationError("Failed to access your location. Please check your browser permissions.");
         setDetectingLocation(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -475,6 +478,12 @@ function CheckoutForm() {
                 placeholder="House No, Building, Street, Area name"
                 className="mt-1 w-full rounded-lg border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
               />
+              {locationError && (
+                <p className="mt-1 text-[10px] text-red-500 font-bold flex items-center gap-1 animate-pulse">
+                  <span>⚠️</span>
+                  <span>{locationError}</span>
+                </p>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

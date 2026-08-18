@@ -43,6 +43,7 @@ function ProfileDashboard() {
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [detectingLocation, setDetectingLocation] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [addressForm, setAddressForm] = useState({
     name: "",
     phone: "",
@@ -133,11 +134,12 @@ function ProfileDashboard() {
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      setLocationError("Geolocation is not supported by your browser.");
       return;
     }
 
     setDetectingLocation(true);
+    setLocationError("");
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -160,19 +162,20 @@ function ProfileDashboard() {
               state: state || prev.state,
               pincode: pincode.replace(/\D/g, "") || prev.pincode,
             }));
+            setLocationError("");
           } else {
-            alert("Could not retrieve clean address details for your location.");
+            setLocationError("Could not retrieve address details for your location.");
           }
         } catch (e) {
           console.error(e);
-          alert("Error fetching address details from coordinates.");
+          setLocationError("Error fetching address details from coordinates.");
         } finally {
           setDetectingLocation(false);
         }
       },
       (error) => {
         console.error(error);
-        alert("Failed to access your location. Please check your browser permissions.");
+        setLocationError("Failed to access your location. Please check your browser permissions.");
         setDetectingLocation(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -618,6 +621,12 @@ function ProfileDashboard() {
                             className="border border-[#ddddd9] rounded-xl px-3 py-2 text-sm focus:outline-[#244f31]"
                             placeholder="Flat/House No., Colony, Landmark"
                           />
+                          {locationError && (
+                            <p className="mt-1 text-[10px] text-red-500 font-bold flex items-center gap-1 animate-pulse">
+                              <span>⚠️</span>
+                              <span>{locationError}</span>
+                            </p>
+                          )}
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="flex flex-col gap-1">

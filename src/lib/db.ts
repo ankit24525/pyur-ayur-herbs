@@ -16,6 +16,7 @@ export interface DBData {
   marketing?: any;
   seo?: any;
   users?: any[];
+  orderOtps?: any[];
 }
 
 let client: MongoClient | null = null;

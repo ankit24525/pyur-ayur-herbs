@@ -66,8 +66,34 @@ function CheckoutForm() {
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [otpInput, setOtpInput] = useState("");
   const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [orderComplete, setOrderComplete] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  // Load logged-in user email from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("pyur_user");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.email) setUserEmail(parsed.email);
+          // Auto-fill name and phone from profile
+          if (parsed.name || parsed.phone) {
+            setFormData((prev) => ({
+              ...prev,
+              name: parsed.name || prev.name,
+              phone: parsed.phone || prev.phone,
+            }));
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+  }, []);
 
   // Settings & Coupons state
   const [settings, setSettings] = useState({
@@ -185,7 +211,7 @@ function CheckoutForm() {
   const shipping = subtotal >= 999 ? 0 : 49;
   const total = subtotal - prepaidDiscount - couponDiscount + shipping;
 
-  const handleCheckoutSubmit = (e: React.FormEvent) => {
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.pincode.length !== 6) {
@@ -194,7 +220,31 @@ function CheckoutForm() {
     }
 
     if (formData.paymentMethod === "cod" && settings.codOtpEnabled) {
-      setOtpModalOpen(true);
+      if (!userEmail) {
+        alert("No email address found. Please log in again to place your order.");
+        return;
+      }
+      // Send OTP to user's registered email
+      setOtpSending(true);
+      try {
+        const res = await fetch("/api/checkout/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmail }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setOtpError("");
+          setOtpInput("");
+          setOtpModalOpen(true);
+        } else {
+          alert(data.error || "Failed to send verification code. Please try again.");
+        }
+      } catch {
+        alert("Failed to send verification code. Check your connection and try again.");
+      } finally {
+        setOtpSending(false);
+      }
     } else {
       void processOrder();
     }
@@ -202,28 +252,31 @@ function CheckoutForm() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setOtpError("");
+
     if (otpInput.length !== 4) {
-      alert("Please enter a valid 4-digit verification code.");
+      setOtpError("Please enter the 4-digit code sent to your email.");
       return;
     }
 
     setOtpVerifying(true);
     try {
-      const response = await fetch("/api/verify-otp", {
+      const response = await fetch("/api/checkout/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: formData.phone, otp: otpInput }),
+        body: JSON.stringify({ email: userEmail, otp: otpInput }),
       });
       const resData = await response.json();
       if (resData.success && resData.verified) {
         setOtpModalOpen(false);
         setOtpInput("");
+        setOtpError("");
         void processOrder();
       } else {
-        alert(resData.error || "OTP Verification failed.");
+        setOtpError(resData.error || "Incorrect verification code. Please try again.");
       }
     } catch {
-      alert("Error verifying OTP.");
+      setOtpError("Connection error. Please try again.");
     } finally {
       setOtpVerifying(false);
     }
@@ -574,8 +627,9 @@ function CheckoutForm() {
               <h3 className="text-base font-bold text-[#17231b]">COD Verification Code</h3>
             </div>
             <p className="mt-1 text-xs text-[#666666]">
-              We have sent a 4-digit verification code to <b>{formData.phone}</b>. Enter it below to complete your order.
+              We have sent a 4-digit verification code to your email <b>{userEmail}</b>. Enter it below to complete your order.
             </p>
+            {otpError && <p className="mt-2 text-xs text-red-500 font-bold text-center">{otpError}</p>}
             <form onSubmit={handleVerifyOtp} className="mt-4 space-y-4">
               <input
                 type="text"

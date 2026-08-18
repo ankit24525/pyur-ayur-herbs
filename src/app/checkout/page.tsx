@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -20,8 +20,19 @@ import { trackMetaEvent } from "@/components/MetaPixel";
 
 function CheckoutForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const prodId = searchParams.get("productId") || "1";
   const qty = parseInt(searchParams.get("quantity") || "1", 10);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("pyur_user");
+      if (!stored) {
+        const currentUrl = window.location.pathname + window.location.search;
+        router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+      }
+    }
+  }, [router]);
 
   const [catalog, setCatalog] = useState<Product[]>(products);
   const [product, setProduct] = useState<Product>(products[0]);

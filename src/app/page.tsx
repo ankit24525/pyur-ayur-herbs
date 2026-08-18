@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import SiteHeader from "@/components/SiteHeader";
 import HeroSlider from "@/components/HeroSlider";
@@ -16,6 +17,7 @@ import { products, Product } from "@/lib/store";
 import { X, Smartphone, User, CheckCircle2 } from "lucide-react";
 
 export default function Home() {
+  const router = useRouter();
   const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<Product[]>(products);
   const [cmsData, setCmsData] = useState<any>({
@@ -80,8 +82,7 @@ export default function Home() {
   };
 
   const handleBuyNow = (product: Product) => {
-    handleAddToCart(product);
-    alert(`Proceeding to instant checkout for ${product.name} at ₹${product.price}!`);
+    router.push(`/checkout?productId=${product.id}&quantity=1`);
   };
 
   // Filter products by selected concern if active

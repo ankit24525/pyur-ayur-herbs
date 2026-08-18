@@ -492,7 +492,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         subtitle="Complementary Ayurvedic routines recommended by Vaidyas"
         items={products.slice(0, 4)}
         onAddToCart={handleAddToCart}
-        onBuyNow={(prod) => alert(`Buying ${prod.name}`)}
+        onBuyNow={(prod) => window.location.href = `/checkout?productId=${prod.id}&quantity=1`}
       />
 
       {/* Main Footer */}

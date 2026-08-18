@@ -661,7 +661,11 @@ export default function SiteHeader({
                   </div>
                 </div>
                 <button
-                  onClick={() => alert(`Proceeding to checkout for ₹${cartSubtotal}`)}
+                  onClick={() => {
+                    if (cart.length > 0) {
+                      window.location.href = `/checkout?productId=${cart[0].product.id}&quantity=${cart[0].quantity}`;
+                    }
+                  }}
                   className="w-full rounded-lg bg-[#244f31] py-3 text-sm font-bold tracking-wider text-white shadow-lg transition hover:bg-[#1d3b24]"
                 >
                   PROCEED TO CHECKOUT

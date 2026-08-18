@@ -97,9 +97,9 @@ function ProfileDashboard() {
 
   // Load orders & wallet coins
   useEffect(() => {
-    if (!user || !user.phone) return;
+    if (!user || (!user.email && !user.phone)) return;
     setLoadingOrders(true);
-    fetch(`/api/profile/orders?phone=${user.phone}`)
+    fetch(`/api/profile/orders?email=${user.email || ""}&phone=${user.phone || ""}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {

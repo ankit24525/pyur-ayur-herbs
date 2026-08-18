@@ -4,7 +4,7 @@ import { readDB, writeDB } from "@/lib/db";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, phone, address, pincode, city, state, paymentMethod, items, subtotal } = body;
+    const { name, phone, address, pincode, city, state, paymentMethod, items, subtotal, email } = body;
 
     // Server-side validation
     if (!name || !phone || !address || !pincode || pincode.length !== 6 || !city || !state || !items || items.length === 0) {
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     const newOrder = {
       id: orderId,
       customer: name,
+      email: email || "",
       phone: phone,
       address: address || "",
       pincode: pincode || "",

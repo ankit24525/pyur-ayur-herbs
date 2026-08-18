@@ -290,6 +290,7 @@ function CheckoutForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          email: userEmail,
           subtotal,
           items: [{ productId: product.id, quantity: qty }],
         }),

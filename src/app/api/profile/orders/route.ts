@@ -4,20 +4,25 @@ import { readDB } from "@/lib/db";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const email = searchParams.get("email") || "";
     const phone = searchParams.get("phone") || "";
 
-    if (!phone) {
-      return NextResponse.json({ success: false, error: "Phone number is required." }, { status: 400 });
+    if (!email && !phone) {
+      return NextResponse.json({ success: false, error: "Email or phone number is required." }, { status: 400 });
     }
 
     const db = await readDB();
     const allOrders = db.orders || [];
 
-    // Filter orders matching the phone number
-    const normalizedPhone = phone.trim().replace(/\s+/g, "");
+    // Filter orders matching the email or phone number
     const userOrders = allOrders.filter((order) => {
+      const matchEmail = email && order.email && order.email.toLowerCase().trim() === email.toLowerCase().trim();
+      
+      const normalizedPhone = phone.trim().replace(/\s+/g, "");
       const orderPhone = (order.phone || "").trim().replace(/\s+/g, "");
-      return orderPhone === normalizedPhone || orderPhone.includes(normalizedPhone) || normalizedPhone.includes(orderPhone);
+      const matchPhone = phone && orderPhone && (orderPhone === normalizedPhone || orderPhone.includes(normalizedPhone) || normalizedPhone.includes(orderPhone));
+      
+      return matchEmail || matchPhone;
     });
 
     // Sort orders by date/id descending (newest first)

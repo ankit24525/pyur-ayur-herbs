@@ -29,7 +29,7 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
         {activeSlides.map((slide, idx) => (
           <div
             key={slide.id || idx}
-            className={`relative min-w-full shrink-0 ${slide.fullWidthBanner ? "" : `bg-gradient-to-r ${slide.bgColor || "from-[#1d3b24] via-[#244f31] to-[#0f2416]"}`} text-white`}
+            className={`relative w-full shrink-0 overflow-hidden ${slide.fullWidthBanner ? "" : `bg-gradient-to-r ${slide.bgColor || "from-[#1d3b24] via-[#244f31] to-[#0f2416]"}`} text-white`}
           >
             {slide.fullWidthBanner ? (
               <a

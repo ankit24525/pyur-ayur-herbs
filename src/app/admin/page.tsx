@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { concerns } from "@/lib/store";
 import Link from "next/link";
 import {
@@ -43,6 +43,11 @@ import {
 export default function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState("dashboard"); // dashboard, orders, products, customers, discounts, marketing, content, reviews, shipping, analytics, seo, support, settings
   const [subTab, setSubTab] = useState("overview");
+  const activeMenuRef = useRef(activeMenu);
+
+  useEffect(() => {
+    activeMenuRef.current = activeMenu;
+  }, [activeMenu]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -188,7 +193,7 @@ export default function AdminDashboard() {
 
     // Poll for real-time database updates (every 5 seconds)
     const interval = setInterval(() => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && activeMenuRef.current !== "settings") {
         void loadData();
       }
     }, 5000);

@@ -18,7 +18,10 @@ export default function WhatsAppWidget() {
       .catch((e) => console.error("Error loading WhatsApp widget config:", e));
   }, []);
 
-  const cleanNumber = whatsappNumber.replace(/\D/g, "");
+  let cleanNumber = whatsappNumber.replace(/\D/g, "");
+  if (cleanNumber.length === 10) {
+    cleanNumber = "91" + cleanNumber;
+  }
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(whatsappMessage)}`;
 
   return (

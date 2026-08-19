@@ -43,55 +43,67 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                 />
               </a>
             ) : (
-              <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between px-6 py-12 lg:flex-row lg:px-12 lg:py-16">
+              <div className="relative mx-auto flex max-w-[1440px] flex-col justify-end min-h-[360px] sm:min-h-[420px] lg:min-h-[450px] lg:justify-between lg:flex-row lg:items-center px-5 py-10 lg:px-12 lg:py-16">
+                {/* Mobile Background Image (absolute, hidden on desktop) */}
+                {slide.image && (
+                  <div className="absolute inset-0 lg:hidden">
+                    <img
+                      src={slide.image}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-[#17231b]/75 backdrop-blur-xxs" />
+                  </div>
+                )}
+
                 {/* Content Box */}
-                <div className="z-10 flex max-w-xl flex-col items-center text-center lg:items-start lg:text-left">
+                <div className="z-10 flex flex-col items-center text-center lg:max-w-xl lg:items-start lg:text-left">
                   {slide.badge && (
-                    <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#80a03c] px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
+                    <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#80a03c] px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md lg:mb-3 lg:px-3.5 lg:py-1 lg:text-xs">
                       <Sparkles className="size-3.5" /> {slide.badge}
                     </span>
                   )}
 
-                  <h1 className="text-2xl font-black leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                  <h1 className="text-xl font-black leading-tight tracking-tight sm:text-2xl lg:text-5xl">
                     {slide.title}
                   </h1>
 
                   {slide.subtitle && (
-                    <p className="mt-3 text-xs font-bold tracking-widest text-[#f2c94c] uppercase sm:text-sm">
+                    <p className="mt-2 text-[10px] font-bold tracking-widest text-[#f2c94c] uppercase sm:text-xs lg:text-sm lg:mt-3">
                       {slide.subtitle}
                     </p>
                   )}
 
                   {slide.offer && (
-                    <div className="mt-4 rounded-lg bg-white/10 px-4 py-2 text-xs font-semibold backdrop-blur-md border border-white/20">
+                    <div className="mt-3 rounded-lg bg-white/10 px-3 py-1.5 text-[10px] font-semibold backdrop-blur-md border border-white/20 lg:mt-4 lg:px-4 lg:py-2 lg:text-xs">
                       🎁 {slide.offer}
                     </div>
                   )}
 
-                  <div className="mt-6 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-3 lg:mt-6 lg:gap-4 lg:justify-start">
                     <a
                       href={slide.href}
-                      className="inline-flex items-center justify-center rounded-lg bg-[#80a03c] px-6 py-3.5 text-xs font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-[#6c8930] hover:shadow-xl sm:text-sm"
+                      className="inline-flex items-center justify-center rounded-lg bg-[#80a03c] px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-[#6c8930] hover:shadow-xl sm:text-xs lg:px-6 lg:py-3.5 lg:text-sm"
                     >
                       {slide.ctaText || "SHOP NOW"}
                     </a>
                     <a
                       href="#concerns"
-                      className="inline-flex items-center justify-center rounded-lg border border-white/40 bg-white/10 px-6 py-3.5 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-white/20 sm:text-sm"
+                      className="inline-flex items-center justify-center rounded-lg border border-white/40 bg-white/10 px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-white transition hover:bg-white/20 sm:text-xs lg:px-6 lg:py-3.5 lg:text-sm"
                     >
                       SELECT CONCERN
                     </a>
                   </div>
                 </div>
 
-                {/* Image Box */}
+                {/* Desktop Image Box */}
                 {slide.image && (
-                  <div className="relative mt-8 max-w-lg lg:mt-0 w-full lg:w-auto">
+                  <div className="relative mt-8 hidden lg:block lg:mt-0 lg:max-w-lg lg:w-auto">
                     <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
                       <img
                         src={slide.image}
                         alt={slide.title}
-                        className="h-[280px] w-full object-cover sm:h-[360px] lg:h-[400px] lg:w-[500px]"
+                        className="h-[400px] w-[500px] object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                     </div>

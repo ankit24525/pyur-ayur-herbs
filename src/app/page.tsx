@@ -13,13 +13,26 @@ import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import PressSection from "@/components/PressSection";
 import SiteFooter from "@/components/SiteFooter";
-import { products, Product } from "@/lib/store";
+import { products, Product, concerns } from "@/lib/store";
 import { X, Smartphone, User, CheckCircle2 } from "lucide-react";
+
+const getShortName = (name: string) => {
+  if (name.includes("Sugar")) return "Sugar";
+  if (name.includes("Gym")) return "Gym";
+  if (name.includes("Energy")) return "Energy";
+  if (name.includes("Heart")) return "Heart";
+  if (name.includes("Liver")) return "Liver";
+  if (name.includes("Daily")) return "Daily";
+  if (name.includes("Skin")) return "Skin";
+  if (name.includes("Women")) return "For Her";
+  return name;
+};
 
 export default function Home() {
   const router = useRouter();
   const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<Product[]>(products);
+  const [categories, setCategories] = useState<any[]>(concerns);
   const [cmsData, setCmsData] = useState<any>({
     announcement: null,
     heroSlides: [],
@@ -33,6 +46,9 @@ export default function Home() {
       .then((data) => {
         if (data.products && data.products.length > 0) {
           setCatalog(data.products);
+        }
+        if (data.categories && data.categories.length > 0) {
+          setCategories(data.categories);
         }
         if (data.content) {
           setCmsData(data.content);
@@ -112,6 +128,36 @@ export default function Home() {
         onOpenLoginModal={() => setLoginModalOpen(true)}
         onOpenConsultationModal={() => setConsultationModalOpen(true)}
       />
+
+      {/* Mobile Circular Category Selector (Kapiva-Style) - Mobile Only */}
+      <div className="md:hidden bg-white border-b border-[#ddddd9] py-3.5 px-4 overflow-x-auto no-scrollbar flex gap-5 scroll-smooth min-w-0">
+        {categories.map((c) => {
+          const isSelected = selectedConcern === c.name;
+          const shortName = getShortName(c.name);
+          return (
+            <button
+              key={c.id}
+              onClick={() => {
+                setSelectedConcern(isSelected ? null : c.name);
+                // Scroll to products catalog grid
+                document.getElementById("shop")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="flex flex-col items-center gap-1.5 shrink-0"
+            >
+              <div className={`size-14 rounded-full flex items-center justify-center text-2xl border transition duration-200 ${
+                isSelected 
+                  ? "border-[#244f31] bg-[#eef5df] shadow-xs" 
+                  : "border-[#ddddd9] bg-[#f8faf1] hover:border-[#80a03c]"
+              }`}>
+                <span>{c.icon || "🌿"}</span>
+              </div>
+              <span className={`text-[10px] font-bold tracking-tight text-center ${isSelected ? "text-[#244f31]" : "text-[#17231b]"}`}>
+                {shortName}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Hero Banner Slider Carousel */}
       <HeroSlider slides={cmsData.heroSlides} />

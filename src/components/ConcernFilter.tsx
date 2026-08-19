@@ -12,6 +12,7 @@ interface ConcernFilterProps {
 
 export default function ConcernFilter({ selectedConcern, onSelectConcern }: ConcernFilterProps) {
   const [categories, setCategories] = useState<any[]>([]);
+  const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,7 +58,8 @@ export default function ConcernFilter({ selectedConcern, onSelectConcern }: Conc
 
   return (
     <section id="concerns" className="mx-auto max-w-[1440px] px-4 py-4 md:px-6 md:py-6">
-      <div className="relative group/carousel">
+      {/* Desktop View: Horizontal Chips Carousel (hidden on mobile) */}
+      <div className="relative group/carousel hidden md:block">
         {/* Left Chevron Button */}
         <button
           onClick={() => handleScroll("left")}
@@ -125,6 +127,64 @@ export default function ConcernFilter({ selectedConcern, onSelectConcern }: Conc
         >
           <ChevronRight className="size-5" />
         </button>
+      </div>
+
+      {/* Mobile View: Kapiva-Style Wrapped Chips (hidden on desktop) */}
+      <div className="md:hidden flex flex-col gap-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-black uppercase tracking-wider text-[#17231b] flex items-center gap-1.5">
+            <span>🌱 Select Concern:</span>
+          </span>
+          {selectedConcern && (
+            <span className="text-[10px] font-black uppercase text-[#244f31] bg-[#eef5df] border border-[#244f31]/20 rounded-md px-1.5 py-0.5">
+              ✓ Active
+            </span>
+          )}
+        </div>
+
+        {/* Wrapped Chips list */}
+        <div className="flex flex-wrap gap-2.5">
+          {/* All Remedies Chip */}
+          <button
+            onClick={() => onSelectConcern(null)}
+            className={`flex items-center gap-1 rounded-lg border px-3.5 py-2 text-xs font-bold transition ${
+              selectedConcern === null
+                ? "border-[#244f31] bg-[#eef5df] text-[#244f31] shadow-xs ring-1 ring-[#244f31]"
+                : "border-[#ddddd9] bg-white text-[#17231b]"
+            }`}
+          >
+            <span>All Remedies</span>
+          </button>
+
+          {/* Individual Concern Chips (sliced based on expanded state) */}
+          {(expanded ? categories : categories.slice(0, 3)).map((c) => {
+            const isSelected = selectedConcern === c.name;
+            return (
+              <button
+                key={c.id}
+                onClick={() => onSelectConcern(isSelected ? null : c.name)}
+                className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-bold transition ${
+                  isSelected
+                    ? "border-[#244f31] bg-[#eef5df] text-[#244f31] shadow-xs ring-1 ring-[#244f31]"
+                    : "border-[#ddddd9] bg-white text-[#17231b]"
+                }`}
+              >
+                <span>{c.name}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Expand / Collapse Button */}
+        {categories.length > 3 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs font-extrabold text-[#c9704c] hover:text-[#244f31] flex items-center gap-0.5 mt-1 self-start select-none"
+          >
+            <span>{expanded ? "See less ▲" : "See more ▼"}</span>
+          </button>
+        )}
       </div>
     </section>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mail, Phone, MapPin, CheckCircle } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
@@ -11,6 +11,21 @@ export default function ContactUsPage() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
+  const [settings, setSettings] = useState<any>({
+    supportEmail: "support@pyurayurherbs.com",
+    whatsappNumber: "919876543210",
+  });
+
+  useEffect(() => {
+    fetch("/api/admin/all")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setSettings(data.settings);
+        }
+      })
+      .catch((e) => console.error("Error loading settings:", e));
+  }, []);
 
   const handleUpdateQuantity = (id: string, delta: number) => {
     setCart((prev) =>
@@ -85,8 +100,8 @@ export default function ContactUsPage() {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-[#17231b]">Email Support</h4>
-                  <a href="mailto:support@pyurayurherbs.com" className="text-xs text-[#666666] hover:underline">
-                    support@pyurayurherbs.com
+                  <a href={`mailto:${settings.supportEmail}`} className="text-xs text-[#666666] hover:underline">
+                    {settings.supportEmail}
                   </a>
                 </div>
               </div>
@@ -97,8 +112,8 @@ export default function ContactUsPage() {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-[#17231b]">Call & WhatsApp</h4>
-                  <a href="https://wa.me/919876543210" className="text-xs text-[#666666] hover:underline">
-                    +91 98765 43210 (Toll-Free Desk)
+                  <a href={`https://wa.me/${settings.whatsappNumber}`} className="text-xs text-[#666666] hover:underline">
+                    +{settings.whatsappNumber} (Business Desk)
                   </a>
                 </div>
               </div>

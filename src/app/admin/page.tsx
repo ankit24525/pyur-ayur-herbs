@@ -56,6 +56,8 @@ export default function AdminDashboard() {
     settings: {
       storeName: "",
       supportEmail: "",
+      whatsappNumber: "",
+      whatsappMessage: "",
       codOtpEnabled: true,
       prepaidDiscount: 5,
       taxRate: 18,
@@ -4298,7 +4300,26 @@ export default function AdminDashboard() {
                         className="mt-1 w-full rounded border p-2"
                       />
                     </div>
-                    <button onClick={() => handleSaveSettings("storeName", dbData.settings.storeName)} className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2">Save</button>
+                    <div>
+                      <label className="block font-bold">Business WhatsApp Number (with country code, e.g. 919876543210)</label>
+                      <input
+                        type="text"
+                        value={dbData.settings.whatsappNumber || ""}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, whatsappNumber: e.target.value } })}
+                        placeholder="e.g. 919876543210"
+                        className="mt-1 w-full rounded border p-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold">Default Support Greeting Message</label>
+                      <textarea
+                        value={dbData.settings.whatsappMessage || ""}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, whatsappMessage: e.target.value } })}
+                        placeholder="e.g. नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।"
+                        className="mt-1 w-full rounded border p-2 h-20"
+                      />
+                    </div>
+                    <button onClick={() => handleSaveSettings("storeName", dbData.settings.storeName)} className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2">Save General Settings</button>
                   </div>
                 )}
 

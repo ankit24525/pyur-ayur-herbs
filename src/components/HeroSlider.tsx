@@ -40,7 +40,7 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                   src={slide.image}
                   alt={slide.title || "Storefront Banner"}
                   onError={(e) => {
-                    e.currentTarget.src = "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=80";
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
                   }}
                   className="w-full h-[240px] sm:h-[360px] lg:h-[450px] object-cover"
                 />
@@ -54,7 +54,7 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                       src={slide.image}
                       alt=""
                       onError={(e) => {
-                        e.currentTarget.src = "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=80";
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
                       }}
                       className="size-full object-cover"
                     />
@@ -110,7 +110,7 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                         src={slide.image}
                         alt={slide.title}
                         onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=80";
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
                         }}
                         className="h-[400px] w-[500px] object-cover"
                       />

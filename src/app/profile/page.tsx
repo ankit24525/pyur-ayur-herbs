@@ -498,6 +498,23 @@ function ProfileDashboard() {
                             }`}>{order.status}</span>
                           </div>
                         </div>
+                        
+                        <div className="flex gap-2.5 justify-end border-t border-[#f0f0eb] pt-3 mt-1">
+                          <Link
+                            href={`/track?orderId=${encodeURIComponent(order.id)}&contact=${encodeURIComponent(user?.email || user?.phone || "")}`}
+                            className="rounded-xl border border-[#244f31] text-[#244f31] font-bold text-[10px] sm:text-xs py-1.5 px-3 hover:bg-[#f8faf1] transition"
+                          >
+                            Track Package
+                          </Link>
+                          {order.status === "Delivered" && (
+                            <Link
+                              href="/#shop"
+                              className="rounded-xl bg-[#244f31] text-white font-bold text-[10px] sm:text-xs py-1.5 px-3 hover:bg-[#1d3b24] transition text-center"
+                            >
+                              Buy Again
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

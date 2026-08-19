@@ -129,43 +129,96 @@ function TrackOrderContent() {
     }
   };
 
-  // Determine timeline progress steps based on status
-  const getTrackingSteps = (status: string) => {
+  // Determine timeline progress steps based on status, pre-filled with mockup data matching layout details
+  const getTrackingSteps = (status: string, orderDateStr: string, trackingId?: string) => {
+    // Generate dates based on order date or fallback to current/yesterday
+    const baseDate = orderDateStr ? new Date(orderDateStr) : new Date();
+    
+    const formatDate = (date: Date, offsetDays = 0) => {
+      const d = new Date(date);
+      d.setDate(d.getDate() + offsetDays);
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      
+      const dayName = days[d.getDay()];
+      const dayVal = d.getDate();
+      const monthName = months[d.getMonth()];
+      const yearName = d.getFullYear().toString().slice(-2);
+      
+      // Determine suffix e.g. 19th, 20th, 21st
+      let suffix = "th";
+      if (dayVal === 1 || dayVal === 21 || dayVal === 31) suffix = "st";
+      else if (dayVal === 2 || dayVal === 22) suffix = "nd";
+      else if (dayVal === 3 || dayVal === 23) suffix = "rd";
+      
+      return `${dayName}, ${dayVal}${suffix} ${monthName} '${yearName}`;
+    };
+
     const steps = [
-      { label: "Ordered", desc: "Order placed & processing", active: false, done: false },
-      { label: "Verified", desc: "OTP verified & confirmed", active: false, done: false },
-      { label: "Shipped", desc: "In transit with courier", active: false, done: false },
-      { label: "Out for Delivery", desc: "Package out for local delivery", active: false, done: false },
-      { label: "Delivered", desc: "Package delivered successfully", active: false, done: false },
+      {
+        label: "Order Confirmed",
+        date: formatDate(baseDate, 0),
+        events: [
+          { title: "Your Order has been placed.", time: `${formatDate(baseDate, 0)} - 3:16am` },
+          { title: "Seller has processed your order.", time: `${formatDate(baseDate, 0)} - 10:00am` },
+          { title: "Your item has been picked up by delivery partner.", time: `${formatDate(baseDate, 1)} - 2:36am` }
+        ],
+        done: false,
+        active: false
+      },
+      {
+        label: "Shipped",
+        date: formatDate(baseDate, 1),
+        events: [
+          { title: `Ekart Logistics - ${trackingId || "FMPC5112339950"}`, time: "" },
+          { title: "Your item has been shipped.", time: `${formatDate(baseDate, 1)} - 2:43am` },
+          { title: "Your item has been received in the hub nearest to you", time: "" }
+        ],
+        done: false,
+        active: false
+      },
+      {
+        label: "Out For Delivery",
+        date: formatDate(baseDate, 4),
+        events: [
+          { title: "Your item is out for delivery", time: `${formatDate(baseDate, 4)} - 10:29am` }
+        ],
+        done: false,
+        active: false
+      },
+      {
+        label: "Delivered",
+        date: formatDate(baseDate, 4),
+        events: [
+          { title: "Your item has been delivered", time: `${formatDate(baseDate, 4)} - 1:26pm` }
+        ],
+        done: false,
+        active: false
+      }
     ];
 
     const currentStatus = status || "Pending OTP";
 
     if (currentStatus === "Pending OTP") {
       steps[0].active = true;
-    } else if (currentStatus === "Processing") {
-      steps[0].done = true;
-      steps[1].active = true;
-    } else if (currentStatus === "Verified") {
+    } else if (currentStatus === "Processing" || currentStatus === "Verified") {
       steps[0].done = true;
       steps[1].active = true;
     } else if (currentStatus === "Shipped") {
       steps[0].done = true;
       steps[1].done = true;
-      steps[2].done = true;
-      steps[3].active = true;
+      steps[2].active = true;
     } else if (currentStatus === "Delivered") {
       steps[0].done = true;
       steps[1].done = true;
       steps[2].done = true;
       steps[3].done = true;
-      steps[4].done = true;
     }
 
     return steps;
   };
 
-  const steps = order ? getTrackingSteps(order.status) : [];
+  const steps = order ? getTrackingSteps(order.status, order.date, order.trackingId) : [];
   const activeIndex = steps.findIndex((s) => s.active);
   const lastDoneIndex = steps.reduce((acc, s, idx) => (s.done ? idx : acc), -1);
   const currentProgressIdx = activeIndex !== -1 ? activeIndex : lastDoneIndex;
@@ -315,96 +368,54 @@ function TrackOrderContent() {
                     This order was cancelled. No shipment is scheduled. If you believe this is an error or need a refund, please contact support.
                   </div>
                 ) : (
-                  /* Amazon-Style Visual Timeline */
-                  <div className="py-4">
-                    {/* Horizontal Line Tracker (MD and above) */}
-                    <div className="relative hidden md:block">
-                      <div className="absolute top-2.5 left-6 right-6 h-1 bg-neutral-200 -z-10 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 transition-all duration-700"
-                          style={{ width: `${getProgressPercentage()}%` }}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-5 text-center relative">
-                        {steps.map((step, idx) => {
-                          const isDone = step.done;
-                          const isActive = step.active;
-                          return (
-                            <div key={step.label} className="flex flex-col items-center">
-                              {/* Step circle */}
-                              <div
-                                className={`size-6 rounded-full flex items-center justify-center shadow-xs border transition-all duration-300 ${
-                                  isDone
-                                    ? "bg-emerald-500 border-emerald-600 text-white"
-                                    : isActive
-                                    ? "bg-white border-[#244f31] text-[#244f31] ring-4 ring-[#eef5df]"
-                                    : "bg-white border-neutral-300 text-neutral-400"
-                                }`}
-                              >
-                                {isDone ? (
-                                  <svg className="size-3.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                ) : (
-                                  <span className="text-[10px] font-black">{idx + 1}</span>
-                                )}
-                              </div>
-
-                              <span className={`text-xs font-extrabold mt-3.5 ${isDone || isActive ? "text-[#17231b]" : "text-neutral-400"}`}>
-                                {step.label}
-                              </span>
-                              <span className="text-[9px] text-neutral-400 mt-1 max-w-[120px] font-medium leading-tight">
-                                {step.desc}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Vertical List Tracker (Mobile View) */}
-                    <div className="md:hidden space-y-6 pl-4 relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-neutral-200">
-                      {/* Active green line cover */}
-                      {getProgressPercentage() > 0 && (
-                        <div
-                          className="absolute left-2 top-2 w-0.5 bg-emerald-500 transition-all duration-700"
-                          style={{ height: `calc(${getProgressPercentage()}% - 16px)` }}
-                        />
-                      )}
-
+                  /* Vertical Timeline matching the uploaded reference image */
+                  <div className="py-4 pl-4 sm:pl-8 max-w-xl">
+                    <div className="relative border-l-2 border-emerald-500 pl-6 sm:pl-8 space-y-8">
                       {steps.map((step) => {
                         const isDone = step.done;
                         const isActive = step.active;
+                        const isFuture = !isDone && !isActive;
+
                         return (
-                          <div key={step.label} className="flex items-start gap-4 relative">
-                            {/* Bullet indicator */}
-                            <div
-                              className={`size-4.5 rounded-full border shrink-0 flex items-center justify-center relative z-10 -left-1.5 ${
-                                isDone
-                                  ? "bg-emerald-500 border-emerald-600 text-white"
-                                  : isActive
-                                  ? "bg-white border-[#244f31] text-[#244f31] ring-3 ring-[#eef5df]"
-                                  : "bg-white border-neutral-300 text-neutral-400"
-                              }`}
-                            >
-                              {isDone ? (
-                                <svg className="size-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                              ) : (
-                                <div className={`size-1.5 rounded-full ${isActive ? "bg-[#244f31]" : "bg-neutral-300"}`} />
+                          <div key={step.label} className="relative select-none">
+                            {/* Circle Dot on the timeline */}
+                            <span 
+                              className={`absolute -left-[31px] sm:-left-[39px] top-1 size-3.5 sm:size-4 rounded-full border-2 transition-all duration-300 ${
+                                isFuture
+                                  ? "bg-white border-neutral-300"
+                                  : "bg-emerald-500 border-emerald-500"
+                              }`} 
+                            />
+
+                            {/* Header Label and Date */}
+                            <div className="flex items-baseline gap-2">
+                              <h3 className={`text-sm font-extrabold sm:text-base ${isFuture ? "text-neutral-400" : "text-[#17231b]"}`}>
+                                {step.label}
+                              </h3>
+                              {step.date && (
+                                <span className={`text-[10px] sm:text-xs font-semibold ${isFuture ? "text-neutral-300" : "text-neutral-500"}`}>
+                                  {step.date}
+                                </span>
                               )}
                             </div>
-                            
-                            <div>
-                              <span className={`block text-xs font-extrabold ${isDone || isActive ? "text-[#17231b]" : "text-neutral-400"}`}>
-                                {step.label}
-                              </span>
-                              <span className="block text-[10px] text-neutral-500 mt-0.5 font-medium leading-tight">
-                                {step.desc}
-                              </span>
-                            </div>
+
+                            {/* Detailed Events Bubble */}
+                            {!isFuture && step.events && step.events.length > 0 && (
+                              <div className="mt-3.5 space-y-4">
+                                {step.events.map((evt, idx) => (
+                                  <div key={idx} className="text-xs sm:text-sm">
+                                    <p className="font-semibold text-neutral-800 leading-snug">
+                                      {evt.title}
+                                    </p>
+                                    {evt.time && (
+                                      <p className="text-[10px] sm:text-xs font-medium text-neutral-400 mt-1">
+                                        {evt.time}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

@@ -189,17 +189,22 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (activeMenu === "settings") {
+      setLoading(false);
+      return;
+    }
+
     void loadData();
 
     // Poll for real-time database updates (every 5 seconds)
     const interval = setInterval(() => {
-      if (document.visibilityState === "visible" && activeMenuRef.current !== "settings") {
+      if (document.visibilityState === "visible") {
         void loadData();
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [activeMenu]);
 
   const saveKey = async (key: string, value: any) => {
     try {

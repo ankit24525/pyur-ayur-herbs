@@ -1,6 +1,7 @@
 import ProductClickRouter from "@/components/ProductClickRouter";
 import MetaPixel from "@/components/MetaPixel";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
+import ToastContainer from "@/components/ToastContainer";
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ProductClickRouter />
         <MetaPixel />
         <WhatsAppWidget />
+        <ToastContainer />
         {children}
       </body>
     </html>

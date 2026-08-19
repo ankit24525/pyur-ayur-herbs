@@ -18,7 +18,8 @@ export default function WhatsAppWidget() {
       .catch((e) => console.error("Error loading WhatsApp widget config:", e));
   }, []);
 
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+  const cleanNumber = whatsappNumber.replace(/\D/g, "");
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
     <div className="fixed bottom-6 right-6 z-40">

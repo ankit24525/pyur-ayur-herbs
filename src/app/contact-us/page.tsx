@@ -112,8 +112,8 @@ export default function ContactUsPage() {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-[#17231b]">Call & WhatsApp</h4>
-                  <a href={`https://wa.me/${settings.whatsappNumber}`} className="text-xs text-[#666666] hover:underline">
-                    +{settings.whatsappNumber} (Business Desk)
+                  <a href={`https://api.whatsapp.com/send?phone=${(settings.whatsappNumber || "919876543210").replace(/\D/g, "")}`} className="text-xs text-[#666666] hover:underline">
+                    +{settings.whatsappNumber || "919876543210"} (Business Desk)
                   </a>
                 </div>
               </div>

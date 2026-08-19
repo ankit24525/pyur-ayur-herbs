@@ -39,6 +39,9 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                 <img
                   src={slide.image}
                   alt={slide.title || "Storefront Banner"}
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=80";
+                  }}
                   className="w-full h-[240px] sm:h-[360px] lg:h-[450px] object-cover"
                 />
               </a>
@@ -50,6 +53,9 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                     <img
                       src={slide.image}
                       alt=""
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=80";
+                      }}
                       className="size-full object-cover"
                     />
                     <div className="absolute inset-0 bg-[#17231b]/75 backdrop-blur-xxs" />
@@ -103,6 +109,9 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                       <img
                         src={slide.image}
                         alt={slide.title}
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=80";
+                        }}
                         className="h-[400px] w-[500px] object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />

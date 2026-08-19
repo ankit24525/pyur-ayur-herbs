@@ -19,6 +19,7 @@ import {
   MapPinCheck,
   ChevronRight,
   ShieldCheck,
+  ArrowLeft,
 } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import { products, Product } from "@/lib/store";
@@ -343,7 +344,18 @@ function ProfileDashboard() {
         onOpenConsultationModal={() => {}}
       />
 
-      <div className="max-w-6xl mx-auto px-4 mt-8">
+      <div className="max-w-6xl mx-auto px-4 mt-6">
+        {/* Back to Home Link */}
+        <div className="mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#244f31] hover:text-[#80a03c] transition group"
+          >
+            <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
+            <span>Back to Main Shop Page</span>
+          </Link>
+        </div>
+
         <h1 className="text-2xl font-bold text-[#244f31] mb-6">My Profile</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

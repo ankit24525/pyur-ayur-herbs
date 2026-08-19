@@ -147,7 +147,8 @@ export default function SiteHeader({
   const handleTrackOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (orderIdInput.trim()) {
-      setTrackedStatus(`Order ${orderIdInput} is IN TRANSIT. Expected delivery tomorrow by 4 PM.`);
+      setTrackOrderOpen(false);
+      window.location.href = `/track?orderId=${encodeURIComponent(orderIdInput.trim())}`;
     }
   };
 

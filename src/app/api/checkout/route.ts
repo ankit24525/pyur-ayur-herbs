@@ -64,6 +64,57 @@ export async function POST(request: Request) {
       console.error("[CAPI Server Trigger Failed]:", e);
     }
 
+    // WhatsApp Cloud API Order Notification Trigger
+    const whatsappToken = process.env.WHATSAPP_ACCESS_TOKEN;
+    const whatsappPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+    if (
+      whatsappToken &&
+      whatsappPhoneId &&
+      whatsappToken !== "your_permanent_access_token_here" &&
+      whatsappPhoneId !== "your_phone_number_id_here"
+    ) {
+      try {
+        let cleanedPhone = phone.replace(/\D/g, "");
+        if (cleanedPhone.length === 10) {
+          cleanedPhone = "91" + cleanedPhone;
+        }
+
+        const metaApiUrl = `https://graph.facebook.com/v19.0/${whatsappPhoneId}/messages`;
+
+        // Send template order confirmation notification (using standard hello_world template for testing)
+        const response = await fetch(metaApiUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${whatsappToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: cleanedPhone,
+            type: "template",
+            template: {
+              name: "hello_world",
+              language: {
+                code: "en_US"
+              }
+            }
+          }),
+        });
+
+        const resJson = await response.json();
+        if (response.ok) {
+          console.log(`[WhatsApp API Success]: Confirmation sent to ${cleanedPhone} for order ${orderId}`, resJson);
+        } else {
+          console.error(`[WhatsApp API Error]: Meta rejected message dispatch for ${orderId}:`, resJson);
+        }
+      } catch (e) {
+        console.error(`[WhatsApp API Network Error]: Failed to dispatch message for ${orderId}:`, e);
+      }
+    } else {
+      console.log(`[WhatsApp API Simulation]: Order ${orderId} placed. Set WHATSAPP_ACCESS_TOKEN & WHATSAPP_PHONE_NUMBER_ID in .env.local to send live WhatsApp notifications.`);
+    }
+
     return NextResponse.json({
       success: true,
       orderId,

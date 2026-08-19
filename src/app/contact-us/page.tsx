@@ -17,7 +17,7 @@ export default function ContactUsPage() {
   });
 
   useEffect(() => {
-    fetch("/api/admin/all")
+    fetch("/api/admin/all", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.settings) {

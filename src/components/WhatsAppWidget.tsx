@@ -7,7 +7,7 @@ export default function WhatsAppWidget() {
   const [whatsappMessage, setWhatsappMessage] = useState("नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।");
 
   useEffect(() => {
-    fetch("/api/admin/all")
+    fetch("/api/admin/all", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.settings) {

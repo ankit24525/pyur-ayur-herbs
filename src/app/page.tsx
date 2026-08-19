@@ -41,7 +41,7 @@ export default function Home() {
 
   // Load dynamic catalog and CMS layout settings from database on mount
   useEffect(() => {
-    fetch("/api/admin/all")
+    fetch("/api/admin/all", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.products && data.products.length > 0) {

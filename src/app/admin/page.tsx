@@ -176,7 +176,7 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const res = await fetch("/api/admin/all");
+      const res = await fetch("/api/admin/all", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setDbData(data);

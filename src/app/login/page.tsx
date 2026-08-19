@@ -149,7 +149,7 @@ function LoginFormContent() {
 
   if (isForgotPassword) {
     return (
-      <div className="w-full max-w-md bg-white border border-[#ddddd9] rounded-3xl p-8 shadow-xl relative overflow-hidden">
+      <div className="w-full max-w-md bg-white border border-[#ddddd9] rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         {/* Decorative background */}
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#f8faf1] rounded-full -z-10 opacity-60" />
         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#244f31]/5 rounded-full -z-10 opacity-60" />
@@ -295,7 +295,7 @@ function LoginFormContent() {
   }
 
   return (
-    <div className="w-full max-w-md bg-white border border-[#ddddd9] rounded-3xl p-8 shadow-xl relative overflow-hidden">
+    <div className="w-full max-w-md bg-white border border-[#ddddd9] rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
       {/* Decorative background */}
       <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#f8faf1] rounded-full -z-10 opacity-60" />
       <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#244f31]/5 rounded-full -z-10 opacity-60" />

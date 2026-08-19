@@ -349,17 +349,29 @@ function ProfileDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Left Sidebar */}
           <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-[#ddddd9] h-fit">
-            <div className="flex items-center gap-3 pb-4 mb-4 border-b border-[#f0f0eb]">
-              <div className="flex size-10 items-center justify-center rounded-full bg-[#244f31] font-bold text-white text-lg">
-                {user.name[0].toUpperCase()}
+            <div className="flex items-center justify-between pb-4 border-b border-[#f0f0eb] md:pb-4 md:mb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-full bg-[#244f31] font-bold text-white text-lg">
+                  {user.name[0].toUpperCase()}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-[#666666]">Welcome back,</span>
+                  <span className="font-bold text-[#17231b] leading-tight">{user.name}</span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-[#666666]">Welcome back,</span>
-                <span className="font-bold text-[#17231b] leading-tight">{user.name}</span>
-              </div>
+              
+              {/* Mobile Sign Out Button */}
+              <button
+                onClick={handleSignOut}
+                className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-red-600 border border-red-100 hover:bg-red-50 transition"
+              >
+                <LogOut className="size-3.5" />
+                <span>Sign Out</span>
+              </button>
             </div>
 
-            <nav className="flex flex-col gap-1">
+            {/* Desktop Navigation Links */}
+            <nav className="hidden md:flex flex-col gap-1 mt-4">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -398,6 +410,38 @@ function ProfileDashboard() {
                 <span>Sign Out</span>
               </button>
             </nav>
+          </div>
+
+          {/* Mobile Horizontal Scrolling Tabs Selector */}
+          <div className="md:hidden flex gap-2 overflow-x-auto pb-3 mb-2 no-scrollbar scroll-smooth min-w-0">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    router.push(`/profile?tab=${tab.id}`);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 transition ${
+                    isActive
+                      ? "bg-[#244f31] text-white shadow-xs"
+                      : "bg-white text-[#17231b] border border-[#ddddd9] hover:bg-[#f8faf1]"
+                  }`}
+                >
+                  <Icon className="size-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+            <Link
+              href="/contact-us"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shrink-0 bg-white text-[#17231b] border border-[#ddddd9] hover:bg-[#f8faf1] transition"
+            >
+              <PhoneCall className="size-3.5" />
+              <span>Contact Us</span>
+            </Link>
           </div>
 
           {/* Right Content Area */}

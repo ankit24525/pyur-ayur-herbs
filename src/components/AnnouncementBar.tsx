@@ -50,7 +50,7 @@ export default function AnnouncementBar({
         {/* Get App Button */}
         <button
           onClick={link === "#" ? onOpenAppModal : () => { window.location.href = link; }}
-          className="inline-flex items-center gap-1.5 rounded border border-[#80a03c] bg-[#80a03c] px-2.5 py-1 text-[11px] font-bold tracking-wider text-white shadow-sm transition hover:bg-[#6c8930] md:px-3.5 md:text-xs cursor-pointer animate-pulse-subtle"
+          className="hidden sm:inline-flex items-center gap-1.5 rounded border border-[#80a03c] bg-[#80a03c] px-2.5 py-1 text-[11px] font-bold tracking-wider text-white shadow-sm transition hover:bg-[#6c8930] md:px-3.5 md:text-xs cursor-pointer animate-pulse-subtle"
         >
           <Smartphone className="size-3.5" />
           <span>{btnText}</span>

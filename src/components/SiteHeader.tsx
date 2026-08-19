@@ -200,7 +200,7 @@ export default function SiteHeader({
           </button>
 
           {/* Center: Search Bar with Rotating Suggestions */}
-          <div className="relative flex-1 max-w-xl">
+          <div className="relative flex-1 max-w-xl hidden md:block">
             <div className="relative flex items-center rounded-lg border border-[#666666] bg-white px-3 py-2 transition-all focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31]">
               <Search className="size-4 shrink-0 text-[#666666] md:size-5" />
               <input
@@ -404,6 +404,87 @@ export default function SiteHeader({
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Mobile Search Bar Row (Mobile only: md:hidden) */}
+        <div className="px-3 pb-3 md:hidden">
+          <div className="relative">
+            <div className="relative flex items-center rounded-lg border border-[#666666] bg-white px-3 py-2 transition-all focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31]">
+              <Search className="size-4 shrink-0 text-[#666666]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`Search for "${headerSearchSuggestions[suggestionIdx]}"`}
+                className="w-full pl-2 text-xs text-[#17231b] outline-none placeholder:text-[#666666]"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="p-1 text-[#666666] hover:text-[#17231b]"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Live Search Results Dropdown */}
+            {isSearching && (
+              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-[#ddddd9] bg-white shadow-xl">
+                {searchResults.length > 0 ? (
+                  <div className="divide-y divide-[#ddddd9]">
+                    <div className="bg-[#f8faf1] px-4 py-2 text-xs font-bold text-[#244f31]">
+                      Found {searchResults.length} matching herbal products
+                    </div>
+                    {searchResults.map((product) => (
+                      <a
+                        key={product.id}
+                        href={`/products/${product.slug}`}
+                        onClick={() => {
+                          setSearchQuery("");
+                          setIsSearching(false);
+                        }}
+                        className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-[#f8faf1]"
+                      >
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          width={48}
+                          height={48}
+                          className="size-12 rounded object-cover"
+                        />
+                        <div className="flex-1">
+                          <h4 className="line-clamp-1 text-xs font-bold text-[#17231b]">
+                            {product.name}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs text-[#666666]">
+                            <span className="font-semibold text-[#244f31]">₹{product.price}</span>
+                            <span className="line-through">₹{product.compareAt}</span>
+                            <span className="rounded bg-[#eef5df] px-1.5 py-0.5 text-[10px] font-bold text-[#244f31]">
+                              {product.concern}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUpdateQuantity(product.id, 1);
+                          }}
+                          className="rounded bg-[#80a03c] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#244f31]"
+                        >
+                          ADD
+                        </button>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-xs font-medium text-[#666666]">
+                    No matching products found for "{searchQuery}"
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

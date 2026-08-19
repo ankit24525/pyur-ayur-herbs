@@ -20,19 +20,28 @@ export async function POST(request: Request) {
 
     if (action === "updateKey" && key && value) {
       (db as any)[key] = value;
-      await writeDB(db);
+      const success = await writeDB(db);
+      if (!success) {
+        return NextResponse.json({ success: false, error: "Database write failed." }, { status: 500 });
+      }
       return NextResponse.json({ success: true, message: `${key} updated successfully.` });
     }
 
     if (action === "saveSettings" && data) {
       db.settings = { ...db.settings, ...data };
-      await writeDB(db);
+      const success = await writeDB(db);
+      if (!success) {
+        return NextResponse.json({ success: false, error: "Database write failed." }, { status: 500 });
+      }
       return NextResponse.json({ success: true, settings: db.settings });
     }
 
     if (action === "saveSeo" && data) {
       db.seo = { ...db.seo, ...data };
-      await writeDB(db);
+      const success = await writeDB(db);
+      if (!success) {
+        return NextResponse.json({ success: false, error: "Database write failed." }, { status: 500 });
+      }
       return NextResponse.json({ success: true, seo: db.seo });
     }
 
@@ -40,7 +49,10 @@ export async function POST(request: Request) {
       const idx = db.orders.findIndex((o) => o.id === body.orderId);
       if (idx !== -1) {
         db.orders[idx].status = body.newStatus;
-        await writeDB(db);
+        const success = await writeDB(db);
+        if (!success) {
+          return NextResponse.json({ success: false, error: "Database write failed." }, { status: 500 });
+        }
         return NextResponse.json({ success: true });
       }
     }

@@ -24,7 +24,10 @@ export async function POST(request: Request) {
       taxRate: typeof body.taxRate === "number" ? body.taxRate : db.settings.taxRate,
     };
 
-    await writeDB(db);
+    const success = await writeDB(db);
+    if (!success) {
+      return NextResponse.json({ success: false, error: "Database write failed." }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true, settings: db.settings });
   } catch (error) {

@@ -210,6 +210,9 @@ export default function AdminDashboard() {
       });
       if (res.ok) {
         setDbData((prev: any) => ({ ...prev, [key]: value }));
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Error saving ${key}: ${errData.error || "Server error"}`);
       }
     } catch (e) {
       alert("Error saving data to server.");
@@ -228,6 +231,9 @@ export default function AdminDashboard() {
           ...prev,
           orders: prev.orders.map((o: any) => (o.id === orderId ? { ...o, status: newStatus } : o)),
         }));
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Error updating order status: ${errData.error || "Server error"}`);
       }
     } catch {
       alert("Error updating order status.");
@@ -709,6 +715,9 @@ export default function AdminDashboard() {
       if (res.ok) {
         setDbData((prev: any) => ({ ...prev, settings: updatedSettings }));
         alert("Settings saved successfully!");
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Error saving settings: ${errData.error || "Server error"}`);
       }
     } catch {
       alert("Error saving settings.");
@@ -725,6 +734,9 @@ export default function AdminDashboard() {
       });
       if (res.ok) {
         alert("SEO metadata configuration updated!");
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Error saving SEO configuration: ${errData.error || "Server error"}`);
       }
     } catch {
       alert("Error saving SEO configuration.");

@@ -265,7 +265,7 @@ export const heroSlides = [
     ctaText: "UNLOCK GLOW RITUAL",
     href: "#shop",
     badge: "Kashmiri Saffron",
-    image: "https://images.unsplash.com/photo-1608248597260-8b61c5f87b8b?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=80",
     bgColor: "from-[#3e2c1e] via-[#63432b] to-[#2b1d13]",
   },
 ];

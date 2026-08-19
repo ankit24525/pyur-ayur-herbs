@@ -290,79 +290,101 @@ export default function SiteHeader({
 
             {/* Login Button / Profile */}
             {user ? (
-              <div className="relative group hidden sm:block">
-                <Link
-                  href="/profile?tab=orders"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase text-[#17231b] bg-[#f8faf1] rounded-md border border-[#ddddd9] hover:bg-[#eef2db] transition"
-                >
-                  <User className="size-3.5 text-[#244f31]" />
-                  <span>Hi, {user.name.split(" ")[0]}!</span>
-                </Link>
-                
-                {/* Hover Dropdown Menu */}
-                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-[#ddddd9] bg-white p-2 shadow-xl opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200">
-                  <div className="px-3 py-2 border-b border-[#f0f0eb] text-xs font-semibold text-[#666666]">
-                    Hi, {user.name}!
-                  </div>
-                  <div className="flex flex-col py-1">
-                    <Link
-                      href="/profile?tab=orders"
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                    >
-                      Orders
-                    </Link>
-                    <Link
-                      href="/profile?tab=wallet"
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                    >
-                      Wallet
-                    </Link>
-                    <Link
-                      href="/profile?tab=addresses"
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                    >
-                      Addresses
-                    </Link>
-                    <Link
-                      href="/profile?tab=recently-viewed"
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                    >
-                      Recently Viewed
-                    </Link>
-                    <Link
-                      href="/profile?tab=settings"
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                    >
-                      Account Settings
-                    </Link>
-                    <Link
-                      href="/contact-us"
-                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                    >
-                      Contact Us
-                    </Link>
-                  </div>
-                  <div className="border-t border-[#f0f0eb] pt-1 mt-1">
-                    <button
-                      onClick={() => {
-                        localStorage.removeItem("pyur_user");
-                        window.location.href = "/";
-                      }}
-                      className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
-                    >
-                      SIGN OUT
-                    </button>
+              <>
+                <div className="relative group hidden sm:block">
+                  <Link
+                    href="/profile?tab=orders"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase text-[#17231b] bg-[#f8faf1] rounded-md border border-[#ddddd9] hover:bg-[#eef2db] transition"
+                  >
+                    <User className="size-3.5 text-[#244f31]" />
+                    <span>Hi, {user.name.split(" ")[0]}!</span>
+                  </Link>
+                  
+                  {/* Hover Dropdown Menu */}
+                  <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-[#ddddd9] bg-white p-2 shadow-xl opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200">
+                    <div className="px-3 py-2 border-b border-[#f0f0eb] text-xs font-semibold text-[#666666]">
+                      Hi, {user.name}!
+                    </div>
+                    <div className="flex flex-col py-1">
+                      <Link
+                        href="/profile?tab=orders"
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                      >
+                        Orders
+                      </Link>
+                      <Link
+                        href="/profile?tab=wallet"
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                      >
+                        Wallet
+                      </Link>
+                      <Link
+                        href="/profile?tab=addresses"
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                      >
+                        Addresses
+                      </Link>
+                      <Link
+                        href="/profile?tab=recently-viewed"
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                      >
+                        Recently Viewed
+                      </Link>
+                      <Link
+                        href="/profile?tab=settings"
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                      >
+                        Account Settings
+                      </Link>
+                      <Link
+                        href="/contact-us"
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
+                      >
+                        Contact Us
+                      </Link>
+                    </div>
+                    <div className="border-t border-[#f0f0eb] pt-1 mt-1">
+                      <button
+                        onClick={() => {
+                          localStorage.removeItem("pyur_user");
+                          window.location.href = "/";
+                        }}
+                        className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
+                      >
+                        SIGN OUT
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                {/* Mobile Profile Icon Button */}
+                <Link
+                  href="/profile?tab=orders"
+                  className="sm:hidden rounded-md p-1.5 text-[#17231b] hover:bg-[#f8faf1] transition"
+                  title="My Profile"
+                >
+                  <User className="size-6 text-[#244f31]" />
+                </Link>
+              </>
             ) : (
-              <Link
-                href="/login"
-                className="hidden items-center gap-1 rounded-md border border-[#17231b] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#17231b] transition hover:bg-[#244f31] hover:text-white sm:flex"
-              >
-                <User className="size-3.5" />
-                <span>LOGIN</span>
-              </Link>
+              <>
+                <Link
+                  href="/login"
+                  className="hidden items-center gap-1 rounded-md border border-[#17231b] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#17231b] transition hover:bg-[#244f31] hover:text-white sm:flex"
+                >
+                  <User className="size-3.5" />
+                  <span>LOGIN</span>
+                </Link>
+
+                {/* Mobile Login Icon Button */}
+                <Link
+                  href="/login"
+                  className="sm:hidden rounded-md p-1.5 text-[#17231b] hover:bg-[#f8faf1] transition"
+                  title="Login / Sign Up"
+                >
+                  <User className="size-6 text-[#17231b]" />
+                </Link>
+              </>
             )}
 
             {/* Track Order Icon */}
@@ -528,20 +550,52 @@ export default function SiteHeader({
 
             <div className="mt-6 flex flex-col gap-4">
               {user ? (
-                <div className="bg-[#f8faf1] p-3 rounded-xl border border-[#ddddd9] flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <User className="size-4 text-[#244f31]" />
-                    <span className="font-bold text-[#17231b] text-sm">Hello, {user.name}</span>
+                <div className="bg-[#f8faf1] p-3.5 rounded-xl border border-[#ddddd9] flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#ddddd9]/60">
+                    <div className="flex items-center gap-2">
+                      <User className="size-4 text-[#244f31]" />
+                      <span className="font-bold text-[#17231b] text-sm">Hello, {user.name.split(" ")[0]}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem("pyur_user");
+                        window.location.href = "/";
+                      }}
+                      className="text-xs font-bold text-red-600 hover:underline"
+                    >
+                      Logout
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem("pyur_user");
-                      window.location.href = "/";
-                    }}
-                    className="text-left text-xs font-bold text-red-600 hover:underline"
-                  >
-                    Logout from account
-                  </button>
+                  <div className="flex flex-col gap-2 text-xs font-bold text-[#17231b]">
+                    <Link
+                      href="/profile?tab=orders"
+                      onClick={() => setMenuOpen(false)}
+                      className="hover:text-[#244f31] flex items-center gap-1.5"
+                    >
+                      📦 My Orders
+                    </Link>
+                    <Link
+                      href="/profile?tab=wallet"
+                      onClick={() => setMenuOpen(false)}
+                      className="hover:text-[#244f31] flex items-center gap-1.5"
+                    >
+                      🪙 My Wallet (Coins)
+                    </Link>
+                    <Link
+                      href="/profile?tab=addresses"
+                      onClick={() => setMenuOpen(false)}
+                      className="hover:text-[#244f31] flex items-center gap-1.5"
+                    >
+                      📍 Saved Addresses
+                    </Link>
+                    <Link
+                      href="/profile?tab=settings"
+                      onClick={() => setMenuOpen(false)}
+                      className="hover:text-[#244f31] flex items-center gap-1.5"
+                    >
+                      ⚙️ Account Settings
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <Link

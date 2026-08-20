@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { Product } from "@/lib/store";
+import { products, Product } from "@/lib/store";
 
 function TrackOrderContent() {
   const searchParams = useSearchParams();
@@ -135,15 +135,17 @@ function TrackOrderContent() {
     const baseDate = orderDateStr ? new Date(orderDateStr) : new Date();
     
     const formatDate = (date: Date, offsetDays = 0) => {
+      if (!date || isNaN(date.getTime())) return "";
       const d = new Date(date);
       d.setDate(d.getDate() + offsetDays);
+      if (isNaN(d.getTime())) return "";
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       
-      const dayName = days[d.getDay()];
+      const dayName = days[d.getDay()] || "Day";
       const dayVal = d.getDate();
-      const monthName = months[d.getMonth()];
-      const yearName = d.getFullYear().toString().slice(-2);
+      const monthName = months[d.getMonth()] || "Month";
+      const yearName = isNaN(d.getFullYear()) ? "YY" : d.getFullYear().toString().slice(-2);
       
       // Determine suffix e.g. 19th, 20th, 21st
       let suffix = "th";
@@ -523,52 +525,91 @@ function TrackOrderContent() {
 
             {/* Package Items */}
             <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm">
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#244f31] mb-4 flex items-center gap-1.5">
-                <Package className="size-4 shrink-0" />
-                <span>Package Items ({order.items?.length || 1})</span>
-              </h3>
+              {(() => {
+                const parsedItemsList = (() => {
+                  const itemsStr = order.items;
+                  if (!itemsStr) return [];
+                  if (Array.isArray(itemsStr)) return itemsStr;
+                  if (typeof itemsStr !== "string") return [];
+                  
+                  const parts = itemsStr.split(", ");
+                  return parts.map((part) => {
+                    const lastXIndex = part.lastIndexOf(" x");
+                    if (lastXIndex === -1) {
+                      return { name: part.trim(), quantity: 1 };
+                    }
+                    const name = part.slice(0, lastXIndex).trim();
+                    const qtyStr = part.slice(lastXIndex + 2).trim();
+                    const quantity = parseInt(qtyStr, 10) || 1;
+                    return { name, quantity };
+                  });
+                })();
 
-              <div className="divide-y divide-[#f0f0eb]">
-                {order.items && order.items.length > 0 ? (
-                  order.items.map((item: any) => (
-                    <div key={item.product?.id || item.productId} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                      <div className="relative size-16 shrink-0 bg-neutral-100 rounded-lg overflow-hidden border">
-                        <Image
-                          src={item.product?.image || "/product-placeholder.png"}
-                          alt={item.product?.name || "Herbal Product"}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 text-xs">
-                        <h4 className="font-extrabold text-[#17231b] text-sm leading-snug hover:text-[#80a03c] transition">
-                          <Link href={`/products/${item.product?.slug || "#"}`}>
-                            {item.product?.name || "Herbal Remedy"}
-                          </Link>
-                        </h4>
-                        <p className="text-neutral-500 font-semibold mt-1">Quantity: {item.quantity}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="font-extrabold text-[#244f31]">₹{item.product?.price || order.total}</span>
-                          {item.product?.compareAt && (
-                            <span className="text-[10px] text-neutral-400 line-through">₹{item.product.compareAt}</span>
-                          )}
+                return (
+                  <>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-[#244f31] mb-4 flex items-center gap-1.5">
+                      <Package className="size-4 shrink-0" />
+                      <span>Package Items ({parsedItemsList.length || 1})</span>
+                    </h3>
+
+                    <div className="divide-y divide-[#f0f0eb]">
+                      {parsedItemsList.length > 0 ? (
+                        parsedItemsList.map((item: any, idx: number) => {
+                          const matchedProduct = products.find(
+                            (p) => p.name.toLowerCase().trim() === item.name.toLowerCase().trim()
+                          );
+
+                          return (
+                            <div key={idx} className="flex gap-4 py-4 first:pt-0 last:pb-0">
+                              <div className="relative size-16 shrink-0 bg-neutral-100 rounded-lg overflow-hidden border">
+                                <Image
+                                  src={matchedProduct?.image || "/product-placeholder.png"}
+                                  alt={item.name || "Herbal Product"}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                              <div className="flex-1 text-xs">
+                                <h4 className="font-extrabold text-[#17231b] text-sm leading-snug hover:text-[#80a03c] transition">
+                                  {matchedProduct ? (
+                                    <Link href={`/products/${matchedProduct.slug}`}>
+                                      {item.name}
+                                    </Link>
+                                  ) : (
+                                    <span>{item.name}</span>
+                                  )}
+                                </h4>
+                                <p className="text-neutral-500 font-semibold mt-1">Quantity: {item.quantity}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="font-extrabold text-[#244f31]">
+                                    ₹{matchedProduct ? matchedProduct.price * item.quantity : order.total}
+                                  </span>
+                                  {matchedProduct?.compareAt && (
+                                    <span className="text-[10px] text-neutral-400 line-through">
+                                      ₹{matchedProduct.compareAt * item.quantity}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="flex gap-4 py-4 first:pt-0 last:pb-0">
+                          <div className="size-16 bg-neutral-100 rounded-lg flex items-center justify-center border text-neutral-400 shrink-0">
+                            🌿
+                          </div>
+                          <div className="flex-1 text-xs">
+                            <h4 className="font-extrabold text-[#17231b] text-sm leading-snug">Herbal Custom Remedy Formulations</h4>
+                            <p className="text-neutral-500 font-semibold mt-1">Quantity: 1</p>
+                            <p className="font-extrabold text-[#244f31] mt-1">₹{order.total}</p>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  ))
-                ) : (
-                  <div className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                    <div className="size-16 bg-neutral-100 rounded-lg flex items-center justify-center border text-neutral-400 shrink-0">
-                      🌿
-                    </div>
-                    <div className="flex-1 text-xs">
-                      <h4 className="font-extrabold text-[#17231b] text-sm leading-snug">Herbal Custom Remedy Formulations</h4>
-                      <p className="text-neutral-500 font-semibold mt-1">Quantity: 1</p>
-                      <p className="font-extrabold text-[#244f31] mt-1">₹{order.total}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Help / support drawer triggers */}

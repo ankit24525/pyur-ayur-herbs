@@ -57,9 +57,32 @@ export default function Home() {
       .catch((e) => console.error("Error loading storefront layout:", e));
   }, []);
 
-  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([
-    { product: products[0], quantity: 1 },
-  ]);
+  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
+
+  // Load cart from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        try {
+          setCart(JSON.parse(stored));
+        } catch (e) {
+          console.error("Failed to parse cart:", e);
+        }
+      } else {
+        // Default item if cart is empty
+        const defaultCart = [{ product: products[0], quantity: 1 }];
+        setCart(defaultCart);
+        localStorage.setItem("pyur_cart", JSON.stringify(defaultCart));
+      }
+    }
+  }, []);
+
+  // Save cart to localStorage on updates
+  const saveCartState = (newCart: { product: Product; quantity: number }[]) => {
+    setCart(newCart);
+    localStorage.setItem("pyur_cart", JSON.stringify(newCart));
+  };
 
   // Modal States
   const [appModalOpen, setAppModalOpen] = useState(false);
@@ -68,33 +91,34 @@ export default function Home() {
 
   // Cart Handlers
   const handleAddToCart = (product: Product) => {
-    setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prevCart.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prevCart, { product, quantity: 1 }];
-    });
+    let nextCart = [...cart];
+    const existing = nextCart.find((item) => item.product.id === product.id);
+    if (existing) {
+      nextCart = nextCart.map((item) =>
+        item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+      );
+    } else {
+      nextCart.push({ product, quantity: 1 });
+    }
+    saveCartState(nextCart);
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
-    setCart((prevCart) =>
-      prevCart
-        .map((item) => {
-          if (item.product.id === productId) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as { product: Product; quantity: number }[]
-    );
+    const nextCart = cart
+      .map((item) => {
+        if (item.product.id === productId) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      })
+      .filter(Boolean) as { product: Product; quantity: number }[];
+    saveCartState(nextCart);
   };
 
   const handleRemoveItem = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+    const nextCart = cart.filter((item) => item.product.id !== productId);
+    saveCartState(nextCart);
   };
 
   const handleBuyNow = (product: Product) => {

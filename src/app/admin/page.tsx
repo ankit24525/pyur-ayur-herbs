@@ -119,13 +119,15 @@ export default function AdminDashboard() {
   });
   const [newCategory, setNewCategory] = useState({ name: "", image: "", icon: "🌿" });
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
-  const [newBlog, setNewBlog] = useState({
+  const [newBlog, setNewBlog] = useState<any>({
     title: "",
     author: "",
     content: "",
     image: "",
     date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-    status: "Published"
+    status: "Published",
+    relatedProducts: [], // array of product IDs
+    videos: "", // YouTube URLs comma separated
   });
   const [newTestimonial, setNewTestimonial] = useState({ name: "", rating: 5, comment: "", status: "Approved" });
 
@@ -419,7 +421,7 @@ export default function AdminDashboard() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setNewBlog((prev) => ({ ...prev, image: reader.result as string }));
+        setNewBlog((prev: any) => ({ ...prev, image: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
@@ -647,23 +649,37 @@ export default function AdminDashboard() {
 
   const handleAddBlog = async (e: React.FormEvent) => {
     e.preventDefault();
+    const blogId = newBlog.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-") || String(Date.now());
+    
+    // Parse related videos
+    const parsedVideos = newBlog.videos
+      ? newBlog.videos.split(",").map((v: any) => v.trim()).filter(Boolean)
+      : [];
+
     const blog = {
+      id: blogId,
       title: newBlog.title,
       author: newBlog.author,
       content: newBlog.content,
       image: newBlog.image || "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
       date: newBlog.date,
-      status: newBlog.status
+      status: newBlog.status,
+      relatedProducts: newBlog.relatedProducts || [],
+      videos: parsedVideos
     };
-    const updated = [...dbData.blogs, blog];
+
+    const updated = [...(dbData.blogs || []), blog];
     await saveKey("blogs", updated);
+
     setNewBlog({
       title: "",
       author: "",
       content: "",
       image: "",
       date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-      status: "Published"
+      status: "Published",
+      relatedProducts: [],
+      videos: ""
     });
     setSubTab("blogs");
     showToast("Blog published successfully!");
@@ -3917,94 +3933,162 @@ export default function AdminDashboard() {
 
                 {subTab === "blogs" && (
                   <div className="space-y-6">
-                    <form onSubmit={handleAddBlog} className="space-y-4 text-xs border-b pb-6 bg-[#f8faf1]/40 border border-[#ddddd9] p-5 rounded-2xl">
-                      <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Publish New Blog Post</h4>
-                      
-                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                    <form onSubmit={handleAddBlog} className="space-y-5 text-xs border border-[#ddddd9] p-6 rounded-3xl bg-white shadow-sm">
+                      <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3 mb-2">
+                        <h4 className="font-black text-[#17231b] text-sm uppercase tracking-wider">Create & Publish Blog Post</h4>
+                        <div>
+                          <label className="inline-flex items-center gap-2 font-bold text-[#666666] mr-2">Status:</label>
+                          <select
+                            value={newBlog.status}
+                            onChange={(e) => setNewBlog({ ...newBlog, status: e.target.value })}
+                            className="rounded-lg border border-[#ddddd9] px-3 py-1.5 outline-none focus:border-[#244f31] bg-[#f8faf1]/50 cursor-pointer font-bold"
+                          >
+                            <option value="Published">🟢 Published</option>
+                            <option value="Draft">🟡 Draft</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Title & Author Info */}
+                      <div className="grid gap-4 sm:grid-cols-3">
                         <div className="sm:col-span-2">
-                          <label className="block font-bold text-[#666666] mb-1">Blog Title *</label>
+                          <label className="block font-bold text-[#666666] mb-1.5">Blog Title *</label>
                           <input
                             type="text"
-                            placeholder="e.g. Ayurvedic Secrets for Glowing Skin & Healthy Hair"
+                            placeholder="e.g. 5 Time-Tested Ayurvedic Secrets for Healthy Skin & Hair Growth"
                             required
                             value={newBlog.title}
                             onChange={(e) => setNewBlog({ ...newBlog, title: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
                           />
                         </div>
                         <div>
-                          <label className="block font-bold text-[#666666] mb-1">Author Name *</label>
+                          <label className="block font-bold text-[#666666] mb-1.5">Author / Specialist Name *</label>
                           <input
                             type="text"
                             placeholder="e.g. Dr. Vaidya Ananya"
                             required
                             value={newBlog.author}
                             onChange={(e) => setNewBlog({ ...newBlog, author: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
                           />
                         </div>
-                        <div>
-                          <label className="block font-bold text-[#666666] mb-1">Featured Banner Image</label>
-                          <div className="flex gap-2">
+                      </div>
+
+                      {/* Featured Media Image Upload */}
+                      <div>
+                        <label className="block font-bold text-[#666666] mb-1.5">Featured Banner Image</label>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <div className="w-full sm:w-1/2 flex items-center justify-center border-2 border-dashed border-[#ddddd9] rounded-xl p-3 bg-[#f8faf1]/10 hover:bg-[#f8faf1]/30 transition relative">
                             <input
                               type="file"
                               accept="image/*"
                               onChange={handleBlogFileChange}
-                              className="w-1/2 text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-[#f8faf1] file:text-[#244f31] hover:file:bg-[#e4ebc6] cursor-pointer"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                             />
+                            <span className="text-[10px] text-[#244f31] font-bold">
+                              {newBlog.image ? "Change selected image file..." : "📁 Upload Image from Device"}
+                            </span>
+                          </div>
+                          <div className="w-full sm:w-1/2 flex items-center">
                             <input
                               type="text"
-                              placeholder="Or paste URL..."
-                              value={newBlog.image.startsWith("data:") ? "" : newBlog.image}
+                              placeholder="Or paste external banner image URL..."
+                              value={newBlog.image && newBlog.image.startsWith("data:") ? "" : newBlog.image}
                               onChange={(e) => setNewBlog({ ...newBlog, image: e.target.value })}
-                              className="w-1/2 rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white text-[11px]"
+                              className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
                             />
                           </div>
-                          {newBlog.image && (
-                            <div className="mt-1 flex items-center gap-2">
-                              <span className="text-[10px] text-emerald-800 font-bold">✓ Image attached</span>
-                              <button
-                                type="button"
-                                onClick={() => setNewBlog({ ...newBlog, image: "" })}
-                                className="text-red-500 hover:underline text-[9px] font-bold"
-                              >
-                                Clear
-                              </button>
-                            </div>
-                          )}
                         </div>
+                        {newBlog.image && (
+                          <div className="mt-2 flex items-center gap-3">
+                            <img src={newBlog.image} className="h-10 w-20 object-cover rounded-md border border-[#ddddd9]" />
+                            <span className="text-[10px] text-emerald-800 font-bold">✓ Featured image attached</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewBlog({ ...newBlog, image: "" })}
+                              className="text-red-500 hover:underline text-[10px] font-bold"
+                            >
+                              Remove Image
+                            </button>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="grid gap-4 md:grid-cols-4">
-                        <div className="md:col-span-3">
-                          <label className="block font-bold text-[#666666] mb-1">Blog Body Content *</label>
+                      {/* Core Content & Shopping Links Split Grid */}
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {/* Body Content Column */}
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1.5">Blog Body Content *</label>
                           <textarea
-                            placeholder="Write the rich contents of the article here..."
+                            placeholder="Write the full text of your article. Standard paragraphs will render beautifully..."
                             required
                             value={newBlog.content}
                             onChange={(e) => setNewBlog({ ...newBlog, content: e.target.value })}
-                            rows={5}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white resize-none"
+                            rows={10}
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition font-sans text-xs leading-relaxed"
                           />
                         </div>
-                        <div className="flex flex-col justify-between">
+
+                        {/* eCommerce Integration & Videos Column */}
+                        <div className="space-y-4">
+                          {/* Related Storefront Products */}
                           <div>
-                            <label className="block font-bold text-[#666666] mb-1">Publishing Status</label>
-                            <select
-                              value={newBlog.status}
-                              onChange={(e) => setNewBlog({ ...newBlog, status: e.target.value })}
-                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-bold"
-                            >
-                              <option value="Published">Published</option>
-                              <option value="Draft">Draft</option>
-                            </select>
+                            <label className="block font-bold text-[#666666] mb-1.5">Shop Related Storefront Products</label>
+                            <p className="text-[10px] text-gray-500 mb-2">Select the products mentioned in the article to render buy buttons directly inside the blog post page.</p>
+                            <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-3 bg-[#f8faf1]/20 rounded-xl border border-[#ddddd9]">
+                              {dbData.products.map((p: any) => {
+                                const isChecked = newBlog.relatedProducts?.includes(p.id);
+                                return (
+                                  <label
+                                    key={p.id}
+                                    className={`flex items-center gap-2 p-1.5 px-3 rounded-xl border cursor-pointer text-[10px] font-bold transition select-none ${
+                                      isChecked
+                                        ? "border-[#244f31] bg-[#eef5df] text-[#244f31]"
+                                        : "border-[#ddddd9] bg-white hover:bg-[#f8faf1] text-gray-700"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      className="sr-only"
+                                      onChange={(e) => {
+                                        const current = [...(newBlog.relatedProducts || [])];
+                                        if (e.target.checked) {
+                                          current.push(p.id);
+                                        } else {
+                                          const index = current.indexOf(p.id);
+                                          if (index > -1) current.splice(index, 1);
+                                        }
+                                        setNewBlog({ ...newBlog, relatedProducts: current });
+                                      }}
+                                    />
+                                    <span>{p.name}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
                           </div>
-                          <div className="pt-4 flex justify-end">
-                            <button type="submit" className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-5 py-3 transition shadow-md w-full">
-                              Publish Article
-                            </button>
+
+                          {/* Related YouTube Videos */}
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1.5">Related YouTube Videos (Comma Separated Links)</label>
+                            <p className="text-[10px] text-gray-500 mb-1.5">Add link URLs to embed education or tutorial videos directly in the blog post reader.</p>
+                            <input
+                              type="text"
+                              placeholder="e.g. https://www.youtube.com/watch?v=123, https://youtu.be/456"
+                              value={newBlog.videos}
+                              onChange={(e) => setNewBlog({ ...newBlog, videos: e.target.value })}
+                              className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                            />
                           </div>
                         </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-[#ddddd9] flex justify-end">
+                        <button type="submit" className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-8 py-3.5 transition shadow-md flex items-center gap-2">
+                          Publish Article
+                        </button>
                       </div>
                     </form>
 

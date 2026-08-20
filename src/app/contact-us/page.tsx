@@ -25,24 +25,41 @@ export default function ContactUsPage() {
         }
       })
       .catch((e) => console.error("Error loading settings:", e));
+
+    // Load cart from localStorage
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        try {
+          setCart(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
   }, []);
 
+  const saveCartState = (newCart: { product: Product; quantity: number }[]) => {
+    setCart(newCart);
+    localStorage.setItem("pyur_cart", JSON.stringify(newCart));
+  };
+
   const handleUpdateQuantity = (id: string, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((item) => {
-          if (item.product.id === id) {
-            const nextQty = item.quantity + delta;
-            return nextQty > 0 ? { ...item, quantity: nextQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as { product: Product; quantity: number }[]
-    );
+    const nextCart = cart
+      .map((item) => {
+        if (item.product.id === id) {
+          const nextQty = item.quantity + delta;
+          return nextQty > 0 ? { ...item, quantity: nextQty } : null;
+        }
+        return item;
+      })
+      .filter(Boolean) as { product: Product; quantity: number }[];
+    saveCartState(nextCart);
   };
 
   const handleRemoveItem = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== id));
+    const nextCart = cart.filter((item) => item.product.id !== id);
+    saveCartState(nextCart);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

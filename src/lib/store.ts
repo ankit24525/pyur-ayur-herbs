@@ -226,12 +226,12 @@ export const headerSearchSuggestions = [
 ];
 
 export const menuLinks = [
-  { label: "Shop All Products", href: "#shop" },
-  { label: "Select Concern", href: "#concerns" },
-  { label: "Ayurvedic Doctor Consultation", href: "#consult" },
-  { label: "Take Health Quiz", href: "#quiz" },
-  { label: "Customer Reviews", href: "#reviews" },
-  { label: "Why Pyur Ayur Herbs", href: "#trust" },
+  { label: "Shop All Products", href: "/#shop" },
+  { label: "Select Concern", href: "/#concerns" },
+  { label: "Doctor Consultation", href: "/#consult" },
+  { label: "Blog", href: "/blog" },
+  { label: "Customer Reviews", href: "/#reviews" },
+  { label: "Why Pyur Ayur Herbs", href: "/#trust" },
 ];
 
 export const heroSlides = [

@@ -122,7 +122,7 @@ export default function SiteFooter() {
             </h4>
             <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
               <Link href="/contact-us" className="hover:text-[#80a03c] transition">About Us</Link>
-              <Link href="/solution/daily-ayurveda" className="hover:text-[#80a03c] transition">Blog</Link>
+              <Link href="/blog" className="hover:text-[#80a03c] transition">Blog</Link>
               <Link href="/solution/gym-and-fitness" className="hover:text-[#80a03c] transition">Media</Link>
               <Link href="/contact-us" className="hover:text-[#80a03c] transition">Contact Us</Link>
             </div>

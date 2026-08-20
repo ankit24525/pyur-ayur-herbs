@@ -128,7 +128,9 @@ export default function AdminDashboard() {
     status: "Published",
     relatedProducts: [], // array of product IDs
     videos: "", // YouTube URLs comma separated
+    audio: "", // Audio/Podcast URL
   });
+  const [blogFaqs, setBlogFaqs] = useState<{ question: string; answer: string }[]>([]);
   const [newTestimonial, setNewTestimonial] = useState({ name: "", rating: 5, comment: "", status: "Approved" });
 
   const [campaignName, setCampaignName] = useState("");
@@ -665,7 +667,9 @@ export default function AdminDashboard() {
       date: newBlog.date,
       status: newBlog.status,
       relatedProducts: newBlog.relatedProducts || [],
-      videos: parsedVideos
+      videos: parsedVideos,
+      audio: newBlog.audio || "",
+      faqs: blogFaqs
     };
 
     const updated = [...(dbData.blogs || []), blog];
@@ -679,8 +683,10 @@ export default function AdminDashboard() {
       date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       status: "Published",
       relatedProducts: [],
-      videos: ""
+      videos: "",
+      audio: ""
     });
+    setBlogFaqs([]);
     setSubTab("blogs");
     showToast("Blog published successfully!");
   };
@@ -4017,9 +4023,12 @@ export default function AdminDashboard() {
                       <div className="grid gap-4 md:grid-cols-2">
                         {/* Body Content Column */}
                         <div>
-                          <label className="block font-bold text-[#666666] mb-1.5">Blog Body Content *</label>
+                          <div className="flex justify-between items-baseline mb-1.5">
+                             <label className="block font-bold text-[#666666]">Blog Body Content *</label>
+                             <span className="text-[9px] text-[#244f31] font-bold">Supports: ## Heading, [Link Text](url), **bold**</span>
+                           </div>
                           <textarea
-                            placeholder="Write the full text of your article. Standard paragraphs will render beautifully..."
+                            placeholder="Write the full text of your article. Use ## Section Title for headings, [Link Text](https://example.com) for links, and **text** for bold."
                             required
                             value={newBlog.content}
                             onChange={(e) => setNewBlog({ ...newBlog, content: e.target.value })}
@@ -4080,7 +4089,77 @@ export default function AdminDashboard() {
                               className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
                             />
                           </div>
+
+                          {/* Related Audio / Podcast Link */}
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1.5">Related Audio / Podcast Link</label>
+                            <p className="text-[10px] text-gray-500 mb-1.5">Add a link URL to embed an audio player or podcast episode directly in the reader.</p>
+                            <input
+                              type="text"
+                              placeholder="e.g. https://open.spotify.com/embed/episode/... or direct mp3 link"
+                              value={newBlog.audio}
+                              onChange={(e) => setNewBlog({ ...newBlog, audio: e.target.value })}
+                              className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                            />
+                          </div>
                         </div>
+                      </div>
+
+                      {/* Blog Specific FAQ Builder */}
+                      <div className="border-t border-[#ddddd9] pt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block font-bold text-[#17231b] text-[11px] uppercase tracking-wider">Frequently Asked Questions (Blog FAQ Builder)</label>
+                          <button
+                            type="button"
+                            onClick={() => setBlogFaqs([...blogFaqs, { question: "", answer: "" }])}
+                            className="text-xs font-bold text-[#244f31] hover:underline"
+                          >
+                            + Add FAQ Row
+                          </button>
+                        </div>
+                        {blogFaqs.length === 0 ? (
+                          <p className="text-[10px] text-gray-400 italic">No Q&As added for this blog yet. Click "+ Add FAQ Row" to build one.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {blogFaqs.map((faq, idx) => (
+                              <div key={idx} className="flex gap-2 items-start bg-[#f8faf1]/30 p-3 rounded-xl border border-[#ddddd9]">
+                                <div className="flex-1 space-y-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Question (e.g. Can Ayurvedic herbs treat Diabetic Neuropathy?)"
+                                    required
+                                    value={faq.question}
+                                    onChange={(e) => {
+                                      const updated = [...blogFaqs];
+                                      updated[idx].question = e.target.value;
+                                      setBlogFaqs(updated);
+                                    }}
+                                    className="w-full rounded-lg border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white"
+                                  />
+                                  <textarea
+                                    placeholder="Answer..."
+                                    required
+                                    value={faq.answer}
+                                    onChange={(e) => {
+                                      const updated = [...blogFaqs];
+                                      updated[idx].answer = e.target.value;
+                                      setBlogFaqs(updated);
+                                    }}
+                                    rows={2}
+                                    className="w-full rounded-lg border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white resize-none"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setBlogFaqs(blogFaqs.filter((_, i) => i !== idx))}
+                                  className="text-red-500 hover:text-red-700 text-xs font-bold pt-2 px-1"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <div className="pt-2 border-t border-[#ddddd9] flex justify-end">

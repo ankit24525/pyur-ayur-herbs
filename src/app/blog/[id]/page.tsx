@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, User, ShoppingBag, Play, Sparkles } from "lucide-react";
+import { ArrowLeft, Calendar, User, ShoppingBag, Play, Sparkles, Volume2 } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Product } from "@/lib/store";
@@ -17,6 +17,7 @@ export default function BlogPostPage() {
   const [catalog, setCatalog] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     // Fetch all database records
@@ -101,6 +102,105 @@ export default function BlogPostPage() {
       console.warn("YouTube URL parsing skipped for:", urlStr);
     }
     return null;
+  };
+
+  // Parse inline markdown constructs: [link text](url) and **bold text**
+  const parseMarkdownInline = (text: string) => {
+    const parts: any[] = [];
+    let currentIndex = 0;
+    const regex = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      const matchIndex = match.index;
+      if (matchIndex > currentIndex) {
+        parts.push(text.substring(currentIndex, matchIndex));
+      }
+
+      if (match[1]) {
+        // [text](url) link mapping
+        const linkText = match[1];
+        const url = match[2];
+        parts.push(
+          <a
+            key={matchIndex}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#244f31] font-bold underline hover:text-[#80a03c] transition-colors"
+          >
+            {linkText}
+          </a>
+        );
+      } else if (match[3]) {
+        // **text** bold markup mapping
+        const boldText = match[3];
+        parts.push(
+          <strong key={matchIndex} className="font-black text-[#17231b]">
+            {boldText}
+          </strong>
+        );
+      }
+
+      currentIndex = regex.lastIndex;
+    }
+
+    if (currentIndex < text.length) {
+      parts.push(text.substring(currentIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
+  // Parse block-level markdown structures: headings, bullet points, paragraphs
+  const renderBlogContent = (content: string) => {
+    if (!content) return <p>No content provided for this article.</p>;
+
+    const lines = content.split("\n");
+    let elements: any[] = [];
+
+    lines.forEach((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+
+      // H2 Headings
+      if (trimmed.startsWith("## ")) {
+        elements.push(
+          <h2
+            key={idx}
+            className="text-base font-black text-[#17231b] mt-8 mb-3 pt-4 border-t border-gray-100 uppercase tracking-wide"
+          >
+            {parseMarkdownInline(trimmed.substring(3))}
+          </h2>
+        );
+      }
+      // H3 Headings
+      else if (trimmed.startsWith("### ")) {
+        elements.push(
+          <h3 key={idx} className="text-sm font-black text-[#17231b] mt-6 mb-2 uppercase tracking-wide">
+            {parseMarkdownInline(trimmed.substring(4))}
+          </h3>
+        );
+      }
+      // Bullet Points
+      else if (trimmed.startsWith("- ")) {
+        elements.push(
+          <li key={idx} className="list-disc ml-5 pl-1 text-gray-700 my-1 leading-relaxed text-xs md:text-sm">
+            {parseMarkdownInline(trimmed.substring(2))}
+          </li>
+        );
+      }
+      // Standard Paragraph
+      else {
+        elements.push(
+          <p key={idx} className="text-xs md:text-sm text-gray-700 leading-relaxed my-3">
+            {parseMarkdownInline(trimmed)}
+          </p>
+        );
+      }
+    });
+
+    return elements;
   };
 
   if (loading) {
@@ -208,17 +308,36 @@ export default function BlogPostPage() {
             />
           </div>
 
-          {/* Rich Content paragraphs */}
-          <div className="prose max-w-none text-xs md:text-sm text-gray-700 leading-relaxed space-y-4">
-            {blog.content ? (
-              blog.content.split("\n").map((para: string, idx: number) => {
-                const trimmed = para.trim();
-                if (!trimmed) return null;
-                return <p key={idx}>{trimmed}</p>;
-              })
-            ) : (
-              <p>No content provided for this article.</p>
-            )}
+          {/* Audio Player Integration */}
+          {blog.audio && (
+            <div className="mb-8 p-4 bg-white rounded-3xl border border-[#ddddd9] shadow-xs space-y-3">
+              <h4 className="text-[10px] font-black uppercase text-[#17231b] tracking-wider flex items-center gap-1.5">
+                <Volume2 className="size-4 text-[#80a03c]" />
+                <span>🎧 Listen to Podcast / Audio Version</span>
+              </h4>
+              {blog.audio.includes("spotify.com") ? (
+                <iframe
+                  src={blog.audio.replace("spotify.com/episode/", "spotify.com/embed/episode/")}
+                  width="100%"
+                  height="152"
+                  frameBorder="0"
+                  allowFullScreen
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                  className="rounded-2xl"
+                />
+              ) : (
+                <audio controls className="w-full outline-none">
+                  <source src={blog.audio} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+              )}
+            </div>
+          )}
+
+          {/* Rich Content paragraphs parsed dynamically */}
+          <div className="prose max-w-none space-y-2">
+            {renderBlogContent(blog.content)}
           </div>
 
           {/* Embedded YouTube Videos */}
@@ -241,6 +360,41 @@ export default function BlogPostPage() {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                       />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Frequently Asked Questions (FAQ Accordion like Kapiva) */}
+          {blog.faqs && blog.faqs.length > 0 && (
+            <div className="mt-12 pt-8 border-t border-[#ddddd9] space-y-6">
+              <h3 className="text-base font-black uppercase text-[#17231b] tracking-wider flex items-center gap-2">
+                <Sparkles className="size-5 text-[#80a03c]" />
+                <span>Frequently Asked Questions</span>
+              </h3>
+              <div className="space-y-3">
+                {blog.faqs.map((faq: any, idx: number) => {
+                  const isOpen = openFaq === idx;
+                  return (
+                    <div key={idx} className="border border-[#ddddd9] rounded-3xl overflow-hidden bg-white shadow-xs transition duration-300">
+                      <button
+                        onClick={() => setOpenFaq(isOpen ? null : idx)}
+                        className="w-full flex items-center justify-between p-5 text-left font-extrabold text-[#17231b] text-xs md:text-sm hover:bg-[#f8faf1]/40 transition"
+                      >
+                        <span>{faq.question}</span>
+                        <span className={`text-[#244f31] font-black text-lg transform transition duration-300 ${isOpen ? "rotate-45" : ""}`}>
+                          +
+                        </span>
+                      </button>
+                      <div
+                        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                          isOpen ? "max-h-[500px] border-t border-[#ddddd9] p-5 text-xs md:text-sm text-gray-600 leading-relaxed bg-[#f8faf1]/10" : "max-h-0"
+                        }`}
+                      >
+                        <p>{faq.answer}</p>
+                      </div>
                     </div>
                   );
                 })}

@@ -686,14 +686,12 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteBlog = async (index: number) => {
-    if (confirm("Are you sure you want to delete this blog post?")) {
-      try {
-        const updated = dbData.blogs.filter((_: any, idx: number) => idx !== index);
-        await saveKey("blogs", updated);
-        showToast("Blog post deleted successfully!");
-      } catch {
-        alert("Error deleting blog.");
-      }
+    try {
+      const updated = dbData.blogs.filter((_: any, idx: number) => idx !== index);
+      await saveKey("blogs", updated);
+      showToast("Blog post deleted successfully!");
+    } catch {
+      showToast("Error deleting blog.");
     }
   };
 

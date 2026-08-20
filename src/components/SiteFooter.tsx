@@ -191,26 +191,81 @@ export default function SiteFooter() {
           {/* Payment Gateway Badges */}
           <div className="flex flex-col gap-2.5 w-full lg:w-auto">
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#999999]">We Accept:</span>
-            <div className="flex flex-wrap items-center gap-3 select-none">
-              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
-                <CreditCard className="size-3.5 text-[#244f31]" />
-                <span>Cards</span>
+            <div className="flex flex-wrap items-center gap-6 select-none bg-white/50 p-2.5 px-4 rounded-2xl border border-[#ddddd9]">
+              {/* Swiggy Instamart */}
+              <div className="flex items-center">
+                <svg className="h-6 w-auto" viewBox="0 0 110 24" fill="none">
+                  <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2Z" fill="#FC8019" />
+                  <circle cx="12" cy="9" r="3" fill="white" />
+                  <text x="25" y="16" fill="#1C3F94" fontSize="12" fontWeight="900" fontFamily="sans-serif">instamart</text>
+                </svg>
               </div>
-              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
-                <Smartphone className="size-3.5 text-[#244f31]" />
-                <span>UPI / GPay</span>
+
+              {/* Amazon Pay */}
+              <div className="flex items-center">
+                <svg className="h-5 w-auto" viewBox="0 0 90 28" fill="none">
+                  <text x="0" y="16" fill="#111" fontSize="13" fontWeight="900" fontFamily="sans-serif">amazon</text>
+                  <text x="50" y="16" fill="#666" fontSize="12" fontWeight="500" fontFamily="sans-serif">pay</text>
+                  <path d="M6 18C15 23 35 23 44 18" stroke="#FF9900" strokeWidth="2" strokeLinecap="round" fill="none" />
+                  <path d="M44 18L41.5 15.5M44 18L42.5 20.5" stroke="#FF9900" strokeWidth="2" strokeLinecap="round" fill="none" />
+                </svg>
               </div>
-              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
-                <Wallet className="size-3.5 text-[#244f31]" />
-                <span>Wallets & NetBanking</span>
+
+              {/* BHIM UPI */}
+              <div className="flex items-center">
+                <svg className="h-5 w-auto" viewBox="0 0 80 22" fill="none">
+                  <text x="0" y="15" fill="#E07C24" fontSize="12" fontWeight="900" fontStyle="italic" fontFamily="sans-serif">BHIM</text>
+                  <text x="34" y="15" fill="#0A79DF" fontSize="12" fontWeight="900" fontStyle="italic" fontFamily="sans-serif">UPI</text>
+                  <path d="M30 6L32 15M34 6L32 15" stroke="#50DBB4" strokeWidth="1.5" />
+                </svg>
               </div>
-              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
-                <Truck className="size-3.5 text-[#244f31]" />
-                <span>Cash on Delivery</span>
+
+              {/* Pay Online or COD stamp */}
+              <div className="flex items-center opacity-80">
+                <svg className="h-7 w-auto" viewBox="0 0 32 32" fill="none">
+                  <circle cx="16" cy="16" r="14" stroke="#999" strokeWidth="1" strokeDasharray="3 2" />
+                  <circle cx="16" cy="16" r="11" stroke="#999" strokeWidth="0.5" />
+                  <path d="M9 16C9 12.13 12.13 9 16 9C19.87 9 23 12.13 23 16C23 19.87 19.87 23 16 23C12.13 23 9 19.87 9 16Z" fill="#eee" />
+                  <text x="16" y="14" fill="#555" fontSize="4.5" fontWeight="900" textAnchor="middle" fontFamily="sans-serif">COD</text>
+                  <text x="16" y="20" fill="#555" fontSize="3.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">ONLINE</text>
+                </svg>
               </div>
-              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
-                <ShieldCheck className="size-3.5 text-emerald-600" />
-                <span>Secure Payments</span>
+
+              {/* GPay */}
+              <div className="flex items-center">
+                <svg className="h-6 w-auto" viewBox="0 0 48 24" fill="none">
+                  <path d="M4 12C4 8.69 6.69 6 10 6H14" stroke="#4285F4" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M14 6C17.31 6 20 8.69 20 12" stroke="#34A853" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M20 12C20 15.31 17.31 18 14 18" stroke="#FBBC05" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M14 18H10C6.69 18 4 15.31 4 12" stroke="#EA4335" strokeWidth="3" strokeLinecap="round" />
+                  <text x="24" y="16" fill="#5F6368" fontSize="12" fontWeight="bold" fontFamily="sans-serif">Pay</text>
+                </svg>
+              </div>
+
+              {/* Mastercard */}
+              <div className="flex items-center">
+                <svg className="h-6 w-auto" viewBox="0 0 36 24" fill="none">
+                  <circle cx="12" cy="12" r="10" fill="#EB001B" fillOpacity="0.9" />
+                  <circle cx="24" cy="12" r="10" fill="#FF5F00" fillOpacity="0.9" />
+                  <path d="M18 5.58C16.38 7.26 15.38 9.51 15.38 12C15.38 14.49 16.38 16.74 18 18.42C19.62 16.74 20.62 14.49 20.62 12C20.62 9.51 19.62 7.26 18 5.58Z" fill="#FF5F00" />
+                </svg>
+              </div>
+
+              {/* RuPay */}
+              <div className="flex items-center">
+                <svg className="h-5 w-auto" viewBox="0 0 65 20" fill="none">
+                  <text x="0" y="15" fill="#1C3F94" fontSize="13" fontWeight="900" fontStyle="italic" fontFamily="sans-serif">RuPay</text>
+                  <path d="M52 5L58 10L52 15" stroke="#FC8019" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M46 5L52 10L46 15" stroke="#80A03C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+
+              {/* Visa */}
+              <div className="flex items-center">
+                <svg className="h-5 w-auto" viewBox="0 0 50 18" fill="none">
+                  <text x="5" y="15" fill="#1A1F71" fontSize="15" fontWeight="900" fontStyle="italic" fontFamily="sans-serif">VISA</text>
+                  <path d="M0 3L6 3.5L4 12L0 3Z" fill="#F7B600" />
+                </svg>
               </div>
             </div>
           </div>

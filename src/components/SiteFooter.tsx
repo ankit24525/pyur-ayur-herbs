@@ -1,162 +1,238 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Mail, CheckCircle2, ShieldCheck, Truck, Award, Leaf } from "lucide-react";
+import { Phone, Mail } from "lucide-react";
 
 export default function SiteFooter() {
-  const [emailInput, setEmailInput] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
+  const [settings, setSettings] = useState({
+    supportEmail: "info@pyurayurherbs.com",
+    whatsappNumber: "919876543210",
+  });
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (emailInput.trim()) {
-      setSubscribed(true);
-      setTimeout(() => {
-        setSubscribed(false);
-        setEmailInput("");
-      }, 4000);
-    }
-  };
+  useEffect(() => {
+    fetch("/api/admin/all", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setSettings({
+            supportEmail: data.settings.supportEmail || "info@pyurayurherbs.com",
+            whatsappNumber: data.settings.whatsappNumber || "919876543210",
+          });
+        }
+      })
+      .catch((e) => console.error("Error loading settings in footer:", e));
+  }, []);
+
+  let cleanNumber = settings.whatsappNumber.replace(/\D/g, "");
+  if (cleanNumber.length === 10) {
+    cleanNumber = "91" + cleanNumber;
+  }
+
+  // Overlapping botanical leaf designs for the top border strip
+  const leavesPattern = (
+    <div className="h-9 w-full bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 border-y border-emerald-200/40 relative overflow-hidden flex items-center justify-around select-none">
+      {[...Array(12)].map((_, i) => (
+        <svg
+          key={i}
+          className={`size-5 text-emerald-800/20 opacity-30 transform transition-transform duration-500 hover:scale-110`}
+          style={{
+            transform: `rotate(${i % 2 === 0 ? 15 + i * 5 : -15 - i * 3}deg) translateY(${i % 3 === 0 ? "2px" : "-2px"})`,
+          }}
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M17 8C8 10 5.9 16.1 5 21C4 16 6 10 15 7C16 6.5 17 6.8 17 8ZM12.1 12.2C8.1 13.1 7.1 16.1 6.5 19C6 16.5 7.1 13.1 11.1 11.2C11.5 11 12 11.2 12.1 12.2Z" />
+        </svg>
+      ))}
+    </div>
+  );
 
   return (
-    <footer className="bg-[#17231b] text-white">
-      {/* Newsletter Incentive Banner */}
-      <div className="border-b border-white/10 bg-[#1d3b24] py-8">
-        <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-6 px-4 md:flex-row md:px-6">
-          <div className="text-center md:text-left">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#80a03c]">
-              JOIN THE PYUR AYUR HERB FAMILY
-            </span>
-            <h3 className="text-lg font-black text-white sm:text-xl">
-              Get 10% Instant Off On Your First Order
-            </h3>
-            <p className="text-xs text-white/70">
-              Subscribe for exclusive herbal offers, health tips, and free Vaidya diet plans.
+    <footer className="bg-white text-[#17231b] border-t border-neutral-100 flex flex-col">
+      {/* Decorative Botanical Leaf Strip */}
+      {leavesPattern}
+
+      {/* Main Footer Content */}
+      <div className="mx-auto max-w-[1440px] w-full px-5 py-12 md:px-8 md:py-16">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-4 lg:grid-cols-5">
+          {/* Column 1: Brand details */}
+          <div className="md:col-span-2">
+            {/* Pyur Ayur framed logo */}
+            <div className="border-2 border-[#244f31] p-3.5 rounded-xl inline-flex items-center gap-2.5 mb-6 bg-white select-none">
+              <div className="relative flex size-10 items-center justify-center rounded-full bg-[#244f31] text-white">
+                <span className="text-base font-black tracking-tighter">P</span>
+              </div>
+              <div className="flex flex-col leading-none text-left">
+                <span className="text-sm font-black uppercase tracking-wider text-[#244f31]">
+                  PYUR AYUR
+                </span>
+                <span className="text-[8px] font-bold uppercase tracking-[0.25em] text-[#80a03c]">
+                  HERBS
+                </span>
+              </div>
+            </div>
+
+            {/* Address */}
+            <p className="text-xs text-[#555555] leading-relaxed italic mb-5 max-w-sm font-medium">
+              Pyur Ayur Herbs Private Limited,<br />
+              12, Botanical Enclave, Sector 62,<br />
+              Noida, Uttar Pradesh - 201301
             </p>
+
+            {/* Support Phone */}
+            <a
+              href={`https://api.whatsapp.com/send?phone=${cleanNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2.5 text-sm font-black text-[#17231b] hover:text-[#80a03c] transition mb-3 w-fit"
+            >
+              <Phone className="size-4.5 text-[#244f31]" />
+              <span>+{settings.whatsappNumber} (Support)</span>
+            </a>
+
+            {/* Support Email */}
+            <a
+              href={`mailto:${settings.supportEmail}`}
+              className="flex items-center gap-2.5 text-sm font-black text-[#17231b] hover:text-[#80a03c] transition w-fit"
+            >
+              <Mail className="size-4.5 text-[#244f31]" />
+              <span>{settings.supportEmail}</span>
+            </a>
           </div>
 
-          {subscribed ? (
-            <div className="flex items-center gap-2 rounded-xl bg-[#80a03c] px-6 py-3 text-xs font-bold text-white shadow">
-              <CheckCircle2 className="size-5" />
-              <span>Subscribed! Check your inbox for promo code PYUR10</span>
+          {/* Column 2: Link Block 1 */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
+              Shop All
+            </h4>
+            <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
+              <Link href="/products/kapiva-glowing-skin-juice" className="hover:text-[#80a03c] transition">Glowing Skin Juices</Link>
+              <Link href="/products/pure-himalayan-shilajit" className="hover:text-[#80a03c] transition">Shilajit Resins</Link>
+              <Link href="/profile?tab=orders" className="hover:text-[#80a03c] transition">My Account</Link>
+              <Link href="/contact-us" className="hover:text-[#80a03c] transition">Faqs</Link>
+              <Link href="/solution/daily-ayurveda" className="hover:text-[#80a03c] transition">Innovation Fund</Link>
             </div>
-          ) : (
-            <form onSubmit={handleSubscribe} className="flex w-full max-w-md gap-2">
-              <div className="relative flex-1">
-                <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/50" />
-                <input
-                  type="email"
-                  required
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="Enter your email address"
-                  className="w-full rounded-xl border border-white/20 bg-white/10 py-2.5 pl-9 pr-3 text-xs text-white outline-none placeholder:text-white/50 focus:border-[#80a03c]"
-                />
+          </div>
+
+          {/* Column 3: Link Block 2 */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
+              About Us
+            </h4>
+            <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
+              <Link href="/contact-us" className="hover:text-[#80a03c] transition">About Us</Link>
+              <Link href="/solution/daily-ayurveda" className="hover:text-[#80a03c] transition">Blog</Link>
+              <Link href="/solution/gym-and-fitness" className="hover:text-[#80a03c] transition">Media</Link>
+              <Link href="/contact-us" className="hover:text-[#80a03c] transition">Contact Us</Link>
+            </div>
+          </div>
+
+          {/* Column 4: Follow Us & Socials */}
+          <div className="flex flex-col gap-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
+              Follow Us
+            </h4>
+            <div className="flex gap-4.5 text-[#17231b]">
+              <a href="#" className="hover:text-[#80a03c] transition">
+                <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                </svg>
+              </a>
+              <a href="#" className="hover:text-[#80a03c] transition">
+                <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                </svg>
+              </a>
+              <a href="#" className="hover:text-[#80a03c] transition">
+                <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+                  <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
+                </svg>
+              </a>
+              <a href="#" className="hover:text-[#80a03c] transition">
+                <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <hr className="my-10 border-[#ddddd9]" />
+
+        {/* Marketplace & Payment Gateways Strip */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 pb-10">
+          {/* Marketplace Badges */}
+          <div className="flex flex-col gap-2.5">
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#999999]">Also available on:</span>
+            <div className="flex flex-wrap items-center gap-5 select-none">
+              {/* Amazon Brand SVG */}
+              <div className="h-6 w-16 text-neutral-800 relative flex items-center justify-center font-bold text-xs border border-neutral-100 rounded px-1.5 bg-neutral-50/50">
+                amazon.in
               </div>
-              <button
-                type="submit"
-                className="rounded-xl bg-[#80a03c] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#6c8930]"
-              >
-                SUBSCRIBE
-              </button>
-            </form>
-          )}
+              {/* Flipkart Brand SVG */}
+              <div className="h-6 w-16 text-neutral-800 relative flex items-center justify-center font-bold text-xs border border-neutral-100 rounded px-1.5 bg-neutral-50/50">
+                Flipkart
+              </div>
+              {/* Zepto Brand SVG */}
+              <div className="h-6 w-16 text-purple-700 relative flex items-center justify-center font-extrabold text-xs border border-neutral-100 rounded px-1.5 bg-neutral-50/50">
+                zepto
+              </div>
+              {/* Instamart Brand SVG */}
+              <div className="h-6 w-20 text-orange-600 relative flex items-center justify-center font-extrabold text-[10px] border border-neutral-100 rounded px-1.5 bg-neutral-50/50">
+                instamart
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Gateway Badges */}
+          <div className="flex flex-col gap-2.5 w-full lg:w-auto">
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#999999]">We Accept:</span>
+            <div className="flex flex-wrap items-center gap-4 select-none">
+              {/* Amazon Pay */}
+              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-[#111] flex items-center">
+                amazon pay
+              </div>
+              {/* BHIM UPI */}
+              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-[#111] flex items-center gap-1">
+                <span className="text-emerald-600 font-black">BHIM</span>
+                <span className="text-blue-600">UPI</span>
+              </div>
+              {/* GPay */}
+              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-blue-600 flex items-center font-black">
+                GPay
+              </div>
+              {/* Mastercard */}
+              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-red-600 flex items-center gap-0.5">
+                <span>mastercard</span>
+              </div>
+              {/* RuPay */}
+              <div className="h-5 px-1.5 text-[9px] font-black border border-neutral-100 rounded bg-[#fcfcfc] text-blue-800 flex items-center italic">
+                RuPay
+              </div>
+              {/* Visa */}
+              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-blue-900 flex items-center italic">
+                VISA
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Policy Links Row */}
+        <div className="flex flex-wrap justify-between items-center gap-4 text-xs font-bold text-[#666666] tracking-wide pt-4 border-t border-[#f0f0eb] select-none">
+          <Link href="/privacy-policy" className="hover:text-[#80a03c] transition">Privacy Policy</Link>
+          <Link href="/terms-of-service" className="hover:text-[#80a03c] transition">Terms and Conditions</Link>
+          <Link href="/shipping-policy" className="hover:text-[#80a03c] transition">Shipping Policy</Link>
+          <Link href="/return-policy" className="hover:text-[#80a03c] transition">Cancellation Policy</Link>
         </div>
       </div>
 
-      {/* Main Multi-Column Links */}
-      <div className="mx-auto max-w-[1440px] px-4 py-12 md:px-6 md:py-16">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-5">
-          {/* Brand Story & Trust Badges */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-2">
-              <div className="flex size-10 items-center justify-center rounded-full bg-[#80a03c] font-black text-white">
-                P
-              </div>
-              <span className="text-xl font-black uppercase tracking-wider text-white">
-                PYUR AYUR HERBS
-              </span>
-            </div>
-            <p className="mt-4 text-xs leading-relaxed text-white/70 max-w-sm">
-              Pyur Ayur Herbs brings authentic Ayurvedic wellness directly to your home. Formulated with 100% wild-harvested Himalayan botanicals and certified by the Ministry of AYUSH.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-3 max-w-xs text-xs font-semibold text-white/80">
-              <div className="flex items-center gap-1.5 rounded bg-white/5 p-2">
-                <ShieldCheck className="size-4 text-[#80a03c]" />
-                <span>AYUSH Certified</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded bg-white/5 p-2">
-                <Leaf className="size-4 text-[#80a03c]" />
-                <span>0% Added Sugar</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded bg-white/5 p-2">
-                <Award className="size-4 text-[#80a03c]" />
-                <span>100% Himalayan</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded bg-white/5 p-2">
-                <Truck className="size-4 text-[#80a03c]" />
-                <span>Fast All-India Ship</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Shop By Health Goal */}
-          <div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-[#80a03c]">
-              Shop By Health Goal
-            </h4>
-            <ul className="mt-4 space-y-2 text-xs text-white/80">
-              <li><Link href="/solution/sugar-management" className="hover:text-white">Sugar Management</Link></li>
-              <li><Link href="/solution/gym-and-fitness" className="hover:text-white">Gym & Stamina</Link></li>
-              <li><Link href="/solution/energy" className="hover:text-white">Energy & Vitality</Link></li>
-              <li><Link href="/solution/heart-health" className="hover:text-white">Heart & BP Care</Link></li>
-              <li><Link href="/solution/liver-care" className="hover:text-white">Liver Cleanse & Detox</Link></li>
-              <li><Link href="/solution/skin-and-hair" className="hover:text-white">Skin Radiance & Hair Care</Link></li>
-              <li><Link href="/solution/womens-health" className="hover:text-white">Women's Period Harmony</Link></li>
-            </ul>
-          </div>
-
-          {/* Shop By Category */}
-          <div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-[#80a03c]">
-              Shop By Product Type
-            </h4>
-            <ul className="mt-4 space-y-2 text-xs text-white/80">
-              <li><Link href="/solution/sugar-management" className="hover:text-white">Ayurvedic Juices (1L)</Link></li>
-              <li><Link href="/solution/gym-and-fitness" className="hover:text-white">Pure Shilajit & Resins</Link></li>
-              <li><Link href="/solution/skin-and-hair" className="hover:text-white">Saffron Elixirs & Oils</Link></li>
-              <li><Link href="/solution/daily-ayurveda" className="hover:text-white">Organic Amla & Honey</Link></li>
-              <li><Link href="/solution/daily-ayurveda" className="hover:text-white">Triphala & Gut Care</Link></li>
-              <li><Link href="/solution/womens-health" className="hover:text-white">Hormonal Herbal Drinks</Link></li>
-            </ul>
-          </div>
-
-          {/* Customer Care */}
-          <div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-[#80a03c]">
-              Customer Support
-            </h4>
-            <ul className="mt-4 space-y-2 text-xs text-white/80">
-              <li><a href="#consult" className="hover:text-white">Free Doctor Consultation</a></li>
-              <li><a href="#quiz" className="hover:text-white">Take 2-Min Health Quiz</a></li>
-              <li><a href="#" className="hover:text-white">Track Order Status</a></li>
-              <li><a href="#" className="hover:text-white">Shipping & Refund Policy</a></li>
-              <li><a href="#" className="hover:text-white">Contact Us (Toll-Free 1800-123-456)</a></li>
-              <li><Link href="/admin" className="hover:text-white">Admin Dashboard</Link></li>
-            </ul>
-          </div>
-        </div>
-
-        <hr className="my-8 border-white/10" />
-
-        {/* Bottom Bar & Disclaimer */}
-        <div className="flex flex-col items-center justify-between gap-4 text-center text-[11px] text-white/60 md:flex-row md:text-left">
-          <p>© {new Date().getFullYear()} Pyur Ayur Herbs Pvt Ltd. All rights reserved.</p>
-          <p className="max-w-xl">
-            Disclaimer: These statements have not been evaluated by the FDA or FSSAI for medical diagnosis. Products are not intended to diagnose, treat, cure, or prevent any disease. Always consult a certified Vaidya or doctor before starting a new herbal routine.
-          </p>
-        </div>
+      {/* Copyright Bottom Bar */}
+      <div className="bg-[#17231b] py-3.5 w-full text-center text-[10px] text-white/80 font-bold uppercase tracking-wider select-none">
+        Pyur Ayur Herbs Private Limited | © Copyright {new Date().getFullYear()} Pyur Ayur
       </div>
     </footer>
   );

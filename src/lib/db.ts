@@ -1,7 +1,10 @@
 import { MongoClient } from "mongodb";
+import fs from "fs";
+import path from "path";
 
 const uri = process.env.MONGODB_URI || "";
 const dbName = process.env.MONGODB_DB || "pure_ayur_herbs";
+const localDbPath = path.join(process.cwd(), "src/lib/db.json");
 
 export interface DBData {
   products: any[];
@@ -35,7 +38,76 @@ async function getMongoClient(): Promise<MongoClient> {
   return clientPromise;
 }
 
+// Read from local db.json file
+function readLocalDB(): DBData {
+  try {
+    if (fs.existsSync(localDbPath)) {
+      const content = fs.readFileSync(localDbPath, "utf-8");
+      const cleanData = JSON.parse(content);
+      
+      // Ensure all arrays exist
+      if (!cleanData.products) cleanData.products = [];
+      if (!cleanData.orders) cleanData.orders = [];
+      if (!cleanData.coupons) cleanData.coupons = [];
+      if (!cleanData.leads) cleanData.leads = [];
+      if (!cleanData.blogs) cleanData.blogs = [];
+      if (!cleanData.faqs) cleanData.faqs = [];
+      if (!cleanData.testimonials) cleanData.testimonials = [];
+      if (!cleanData.users) cleanData.users = [];
+      if (!cleanData.settings) {
+        cleanData.settings = {
+          storeName: "Pyur Ayur Herbs Store",
+          supportEmail: "support@pyurayurherbs.com",
+          whatsappNumber: "919876543210",
+          whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
+          codOtpEnabled: true,
+          prepaidDiscount: 5,
+          taxRate: 18,
+        };
+      }
+      return cleanData;
+    }
+  } catch (e) {
+    console.error("Error reading local db.json:", e);
+  }
+  return {
+    products: [],
+    orders: [],
+    coupons: [],
+    leads: [],
+    blogs: [],
+    faqs: [],
+    testimonials: [],
+    users: [],
+    settings: {
+      storeName: "Pyur Ayur Herbs Store",
+      supportEmail: "support@pyurayurherbs.com",
+      whatsappNumber: "919876543210",
+      whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
+      codOtpEnabled: true,
+      prepaidDiscount: 5,
+      taxRate: 18,
+    }
+  };
+}
+
+// Write to local db.json file
+function writeLocalDB(data: DBData): boolean {
+  try {
+    fs.writeFileSync(localDbPath, JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch (e) {
+    console.error("Error writing local db.json:", e);
+    return false;
+  }
+}
+
 export async function readDB(): Promise<DBData> {
+  // If MongoDB is not configured, fall back to local db.json file automatically!
+  if (!uri) {
+    return readLocalDB();
+  }
+
   try {
     const activeClient = await getMongoClient();
     const db = activeClient.db(dbName);
@@ -86,29 +158,17 @@ export async function readDB(): Promise<DBData> {
     return cleanData as DBData;
   } catch (error) {
     console.error("Error reading from MongoDB:", error);
-    return {
-      products: [],
-      orders: [],
-      coupons: [],
-      leads: [],
-      blogs: [],
-      faqs: [],
-      testimonials: [],
-      users: [],
-      settings: {
-        storeName: "Pyur Ayur Herbs Store",
-        supportEmail: "support@pyurayurherbs.com",
-        whatsappNumber: "919876543210",
-        whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
-        codOtpEnabled: true,
-        prepaidDiscount: 5,
-        taxRate: 18,
-      },
-    };
+    // Fall back to local db.json if reading from MongoDB fails
+    return readLocalDB();
   }
 }
 
 export async function writeDB(data: DBData): Promise<boolean> {
+  // If MongoDB is not configured, fall back to local db.json file automatically!
+  if (!uri) {
+    return writeLocalDB(data);
+  }
+
   try {
     const activeClient = await getMongoClient();
     const db = activeClient.db(dbName);
@@ -124,7 +184,7 @@ export async function writeDB(data: DBData): Promise<boolean> {
     return true;
   } catch (error) {
     console.error("Error writing to MongoDB:", error);
-    return false;
+    // Fall back to local db.json if writing to MongoDB fails
+    return writeLocalDB(data);
   }
 }
-

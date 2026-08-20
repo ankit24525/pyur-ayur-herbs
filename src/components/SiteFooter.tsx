@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Phone, Mail } from "lucide-react";
+import { Phone, Mail, CreditCard, ShieldCheck, Wallet, Truck, Smartphone } from "lucide-react";
 
 export default function SiteFooter() {
   const [settings, setSettings] = useState({
@@ -191,31 +191,26 @@ export default function SiteFooter() {
           {/* Payment Gateway Badges */}
           <div className="flex flex-col gap-2.5 w-full lg:w-auto">
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#999999]">We Accept:</span>
-            <div className="flex flex-wrap items-center gap-4 select-none">
-              {/* Amazon Pay */}
-              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-[#111] flex items-center">
-                amazon pay
+            <div className="flex flex-wrap items-center gap-3 select-none">
+              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
+                <CreditCard className="size-3.5 text-[#244f31]" />
+                <span>Cards</span>
               </div>
-              {/* BHIM UPI */}
-              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-[#111] flex items-center gap-1">
-                <span className="text-emerald-600 font-black">BHIM</span>
-                <span className="text-blue-600">UPI</span>
+              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
+                <Smartphone className="size-3.5 text-[#244f31]" />
+                <span>UPI / GPay</span>
               </div>
-              {/* GPay */}
-              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-blue-600 flex items-center font-black">
-                GPay
+              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
+                <Wallet className="size-3.5 text-[#244f31]" />
+                <span>Wallets & NetBanking</span>
               </div>
-              {/* Mastercard */}
-              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-red-600 flex items-center gap-0.5">
-                <span>mastercard</span>
+              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
+                <Truck className="size-3.5 text-[#244f31]" />
+                <span>Cash on Delivery</span>
               </div>
-              {/* RuPay */}
-              <div className="h-5 px-1.5 text-[9px] font-black border border-neutral-100 rounded bg-[#fcfcfc] text-blue-800 flex items-center italic">
-                RuPay
-              </div>
-              {/* Visa */}
-              <div className="h-5 px-1.5 text-[9px] font-extrabold border border-neutral-100 rounded bg-[#fcfcfc] text-blue-900 flex items-center italic">
-                VISA
+              <div className="h-7 px-3 text-[10px] font-black border border-[#ddddd9] rounded-xl bg-white text-gray-700 flex items-center gap-1.5 shadow-xs">
+                <ShieldCheck className="size-3.5 text-emerald-600" />
+                <span>Secure Payments</span>
               </div>
             </div>
           </div>

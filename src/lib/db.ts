@@ -61,6 +61,28 @@ export async function readDB(): Promise<DBData> {
     
     // Remove MongoDB specific internal fields if they exist
     const { _id, ...cleanData } = document as any;
+
+    // Ensure all model fields are initialized to prevent undefined state bugs
+    if (!cleanData.products) cleanData.products = [];
+    if (!cleanData.orders) cleanData.orders = [];
+    if (!cleanData.coupons) cleanData.coupons = [];
+    if (!cleanData.leads) cleanData.leads = [];
+    if (!cleanData.blogs) cleanData.blogs = [];
+    if (!cleanData.faqs) cleanData.faqs = [];
+    if (!cleanData.testimonials) cleanData.testimonials = [];
+    if (!cleanData.users) cleanData.users = [];
+    if (!cleanData.settings) {
+      cleanData.settings = {
+        storeName: "Pyur Ayur Herbs Store",
+        supportEmail: "support@pyurayurherbs.com",
+        whatsappNumber: "919876543210",
+        whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
+        codOtpEnabled: true,
+        prepaidDiscount: 5,
+        taxRate: 18,
+      };
+    }
+
     return cleanData as DBData;
   } catch (error) {
     console.error("Error reading from MongoDB:", error);
@@ -69,6 +91,10 @@ export async function readDB(): Promise<DBData> {
       orders: [],
       coupons: [],
       leads: [],
+      blogs: [],
+      faqs: [],
+      testimonials: [],
+      users: [],
       settings: {
         storeName: "Pyur Ayur Herbs Store",
         supportEmail: "support@pyurayurherbs.com",

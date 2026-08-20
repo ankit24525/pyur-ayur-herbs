@@ -27,7 +27,10 @@ export function middleware(request: NextRequest) {
   } else {
     // On the main domain (purreayurherbs.com / localhost:3000)
     // If they manually try to load "/admin" or admin API routes, redirect them to the home page!
-    if (url.pathname === "/admin" || url.pathname.startsWith("/admin/") || url.pathname.startsWith("/api/admin")) {
+    const isBlockedPath = url.pathname === "/admin" || 
+                          url.pathname.startsWith("/admin/") || 
+                          (url.pathname.startsWith("/api/admin") && request.method !== "GET");
+    if (isBlockedPath) {
       return NextResponse.redirect(new URL("/", request.url), 307);
     }
   }

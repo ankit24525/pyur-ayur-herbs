@@ -20,6 +20,7 @@ export interface DBData {
   seo?: any;
   users?: any[];
   orderOtps?: any[];
+  sessions?: { token: string; userId: string; expiresAt: number }[];
 }
 
 let client: MongoClient | null = null;

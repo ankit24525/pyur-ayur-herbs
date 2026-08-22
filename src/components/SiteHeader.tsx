@@ -40,16 +40,12 @@ export default function SiteHeader({
   const [suggestionIdx, setSuggestionIdx] = useState(0);
   const [user, setUser] = useState<any>(null);
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("pyur_user");
-      if (stored) {
-        try {
-          setUser(JSON.parse(stored));
-        } catch (e) {
-          // ignore
-        }
-      }
-    }
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.user) setUser(data.user);
+      })
+      .catch(() => {});
   }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -346,8 +342,9 @@ export default function SiteHeader({
                     </div>
                     <div className="border-t border-[#f0f0eb] pt-1 mt-1">
                       <button
-                        onClick={() => {
-                          localStorage.removeItem("pyur_user");
+                        onClick={async () => {
+                          await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                          setUser(null);
                           window.location.href = "/";
                         }}
                         className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
@@ -558,8 +555,9 @@ export default function SiteHeader({
                       <span className="font-bold text-[#17231b] text-sm">Hello, {user.name.split(" ")[0]}</span>
                     </div>
                     <button
-                      onClick={() => {
-                        localStorage.removeItem("pyur_user");
+                      onClick={async () => {
+                        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                        setUser(null);
                         window.location.href = "/";
                       }}
                       className="text-xs font-bold text-red-600 hover:underline"

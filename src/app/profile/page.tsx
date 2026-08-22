@@ -68,13 +68,13 @@ function ProfileDashboard() {
   // Recently Viewed State
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
 
-  // Load user session
+  // Load user session from server (httpOnly cookie)
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("pyur_user");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.user) {
+          const parsed = data.user;
           setUser(parsed);
           setAddresses(parsed.savedAddresses || []);
           setSettingsForm({
@@ -83,14 +83,12 @@ function ProfileDashboard() {
             password: "",
             confirmPassword: "",
           });
-        } catch (e) {
+        } else {
           router.push("/login");
         }
-      } else {
-        router.push("/login");
-      }
-      setLoading(false);
-    }
+      })
+      .catch(() => router.push("/login"))
+      .finally(() => setLoading(false));
   }, [router]);
 
   // Sync activeTab with search param
@@ -211,8 +209,8 @@ function ProfileDashboard() {
   }
 
   // Handle Sign Out
-  const handleSignOut = () => {
-    localStorage.removeItem("pyur_user");
+  const handleSignOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     router.push("/");
     setTimeout(() => window.location.reload(), 100);
   };
@@ -240,7 +238,6 @@ function ProfileDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem("pyur_user", JSON.stringify(data.user));
         setUser(data.user);
         setAddresses(data.user.savedAddresses || []);
         setAddressModalOpen(false);
@@ -275,7 +272,6 @@ function ProfileDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem("pyur_user", JSON.stringify(data.user));
         setUser(data.user);
         setAddresses(data.user.savedAddresses || []);
       } else {
@@ -311,7 +307,6 @@ function ProfileDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem("pyur_user", JSON.stringify(data.user));
         setUser(data.user);
         setSettingsMessage({ type: "success", text: "Profile details updated successfully!" });
         setSettingsForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));

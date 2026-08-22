@@ -133,10 +133,8 @@ function LoginFormContent() {
         return;
       }
 
-      // Success login / signup
-      localStorage.setItem("pyur_user", JSON.stringify(data.user));
-      
-      // Force refresh header / state and redirect
+      // Success login / signup — session cookie set by server automatically
+      // No need to store anything in localStorage
       router.push(redirectUrl);
       setTimeout(() => {
         window.location.reload();

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { readDB } from "@/lib/db";
+import { createSession, buildSessionCookie } from "@/lib/session";
 import crypto from "crypto";
+
+export const dynamic = "force-dynamic";
 
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
@@ -33,10 +36,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Invalid email or password." }, { status: 400 });
     }
 
-    // Return user details without password hash
-    const { passwordHash, ...userResponse } = user;
-    return NextResponse.json({ success: true, user: userResponse });
+    // Create a secure server-side session
+    const token = await createSession(user.id);
+
+    // Return minimal user info (only what's safe to expose for immediate UI use)
+    const { passwordHash, ...safeUser } = user;
+
+    return NextResponse.json(
+      { success: true, user: safeUser },
+      {
+        headers: {
+          "Set-Cookie": buildSessionCookie(token),
+        },
+      }
+    );
   } catch (error) {
+    console.error("[Auth/Login]", error);
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }

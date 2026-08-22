@@ -25,13 +25,18 @@ function CheckoutForm() {
   const qty = parseInt(searchParams.get("quantity") || "1", 10);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("pyur_user");
-      if (!stored) {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) {
+          const currentUrl = window.location.pathname + window.location.search;
+          router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+        }
+      })
+      .catch(() => {
         const currentUrl = window.location.pathname + window.location.search;
         router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
-      }
-    }
+      });
   }, [router]);
 
   const [catalog, setCatalog] = useState<Product[]>(products);
@@ -74,27 +79,23 @@ function CheckoutForm() {
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
 
-  // Load logged-in user email from localStorage
+  // Load logged-in user info for auto-fill
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("pyur_user");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.email) setUserEmail(parsed.email);
-          // Auto-fill name and phone from profile
-          if (parsed.name || parsed.phone) {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.user) {
+          if (data.user.email) setUserEmail(data.user.email);
+          if (data.user.name || data.user.phone) {
             setFormData((prev) => ({
               ...prev,
-              name: parsed.name || prev.name,
-              phone: parsed.phone || prev.phone,
+              name: data.user.name || prev.name,
+              phone: data.user.phone || prev.phone,
             }));
           }
-        } catch (e) {
-          // ignore
         }
-      }
-    }
+      })
+      .catch(() => {});
   }, []);
 
   // Settings & Coupons state

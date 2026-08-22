@@ -49,6 +49,59 @@ export default function AdminDashboard() {
     activeMenuRef.current = activeMenu;
   }, [activeMenu]);
 
+  // Admin Auth State — checked against sessionStorage on mount
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Check session on mount
+  useEffect(() => {
+    const token = sessionStorage.getItem("pyur_admin_token");
+    const expiry = sessionStorage.getItem("pyur_admin_expiry");
+    if (token && expiry && Date.now() < parseInt(expiry, 10)) {
+      setIsAdminLoggedIn(true);
+    }
+    setAuthChecked(true);
+  }, []);
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError(null);
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        sessionStorage.setItem("pyur_admin_token", data.token);
+        sessionStorage.setItem("pyur_admin_expiry", String(Date.now() + data.expiresIn * 1000));
+        setIsAdminLoggedIn(true);
+        setLoginError(null);
+      } else {
+        setLoginError(data.error || "Invalid credentials. Please try again.");
+      }
+    } catch {
+      setLoginError("Connection error. Please check your network and try again.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem("pyur_admin_token");
+    sessionStorage.removeItem("pyur_admin_expiry");
+    setIsAdminLoggedIn(false);
+    setLoginUsername("");
+    setLoginPassword("");
+  };
+
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -959,10 +1012,140 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7f2] font-black text-[#244f31] text-sm tracking-wider">
-        🔄 LOADING KAPIVA ADMIN PORTAL...
+        🔄 LOADING PYUR AYUR ADMIN PORTAL...
       </div>
     );
   }
+
+  // Auth guard: show spinner while sessionStorage check is pending (avoids flash)
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#17231b]">
+        <div className="size-8 animate-spin rounded-full border-4 border-[#80a03c] border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Admin Login Screen
+  if (!isAdminLoggedIn) {
+    return (
+      <div className="min-h-screen bg-[#17231b] flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          {/* Logo Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center size-16 rounded-2xl bg-[#80a03c] shadow-lg mb-4">
+              <span className="text-3xl font-black text-white">P</span>
+            </div>
+            <h1 className="text-2xl font-black text-white tracking-wide">PYUR AYUR HERBS</h1>
+            <p className="text-xs text-white/50 mt-1 font-semibold uppercase tracking-wider">Admin Portal</p>
+          </div>
+
+          {/* Login Card */}
+          <div className="bg-white rounded-2xl shadow-2xl p-8 border border-white/10">
+            <h2 className="text-lg font-black text-[#17231b] mb-1">Sign in to Admin</h2>
+            <p className="text-xs text-[#888888] font-semibold mb-6">Only authorized administrators can access this panel.</p>
+
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              {/* Username */}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-[#666666] mb-1.5">Admin Username</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                    <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/>
+                    </svg>
+                  </span>
+                  <input
+                    type="text"
+                    value={loginUsername}
+                    onChange={(e) => setLoginUsername(e.target.value)}
+                    placeholder="Enter admin username"
+                    autoComplete="username"
+                    required
+                    className="w-full rounded-xl border border-[#ddddd9] bg-[#f8f8f8] pl-10 pr-4 py-2.5 text-xs font-semibold text-[#17231b] outline-none focus:border-[#244f31] focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-[#666666] mb-1.5">Password</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                    <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    required
+                    className="w-full rounded-xl border border-[#ddddd9] bg-[#f8f8f8] pl-10 pr-10 py-2.5 text-xs font-semibold text-[#17231b] outline-none focus:border-[#244f31] focus:bg-white transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                  >
+                    {showPassword ? (
+                      <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23" strokeLinecap="round"/>
+                      </svg>
+                    ) : (
+                      <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {loginError && (
+                <div className="flex items-start gap-2.5 rounded-xl bg-rose-50 border border-rose-200 p-3">
+                  <svg className="size-4 text-rose-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <p className="text-[11px] font-bold text-rose-700">{loginError}</p>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-sm py-3 shadow-sm transition disabled:opacity-60 flex items-center justify-center gap-2.5 mt-2"
+              >
+                {loginLoading && (
+                  <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                )}
+                <span>{loginLoading ? "Signing in..." : "Sign In to Admin Panel"}</span>
+              </button>
+            </form>
+
+            <div className="mt-6 pt-5 border-t border-[#f0f0eb] text-center">
+              <p className="text-[10px] text-neutral-400 font-semibold">
+                🔐 This is a restricted, secure area. Unauthorized access is prohibited.
+              </p>
+            </div>
+          </div>
+
+          {/* Back to store link */}
+          <div className="text-center mt-6">
+            <a href="/" className="text-xs text-white/40 hover:text-white/70 font-semibold transition">
+              ← Back to Store
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <main className="min-h-screen bg-[#f5f7f2] text-[#17231b]">
@@ -972,13 +1155,13 @@ export default function AdminDashboard() {
           {toastMsg}
         </div>
       )}
-      {/* Top Header Row matching mockup */}
+      {/* Top Header Row */}
       <div className="bg-[#17231b] text-white py-3.5 px-6 shadow-md sticky top-0 z-30 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button className="text-xl font-bold hover:text-white/80">☰</button>
           <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-[#80a03c] font-black text-white text-sm">K</div>
-            <span className="text-base font-black tracking-wider uppercase">KAPIVA ADMIN</span>
+            <div className="flex size-9 items-center justify-center rounded-lg bg-[#80a03c] font-black text-white text-sm">P</div>
+            <span className="text-base font-black tracking-wider uppercase">PYUR AYUR ADMIN</span>
           </div>
         </div>
 
@@ -996,10 +1179,18 @@ export default function AdminDashboard() {
             <span className="absolute top-1 right-1 size-2 rounded-full bg-[#80a03c]" />
             🔔
           </button>
-          <div className="flex items-center gap-1 cursor-pointer group">
-            <span className="text-xs font-bold text-white/90 group-hover:text-white">Admin</span>
-            <ChevronDown className="size-3.5 text-white/60 group-hover:text-white" />
+          <div className="flex items-center gap-1 text-xs font-bold text-white/90">
+            <span>Admin</span>
+            <ChevronDown className="size-3.5 text-white/60" />
           </div>
+          <button
+            onClick={handleAdminLogout}
+            className="flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-rose-600/80 border border-white/10 px-3 py-1.5 text-[10px] font-black text-white/80 hover:text-white transition"
+            title="Logout from admin"
+          >
+            <Lock className="size-3.5" />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Phone, Mail, CreditCard, ShieldCheck, Wallet, Truck, Smartphone } from "lucide-react";
 
 export default function SiteFooter() {
@@ -59,15 +60,21 @@ export default function SiteFooter() {
           {/* Column 1: Brand details */}
           <div className="md:col-span-2">
             {/* Pyur Ayur framed logo */}
-            <div className="border-2 border-[#244f31] p-3.5 rounded-xl inline-flex items-center gap-2.5 mb-6 bg-white select-none">
-              <div className="relative flex size-10 items-center justify-center rounded-full bg-[#244f31] text-white">
-                <span className="text-base font-black tracking-tighter">P</span>
+            <div className="border-2 border-[#244f31] p-3 rounded-xl inline-flex items-center gap-3 mb-6 bg-white select-none shadow-sm">
+              <div className="relative flex size-11 items-center justify-center rounded-full overflow-hidden border border-[#244f31]/10 bg-white">
+                <Image
+                  src="/brand/pure-ayur-logo.jpg"
+                  alt="Pure Ayur Herbs Logo"
+                  width={50}
+                  height={50}
+                  className="size-full object-cover"
+                />
               </div>
               <div className="flex flex-col leading-none text-left">
-                <span className="text-sm font-black uppercase tracking-wider text-[#244f31]">
-                  PYUR AYUR
+                <span className="text-base font-black uppercase tracking-wider text-[#244f31]">
+                  PURE AYUR
                 </span>
-                <span className="text-[8px] font-bold uppercase tracking-[0.25em] text-[#80a03c]">
+                <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#80a03c]">
                   HERBS
                 </span>
               </div>

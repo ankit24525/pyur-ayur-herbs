@@ -163,14 +163,20 @@ export default function SiteHeader({
               <Menu className="size-6 md:size-7" />
             </button>
 
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="relative flex size-10 items-center justify-center rounded-full bg-[#244f31] text-white shadow-sm md:size-12">
-                <span className="text-lg font-black tracking-tighter md:text-xl">P</span>
-                <span className="absolute -bottom-0.5 right-0 size-3 rounded-full border-2 border-white bg-[#80a03c]" />
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="relative flex size-11 items-center justify-center rounded-full bg-white p-0.5 shadow-md border border-[#244f31]/20 md:size-13 overflow-hidden">
+                <Image
+                  src="/brand/pure-ayur-logo.jpg"
+                  alt="Pure Ayur Herbs Logo"
+                  width={60}
+                  height={60}
+                  className="size-full rounded-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  priority
+                />
               </div>
               <div className="flex flex-col leading-none">
                 <span className="text-base font-black uppercase tracking-wider text-[#244f31] md:text-xl">
-                  PYUR AYUR
+                  PURE AYUR
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#80a03c] md:text-xs">
                   HERBS

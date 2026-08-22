@@ -3,7 +3,8 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { User, Mail, Lock, Phone, ArrowLeft, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { User, Mail, Lock, Phone, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 
 function LoginFormContent() {
   const router = useRouter();
@@ -17,6 +18,7 @@ function LoginFormContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -153,6 +155,16 @@ function LoginFormContent() {
         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#244f31]/5 rounded-full -z-10 opacity-60" />
 
         <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center p-1 rounded-full bg-white shadow-md border border-[#244f31]/20 mb-3">
+            <Image
+              src="/brand/pure-ayur-logo.jpg"
+              alt="Pure Ayur Herbs Logo"
+              width={56}
+              height={56}
+              className="size-14 rounded-full object-cover"
+              priority
+            />
+          </div>
           <h2 className="text-xl font-black text-[#17231b]">Reset Your Password</h2>
           <p className="text-xs text-gray-500 mt-1">
             {!otpSent 
@@ -230,13 +242,21 @@ function LoginFormContent() {
                     <Lock className="size-4" />
                   </span>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     placeholder="Enter new secure password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                    className="w-full pl-9 pr-10 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#244f31] transition"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -335,6 +355,16 @@ function LoginFormContent() {
       </div>
 
       <div className="text-center mb-6">
+        <div className="inline-flex items-center justify-center p-1 rounded-full bg-white shadow-md border border-[#244f31]/20 mb-3">
+          <Image
+            src="/brand/pure-ayur-logo.jpg"
+            alt="Pure Ayur Herbs Logo"
+            width={64}
+            height={64}
+            className="size-16 rounded-full object-cover"
+            priority
+          />
+        </div>
         <h2 className="text-xl font-black text-[#17231b]">
           {isLogin ? "Welcome Back to Pyur Ayur" : "Begin Your Wellness Journey"}
         </h2>
@@ -435,13 +465,21 @@ function LoginFormContent() {
               <Lock className="size-4" />
             </span>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               placeholder="••••••••"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+              className="w-full pl-9 pr-10 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#244f31] transition"
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
           </div>
         </div>
 

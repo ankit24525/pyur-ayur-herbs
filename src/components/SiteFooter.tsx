@@ -61,12 +61,12 @@ export default function SiteFooter() {
           <div className="md:col-span-2">
             {/* Pyur Ayur framed logo */}
             <div className="border-2 border-[#244f31] p-3 rounded-xl inline-flex items-center gap-3 mb-6 bg-white select-none shadow-sm">
-              <div className="relative flex size-11 items-center justify-center rounded-full overflow-hidden border border-[#244f31]/10 bg-white">
+              <div className="relative flex size-12 items-center justify-center rounded-full overflow-hidden border border-[#244f31]/10 bg-white shrink-0">
                 <Image
-                  src="/brand/pure-ayur-logo.jpg"
+                  src="/brand/pure-ayur-logo.png"
                   alt="Pure Ayur Herbs Logo"
-                  width={50}
-                  height={50}
+                  width={60}
+                  height={60}
                   className="size-full object-cover"
                 />
               </div>

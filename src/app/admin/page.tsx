@@ -1075,12 +1075,12 @@ export default function AdminDashboard() {
         <div className="w-full max-w-md">
           {/* Logo Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center size-20 rounded-full bg-white p-1 shadow-xl border-2 border-[#80a03c] mb-4">
+            <div className="inline-flex items-center justify-center size-24 rounded-full bg-white p-1.5 shadow-2xl border-2 border-[#80a03c] mb-4">
               <Image
-                src="/brand/pure-ayur-logo.jpg"
+                src="/brand/pure-ayur-logo.png"
                 alt="Pure Ayur Herbs Logo"
-                width={80}
-                height={80}
+                width={96}
+                height={96}
                 className="size-full rounded-full object-cover"
                 priority
               />
@@ -1284,12 +1284,12 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-4">
           <button className="text-xl font-bold hover:text-white/80">☰</button>
           <div className="flex items-center gap-2.5">
-            <div className="relative flex size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden">
+            <div className="relative flex size-10 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden shrink-0">
               <Image
-                src="/brand/pure-ayur-logo.jpg"
+                src="/brand/pure-ayur-logo.png"
                 alt="Pure Ayur Herbs Logo"
-                width={36}
-                height={36}
+                width={40}
+                height={40}
                 className="size-full rounded-full object-cover"
               />
             </div>

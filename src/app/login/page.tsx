@@ -155,13 +155,13 @@ function LoginFormContent() {
         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#244f31]/5 rounded-full -z-10 opacity-60" />
 
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center p-1 rounded-full bg-white shadow-md border border-[#244f31]/20 mb-3">
+          <div className="inline-flex items-center justify-center p-1 rounded-full bg-white shadow-lg border border-[#244f31]/20 mb-3">
             <Image
-              src="/brand/pure-ayur-logo.jpg"
+              src="/brand/pure-ayur-logo.png"
               alt="Pure Ayur Herbs Logo"
-              width={56}
-              height={56}
-              className="size-14 rounded-full object-cover"
+              width={80}
+              height={80}
+              className="size-20 rounded-full object-cover"
               priority
             />
           </div>
@@ -355,13 +355,13 @@ function LoginFormContent() {
       </div>
 
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center p-1 rounded-full bg-white shadow-md border border-[#244f31]/20 mb-3">
+        <div className="inline-flex items-center justify-center p-1 rounded-full bg-white shadow-lg border border-[#244f31]/20 mb-3">
           <Image
-            src="/brand/pure-ayur-logo.jpg"
+            src="/brand/pure-ayur-logo.png"
             alt="Pure Ayur Herbs Logo"
-            width={64}
-            height={64}
-            className="size-16 rounded-full object-cover"
+            width={88}
+            height={88}
+            className="size-22 rounded-full object-cover"
             priority
           />
         </div>

@@ -164,12 +164,12 @@ export default function SiteHeader({
             </button>
 
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="relative flex size-11 items-center justify-center rounded-full bg-white p-0.5 shadow-md border border-[#244f31]/20 md:size-13 overflow-hidden">
+              <div className="relative flex size-12 items-center justify-center rounded-full bg-white p-0.5 shadow-md border border-[#244f31]/20 md:size-14 shrink-0 overflow-hidden">
                 <Image
-                  src="/brand/pure-ayur-logo.jpg"
+                  src="/brand/pure-ayur-logo.png"
                   alt="Pure Ayur Herbs Logo"
-                  width={60}
-                  height={60}
+                  width={70}
+                  height={70}
                   className="size-full rounded-full object-cover group-hover:scale-105 transition-transform duration-300"
                   priority
                 />

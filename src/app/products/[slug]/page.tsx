@@ -1,8 +1,37 @@
 import { readDB } from "@/lib/db";
 import { productDetails } from "@/lib/product-detail-data";
 import { ProductDetailView } from "@/components/ProductDetailView";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const db = await readDB();
+  const normalizedSlug = slug.trim().toLowerCase();
+  
+  const dbProduct = db.products.find((p: any) => p.slug.trim().toLowerCase() === normalizedSlug);
+  
+  if (dbProduct) {
+    const title = `${dbProduct.name} | Pyur Ayur Herbs`;
+    const description = dbProduct.description || "Premium certified herbal remedy formulated by Ayurvedic Vaidyas.";
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [dbProduct.image],
+        type: "website",
+      }
+    };
+  }
+  
+  return {
+    title: "Ayurvedic Product | Pyur Ayur Herbs",
+    description: "Authentic Himalayan Ayurvedic formulations."
+  };
+}
 
 export async function generateStaticParams() {
   const db = await readDB();

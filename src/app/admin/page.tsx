@@ -339,6 +339,14 @@ export default function AdminDashboard() {
           partners: [],
           ...(data.settings?.shipping || {})
         };
+        settings.phonepe = {
+          merchantId: "PGBARCHUPGTEST",
+          saltKey: "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399",
+          saltIndex: "1",
+          env: "sandbox",
+          enabled: true,
+          ...(data.settings?.phonepe || {})
+        };
         settings.email = {
           senderName: "",
           smtpHost: "",
@@ -5003,7 +5011,7 @@ export default function AdminDashboard() {
                         className="size-5 accent-[#244f31]"
                       />
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border-b pb-3">
                       <div>
                         <span className="block font-bold">Prepaid Payment Discount (%)</span>
                       </div>
@@ -5014,7 +5022,117 @@ export default function AdminDashboard() {
                         className="w-20 rounded border p-1 text-center"
                       />
                     </div>
-                    <button onClick={() => handleSaveSettings("codOtpEnabled", dbData.settings.codOtpEnabled)} className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2">Save Payment Settings</button>
+
+                    <div className="space-y-3 pt-2">
+                      <h4 className="font-black text-[#17231b] uppercase tracking-wider text-[11px] border-b pb-1">💜 PhonePe Payment Gateway</h4>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="block font-bold">Enable PhonePe Checkout</span>
+                          <span className="block text-[10px] text-[#666666]">Activate online payment redirects for prepaid checkout.</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={dbData.settings.phonepe?.enabled ?? true}
+                          onChange={(e) => setDbData({
+                            ...dbData,
+                            settings: {
+                              ...dbData.settings,
+                              phonepe: { ...(dbData.settings.phonepe || {}), enabled: e.target.checked }
+                            }
+                          })}
+                          className="size-5 accent-[#244f31]"
+                        />
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block font-bold">Merchant ID (MID)</label>
+                          <input
+                            type="text"
+                            value={dbData.settings.phonepe?.merchantId || ""}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                phonepe: { ...(dbData.settings.phonepe || {}), merchantId: e.target.value }
+                              }
+                            })}
+                            className="mt-1 w-full rounded border p-2"
+                            placeholder="e.g. PGBARCHUPGTEST"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold">Salt Key</label>
+                          <input
+                            type="text"
+                            value={dbData.settings.phonepe?.saltKey || ""}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                phonepe: { ...(dbData.settings.phonepe || {}), saltKey: e.target.value }
+                              }
+                            })}
+                            className="mt-1 w-full rounded border p-2"
+                            placeholder="e.g. 099eb0cd-02cf..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block font-bold">Salt Key Index</label>
+                          <input
+                            type="text"
+                            value={dbData.settings.phonepe?.saltIndex || ""}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                phonepe: { ...(dbData.settings.phonepe || {}), saltIndex: e.target.value }
+                              }
+                            })}
+                            className="mt-1 w-full rounded border p-2"
+                            placeholder="e.g. 1"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold">Gateway Environment</label>
+                          <select
+                            value={dbData.settings.phonepe?.env || "sandbox"}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                phonepe: { ...(dbData.settings.phonepe || {}), env: e.target.value }
+                              }
+                            })}
+                            className="mt-1 w-full rounded border p-2 bg-white"
+                          >
+                            <option value="sandbox">Sandbox (Testing)</option>
+                            <option value="production">Production (Live)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={async () => {
+                        await handleSaveSettings("codOtpEnabled", dbData.settings.codOtpEnabled);
+                        await handleSaveSettings("prepaidDiscount", dbData.settings.prepaidDiscount);
+                        await handleSaveSettings("phonepe", dbData.settings.phonepe || {
+                          merchantId: "PGBARCHUPGTEST",
+                          saltKey: "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399",
+                          saltIndex: "1",
+                          env: "sandbox",
+                          enabled: true
+                        });
+                      }}
+                      className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2"
+                    >
+                      Save Payment Settings
+                    </button>
                   </div>
                 )}
 

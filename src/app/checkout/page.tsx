@@ -39,6 +39,18 @@ function CheckoutForm() {
       });
   }, [router]);
 
+  const successParam = searchParams.get("success");
+  const orderIdParam = searchParams.get("orderId");
+  const errorParam = searchParams.get("error");
+
+  useEffect(() => {
+    if (successParam === "true" && orderIdParam) {
+      setOrderComplete({ success: true, orderId: orderIdParam });
+    } else if (errorParam) {
+      alert(decodeURIComponent(errorParam));
+    }
+  }, [successParam, orderIdParam, errorParam]);
+
   const [catalog, setCatalog] = useState<Product[]>(products);
   const [product, setProduct] = useState<Product>(products[0]);
   const [loadingProduct, setLoadingProduct] = useState(true);
@@ -277,7 +289,9 @@ function CheckoutForm() {
       return;
     }
 
-    if (formData.paymentMethod === "cod" && settings.codOtpEnabled) {
+    if (formData.paymentMethod === "prepaid") {
+      void processPrepaidPhonePeOrder();
+    } else if (formData.paymentMethod === "cod" && settings.codOtpEnabled) {
       if (!userEmail) {
         alert("No email address found. Please log in again to place your order.");
         return;
@@ -337,6 +351,32 @@ function CheckoutForm() {
       setOtpError("Connection error. Please try again.");
     } finally {
       setOtpVerifying(false);
+    }
+  };
+
+  const processPrepaidPhonePeOrder = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/payment/phonepe/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          email: userEmail,
+          subtotal,
+          items: [{ productId: product.id, quantity: qty }],
+        }),
+      });
+      const resData = await response.json();
+      if (resData.success && resData.redirectUrl) {
+        window.location.href = resData.redirectUrl;
+      } else {
+        alert(resData.error || "Failed to initialize payment with PhonePe. Please try again.");
+        setLoading(false);
+      }
+    } catch {
+      alert("Error initiating payment. Please check your internet connection.");
+      setLoading(false);
     }
   };
 

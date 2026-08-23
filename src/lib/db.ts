@@ -64,6 +64,13 @@ function readLocalDB(): DBData {
           codOtpEnabled: true,
           prepaidDiscount: 5,
           taxRate: 18,
+          phonepe: {
+            merchantId: "PGBARCHUPGTEST",
+            saltKey: "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399",
+            saltIndex: "1",
+            env: "sandbox",
+            enabled: true
+          }
         };
       }
       return cleanData;
@@ -88,6 +95,13 @@ function readLocalDB(): DBData {
       codOtpEnabled: true,
       prepaidDiscount: 5,
       taxRate: 18,
+      phonepe: {
+        merchantId: "PGBARCHUPGTEST",
+        saltKey: "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399",
+        saltIndex: "1",
+        env: "sandbox",
+        enabled: true
+      }
     }
   };
 }

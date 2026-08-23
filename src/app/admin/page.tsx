@@ -213,6 +213,114 @@ export default function AdminDashboard() {
     collections: [],
   });
 
+  // Dynamic line chart history calculation based on Time Range, Metric Type, and Product Filter (Shared across Dashboard and Analytics tab)
+  const getChartDataHistory = () => {
+    const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let days = 7;
+    let formatOpt: any = { day: "numeric", month: "short" };
+    
+    if (graphTimeRange === "30days") {
+      days = 30;
+    } else if (graphTimeRange === "12months") {
+      days = 12;
+      formatOpt = { month: "short" };
+    }
+
+    const result = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      if (graphTimeRange === "12months") {
+        d.setMonth(d.getMonth() - i);
+      } else {
+        d.setDate(d.getDate() - i);
+      }
+      
+      const monthLabel = MONTH_NAMES[d.getMonth()];
+      const dateLabel = d.toLocaleDateString("en-IN", formatOpt);
+      const yearVal = d.getFullYear();
+      
+      // Filter orders matching this date bucket
+      const matchedOrders = dbData.orders.filter((o: any) => {
+        const matchDate = o.date || "";
+        if (graphTimeRange === "12months") {
+          return matchDate.toLowerCase().includes(monthLabel.toLowerCase()) && matchDate.includes(String(yearVal));
+        } else {
+          const targetStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+          return matchDate.toLowerCase().includes(targetStr.toLowerCase());
+        }
+      });
+
+      // Filter leads matching this date bucket
+      const matchedLeads = (dbData.leads || []).filter((l: any) => {
+        const matchDate = l.date || "";
+        if (graphTimeRange === "12months") {
+          return matchDate.toLowerCase().includes(monthLabel.toLowerCase()) && matchDate.includes(String(yearVal));
+        } else {
+          const targetStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+          return matchDate.toLowerCase().includes(targetStr.toLowerCase());
+        }
+      });
+
+      // Calculate the specific metric value
+      let val = 0;
+      if (graphMetricType === "overall-sales") {
+        val = matchedOrders
+          .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
+          .reduce((acc: number, o: any) => acc + o.total, 0);
+      } else if (graphMetricType === "product-sales") {
+        matchedOrders
+          .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
+          .forEach((o: any) => {
+            const itemsString = o.items || "";
+            const itemsList = itemsString.split(", ");
+            itemsList.forEach((item: string) => {
+              const match = item.match(/(.+)\s+x(\d+)/);
+              if (match) {
+                const name = match[1].trim();
+                const qty = parseInt(match[2]) || 0;
+                
+                const prod = dbData.products.find((p: any) => p.id === graphProductFilter || p.name.toLowerCase().trim() === name.toLowerCase().trim());
+                if (prod && prod.id === graphProductFilter) {
+                  const price = prod.price || 0;
+                  val += price * qty;
+                }
+              }
+            });
+          });
+      } else if (graphMetricType === "overall-views") {
+        const ordersCount = matchedOrders.length;
+        const leadsCount = matchedLeads.length;
+        val = (ordersCount * 12) + (leadsCount * 8) + (d.getDate() % 5) * 15 + 45;
+      } else if (graphMetricType === "product-views") {
+        let productOrdersCount = 0;
+        matchedOrders.forEach((o: any) => {
+          const itemsString = o.items || "";
+          const itemsList = itemsString.split(", ");
+          itemsList.forEach((item: string) => {
+            const match = item.match(/(.+)\s+x(\d+)/);
+            if (match) {
+              const name = match[1].trim();
+              const qty = parseInt(match[2]) || 0;
+              
+              const prod = dbData.products.find((p: any) => p.id === graphProductFilter || p.name.toLowerCase().trim() === name.toLowerCase().trim());
+              if (prod && prod.id === graphProductFilter) {
+                productOrdersCount += qty;
+              }
+            }
+          });
+        });
+        
+        const multiplier = graphProductFilter ? (graphProductFilter.charCodeAt(0) % 5) + 3 : 5;
+        val = (productOrdersCount * 8) + (matchedLeads.length * multiplier) + (d.getDate() % 3) * 6 + 10;
+      } else if (graphMetricType === "cancellations") {
+        val = matchedOrders.filter((o: any) => o.status === "Cancelled").length;
+      }
+      
+      result.push({ label: graphTimeRange === "12months" ? monthLabel : dateLabel, val });
+    }
+    return result;
+  };
+
   // Forms states
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -1538,113 +1646,7 @@ export default function AdminDashboard() {
 
               const maxQty = Math.max(...top5Products.map(p => p.qty), 1);
 
-              // Dynamic line chart history calculation based on Time Range, Metric Type, and Product Filter
-              const getChartDataHistory = () => {
-                const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                let days = 7;
-                let formatOpt: any = { day: "numeric", month: "short" };
-                
-                if (graphTimeRange === "30days") {
-                  days = 30;
-                } else if (graphTimeRange === "12months") {
-                  days = 12;
-                  formatOpt = { month: "short" };
-                }
 
-                const result = [];
-                for (let i = days - 1; i >= 0; i--) {
-                  const d = new Date();
-                  if (graphTimeRange === "12months") {
-                    d.setMonth(d.getMonth() - i);
-                  } else {
-                    d.setDate(d.getDate() - i);
-                  }
-                  
-                  const monthLabel = MONTH_NAMES[d.getMonth()];
-                  const dateLabel = d.toLocaleDateString("en-IN", formatOpt);
-                  const yearVal = d.getFullYear();
-                  
-                  // Filter orders matching this date bucket
-                  const matchedOrders = dbData.orders.filter((o: any) => {
-                    const matchDate = o.date || "";
-                    if (graphTimeRange === "12months") {
-                      return matchDate.toLowerCase().includes(monthLabel.toLowerCase()) && matchDate.includes(String(yearVal));
-                    } else {
-                      const targetStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-                      return matchDate.toLowerCase().includes(targetStr.toLowerCase());
-                    }
-                  });
-
-                  // Filter leads matching this date bucket
-                  const matchedLeads = (dbData.leads || []).filter((l: any) => {
-                    const matchDate = l.date || "";
-                    if (graphTimeRange === "12months") {
-                      return matchDate.toLowerCase().includes(monthLabel.toLowerCase()) && matchDate.includes(String(yearVal));
-                    } else {
-                      const targetStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-                      return matchDate.toLowerCase().includes(targetStr.toLowerCase());
-                    }
-                  });
-
-                  // Calculate the specific metric value
-                  let val = 0;
-                  if (graphMetricType === "overall-sales") {
-                    val = matchedOrders
-                      .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
-                      .reduce((acc: number, o: any) => acc + o.total, 0);
-                  } else if (graphMetricType === "product-sales") {
-                    matchedOrders
-                      .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
-                      .forEach((o: any) => {
-                        const itemsString = o.items || "";
-                        const itemsList = itemsString.split(", ");
-                        itemsList.forEach((item: string) => {
-                          const match = item.match(/(.+)\s+x(\d+)/);
-                          if (match) {
-                            const name = match[1].trim();
-                            const qty = parseInt(match[2]) || 0;
-                            
-                            const prod = dbData.products.find((p: any) => p.id === graphProductFilter || p.name.toLowerCase().trim() === name.toLowerCase().trim());
-                            if (prod && prod.id === graphProductFilter) {
-                              const price = prod.price || 0;
-                              val += price * qty;
-                            }
-                          }
-                        });
-                      });
-                  } else if (graphMetricType === "overall-views") {
-                    const ordersCount = matchedOrders.length;
-                    const leadsCount = matchedLeads.length;
-                    val = (ordersCount * 12) + (leadsCount * 8) + (d.getDate() % 5) * 15 + 45;
-                  } else if (graphMetricType === "product-views") {
-                    let productOrdersCount = 0;
-                    matchedOrders.forEach((o: any) => {
-                      const itemsString = o.items || "";
-                      const itemsList = itemsString.split(", ");
-                      itemsList.forEach((item: string) => {
-                        const match = item.match(/(.+)\s+x(\d+)/);
-                        if (match) {
-                          const name = match[1].trim();
-                          const qty = parseInt(match[2]) || 0;
-                          
-                          const prod = dbData.products.find((p: any) => p.id === graphProductFilter || p.name.toLowerCase().trim() === name.toLowerCase().trim());
-                          if (prod && prod.id === graphProductFilter) {
-                            productOrdersCount += qty;
-                          }
-                        }
-                      });
-                    });
-                    
-                    const multiplier = graphProductFilter ? (graphProductFilter.charCodeAt(0) % 5) + 3 : 5;
-                    val = (productOrdersCount * 8) + (matchedLeads.length * multiplier) + (d.getDate() % 3) * 6 + 10;
-                  } else if (graphMetricType === "cancellations") {
-                    val = matchedOrders.filter((o: any) => o.status === "Cancelled").length;
-                  }
-                  
-                  result.push({ label: graphTimeRange === "12months" ? monthLabel : dateLabel, val });
-                }
-                return result;
-              };
 
               const chartDataHistory = getChartDataHistory();
               const maxSalesVal = Math.max(...chartDataHistory.map(h => h.val), 10);
@@ -1785,7 +1787,10 @@ export default function AdminDashboard() {
                   {/* B. Main Analytics Grid */}
                   <div className="grid gap-6 md:grid-cols-2">
                     {/* Sales & Revenue Trend (Line/Area Chart) */}
-                    <div className="bg-white border border-[#e4e4e7] p-6 rounded-2xl shadow-xs space-y-4">
+                    <div 
+                      onClick={() => { setActiveMenu("analytics"); }}
+                      className="bg-white border border-[#e4e4e7] p-6 rounded-2xl shadow-xs space-y-4 cursor-pointer transition hover:border-[#2563eb] group relative"
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-4">
                         <div>
                           <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">
@@ -5191,25 +5196,217 @@ export default function AdminDashboard() {
             )}
 
             {/* 10. Analytics Panel */}
-            {activeMenu === "analytics" && (
-              <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b]">📈 Store Sales & Traffic Analytics</h3>
-                <div className="grid gap-4 sm:grid-cols-3 text-xs">
-                  <div className="border p-4 rounded-xl text-center">
-                    <span className="block font-semibold">Average Order Value</span>
-                    <span className="text-xl font-black text-[#244f31] mt-1 block">₹1,120</span>
+            {activeMenu === "analytics" && (() => {
+              const liveRevenue = dbData.orders
+                .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
+                .reduce((acc: number, o: any) => acc + o.total, 0);
+              const liveOrders = dbData.orders.length;
+              const totalSalesVal = liveRevenue;
+              const totalOrdersVal = liveOrders;
+              const displayAov = totalOrdersVal > 0 ? Math.round(totalSalesVal / totalOrdersVal) : 0;
+              const totalLeadsCount = dbData.leads?.length || 0;
+              const conversionRateVal = totalLeadsCount > 0 ? parseFloat(((liveOrders / totalLeadsCount) * 100).toFixed(1)) : 0;
+
+              const chartDataHistory = getChartDataHistory();
+              const maxSalesVal = Math.max(...chartDataHistory.map(h => h.val), 10);
+              const numPoints = chartDataHistory.length;
+
+              // Fullscreen width is 1000, height is 350. Spacing is 860px wide (from 70 to 930)
+              const pathPoints = chartDataHistory.map((h, idx) => {
+                const x = 70 + idx * (860 / (numPoints - 1 || 1));
+                const y = 300 - (h.val / maxSalesVal) * 240;
+                return { x, y, label: h.label, sales: h.val };
+              });
+
+              // Dynamic cubic bezier path helper for smooth curves
+              const getBezierPath = (pts: any[]) => {
+                if (pts.length === 0) return "";
+                let d = `M ${pts[0].x} ${pts[0].y}`;
+                for (let i = 0; i < pts.length - 1; i++) {
+                  const p0 = pts[i];
+                  const p1 = pts[i + 1];
+                  const cp1x = p0.x + (860 / (numPoints - 1 || 1)) / 3;
+                  const cp1y = p0.y;
+                  const cp2x = p1.x - (860 / (numPoints - 1 || 1)) / 3;
+                  const cp2y = p1.y;
+                  d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+                }
+                return d;
+              };
+
+              const pathD = getBezierPath(pathPoints);
+              const areaD = pathPoints.length > 0 ? `${pathD} L ${pathPoints[pathPoints.length-1].x} 300 L ${pathPoints[0].x} 300 Z` : "";
+
+              // Helper to format currency/count dynamically for y-axis scale
+              const formatYLabel = (v: number) => {
+                const isMonetary = graphMetricType === "overall-sales" || graphMetricType === "product-sales";
+                const prefix = isMonetary ? "₹" : "";
+                if (v >= 100000) {
+                  return `${prefix}${(v / 100000).toFixed(1)}L`;
+                }
+                if (v >= 1000) {
+                  return `${prefix}${(v / 1000).toFixed(0)}K`;
+                }
+                return `${prefix}${Math.round(v)}`;
+              };
+
+              return (
+                <div className="space-y-6">
+                  {/* Header Title */}
+                  <div className="flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                      <button
+                        onClick={() => { setActiveMenu("dashboard"); }}
+                        className="text-xs font-bold text-[#2563eb] hover:underline flex items-center gap-1 mb-1 bg-none border-none p-0 cursor-pointer"
+                      >
+                        <span>← Back to Dashboard Overview</span>
+                      </button>
+                      <h2 className="text-xl font-bold tracking-tight text-[#17231b]">📈 Fullscreen Analytics Dashboard</h2>
+                      <p className="text-xs text-[#666666] mt-0.5">High-definition interactive view of sales, views, and order life cycles.</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Metric Selector */}
+                      <select
+                        value={graphMetricType}
+                        onChange={(e) => setGraphMetricType(e.target.value)}
+                        className="rounded border border-[#e4e4e7] px-3 py-1.5 text-xs font-bold outline-none bg-white text-[#17231b] cursor-pointer"
+                      >
+                        <option value="overall-sales">📈 Overall Store Sales (₹)</option>
+                        <option value="product-sales">📦 Product Performance Sales (₹)</option>
+                        <option value="overall-views">👁️ Website Traffic Views (Qty)</option>
+                        <option value="product-views">🔍 Product Views (Qty)</option>
+                        <option value="cancellations">❌ Cancelled Orders Count</option>
+                      </select>
+
+                      {/* Product Selector */}
+                      {(graphMetricType === "product-sales" || graphMetricType === "product-views") && (
+                        <select
+                          value={graphProductFilter}
+                          onChange={(e) => setGraphProductFilter(e.target.value)}
+                          className="rounded border border-[#e4e4e7] px-3 py-1.5 text-xs font-bold outline-none bg-white text-[#17231b] cursor-pointer max-w-[200px]"
+                        >
+                          <option value="all">Select Product...</option>
+                          {dbData.products.map((p: any) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      )}
+
+                      {/* Time Range Selector */}
+                      <select
+                        value={graphTimeRange}
+                        onChange={(e) => setGraphTimeRange(e.target.value)}
+                        className="rounded border border-[#e4e4e7] px-3 py-1.5 text-xs font-bold outline-none bg-white text-[#17231b] cursor-pointer"
+                      >
+                        <option value="7days">Last 7 Days</option>
+                        <option value="30days">Last 30 Days</option>
+                        <option value="12months">Last 12 Months</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="border p-4 rounded-xl text-center">
-                    <span className="block font-semibold">Prepaid Payment Conversion</span>
-                    <span className="text-xl font-black text-[#244f31] mt-1 block">64%</span>
+
+                  {/* Giant Fullscreen Graph Container */}
+                  <div className="bg-white border border-[#e4e4e7] p-8 rounded-2xl shadow-sm space-y-6">
+                    <div className="flex justify-between items-baseline border-b pb-4">
+                      <div>
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">Selected Metric Scale</span>
+                        <span className="text-2xl font-black text-[#17231b] mt-1 block">
+                          {formatYLabel(maxSalesVal)}
+                          <span className="text-xs font-bold text-neutral-400 ml-1.5 uppercase">Max Peak Value</span>
+                        </span>
+                      </div>
+                      <div className="text-right text-[11px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
+                        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Interactive HD View</span>
+                      </div>
+                    </div>
+
+                    <div className="h-96 w-full flex items-end pt-4">
+                      <svg viewBox="0 0 1000 350" className="w-full h-full">
+                        <defs>
+                          <linearGradient id="areaGradGiant" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        {/* Horizontal Grid lines */}
+                        <line x1="60" y1="50" x2="940" y2="50" stroke="#f3f4f6" strokeWidth="1" />
+                        <line x1="60" y1="130" x2="940" y2="130" stroke="#f3f4f6" strokeWidth="1" />
+                        <line x1="60" y1="210" x2="940" y2="210" stroke="#f3f4f6" strokeWidth="1" />
+                        <line x1="60" y1="300" x2="940" y2="300" stroke="#e4e4e7" strokeWidth="1.2" />
+
+                        {/* Bezier Path Line & Gradient Area */}
+                        {pathD && (
+                          <>
+                            <path
+                              d={pathD}
+                              fill="none"
+                              stroke="#2563eb"
+                              strokeWidth="4.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d={areaD}
+                              fill="url(#areaGradGiant)"
+                            />
+                          </>
+                        )}
+
+                        {/* Interactive Dot Intersections and Values */}
+                        {pathPoints.map((p, idx) => (
+                          <g key={idx} className="group cursor-pointer">
+                            <circle cx={p.x} cy={p.y} r="6" fill="#2563eb" stroke="white" strokeWidth="2" />
+                            {/* Static tooltip overlay on hover */}
+                            <g className="opacity-0 group-hover:opacity-100 transition duration-150">
+                              <rect x={p.x - 35} y={p.y - 32} width="70" height="20" rx="4" fill="#18181b" />
+                              <text x={p.x} y={p.y - 19} textAnchor="middle" className="text-[9px] font-bold fill-white">
+                                {formatYLabel(p.sales)}
+                              </text>
+                            </g>
+                          </g>
+                        ))}
+
+                        {/* Y-axis Labels */}
+                        <text x="50" y="54" textAnchor="end" className="text-[9px] font-bold fill-neutral-400">{formatYLabel(maxSalesVal)}</text>
+                        <text x="50" y="134" textAnchor="end" className="text-[9px] font-bold fill-neutral-400">{formatYLabel(maxSalesVal * 0.66)}</text>
+                        <text x="50" y="214" textAnchor="end" className="text-[9px] font-bold fill-neutral-400">{formatYLabel(maxSalesVal * 0.33)}</text>
+
+                        {/* X-axis Labels */}
+                        {pathPoints.map((p, idx) => {
+                          const showLabel = numPoints <= 12 || idx % 5 === 0 || idx === numPoints - 1;
+                          if (!showLabel) return null;
+                          return (
+                            <text key={idx} x={p.x} y="325" textAnchor="middle" className="text-[9px] font-bold fill-neutral-400">{p.label}</text>
+                          );
+                        })}
+                      </svg>
+                    </div>
                   </div>
-                  <div className="border p-4 rounded-xl text-center">
-                    <span className="block font-semibold">COD RTO Rate</span>
-                    <span className="text-xl font-black text-red-800 mt-1 block">12.4%</span>
+
+                  {/* Summary Cards Grid */}
+                  <div className="grid gap-4 sm:grid-cols-4">
+                    <div className="border border-[#e4e4e7] p-5 rounded-2xl bg-white text-center">
+                      <span className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Average Order Value</span>
+                      <span className="text-lg font-black text-[#17231b] mt-1.5 block">₹{displayAov.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="border border-[#e4e4e7] p-5 rounded-2xl bg-white text-center">
+                      <span className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Database Leads</span>
+                      <span className="text-lg font-black text-[#17231b] mt-1.5 block">{totalLeadsCount.toLocaleString()} Leads</span>
+                    </div>
+                    <div className="border border-[#e4e4e7] p-5 rounded-2xl bg-white text-center">
+                      <span className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Active Orders</span>
+                      <span className="text-lg font-black text-[#17231b] mt-1.5 block">{totalOrdersVal} Orders</span>
+                    </div>
+                    <div className="border border-[#e4e4e7] p-5 rounded-2xl bg-white text-center">
+                      <span className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Conversion Rate</span>
+                      <span className="text-lg font-black text-[#17231b] mt-1.5 block">{conversionRateVal.toFixed(1)}%</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* 11. SEO Panel */}
             {activeMenu === "seo" && (

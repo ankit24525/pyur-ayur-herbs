@@ -910,6 +910,32 @@ export default function AdminDashboard() {
     alert("Testimonial added!");
   };
 
+  const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
+    try {
+      const leads = dbData.leads || [];
+      const idx = leads.findIndex((l: any) => l.id === leadId);
+      if (idx !== -1) {
+        const updated = [...leads];
+        updated[idx].status = newStatus;
+        await saveKey("leads", updated);
+        showToast("Lead status updated successfully!");
+      }
+    } catch {
+      showToast("Error updating status.");
+    }
+  };
+
+  const handleDeleteLead = async (leadId: string) => {
+    try {
+      const leads = dbData.leads || [];
+      const updated = leads.filter((l: any) => l.id !== leadId);
+      await saveKey("leads", updated);
+      showToast("Lead query deleted successfully!");
+    } catch {
+      showToast("Error deleting lead query.");
+    }
+  };
+
   const handleSaveSettings = async (section: string, value: any) => {
     const updatedSettings = {
       ...dbData.settings,
@@ -4851,20 +4877,56 @@ export default function AdminDashboard() {
                         <th className="p-3 font-bold">Type</th>
                         <th className="p-3 font-bold">Details description</th>
                         <th className="p-3 font-bold text-center">Status</th>
+                        <th className="p-3 font-bold text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#ddddd9]">
-                      {dbData.leads.map((ld: any) => (
-                        <tr key={ld.id}>
-                          <td className="p-3 font-bold">
-                            <span className="block">{ld.name}</span>
-                            <span className="block text-[10px] text-[#666666]">{ld.phone}</span>
+                      {!dbData.leads || dbData.leads.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-[#666] font-semibold italic bg-white">
+                            No queries or consult leads found.
                           </td>
-                          <td className="p-3 font-semibold">{ld.type}</td>
-                          <td className="p-3 text-[#666666]">{ld.concern} • {ld.detail}</td>
-                          <td className="p-3 text-center"><span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">{ld.status}</span></td>
                         </tr>
-                      ))}
+                      ) : (
+                        dbData.leads.map((ld: any) => (
+                          <tr key={ld.id} className="hover:bg-[#f8faf1]/20 transition-colors">
+                            <td className="p-3 font-bold">
+                              <span className="block">{ld.name}</span>
+                              <span className="block text-[10px] text-[#666666]">{ld.phone}</span>
+                            </td>
+                            <td className="p-3 font-semibold">{ld.type}</td>
+                            <td className="p-3 text-[#666666]">{ld.concern} • {ld.detail}</td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={ld.status || "New"}
+                                onChange={(e) => handleUpdateLeadStatus(ld.id, e.target.value)}
+                                className={`px-2.5 py-1 rounded text-[10px] font-bold outline-none border transition ${
+                                  ld.status === "Resolved"
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                    : ld.status === "Responded"
+                                    ? "bg-blue-100 text-blue-800 border-blue-200"
+                                    : ld.status === "Pending"
+                                    ? "bg-amber-100 text-amber-800 border-amber-200"
+                                    : "bg-gray-100 text-gray-800 border-gray-200"
+                                }`}
+                              >
+                                <option value="New">New</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Responded">Responded</option>
+                                <option value="Resolved">Resolved</option>
+                              </select>
+                            </td>
+                            <td className="p-3 text-center">
+                              <button
+                                onClick={() => handleDeleteLead(ld.id)}
+                                className="text-rose-600 hover:text-rose-800 text-[10px] font-bold transition hover:underline"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -4937,7 +4999,7 @@ export default function AdminDashboard() {
                       <input
                         type="checkbox"
                         checked={dbData.settings.codOtpEnabled}
-                        onChange={(e) => handleSaveSettings("codOtpEnabled", e.target.checked)}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, codOtpEnabled: e.target.checked } })}
                         className="size-5 accent-[#244f31]"
                       />
                     </div>
@@ -4948,10 +5010,11 @@ export default function AdminDashboard() {
                       <input
                         type="number"
                         value={dbData.settings.prepaidDiscount}
-                        onChange={(e) => handleSaveSettings("prepaidDiscount", parseInt(e.target.value))}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, prepaidDiscount: parseInt(e.target.value) || 0 } })}
                         className="w-20 rounded border p-1 text-center"
                       />
                     </div>
+                    <button onClick={() => handleSaveSettings("codOtpEnabled", dbData.settings.codOtpEnabled)} className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2">Save Payment Settings</button>
                   </div>
                 )}
 
@@ -4964,14 +5027,17 @@ export default function AdminDashboard() {
                 )}
 
                 {subTab === "tax" && (
-                  <div className="text-xs">
-                    <label className="block font-bold">Gst / Tax Rate (%)</label>
-                    <input
-                      type="number"
-                      value={dbData.settings.taxRate}
-                      onChange={(e) => handleSaveSettings("taxRate", parseInt(e.target.value))}
-                      className="mt-2 w-20 rounded border p-2 text-center"
-                    />
+                  <div className="text-xs space-y-3">
+                    <div>
+                      <label className="block font-bold">Gst / Tax Rate (%)</label>
+                      <input
+                        type="number"
+                        value={dbData.settings.taxRate}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, taxRate: parseInt(e.target.value) || 0 } })}
+                        className="mt-2 w-20 rounded border p-2 text-center"
+                      />
+                    </div>
+                    <button onClick={() => handleSaveSettings("taxRate", dbData.settings.taxRate)} className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2">Save Tax Settings</button>
                   </div>
                 )}
 
@@ -4982,7 +5048,7 @@ export default function AdminDashboard() {
                       <input
                         type="text"
                         value={dbData.settings.email.senderName}
-                        onChange={(e) => handleSaveSettings("email", { ...dbData.settings.email, senderName: e.target.value })}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, email: { ...dbData.settings.email, senderName: e.target.value } } })}
                         className="mt-1 w-full rounded border p-2"
                       />
                     </div>
@@ -4991,10 +5057,38 @@ export default function AdminDashboard() {
                       <input
                         type="text"
                         value={dbData.settings.email.smtpHost}
-                        onChange={(e) => handleSaveSettings("email", { ...dbData.settings.email, smtpHost: e.target.value })}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, email: { ...dbData.settings.email, smtpHost: e.target.value } } })}
                         className="mt-1 w-full rounded border p-2"
                       />
                     </div>
+                    <div>
+                      <label className="block font-bold">SMTP Port</label>
+                      <input
+                        type="number"
+                        value={dbData.settings.email.smtpPort || 587}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, email: { ...dbData.settings.email, smtpPort: parseInt(e.target.value) || 587 } } })}
+                        className="mt-1 w-full rounded border p-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold">SMTP User / Email</label>
+                      <input
+                        type="text"
+                        value={dbData.settings.email.smtpUser || ""}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, email: { ...dbData.settings.email, smtpUser: e.target.value } } })}
+                        className="mt-1 w-full rounded border p-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold">SMTP Password</label>
+                      <input
+                        type="password"
+                        value={dbData.settings.email.smtpPass || ""}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, email: { ...dbData.settings.email, smtpPass: e.target.value } } })}
+                        className="mt-1 w-full rounded border p-2"
+                      />
+                    </div>
+                    <button onClick={() => handleSaveSettings("email", dbData.settings.email)} className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2">Save Email Settings</button>
                   </div>
                 )}
 
@@ -5005,10 +5099,11 @@ export default function AdminDashboard() {
                       <input
                         type="checkbox"
                         checked={dbData.settings.notifications.orderPlacedSms}
-                        onChange={(e) => handleSaveSettings("notifications", { ...dbData.settings.notifications, orderPlacedSms: e.target.checked })}
+                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, notifications: { ...dbData.settings.notifications, orderPlacedSms: e.target.checked } } })}
                         className="size-5 accent-[#244f31]"
                       />
                     </div>
+                    <button onClick={() => handleSaveSettings("notifications", dbData.settings.notifications)} className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2">Save Notification Settings</button>
                   </div>
                 )}
 

@@ -1539,13 +1539,14 @@ export default function AdminDashboard() {
 
               const maxQty = Math.max(...top5Products.map(p => p.qty), 1);
 
-              // 6-Month dynamic sales history calculation
+              // 6-Month dynamic sales history calculation (locale-independent)
               const getMonthlySales = () => {
+                const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 const result = [];
                 for (let i = 5; i >= 0; i--) {
                   const d = new Date();
                   d.setMonth(d.getMonth() - i);
-                  const monthLabel = d.toLocaleDateString("en-IN", { month: "short" });
+                  const monthLabel = MONTH_NAMES[d.getMonth()];
                   const yearVal = d.getFullYear();
                   
                   const monthRevenue = dbData.orders
@@ -1565,7 +1566,7 @@ export default function AdminDashboard() {
 
               const monthlySalesHistory = getMonthlySales();
               
-              // Standard specification data for line points: Mar (1.52L), Apr (1.85L), May (2.1L), Jun (1.95L), Jul (2.42L), Aug (2.6L)
+              // Standard baseline mock data points: Mar (1.52L), Apr (1.85L), May (2.1L), Jun (1.95L), Jul (2.42L), Aug (2.6L)
               const mockMonthlySales = [152000, 185400, 210200, 195000, 242800, 260400];
               const finalMonthlySales = monthlySalesHistory.map((m, idx) => {
                 return {
@@ -1582,9 +1583,35 @@ export default function AdminDashboard() {
                 return { x, y, label: m.label, sales: m.sales };
               });
 
-              const pathD = `M ${pathPoints[0].x} ${pathPoints[0].y} ` + 
-                            pathPoints.slice(1).map(p => `L ${p.x} ${p.y}`).join(" ");
+              // Dynamic cubic bezier path helper for smooth curves
+              const getBezierPath = (pts: any[]) => {
+                if (pts.length === 0) return "";
+                let d = `M ${pts[0].x} ${pts[0].y}`;
+                for (let i = 0; i < pts.length - 1; i++) {
+                  const p0 = pts[i];
+                  const p1 = pts[i + 1];
+                  const cp1x = p0.x + 50;
+                  const cp1y = p0.y;
+                  const cp2x = p1.x - 50;
+                  const cp2y = p1.y;
+                  d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+                }
+                return d;
+              };
+
+              const pathD = getBezierPath(pathPoints);
               const areaD = `${pathD} L ${pathPoints[pathPoints.length-1].x} 170 L ${pathPoints[0].x} 170 Z`;
+
+              // Helper to format currency dynamically for y-axis scale
+              const formatYLabel = (val: number) => {
+                if (val >= 100000) {
+                  return `₹${(val / 100000).toFixed(1)}L`;
+                }
+                if (val >= 1000) {
+                  return `₹${(val / 1000).toFixed(0)}K`;
+                }
+                return `₹${val}`;
+              };
 
               // Order Status Distribution Donut Calculation
               const totalOrdersCount = dbData.orders.length || 1;
@@ -1722,9 +1749,9 @@ export default function AdminDashboard() {
                           ))}
 
                           {/* Y-axis Labels */}
-                          <text x="30" y="34" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">₹3L</text>
-                          <text x="30" y="84" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">₹2L</text>
-                          <text x="30" y="134" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">₹1L</text>
+                          <text x="30" y="34" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">{formatYLabel(maxSalesVal)}</text>
+                          <text x="30" y="84" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">{formatYLabel(maxSalesVal * 0.66)}</text>
+                          <text x="30" y="134" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">{formatYLabel(maxSalesVal * 0.33)}</text>
                           
                           {/* X-axis Labels */}
                           {pathPoints.map((p, idx) => (

@@ -1482,18 +1482,18 @@ export default function AdminDashboard() {
                 .reduce((acc: number, o: any) => acc + o.total, 0);
               const liveOrders = dbData.orders.length;
 
-              // KPI Figures: dynamically backed by real database data
-              const totalSalesVal = liveRevenue > 0 ? liveRevenue : 1245800; // Use live revenue or mock standard if empty
-              const totalOrdersVal = liveOrders > 0 ? liveOrders : 1420; // Use live orders count or mock standard if empty
-              const displayAov = Math.round(totalSalesVal / totalOrdersVal);
+              // KPI Figures: dynamically backed purely by real database data
+              const totalSalesVal = liveRevenue;
+              const totalOrdersVal = liveOrders;
+              const displayAov = totalOrdersVal > 0 ? Math.round(totalSalesVal / totalOrdersVal) : 0;
               
               // Calculate conversion rate dynamically based on leads ratio:
-              const totalLeadsCount = dbData.leads?.length || 1;
-              const conversionRateVal = liveOrders > 0 
+              const totalLeadsCount = dbData.leads?.length || 0;
+              const conversionRateVal = totalLeadsCount > 0 
                 ? parseFloat(((liveOrders / totalLeadsCount) * 100).toFixed(1)) 
-                : 3.2;
+                : 0;
 
-              // Top 5 Products by Sales Quantity according to actual database orders, backfilled with specifications
+              // Top 5 Products by Sales Quantity according to actual database orders
               const productSales: { [name: string]: number } = {};
               dbData.orders.forEach((o: any) => {
                 if (o.status === "Cancelled") return;
@@ -1509,26 +1509,24 @@ export default function AdminDashboard() {
                 });
               });
 
+              // Extract actual sales quantities, falling back to catalogue products at 0 sold
               const parsedTopProducts = Object.entries(productSales)
                 .map(([name, qty]) => ({ name, qty }))
                 .sort((a, b) => b.qty - a.qty);
 
-              const defaultTop5 = [
-                { name: "Himalayan Shilajit Gold", qty: 480 },
-                { name: "Organic Ashwagandha Capsules", qty: 390 },
-                { name: "Cold-Pressed Triphala Juice", qty: 290 },
-                { name: "Cognitive Brahmi Capsules", qty: 180 },
-                { name: "Pure Amla Wellness Juice", qty: 120 }
-              ];
-
-              const finalTop5 = [...parsedTopProducts];
-              defaultTop5.forEach(d => {
-                if (finalTop5.length < 5 && !finalTop5.some(r => r.name.toLowerCase().includes(d.name.toLowerCase()) || d.name.toLowerCase().includes(r.name.toLowerCase()))) {
-                  finalTop5.push(d);
+              const activeTopList = [...parsedTopProducts];
+              dbData.products.forEach((p: any) => {
+                if (activeTopList.length < 5 && !activeTopList.some(r => r.name.toLowerCase() === p.name.toLowerCase())) {
+                  activeTopList.push({ name: p.name, qty: 0 });
                 }
               });
 
-              const top5Products = finalTop5.map((p, idx) => {
+              // Ensure at least 5 slots are populated
+              while (activeTopList.length < 5) {
+                activeTopList.push({ name: `Product Slot ${activeTopList.length + 1}`, qty: 0 });
+              }
+
+              const top5Products = activeTopList.slice(0, 5).map((p, idx) => {
                 const colors = ["bg-[#2563eb]", "bg-[#3b82f6]", "bg-[#60a5fa]", "bg-[#93c5fd]", "bg-[#cbd5e1]"];
                 return {
                   name: p.name,
@@ -1565,19 +1563,9 @@ export default function AdminDashboard() {
               };
 
               const monthlySalesHistory = getMonthlySales();
+              const maxSalesVal = Math.max(...monthlySalesHistory.map(m => m.sales), 1000);
               
-              // Standard baseline mock data points: Mar (1.52L), Apr (1.85L), May (2.1L), Jun (1.95L), Jul (2.42L), Aug (2.6L)
-              const mockMonthlySales = [152000, 185400, 210200, 195000, 242800, 260400];
-              const finalMonthlySales = monthlySalesHistory.map((m, idx) => {
-                return {
-                  label: m.label,
-                  sales: mockMonthlySales[idx] + m.sales
-                };
-              });
-
-              const maxSalesVal = Math.max(...finalMonthlySales.map(m => m.sales), 1000);
-              
-              const pathPoints = finalMonthlySales.map((m, idx) => {
+              const pathPoints = monthlySalesHistory.map((m, idx) => {
                 const x = 60 + idx * 100;
                 const y = 170 - (m.sales / maxSalesVal) * 130;
                 return { x, y, label: m.label, sales: m.sales };
@@ -1617,11 +1605,11 @@ export default function AdminDashboard() {
               const totalOrdersCount = dbData.orders.length || 1;
               const hasOrders = dbData.orders.length > 0;
 
-              const deliveredPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Delivered").length / totalOrdersCount * 100) : 65;
-              const processingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Processing" || o.status === "Verified").length / totalOrdersCount * 100) : 15;
-              const shippedPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Shipped").length / totalOrdersCount * 100) : 10;
-              const pendingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Pending Payment" || o.status === "Pending OTP").length / totalOrdersCount * 100) : 7;
-              const cancelledPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Cancelled").length / totalOrdersCount * 100) : 3;
+              const deliveredPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Delivered").length / totalOrdersCount * 100) : 0;
+              const processingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Processing" || o.status === "Verified").length / totalOrdersCount * 100) : 0;
+              const shippedPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Shipped").length / totalOrdersCount * 100) : 0;
+              const pendingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Pending Payment" || o.status === "Pending OTP").length / totalOrdersCount * 100) : 0;
+              const cancelledPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Cancelled").length / totalOrdersCount * 100) : 0;
 
               // Donut segment calculations
               const deliveredSeg = (314.16 * deliveredPct) / 100;
@@ -1636,15 +1624,15 @@ export default function AdminDashboard() {
               const pendingOff = -(deliveredSeg + processingSeg + shippedSeg);
               const cancelledOff = -(deliveredSeg + processingSeg + shippedSeg + pendingSeg);
 
-              // Checkout Conversion Funnel counts
-              const funnelViews = Math.max(10000, totalLeadsCount * 15 + liveOrders * 20);
-              const funnelCart = Math.max(3000, totalLeadsCount * 5 + liveOrders * 10);
-              const funnelInitiated = Math.max(1500, liveOrders * 2);
-              const funnelCompleted = Math.max(320, dbData.orders.filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP").length);
+              // Checkout Conversion Funnel counts purely from live database data
+              const funnelViews = totalLeadsCount * 10 + liveOrders * 15;
+              const funnelCart = totalLeadsCount * 3 + liveOrders * 5;
+              const funnelInitiated = liveOrders * 2;
+              const funnelCompleted = dbData.orders.filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP").length;
 
-              const cartPct = ((funnelCart / funnelViews) * 100).toFixed(1);
-              const initiatedPct = ((funnelInitiated / funnelViews) * 100).toFixed(1);
-              const completedPct = ((funnelCompleted / funnelViews) * 100).toFixed(1);
+              const cartPct = funnelViews > 0 ? ((funnelCart / funnelViews) * 100).toFixed(1) : "0.0";
+              const initiatedPct = funnelViews > 0 ? ((funnelInitiated / funnelViews) * 100).toFixed(1) : "0.0";
+              const completedPct = funnelViews > 0 ? ((funnelCompleted / funnelViews) * 100).toFixed(1) : "0.0";
 
               return (
                 <div className="space-y-8 pb-10">

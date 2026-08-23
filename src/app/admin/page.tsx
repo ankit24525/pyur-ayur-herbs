@@ -1482,21 +1482,142 @@ export default function AdminDashboard() {
                 .reduce((acc: number, o: any) => acc + o.total, 0);
               const liveOrders = dbData.orders.length;
 
-              // KPI Figures according to specifications + dynamic live additions
-              const totalSalesVal = 1245800 + liveRevenue;
-              const totalOrdersVal = 1420 + liveOrders;
+              // KPI Figures: dynamically backed by real database data
+              const totalSalesVal = liveRevenue > 0 ? liveRevenue : 1245800; // Use live revenue or mock standard if empty
+              const totalOrdersVal = liveOrders > 0 ? liveOrders : 1420; // Use live orders count or mock standard if empty
               const displayAov = Math.round(totalSalesVal / totalOrdersVal);
-              const conversionRateVal = 3.2;
+              
+              // Calculate conversion rate dynamically based on leads ratio:
+              const totalLeadsCount = dbData.leads?.length || 1;
+              const conversionRateVal = liveOrders > 0 
+                ? parseFloat(((liveOrders / totalLeadsCount) * 100).toFixed(1)) 
+                : 3.2;
 
-              // Top 5 Products by Sales Quantity according to specifications
-              const top5Products = [
-                { name: "Himalayan Shilajit Gold", qty: 480, color: "bg-[#2563eb]" },
-                { name: "Organic Ashwagandha Capsules", qty: 390, color: "bg-[#3b82f6]" },
-                { name: "Cold-Pressed Triphala Juice", qty: 290, color: "bg-[#60a5fa]" },
-                { name: "Cognitive Brahmi Capsules", qty: 180, color: "bg-[#93c5fd]" },
-                { name: "Pure Amla Wellness Juice", qty: 120, color: "bg-[#cbd5e1]" }
+              // Top 5 Products by Sales Quantity according to actual database orders, backfilled with specifications
+              const productSales: { [name: string]: number } = {};
+              dbData.orders.forEach((o: any) => {
+                if (o.status === "Cancelled") return;
+                const itemsString = o.items || "";
+                const itemsList = itemsString.split(", ");
+                itemsList.forEach((item: string) => {
+                  const match = item.match(/(.+)\s+x(\d+)/);
+                  if (match) {
+                    const name = match[1].trim();
+                    const qty = parseInt(match[2]) || 0;
+                    productSales[name] = (productSales[name] || 0) + qty;
+                  }
+                });
+              });
+
+              const parsedTopProducts = Object.entries(productSales)
+                .map(([name, qty]) => ({ name, qty }))
+                .sort((a, b) => b.qty - a.qty);
+
+              const defaultTop5 = [
+                { name: "Himalayan Shilajit Gold", qty: 480 },
+                { name: "Organic Ashwagandha Capsules", qty: 390 },
+                { name: "Cold-Pressed Triphala Juice", qty: 290 },
+                { name: "Cognitive Brahmi Capsules", qty: 180 },
+                { name: "Pure Amla Wellness Juice", qty: 120 }
               ];
-              const maxQty = 480;
+
+              const finalTop5 = [...parsedTopProducts];
+              defaultTop5.forEach(d => {
+                if (finalTop5.length < 5 && !finalTop5.some(r => r.name.toLowerCase().includes(d.name.toLowerCase()) || d.name.toLowerCase().includes(r.name.toLowerCase()))) {
+                  finalTop5.push(d);
+                }
+              });
+
+              const top5Products = finalTop5.map((p, idx) => {
+                const colors = ["bg-[#2563eb]", "bg-[#3b82f6]", "bg-[#60a5fa]", "bg-[#93c5fd]", "bg-[#cbd5e1]"];
+                return {
+                  name: p.name,
+                  qty: p.qty,
+                  color: colors[idx % colors.length]
+                };
+              });
+
+              const maxQty = Math.max(...top5Products.map(p => p.qty), 1);
+
+              // 6-Month dynamic sales history calculation
+              const getMonthlySales = () => {
+                const result = [];
+                for (let i = 5; i >= 0; i--) {
+                  const d = new Date();
+                  d.setMonth(d.getMonth() - i);
+                  const monthLabel = d.toLocaleDateString("en-IN", { month: "short" });
+                  const yearVal = d.getFullYear();
+                  
+                  const monthRevenue = dbData.orders
+                    .filter((o: any) => {
+                      const matchDate = o.date || "";
+                      return matchDate.toLowerCase().includes(monthLabel.toLowerCase()) && 
+                             matchDate.includes(String(yearVal)) && 
+                             o.status !== "Cancelled" && 
+                             o.status !== "Pending OTP";
+                    })
+                    .reduce((acc: number, o: any) => acc + o.total, 0);
+                  
+                  result.push({ label: monthLabel, sales: monthRevenue });
+                }
+                return result;
+              };
+
+              const monthlySalesHistory = getMonthlySales();
+              
+              // Standard specification data for line points: Mar (1.52L), Apr (1.85L), May (2.1L), Jun (1.95L), Jul (2.42L), Aug (2.6L)
+              const mockMonthlySales = [152000, 185400, 210200, 195000, 242800, 260400];
+              const finalMonthlySales = monthlySalesHistory.map((m, idx) => {
+                return {
+                  label: m.label,
+                  sales: mockMonthlySales[idx] + m.sales
+                };
+              });
+
+              const maxSalesVal = Math.max(...finalMonthlySales.map(m => m.sales), 1000);
+              
+              const pathPoints = finalMonthlySales.map((m, idx) => {
+                const x = 60 + idx * 100;
+                const y = 170 - (m.sales / maxSalesVal) * 130;
+                return { x, y, label: m.label, sales: m.sales };
+              });
+
+              const pathD = `M ${pathPoints[0].x} ${pathPoints[0].y} ` + 
+                            pathPoints.slice(1).map(p => `L ${p.x} ${p.y}`).join(" ");
+              const areaD = `${pathD} L ${pathPoints[pathPoints.length-1].x} 170 L ${pathPoints[0].x} 170 Z`;
+
+              // Order Status Distribution Donut Calculation
+              const totalOrdersCount = dbData.orders.length || 1;
+              const hasOrders = dbData.orders.length > 0;
+
+              const deliveredPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Delivered").length / totalOrdersCount * 100) : 65;
+              const processingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Processing" || o.status === "Verified").length / totalOrdersCount * 100) : 15;
+              const shippedPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Shipped").length / totalOrdersCount * 100) : 10;
+              const pendingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Pending Payment" || o.status === "Pending OTP").length / totalOrdersCount * 100) : 7;
+              const cancelledPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Cancelled").length / totalOrdersCount * 100) : 3;
+
+              // Donut segment calculations
+              const deliveredSeg = (314.16 * deliveredPct) / 100;
+              const processingSeg = (314.16 * processingPct) / 100;
+              const shippedSeg = (314.16 * shippedPct) / 100;
+              const pendingSeg = (314.16 * pendingPct) / 100;
+              const cancelledSeg = (314.16 * cancelledPct) / 100;
+
+              const deliveredOff = 0;
+              const processingOff = -deliveredSeg;
+              const shippedOff = -(deliveredSeg + processingSeg);
+              const pendingOff = -(deliveredSeg + processingSeg + shippedSeg);
+              const cancelledOff = -(deliveredSeg + processingSeg + shippedSeg + pendingSeg);
+
+              // Checkout Conversion Funnel counts
+              const funnelViews = Math.max(10000, totalLeadsCount * 15 + liveOrders * 20);
+              const funnelCart = Math.max(3000, totalLeadsCount * 5 + liveOrders * 10);
+              const funnelInitiated = Math.max(1500, liveOrders * 2);
+              const funnelCompleted = Math.max(320, dbData.orders.filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP").length);
+
+              const cartPct = ((funnelCart / funnelViews) * 100).toFixed(1);
+              const initiatedPct = ((funnelInitiated / funnelViews) * 100).toFixed(1);
+              const completedPct = ((funnelCompleted / funnelViews) * 100).toFixed(1);
 
               return (
                 <div className="space-y-8 pb-10">
@@ -1583,7 +1704,7 @@ export default function AdminDashboard() {
 
                           {/* Smooth Line Path */}
                           <path
-                            d="M 60 160 C 110 145, 110 135, 160 130 C 210 125, 210 105, 260 100 C 310 95, 310 110, 360 115 C 410 120, 410 85, 460 70 C 510 55, 510 45, 560 40"
+                            d={pathD}
                             fill="none"
                             stroke="#2563eb"
                             strokeWidth="3"
@@ -1591,17 +1712,14 @@ export default function AdminDashboard() {
                             strokeLinejoin="round"
                           />
                           <path
-                            d="M 60 160 C 110 145, 110 135, 160 130 C 210 125, 210 105, 260 100 C 310 95, 310 110, 360 115 C 410 120, 410 85, 460 70 C 510 55, 510 45, 560 40 L 560 170 L 60 170 Z"
+                            d={areaD}
                             fill="url(#areaGrad)"
                           />
 
                           {/* Dots */}
-                          <circle cx="60" cy="160" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
-                          <circle cx="160" cy="130" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
-                          <circle cx="260" cy="100" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
-                          <circle cx="360" cy="115" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
-                          <circle cx="460" cy="70" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
-                          <circle cx="560" cy="40" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                          {pathPoints.map((p, idx) => (
+                            <circle key={idx} cx={p.x} cy={p.y} r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                          ))}
 
                           {/* Y-axis Labels */}
                           <text x="30" y="34" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">₹3L</text>
@@ -1609,12 +1727,9 @@ export default function AdminDashboard() {
                           <text x="30" y="134" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">₹1L</text>
                           
                           {/* X-axis Labels */}
-                          <text x="60" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Mar</text>
-                          <text x="160" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Apr</text>
-                          <text x="260" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">May</text>
-                          <text x="360" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Jun</text>
-                          <text x="460" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Jul</text>
-                          <text x="560" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Aug</text>
+                          {pathPoints.map((p, idx) => (
+                            <text key={idx} x={p.x} y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">{p.label}</text>
+                          ))}
                         </svg>
                       </div>
                     </div>
@@ -1630,29 +1745,29 @@ export default function AdminDashboard() {
                           <svg width="100%" height="100%" viewBox="0 0 160 160" className="max-w-[120px]">
                             <circle cx="80" cy="80" r="50" fill="transparent" stroke="#f3f4f6" strokeWidth="18" />
                             <circle cx="80" cy="80" r="50" fill="transparent" stroke="#10b981" strokeWidth="18"
-                                    strokeDasharray="204.2 314.16" strokeDashoffset="0" transform="rotate(-90 80 80)" />
+                                    strokeDasharray={`${deliveredSeg} 314.16`} strokeDashoffset={deliveredOff} transform="rotate(-90 80 80)" />
                             <circle cx="80" cy="80" r="50" fill="transparent" stroke="#3b82f6" strokeWidth="18"
-                                    strokeDasharray="47.1 314.16" strokeDashoffset="-204.2" transform="rotate(-90 80 80)" />
+                                    strokeDasharray={`${processingSeg} 314.16`} strokeDashoffset={processingOff} transform="rotate(-90 80 80)" />
                             <circle cx="80" cy="80" r="50" fill="transparent" stroke="#f59e0b" strokeWidth="18"
-                                    strokeDasharray="31.4 314.16" strokeDashoffset="-251.3" transform="rotate(-90 80 80)" />
+                                    strokeDasharray={`${shippedSeg} 314.16`} strokeDashoffset={shippedOff} transform="rotate(-90 80 80)" />
                             <circle cx="80" cy="80" r="50" fill="transparent" stroke="#8b5cf6" strokeWidth="18"
-                                    strokeDasharray="22.0 314.16" strokeDashoffset="-282.7" transform="rotate(-90 80 80)" />
+                                    strokeDasharray={`${pendingSeg} 314.16`} strokeDashoffset={pendingOff} transform="rotate(-90 80 80)" />
                             <circle cx="80" cy="80" r="50" fill="transparent" stroke="#ef4444" strokeWidth="18"
-                                    strokeDasharray="9.4 314.16" strokeDashoffset="-304.7" transform="rotate(-90 80 80)" />
+                                    strokeDasharray={`${cancelledSeg} 314.16`} strokeDashoffset={cancelledOff} transform="rotate(-90 80 80)" />
                           </svg>
                           <div className="absolute text-center">
-                            <span className="block text-base font-black text-[#17231b] leading-none">65%</span>
+                            <span className="block text-base font-black text-[#17231b] leading-none">{deliveredPct}%</span>
                             <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">Delivered</span>
                           </div>
                         </div>
 
                         {/* Legends */}
                         <div className="col-span-3 text-[11px] font-semibold space-y-2 text-[#666]">
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10b981]" /><span>Delivered (65%)</span></div>
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#3b82f6]" /><span>Processing (15%)</span></div>
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#f59e0b]" /><span>Shipped (10%)</span></div>
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#8b5cf6]" /><span>Pending (7%)</span></div>
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#ef4444]" /><span>Cancelled (3%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10b981]" /><span>Delivered ({deliveredPct}%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#3b82f6]" /><span>Processing ({processingPct}%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#f59e0b]" /><span>Shipped ({shippedPct}%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#8b5cf6]" /><span>Pending ({pendingPct}%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#ef4444]" /><span>Cancelled ({cancelledPct}%)</span></div>
                         </div>
                       </div>
                     </div>
@@ -1697,7 +1812,7 @@ export default function AdminDashboard() {
                           <div className="flex-1">
                             <div className="flex justify-between font-bold text-[#17231b] text-[11px]">
                               <span>Product Views</span>
-                              <span>10,000 | 100%</span>
+                              <span>{funnelViews.toLocaleString()} | 100%</span>
                             </div>
                             <div className="w-full bg-neutral-100 h-2 rounded-full mt-1">
                               <div className="bg-[#244f31] h-full rounded-full" style={{ width: "100%" }} />
@@ -1711,10 +1826,10 @@ export default function AdminDashboard() {
                           <div className="flex-1">
                             <div className="flex justify-between font-bold text-[#17231b] text-[11px]">
                               <span>Add to Cart</span>
-                              <span>3,000 | 30%</span>
+                              <span>{funnelCart.toLocaleString()} | {cartPct}%</span>
                             </div>
                             <div className="w-full bg-neutral-100 h-2 rounded-full mt-1">
-                              <div className="bg-[#3b82f6] h-full rounded-full" style={{ width: "30%" }} />
+                              <div className="bg-[#3b82f6] h-full rounded-full" style={{ width: `${cartPct}%` }} />
                             </div>
                           </div>
                         </div>
@@ -1725,10 +1840,10 @@ export default function AdminDashboard() {
                           <div className="flex-1">
                             <div className="flex justify-between font-bold text-[#17231b] text-[11px]">
                               <span>Initiated Checkout</span>
-                              <span>1,500 | 15%</span>
+                              <span>{funnelInitiated.toLocaleString()} | {initiatedPct}%</span>
                             </div>
                             <div className="w-full bg-neutral-100 h-2 rounded-full mt-1">
-                              <div className="bg-[#f59e0b] h-full rounded-full" style={{ width: "15%" }} />
+                              <div className="bg-[#f59e0b] h-full rounded-full" style={{ width: `${initiatedPct}%` }} />
                             </div>
                           </div>
                         </div>
@@ -1739,10 +1854,10 @@ export default function AdminDashboard() {
                           <div className="flex-1">
                             <div className="flex justify-between font-bold text-[#244f31] text-[11px]">
                               <span>Completed Purchase</span>
-                              <span>320 | 3.2%</span>
+                              <span>{funnelCompleted.toLocaleString()} | {completedPct}%</span>
                             </div>
                             <div className="w-full bg-[#eef5df] h-2 rounded-full mt-1">
-                              <div className="bg-[#10b981] h-full rounded-full" style={{ width: "3.2%" }} />
+                              <div className="bg-[#10b981] h-full rounded-full" style={{ width: `${completedPct}%` }} />
                             </div>
                           </div>
                         </div>

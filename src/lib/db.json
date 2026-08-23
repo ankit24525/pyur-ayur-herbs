@@ -153,68 +153,7 @@
       "lowStockThreshold": 5
     }
   ],
-  "orders": [
-    {
-      "id": "PYR-ORD-482103",
-      "customer": "Riya Mehta",
-      "phone": "9876543210",
-      "total": 999,
-      "method": "Prepaid",
-      "status": "Processing",
-      "date": "12 Aug 2026",
-      "items": "Dia Free Juice (1L) x1"
-    },
-    {
-      "id": "PYR-ORD-902341",
-      "customer": "Aarav Shah",
-      "phone": "9911223344",
-      "total": 1399,
-      "method": "COD",
-      "status": "Verified",
-      "date": "12 Aug 2026",
-      "items": "Himalayan Shilajit (20g) x1"
-    },
-    {
-      "id": "PYR-ORD-110823",
-      "customer": "Naina Iyer",
-      "phone": "9822334455",
-      "total": 1799,
-      "method": "Prepaid",
-      "status": "Delivered",
-      "date": "10 Aug 2026",
-      "items": "Dia Free Juice Twin Pack x1"
-    },
-    {
-      "id": "PYR-ORD-554210",
-      "customer": "Vikram Malhotra",
-      "phone": "9009988776",
-      "total": 849,
-      "method": "COD",
-      "status": "Pending OTP",
-      "date": "09 Aug 2026",
-      "items": "Artho Sure Joint Juice x1"
-    },
-    {
-      "id": "PYR-ORD-302910",
-      "customer": "Nisha Patel",
-      "phone": "9844332211",
-      "total": 799,
-      "method": "COD",
-      "status": "Cancelled",
-      "date": "08 Aug 2026",
-      "items": "Kumkumadi Glow Elixir x1"
-    },
-    {
-      "id": "PYR-ORD-123456",
-      "customer": "Rahul Sen",
-      "phone": "9811223344",
-      "total": 449,
-      "method": "Prepaid",
-      "status": "Return Request",
-      "date": "07 Aug 2026",
-      "items": "Amla Glow Juice x1"
-    }
-  ],
+  "orders": [],
   "coupons": [
     {
       "code": "PYUR10",
@@ -231,17 +170,7 @@
       "used": 84
     }
   ],
-  "leads": [
-    {
-      "id": "LD-501",
-      "name": "Harish Kumar",
-      "phone": "9876543212",
-      "type": "Doctor Consultation",
-      "concern": "Sugar Management",
-      "detail": "Morning slot preferred",
-      "status": "Scheduled"
-    }
-  ],
+  "leads": [],
   "settings": {
     "storeName": "Pyur Ayur Herbs Online Store",
     "supportEmail": "support@pyurayurherbs.com",

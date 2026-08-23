@@ -2086,8 +2086,28 @@ export default function AdminDashboard() {
                 .filter((o: any) => {
                   // Filter by subTab status
                   if (subTab !== "all") {
-                    const targetStatus = subTab === "Returns" ? "Return Request" : subTab;
-                    if (o.status !== targetStatus) return false;
+                    if (subTab === "Pending OTP") {
+                      return o.status === "Pending OTP";
+                    }
+                    if (subTab === "Pending Payment") {
+                      return o.status === "Pending Payment";
+                    }
+                    if (subTab === "Processing") {
+                      return o.status === "Processing" || o.status === "Verified";
+                    }
+                    if (subTab === "Shipped") {
+                      return o.status === "Shipped";
+                    }
+                    if (subTab === "Delivered") {
+                      return o.status === "Delivered";
+                    }
+                    if (subTab === "Cancelled") {
+                      return o.status === "Cancelled";
+                    }
+                    if (subTab === "Returns") {
+                      return o.status === "Return Request" || o.status === "Returned" || o.status === "Refunded";
+                    }
+                    return o.status === subTab;
                   }
                   
                   // Filter by Payment Method
@@ -2112,7 +2132,8 @@ export default function AdminDashboard() {
                     <div className="flex flex-wrap items-center gap-2">
                       <button onClick={() => setSubTab("all")} className={subTabStyle("all")}>All Orders</button>
                       <button onClick={() => setSubTab("Pending OTP")} className={subTabStyle("Pending OTP")}>Pending OTP</button>
-                      <button onClick={() => setSubTab("Processing")} className={subTabStyle("Processing")}>Processing</button>
+                      <button onClick={() => setSubTab("Pending Payment")} className={subTabStyle("Pending Payment")}>Pending Payment</button>
+                      <button onClick={() => setSubTab("Processing")} className={subTabStyle("Processing")}>Processing / Verified</button>
                       <button onClick={() => setSubTab("Shipped")} className={subTabStyle("Shipped")}>Shipped</button>
                       <button onClick={() => setSubTab("Delivered")} className={subTabStyle("Delivered")}>Delivered</button>
                       <button onClick={() => setSubTab("Cancelled")} className={subTabStyle("Cancelled")}>Cancelled</button>
@@ -2185,15 +2206,18 @@ export default function AdminDashboard() {
                                 <select
                                   value={o.status}
                                   onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)}
-                                  className="rounded border border-[#ddddd9] p-1 text-[10px] outline-none font-bold bg-white"
+                                  className="rounded border border-[#ddddd9] p-1 text-[10px] outline-none font-bold bg-white cursor-pointer"
                                 >
                                   <option value="Pending OTP">Pending OTP</option>
+                                  <option value="Pending Payment">Pending Payment</option>
                                   <option value="Processing">Processing</option>
                                   <option value="Verified">Verified</option>
                                   <option value="Shipped">Shipped</option>
                                   <option value="Delivered">Delivered</option>
                                   <option value="Cancelled">Cancelled</option>
                                   <option value="Return Request">Return Request</option>
+                                  <option value="Returned">Returned</option>
+                                  <option value="Refunded">Refunded</option>
                                 </select>
                               </td>
                               <td className="p-3 text-right font-bold text-[#244f31]">₹{o.total}</td>
@@ -5843,12 +5867,15 @@ export default function AdminDashboard() {
                       className="rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-bold bg-white cursor-pointer"
                     >
                       <option value="Pending OTP">Pending OTP</option>
+                      <option value="Pending Payment">Pending Payment</option>
                       <option value="Processing">Processing</option>
                       <option value="Verified">Verified</option>
                       <option value="Shipped">Shipped</option>
                       <option value="Delivered">Delivered</option>
                       <option value="Cancelled">Cancelled</option>
                       <option value="Return Request">Return Request</option>
+                      <option value="Returned">Returned</option>
+                      <option value="Refunded">Refunded</option>
                     </select>
                   </div>
                 </div>

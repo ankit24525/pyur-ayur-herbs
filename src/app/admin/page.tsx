@@ -46,6 +46,8 @@ import {
 export default function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState("dashboard"); // dashboard, orders, products, customers, discounts, marketing, content, reviews, shipping, analytics, seo, support, settings
   const [subTab, setSubTab] = useState("overview");
+  const [graphTimeRange, setGraphTimeRange] = useState("7days");
+  const [graphProductFilter, setGraphProductFilter] = useState("all");
   const activeMenuRef = useRef(activeMenu);
 
   useEffect(() => {
@@ -1518,32 +1520,76 @@ export default function AdminDashboard() {
                 .filter((p: any) => (p.stockQty ?? 0) <= (p.lowStockThreshold ?? 10))
                 .slice(0, 3);
 
-              // Last 7 days dynamic sales chart calculation
+              // Dynamic sales history chart calculation supporting time range and product filter
               const getSalesHistory = () => {
-                const days = 7;
+                let days = 7;
+                let formatOpt: any = { day: "numeric", month: "short" };
+                
+                if (graphTimeRange === "30days") {
+                  days = 30;
+                } else if (graphTimeRange === "12months") {
+                  days = 12;
+                  formatOpt = { month: "short", year: "numeric" };
+                }
+
                 const result = [];
                 for (let i = days - 1; i >= 0; i--) {
                   const d = new Date();
-                  d.setDate(d.getDate() - i);
-                  const label = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                  if (graphTimeRange === "12months") {
+                    d.setMonth(d.getMonth() - i);
+                  } else {
+                    d.setDate(d.getDate() - i);
+                  }
                   
-                  const daySales = dbData.orders
-                    .filter((o: any) => {
-                      const matchDate = o.date || "";
-                      return matchDate.toLowerCase().includes(label.toLowerCase()) && o.status !== "Cancelled";
-                    })
-                    .reduce((acc: number, o: any) => acc + o.total, 0);
+                  const label = d.toLocaleDateString("en-IN", formatOpt);
                   
-                  result.push({ label, sales: daySales });
+                  // Filter orders for this day/month
+                  const matchedOrders = dbData.orders.filter((o: any) => {
+                    const matchDate = o.date || "";
+                    if (graphTimeRange === "12months") {
+                      const searchLabel = d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+                      return matchDate.toLowerCase().includes(searchLabel.toLowerCase()) && o.status !== "Cancelled";
+                    } else {
+                      const searchLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                      return matchDate.toLowerCase().includes(searchLabel.toLowerCase()) && o.status !== "Cancelled";
+                    }
+                  });
+
+                  // Calculate sales for selected product or overall
+                  let totalSales = 0;
+                  matchedOrders.forEach((o: any) => {
+                    if (graphProductFilter === "all") {
+                      totalSales += o.total;
+                    } else {
+                      const itemsString = o.items || "";
+                      const itemsList = itemsString.split(", ");
+                      itemsList.forEach((item: string) => {
+                        const match = item.match(/(.+)\s+x(\d+)/);
+                        if (match) {
+                          const name = match[1].trim();
+                          const qty = parseInt(match[2]) || 0;
+                          
+                          const prod = dbData.products.find((p: any) => p.id === graphProductFilter || p.name.toLowerCase().trim() === name.toLowerCase().trim());
+                          if (prod && prod.id === graphProductFilter) {
+                            const price = prod.price || 0;
+                            totalSales += price * qty;
+                          }
+                        }
+                      });
+                    }
+                  });
+                  
+                  result.push({ label, sales: totalSales });
                 }
                 return result;
               };
 
               const salesHistory = getSalesHistory();
               const maxSales = Math.max(...salesHistory.map(s => s.sales), 1000);
+              const numPoints = salesHistory.length;
               
               const points = salesHistory.map((s, idx) => {
-                const x = 50 + idx * (700 / 6);
+                const x = 50 + idx * (700 / (numPoints - 1 || 1));
                 const y = 150 - (s.sales / maxSales) * 110;
                 return { x, y, label: s.label, val: s.sales };
               });
@@ -1589,9 +1635,35 @@ export default function AdminDashboard() {
 
                   {/* Sales Overview SVG Line Chart */}
                   <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Sales History (Last 7 Days)</h3>
-                      <div className="text-[10px] font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded border border-[#80a03c]">Real-time</div>
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Sales History & Product Performance</h3>
+                        <p className="text-[10px] text-gray-500 mt-0.5">Visualize overall sales or select a specific product to see units sold.</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Product Filter Dropdown */}
+                        <select
+                          value={graphProductFilter}
+                          onChange={(e) => setGraphProductFilter(e.target.value)}
+                          className="rounded border border-[#ddddd9] px-2.5 py-1 text-[10px] font-bold outline-none bg-white text-[#17231b] cursor-pointer"
+                        >
+                          <option value="all">📈 Overall Store Sales</option>
+                          {dbData.products.map((p: any) => (
+                            <option key={p.id} value={p.id}>📦 {p.name}</option>
+                          ))}
+                        </select>
+
+                        {/* Time Range Dropdown */}
+                        <select
+                          value={graphTimeRange}
+                          onChange={(e) => setGraphTimeRange(e.target.value)}
+                          className="rounded border border-[#ddddd9] px-2.5 py-1 text-[10px] font-bold outline-none bg-white text-[#17231b] cursor-pointer"
+                        >
+                          <option value="7days">Last 7 Days</option>
+                          <option value="30days">Last 30 Days</option>
+                          <option value="12months">Last 12 Months</option>
+                        </select>
+                      </div>
                     </div>
                     <div className="mt-4">
                       <svg viewBox="0 0 800 200" className="w-full h-40">
@@ -1632,11 +1704,15 @@ export default function AdminDashboard() {
                             </text>
                           </g>
                         ))}
-                        {/* Dynamic Labels */}
-                        <g className="text-[9px] font-bold fill-[#666666] text-[#666666]">
-                          {points.map((p, idx) => (
-                            <text key={idx} x={p.x} y="175" textAnchor="middle">{p.label}</text>
-                          ))}
+                        {/* Dynamic Labels with skipping for clean rendering */}
+                        <g className="text-[8px] font-bold fill-[#666666] text-[#666666]">
+                          {points.map((p, idx) => {
+                            const showLabel = numPoints <= 12 || idx % 5 === 0 || idx === numPoints - 1;
+                            if (!showLabel) return null;
+                            return (
+                              <text key={idx} x={p.x} y="175" textAnchor="middle">{p.label}</text>
+                            );
+                          })}
                         </g>
                       </svg>
                     </div>

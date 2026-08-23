@@ -99,9 +99,10 @@ function CheckoutForm() {
   }, []);
 
   // Settings & Coupons state
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<any>({
     prepaidDiscount: 5,
     codOtpEnabled: true,
+    shipping: { freeThreshold: 999, baseRate: 49 }
   });
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
@@ -263,7 +264,9 @@ function CheckoutForm() {
     }
   }
 
-  const shipping = subtotal >= 999 ? 0 : 49;
+  const freeThreshold = settings.shipping?.freeThreshold ?? 999;
+  const baseRate = settings.shipping?.baseRate ?? 49;
+  const shipping = subtotal >= freeThreshold ? 0 : baseRate;
   const total = subtotal - prepaidDiscount - couponDiscount + shipping;
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {

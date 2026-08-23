@@ -313,7 +313,61 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin/all", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        setDbData(data);
+        
+        // Deep merge settings defaults to prevent crashes
+        const settings = {
+          storeName: "Pyur Ayur Herbs Store",
+          supportEmail: "support@pyurayurherbs.com",
+          whatsappNumber: "919876543210",
+          whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
+          codOtpEnabled: true,
+          prepaidDiscount: 5,
+          taxRate: 18,
+          shipping: { freeThreshold: 999, baseRate: 49, partners: [] },
+          email: { senderName: "", smtpHost: "", smtpPort: 587, smtpUser: "", smtpPass: "" },
+          notifications: { orderPlacedSms: false, orderPlacedEmail: false },
+          adminUsers: [
+            { email: "pureayurherbs@gmail.com", role: "Super Admin" },
+            { email: "pyuradmin", role: "Administrator" }
+          ],
+          ...(data.settings || {})
+        };
+
+        settings.shipping = {
+          freeThreshold: 999,
+          baseRate: 49,
+          partners: [],
+          ...(data.settings?.shipping || {})
+        };
+        settings.email = {
+          senderName: "",
+          smtpHost: "",
+          smtpPort: 587,
+          smtpUser: "",
+          smtpPass: "",
+          ...(data.settings?.email || {})
+        };
+        settings.notifications = {
+          orderPlacedSms: false,
+          orderPlacedEmail: false,
+          ...(data.settings?.notifications || {})
+        };
+        if (!settings.adminUsers) {
+          settings.adminUsers = [
+            { email: "pureayurherbs@gmail.com", role: "Super Admin" },
+            { email: "pyuradmin", role: "Administrator" }
+          ];
+        }
+
+        setDbData({
+          ...data,
+          settings,
+          seo: {
+            title: "Pyur Ayur Herbs - Original Ayurvedic Formulations",
+            metaDesc: "Shop authentic gold-grade Shilajit, juices, and wellness supplements certified by Ayurvedic experts.",
+            ...(data.seo || {})
+          }
+        });
       }
     } catch (e) {
       console.error("Error fetching database:", e);

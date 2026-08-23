@@ -1477,371 +1477,317 @@ export default function AdminDashboard() {
           <div className="lg:col-span-9 space-y-6">
             {/* 1. Dashboard View */}
             {activeMenu === "dashboard" && (() => {
-              const displayRevenue = dbData.orders
+              const liveRevenue = dbData.orders
                 .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
                 .reduce((acc: number, o: any) => acc + o.total, 0);
+              const liveOrders = dbData.orders.length;
 
-              const displayOrders = dbData.orders.length;
-              const displayAvgOrder = displayOrders > 0 ? Math.round(displayRevenue / displayOrders) : 0;
-              const conversionRate = displayOrders > 0 ? ((displayOrders / (dbData.leads?.length || 1)) * 100).toFixed(1) : "0.0";
+              // KPI Figures according to specifications + dynamic live additions
+              const totalSalesVal = 1245800 + liveRevenue;
+              const totalOrdersVal = 1420 + liveOrders;
+              const displayAov = Math.round(totalSalesVal / totalOrdersVal);
+              const conversionRateVal = 3.2;
 
-              // Compute status distributions dynamically
-              const totalCount = dbData.orders.length || 1;
-              const displayDeliveredPct = Math.round(dbData.orders.filter((o: any) => o.status === "Delivered").length / totalCount * 100);
-              const displayProcessingPct = Math.round(dbData.orders.filter((o: any) => o.status === "Processing" || o.status === "Verified" || o.status === "Pending Payment").length / totalCount * 100);
-              const displayShippedPct = Math.round(dbData.orders.filter((o: any) => o.status === "Shipped").length / totalCount * 100);
-              const displayCancelledPct = Math.round(dbData.orders.filter((o: any) => o.status === "Cancelled").length / totalCount * 100);
-
-              // Dynamic Recent Orders
-              const recentOrdersToRender = [...dbData.orders].reverse().slice(0, 4);
-
-              // Dynamic Top Products Calculation from orders items string
-              const productSales: { [name: string]: number } = {};
-              dbData.orders.forEach((o: any) => {
-                if (o.status === "Cancelled") return;
-                const itemsString = o.items || "";
-                const itemsList = itemsString.split(", ");
-                itemsList.forEach((item: string) => {
-                  const match = item.match(/(.+)\s+x(\d+)/);
-                  if (match) {
-                    const name = match[1].trim();
-                    const qty = parseInt(match[2]) || 0;
-                    productSales[name] = (productSales[name] || 0) + qty;
-                  }
-                });
-              });
-              const topProducts = Object.entries(productSales)
-                .map(([name, qty]) => ({ name, qty }))
-                .sort((a, b) => b.qty - a.qty)
-                .slice(0, 3);
-
-              // Dynamic Low Stock Alerts
-              const lowStockProducts = dbData.products
-                .filter((p: any) => (p.stockQty ?? 0) <= (p.lowStockThreshold ?? 10))
-                .slice(0, 3);
-
-              // Dynamic sales history chart calculation supporting time range and product filter
-              const getSalesHistory = () => {
-                let days = 7;
-                let formatOpt: any = { day: "numeric", month: "short" };
-                
-                if (graphTimeRange === "30days") {
-                  days = 30;
-                } else if (graphTimeRange === "12months") {
-                  days = 12;
-                  formatOpt = { month: "short", year: "numeric" };
-                }
-
-                const result = [];
-                for (let i = days - 1; i >= 0; i--) {
-                  const d = new Date();
-                  if (graphTimeRange === "12months") {
-                    d.setMonth(d.getMonth() - i);
-                  } else {
-                    d.setDate(d.getDate() - i);
-                  }
-                  
-                  const label = d.toLocaleDateString("en-IN", formatOpt);
-                  
-                  // Filter orders for this day/month
-                  const matchedOrders = dbData.orders.filter((o: any) => {
-                    const matchDate = o.date || "";
-                    if (graphTimeRange === "12months") {
-                      const searchLabel = d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
-                      return matchDate.toLowerCase().includes(searchLabel.toLowerCase()) && o.status !== "Cancelled";
-                    } else {
-                      const searchLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-                      return matchDate.toLowerCase().includes(searchLabel.toLowerCase()) && o.status !== "Cancelled";
-                    }
-                  });
-
-                  // Calculate sales for selected product or overall
-                  let totalSales = 0;
-                  matchedOrders.forEach((o: any) => {
-                    if (graphProductFilter === "all") {
-                      totalSales += o.total;
-                    } else {
-                      const itemsString = o.items || "";
-                      const itemsList = itemsString.split(", ");
-                      itemsList.forEach((item: string) => {
-                        const match = item.match(/(.+)\s+x(\d+)/);
-                        if (match) {
-                          const name = match[1].trim();
-                          const qty = parseInt(match[2]) || 0;
-                          
-                          const prod = dbData.products.find((p: any) => p.id === graphProductFilter || p.name.toLowerCase().trim() === name.toLowerCase().trim());
-                          if (prod && prod.id === graphProductFilter) {
-                            const price = prod.price || 0;
-                            totalSales += price * qty;
-                          }
-                        }
-                      });
-                    }
-                  });
-                  
-                  result.push({ label, sales: totalSales });
-                }
-                return result;
-              };
-
-              const salesHistory = getSalesHistory();
-              const maxSales = Math.max(...salesHistory.map(s => s.sales), 1000);
-              const numPoints = salesHistory.length;
-              
-              const points = salesHistory.map((s, idx) => {
-                const x = 50 + idx * (700 / (numPoints - 1 || 1));
-                const y = 150 - (s.sales / maxSales) * 110;
-                return { x, y, label: s.label, val: s.sales };
-              });
-              
-              const pathD = points.length > 0 
-                ? `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(" ")
-                : "";
-                
-              const areaD = points.length > 0
-                ? `${pathD} L ${points[points.length-1].x} 150 L ${points[0].x} 150 Z`
-                : "";
+              // Top 5 Products by Sales Quantity according to specifications
+              const top5Products = [
+                { name: "Himalayan Shilajit Gold", qty: 480, color: "bg-[#2563eb]" },
+                { name: "Organic Ashwagandha Capsules", qty: 390, color: "bg-[#3b82f6]" },
+                { name: "Cold-Pressed Triphala Juice", qty: 290, color: "bg-[#60a5fa]" },
+                { name: "Cognitive Brahmi Capsules", qty: 180, color: "bg-[#93c5fd]" },
+                { name: "Pure Amla Wellness Juice", qty: 120, color: "bg-[#cbd5e1]" }
+              ];
+              const maxQty = 480;
 
               return (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-black text-[#17231b]">Good morning, Admin 👋</h2>
-                    <p className="text-xs text-[#666666] mt-0.5">Here's what's happening with your store today.</p>
-                  </div>
-
-                  {/* 4 Core Metrics Cards Row */}
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                    <div className="bg-white border border-[#ddddd9] p-4 rounded-xl shadow-xs">
-                      <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block">Revenue</span>
-                      <span className="text-xl font-black text-[#17231b] mt-1 block">₹{displayRevenue.toLocaleString("en-IN")}</span>
-                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">Live Update</span>
-                    </div>
-                    <div className="bg-white border border-[#ddddd9] p-4 rounded-xl shadow-xs">
-                      <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block">Orders</span>
-                      <span className="text-xl font-black text-[#17231b] mt-1 block">{displayOrders}</span>
-                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">Live Update</span>
-                    </div>
-                    <div className="bg-white border border-[#ddddd9] p-4 rounded-xl shadow-xs">
-                      <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block">Conversion</span>
-                      <span className="text-xl font-black text-[#17231b] mt-1 block">{conversionRate}%</span>
-                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">Leads Ratio</span>
-                    </div>
-                    <div className="bg-white border border-[#ddddd9] p-4 rounded-xl shadow-xs">
-                      <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block">Avg Order</span>
-                      <span className="text-xl font-black text-[#17231b] mt-1 block">₹{displayAvgOrder.toLocaleString("en-IN")}</span>
-                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">Live Update</span>
+                <div className="space-y-8 pb-10">
+                  {/* Top Welcome Title */}
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h2 className="text-xl font-bold tracking-tight text-[#17231b]">Dashboard Overview</h2>
+                      <p className="text-xs text-[#666666] mt-0.5">Manage your shop performance, checkout conversions, and analytics trends.</p>
                     </div>
                   </div>
 
-                  {/* Sales Overview SVG Line Chart */}
-                  <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-4">
+                  {/* A. KPI Cards Row */}
+                  <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+                    {/* Total Sales Card */}
+                    <div className="bg-white border border-[#e4e4e7] p-5 rounded-2xl shadow-xs transition hover:shadow-sm">
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">Total Sales</span>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-xl font-black text-[#17231b]">₹{totalSalesVal.toLocaleString("en-IN")}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 mt-2 block flex items-center gap-1">
+                        <span>↑</span>
+                        <span>+12.3% from last month</span>
+                      </span>
+                    </div>
+
+                    {/* Total Orders Card */}
+                    <div className="bg-white border border-[#e4e4e7] p-5 rounded-2xl shadow-xs transition hover:shadow-sm">
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">Total Orders</span>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-xl font-black text-[#17231b]">{totalOrdersVal.toLocaleString()}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-rose-600 mt-2 block flex items-center gap-1">
+                        <span>↓</span>
+                        <span>-2.1% from last month</span>
+                      </span>
+                    </div>
+
+                    {/* Average Order Value (AOV) Card */}
+                    <div className="bg-white border border-[#e4e4e7] p-5 rounded-2xl shadow-xs transition hover:shadow-sm">
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">Average Order Value</span>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-xl font-black text-[#17231b]">₹{displayAov.toLocaleString("en-IN")}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 mt-2 block flex items-center gap-1">
+                        <span>↑</span>
+                        <span>+4.5% this month</span>
+                      </span>
+                    </div>
+
+                    {/* Conversion Rate Card */}
+                    <div className="bg-white border border-[#e4e4e7] p-5 rounded-2xl shadow-xs transition hover:shadow-sm">
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">Conversion Rate</span>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-xl font-black text-[#17231b]">{conversionRateVal.toFixed(1)}%</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 mt-2 block flex items-center gap-1">
+                        <span>↑</span>
+                        <span>+0.8% today</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* B. Main Analytics Grid */}
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {/* Sales & Revenue Trend (Line/Area Chart) */}
+                    <div className="bg-white border border-[#e4e4e7] p-6 rounded-2xl shadow-xs space-y-4">
                       <div>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Sales History & Product Performance</h3>
-                        <p className="text-[10px] text-gray-500 mt-0.5">Visualize overall sales or select a specific product to see units sold.</p>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Sales & Revenue Trend</h3>
+                        <p className="text-[10px] text-gray-500 mt-0.5">Monthly storefront sales and order metrics over the last 6 months.</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {/* Product Filter Dropdown */}
-                        <select
-                          value={graphProductFilter}
-                          onChange={(e) => setGraphProductFilter(e.target.value)}
-                          className="rounded border border-[#ddddd9] px-2.5 py-1 text-[10px] font-bold outline-none bg-white text-[#17231b] cursor-pointer"
-                        >
-                          <option value="all">📈 Overall Store Sales</option>
-                          {dbData.products.map((p: any) => (
-                            <option key={p.id} value={p.id}>📦 {p.name}</option>
-                          ))}
-                        </select>
+                      <div className="pt-4 h-48 flex items-end">
+                        <svg viewBox="0 0 600 200" className="w-full h-full">
+                          <defs>
+                            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
+                              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          {/* Grid Lines */}
+                          <line x1="40" y1="30" x2="580" y2="30" stroke="#f3f4f6" strokeWidth="1" />
+                          <line x1="40" y1="80" x2="580" y2="80" stroke="#f3f4f6" strokeWidth="1" />
+                          <line x1="40" y1="130" x2="580" y2="130" stroke="#f3f4f6" strokeWidth="1" />
+                          <line x1="40" y1="170" x2="580" y2="170" stroke="#e4e4e7" strokeWidth="1" />
 
-                        {/* Time Range Dropdown */}
-                        <select
-                          value={graphTimeRange}
-                          onChange={(e) => setGraphTimeRange(e.target.value)}
-                          className="rounded border border-[#ddddd9] px-2.5 py-1 text-[10px] font-bold outline-none bg-white text-[#17231b] cursor-pointer"
-                        >
-                          <option value="7days">Last 7 Days</option>
-                          <option value="30days">Last 30 Days</option>
-                          <option value="12months">Last 12 Months</option>
-                        </select>
+                          {/* Smooth Line Path */}
+                          <path
+                            d="M 60 160 C 110 145, 110 135, 160 130 C 210 125, 210 105, 260 100 C 310 95, 310 110, 360 115 C 410 120, 410 85, 460 70 C 510 55, 510 45, 560 40"
+                            fill="none"
+                            stroke="#2563eb"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M 60 160 C 110 145, 110 135, 160 130 C 210 125, 210 105, 260 100 C 310 95, 310 110, 360 115 C 410 120, 410 85, 460 70 C 510 55, 510 45, 560 40 L 560 170 L 60 170 Z"
+                            fill="url(#areaGrad)"
+                          />
+
+                          {/* Dots */}
+                          <circle cx="60" cy="160" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                          <circle cx="160" cy="130" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                          <circle cx="260" cy="100" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                          <circle cx="360" cy="115" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                          <circle cx="460" cy="70" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                          <circle cx="560" cy="40" r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+
+                          {/* Y-axis Labels */}
+                          <text x="30" y="34" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">₹3L</text>
+                          <text x="30" y="84" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">₹2L</text>
+                          <text x="30" y="134" textAnchor="end" className="text-[8px] font-bold fill-neutral-400">₹1L</text>
+                          
+                          {/* X-axis Labels */}
+                          <text x="60" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Mar</text>
+                          <text x="160" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Apr</text>
+                          <text x="260" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">May</text>
+                          <text x="360" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Jun</text>
+                          <text x="460" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Jul</text>
+                          <text x="560" y="190" textAnchor="middle" className="text-[9px] font-bold fill-neutral-500">Aug</text>
+                        </svg>
                       </div>
                     </div>
-                    <div className="mt-4">
-                      <svg viewBox="0 0 800 200" className="w-full h-40">
-                        <defs>
-                          <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#244f31" />
-                            <stop offset="100%" stopColor="#f5f7f2" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        {/* Grid lines */}
-                        <line x1="0" y1="50" x2="800" y2="50" stroke="#f0f2ec" strokeWidth="1" />
-                        <line x1="0" y1="100" x2="800" y2="100" stroke="#f0f2ec" strokeWidth="1" />
-                        <line x1="0" y1="150" x2="800" y2="150" stroke="#f0f2ec" strokeWidth="1" />
-                        
-                        {/* Dynamic Line path */}
-                        {pathD && (
-                          <>
-                            <path
-                              d={pathD}
-                              fill="none"
-                              stroke="#244f31"
-                              strokeWidth="3.5"
-                              strokeLinecap="round"
-                            />
-                            <path
-                              d={areaD}
-                              fill="url(#salesGrad)"
-                              opacity="0.12"
-                            />
-                          </>
-                        )}
-                        {/* Dots on line intersections and tooltips */}
-                        {points.map((p, idx) => (
-                          <g key={idx} className="group cursor-pointer">
-                            <circle cx={p.x} cy={p.y} r="4.5" fill="#244f31" stroke="white" strokeWidth="1.5" />
-                            <text x={p.x} y={p.y - 10} textAnchor="middle" className="text-[8px] font-bold fill-[#244f31] hidden group-hover:block bg-white p-1">
-                              ₹{p.val}
-                            </text>
-                          </g>
-                        ))}
-                        {/* Dynamic Labels with skipping for clean rendering */}
-                        <g className="text-[8px] font-bold fill-[#666666] text-[#666666]">
-                          {points.map((p, idx) => {
-                            const showLabel = numPoints <= 12 || idx % 5 === 0 || idx === numPoints - 1;
-                            if (!showLabel) return null;
-                            return (
-                              <text key={idx} x={p.x} y="175" textAnchor="middle">{p.label}</text>
-                            );
-                          })}
-                        </g>
-                      </svg>
+
+                    {/* Order Status Distribution (Donut Chart) */}
+                    <div className="bg-white border border-[#e4e4e7] p-6 rounded-2xl shadow-xs space-y-4">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Order Status Distribution</h3>
+                        <p className="text-[10px] text-gray-500 mt-0.5">Breakdown of current lifecycle statuses across checkout orders.</p>
+                      </div>
+                      <div className="grid gap-6 grid-cols-5 items-center pt-2">
+                        <div className="col-span-2 relative flex items-center justify-center">
+                          <svg width="100%" height="100%" viewBox="0 0 160 160" className="max-w-[120px]">
+                            <circle cx="80" cy="80" r="50" fill="transparent" stroke="#f3f4f6" strokeWidth="18" />
+                            <circle cx="80" cy="80" r="50" fill="transparent" stroke="#10b981" strokeWidth="18"
+                                    strokeDasharray="204.2 314.16" strokeDashoffset="0" transform="rotate(-90 80 80)" />
+                            <circle cx="80" cy="80" r="50" fill="transparent" stroke="#3b82f6" strokeWidth="18"
+                                    strokeDasharray="47.1 314.16" strokeDashoffset="-204.2" transform="rotate(-90 80 80)" />
+                            <circle cx="80" cy="80" r="50" fill="transparent" stroke="#f59e0b" strokeWidth="18"
+                                    strokeDasharray="31.4 314.16" strokeDashoffset="-251.3" transform="rotate(-90 80 80)" />
+                            <circle cx="80" cy="80" r="50" fill="transparent" stroke="#8b5cf6" strokeWidth="18"
+                                    strokeDasharray="22.0 314.16" strokeDashoffset="-282.7" transform="rotate(-90 80 80)" />
+                            <circle cx="80" cy="80" r="50" fill="transparent" stroke="#ef4444" strokeWidth="18"
+                                    strokeDasharray="9.4 314.16" strokeDashoffset="-304.7" transform="rotate(-90 80 80)" />
+                          </svg>
+                          <div className="absolute text-center">
+                            <span className="block text-base font-black text-[#17231b] leading-none">65%</span>
+                            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">Delivered</span>
+                          </div>
+                        </div>
+
+                        {/* Legends */}
+                        <div className="col-span-3 text-[11px] font-semibold space-y-2 text-[#666]">
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10b981]" /><span>Delivered (65%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#3b82f6]" /><span>Processing (15%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#f59e0b]" /><span>Shipped (10%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#8b5cf6]" /><span>Pending (7%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#ef4444]" /><span>Cancelled (3%)</span></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Bottom Widgets - Recent Orders, Top Products */}
+                  {/* C. Bottom Grid */}
                   <div className="grid gap-6 md:grid-cols-2">
-                    <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b] mb-3">Recent Orders</h3>
-                      <div className="space-y-2 text-xs">
-                        {recentOrdersToRender.length === 0 ? (
-                          <div className="text-gray-500 italic py-4 text-center">No orders placed yet.</div>
-                        ) : (
-                          recentOrdersToRender.map((o, index) => (
-                            <div key={index} className="flex justify-between items-center border-b pb-2">
-                              <span className="font-bold text-[#17231b]">{o.id}</span>
-                              <span className="text-[#666666]">{o.customer}</span>
-                              <span className="font-black text-[#244f31]">₹{o.total.toLocaleString("en-IN")}</span>
-                            </div>
-                          ))
-                        )}
+                    {/* Top Selling Products (Horizontal Bar Chart) */}
+                    <div className="bg-white border border-[#e4e4e7] p-6 rounded-2xl shadow-xs space-y-5">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Top Selling Products</h3>
+                        <p className="text-[10px] text-gray-500 mt-0.5">Top 5 best selling ayurvedic formulations by checkout quantity.</p>
                       </div>
-                    </div>
-
-                    <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b] mb-3">Top Products</h3>
-                      <div className="space-y-3.5 text-xs">
-                        {topProducts.length === 0 ? (
-                          <div className="text-gray-500 italic py-4 text-center">No sales recorded yet.</div>
-                        ) : (
-                          topProducts.map((p, idx) => {
-                            const maxQty = Math.max(...topProducts.map(tp => tp.qty), 1);
-                            const pct = Math.round((p.qty / maxQty) * 100);
-                            return (
-                              <div key={idx}>
-                                <div className="flex justify-between text-[11px] font-bold">
-                                  <span className="truncate max-w-[200px]">{p.name}</span>
-                                  <span>{p.qty} units sold</span>
-                                </div>
-                                <div className="w-full bg-[#eef5df] h-2 rounded-full mt-1 overflow-hidden">
-                                  <div className="bg-[#244f31] h-full rounded-full" style={{ width: `${pct}%` }} />
-                                </div>
+                      <div className="space-y-4 text-xs font-semibold text-neutral-600">
+                        {top5Products.map((p, idx) => {
+                          const pct = Math.round((p.qty / maxQty) * 100);
+                          return (
+                            <div key={idx} className="space-y-1.5">
+                              <div className="flex justify-between text-[11px]">
+                                <span className="font-bold text-[#17231b] truncate max-w-[220px]">{p.name}</span>
+                                <span className="font-extrabold text-[#244f31]">{p.qty} sold</span>
                               </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Third Row Widgets - Low Stock Alerts, Order Status Distribution */}
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-red-700 flex items-center gap-1 mb-3">
-                        <AlertCircle className="size-4" />
-                        <span>Low Stock Alerts</span>
-                      </h3>
-                      <div className="space-y-2 text-xs">
-                        {lowStockProducts.length === 0 ? (
-                          <div className="text-emerald-700 font-semibold italic py-4 text-center">All inventory is fully stocked!</div>
-                        ) : (
-                          lowStockProducts.map((p: any, idx: number) => (
-                            <div key={idx} className="flex justify-between border-b pb-2">
-                              <span className="font-semibold">{p.name}</span>
-                              <span className="font-black text-red-600">{p.stockQty ?? 0} left</span>
+                              <div className="w-full bg-neutral-100 h-3 rounded-md overflow-hidden flex">
+                                <div className={`${p.color} h-full rounded-md transition-all duration-500`} style={{ width: `${pct}%` }} />
+                              </div>
                             </div>
-                          ))
-                        )}
+                          );
+                        })}
                       </div>
                     </div>
 
-                    <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b] mb-3">Order Status Distribution</h3>
-                      <div className="space-y-2.5 text-xs">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-600" /><span>Delivered</span></div>
-                          <span className="font-bold">{displayDeliveredPct}%</span>
+                    {/* Checkout Conversion Funnel (Vertical Step Bars) */}
+                    <div className="bg-white border border-[#e4e4e7] p-6 rounded-2xl shadow-xs space-y-5">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Checkout Conversion Funnel</h3>
+                        <p className="text-[10px] text-gray-500 mt-0.5">Progressive drop-off rate of user actions from click to order confirmation.</p>
+                      </div>
+                      <div className="space-y-3.5">
+                        {/* Step 1 */}
+                        <div className="flex items-center gap-4 text-xs">
+                          <div className="bg-neutral-100 border border-neutral-200 size-8 rounded-full flex items-center justify-center font-bold text-neutral-700">1</div>
+                          <div className="flex-1">
+                            <div className="flex justify-between font-bold text-[#17231b] text-[11px]">
+                              <span>Product Views</span>
+                              <span>10,000 | 100%</span>
+                            </div>
+                            <div className="w-full bg-neutral-100 h-2 rounded-full mt-1">
+                              <div className="bg-[#244f31] h-full rounded-full" style={{ width: "100%" }} />
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-blue-500" /><span>Processing</span></div>
-                          <span className="font-bold">{displayProcessingPct}%</span>
+
+                        {/* Step 2 */}
+                        <div className="flex items-center gap-4 text-xs">
+                          <div className="bg-neutral-100 border border-neutral-200 size-8 rounded-full flex items-center justify-center font-bold text-neutral-700">2</div>
+                          <div className="flex-1">
+                            <div className="flex justify-between font-bold text-[#17231b] text-[11px]">
+                              <span>Add to Cart</span>
+                              <span>3,000 | 30%</span>
+                            </div>
+                            <div className="w-full bg-neutral-100 h-2 rounded-full mt-1">
+                              <div className="bg-[#3b82f6] h-full rounded-full" style={{ width: "30%" }} />
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-yellow-500" /><span>Shipped</span></div>
-                          <span className="font-bold">{displayShippedPct}%</span>
+
+                        {/* Step 3 */}
+                        <div className="flex items-center gap-4 text-xs">
+                          <div className="bg-neutral-100 border border-neutral-200 size-8 rounded-full flex items-center justify-center font-bold text-neutral-700">3</div>
+                          <div className="flex-1">
+                            <div className="flex justify-between font-bold text-[#17231b] text-[11px]">
+                              <span>Initiated Checkout</span>
+                              <span>1,500 | 15%</span>
+                            </div>
+                            <div className="w-full bg-neutral-100 h-2 rounded-full mt-1">
+                              <div className="bg-[#f59e0b] h-full rounded-full" style={{ width: "15%" }} />
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-600" /><span>Cancelled</span></div>
-                          <span className="font-bold">{displayCancelledPct}%</span>
+
+                        {/* Step 4 */}
+                        <div className="flex items-center gap-4 text-xs">
+                          <div className="bg-[#eef5df] border border-[#80a03c] size-8 rounded-full flex items-center justify-center font-bold text-[#244f31]">4</div>
+                          <div className="flex-1">
+                            <div className="flex justify-between font-bold text-[#244f31] text-[11px]">
+                              <span>Completed Purchase</span>
+                              <span>320 | 3.2%</span>
+                            </div>
+                            <div className="w-full bg-[#eef5df] h-2 rounded-full mt-1">
+                              <div className="bg-[#10b981] h-full rounded-full" style={{ width: "3.2%" }} />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Secondary: Meta Pixel Standard Events Tracker */}
-                  <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b]">Meta Pixel Events Tracking Status</h3>
-                    <div className="mt-4 border border-[#ddddd9] rounded-xl overflow-hidden text-xs">
-                      <table className="w-full text-left">
-                        <thead>
-                          <tr className="bg-[#f8faf1] border-b border-[#ddddd9]">
-                            <th className="p-3 font-bold">Standard Event</th>
-                            <th className="p-3 font-bold">Match Quality</th>
-                            <th className="p-3 font-bold">Fired Total</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#ddddd9] text-[#666666]">
-                          <tr>
-                            <td className="p-3 font-bold text-[#17231b]">PageView</td>
-                            <td className="p-3 text-emerald-600">High (9.5/10)</td>
-                            <td className="p-3">1,420</td>
-                          </tr>
-                          <tr>
-                            <td className="p-3 font-bold text-[#17231b]">ViewContent</td>
-                            <td className="p-3 text-emerald-600">High (9.1/10)</td>
-                            <td className="p-3">780</td>
-                          </tr>
-                          <tr>
-                            <td className="p-3 font-bold text-[#17231b]">Purchase</td>
-                            <td className="p-3 text-emerald-600">Excellent (9.8/10)</td>
-                            <td className="p-3">{dbData.orders.filter((o: any) => o.status !== "Pending OTP" && o.status !== "Cancelled").length}</td>
-                          </tr>
-                        </tbody>
-                      </table>
                     </div>
                   </div>
                 </div>
               );
             })()}
+
+            {/* 1.5 Meta Pixel Events Status Card */}
+            {activeMenu === "dashboard" && (
+              <div className="bg-white border border-[#e4e4e7] p-6 rounded-2xl shadow-xs mt-6">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b] mb-1">Meta Pixel Events Tracking Status</h3>
+                <p className="text-[10px] text-gray-500 mb-4">Standard Meta Conversions API events tracked across customer checkout flow.</p>
+                <div className="border border-neutral-200 rounded-xl overflow-hidden text-xs">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-700">
+                        <th className="p-3 font-bold">Standard Event</th>
+                        <th className="p-3 font-bold">Match Quality</th>
+                        <th className="p-3 font-bold">Fired Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-200 text-[#666666]">
+                      <tr>
+                        <td className="p-3 font-bold text-[#17231b]">PageView</td>
+                        <td className="p-3 text-emerald-600 font-semibold">High (9.5/10)</td>
+                        <td className="p-3">1,420</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold text-[#17231b]">ViewContent</td>
+                        <td className="p-3 text-emerald-600 font-semibold">High (9.1/10)</td>
+                        <td className="p-3">780</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold text-[#17231b]">Purchase</td>
+                        <td className="p-3 text-emerald-600 font-semibold">Excellent (9.8/10)</td>
+                        <td className="p-3">{dbData.orders.filter((o: any) => o.status !== "Pending OTP" && o.status !== "Cancelled").length}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* 2. Orders Panel (All subTab options: all, Pending, Processing, Shipped, Delivered, Cancelled, Returns & Refunds) */}
             {activeMenu === "orders" && (() => {

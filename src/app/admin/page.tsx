@@ -110,6 +110,41 @@ export default function AdminDashboard() {
     setAuthChecked(true);
   }, []);
 
+  // 10 minutes inactivity auto-logout for Admin session
+  useEffect(() => {
+    if (!isAdminLoggedIn) return;
+
+    let timeoutId: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      // 10 minutes = 600,000 milliseconds
+      timeoutId = setTimeout(() => {
+        handleAdminLogout();
+        alert("Your admin session has expired due to 10 minutes of inactivity. Please log in again.");
+      }, 600000);
+    };
+
+    // Initialize timer
+    resetTimer();
+
+    // Listen for common user interactions
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart"];
+    const handleActivity = () => resetTimer();
+
+    events.forEach((event) => {
+      window.addEventListener(event, handleActivity);
+    });
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach((event) => {
+        window.removeEventListener(event, handleActivity);
+      });
+    };
+  }, [isAdminLoggedIn]);
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginLoading(true);

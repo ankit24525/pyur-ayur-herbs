@@ -15,6 +15,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Email, OTP code, and new password are required." }, { status: 400 });
     }
 
+    // Server-side password strength check
+    if (
+      newPassword.length < 8 ||
+      !/[A-Z]/.test(newPassword) ||
+      !/[a-z]/.test(newPassword) ||
+      !/[0-9]/.test(newPassword) ||
+      !/[!@#$%^&*(),.?\":{}|<>]/.test(newPassword)
+    ) {
+      return NextResponse.json({
+        success: false,
+        error: "Password must be at least 8 characters and contain uppercase, lowercase, numbers, and special characters."
+      }, { status: 400 });
+    }
+
     const db = await readDB();
     
     // Verify OTP matches

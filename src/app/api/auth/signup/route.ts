@@ -18,6 +18,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Name, email, and password are required." }, { status: 400 });
     }
 
+    // Server-side password strength check
+    if (
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[a-z]/.test(password) ||
+      !/[0-9]/.test(password) ||
+      !/[!@#$%^&*(),.?\":{}|<>]/.test(password)
+    ) {
+      return NextResponse.json({
+        success: false,
+        error: "Password must be at least 8 characters and contain uppercase, lowercase, numbers, and special characters."
+      }, { status: 400 });
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json({ success: false, error: "Please enter a valid email address." }, { status: 400 });

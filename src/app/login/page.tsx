@@ -6,6 +6,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { User, Mail, Lock, Phone, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 
+const isPasswordStrong = (password: string) => {
+  if (password.length < 8) return { valid: false, error: "Password must be at least 8 characters long." };
+  if (!/[A-Z]/.test(password)) return { valid: false, error: "Password must contain at least one uppercase letter (A-Z)." };
+  if (!/[a-z]/.test(password)) return { valid: false, error: "Password must contain at least one lowercase letter (a-z)." };
+  if (!/[0-9]/.test(password)) return { valid: false, error: "Password must contain at least one digit (0-9)." };
+  if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) return { valid: false, error: "Password must contain at least one special character (e.g. !@#$%^&*)." };
+  return { valid: true };
+};
+
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -79,6 +88,15 @@ function LoginFormContent() {
       const phoneRegex = /^[0-9]{10}$/;
       if (!phoneRegex.test(formData.phone)) {
         setError("Please enter a valid 10-digit mobile number.");
+        return;
+      }
+    }
+
+    // Validate password strength for Sign Up and Reset Password flow
+    if (!isLogin || isForgotPassword) {
+      const strength = isPasswordStrong(formData.password);
+      if (!strength.valid) {
+        setError(strength.error || "Password is not strong enough.");
         return;
       }
     }

@@ -3002,26 +3002,35 @@ export default function AdminDashboard() {
                 </div>
 
                 {subTab === "all" && (
-                  <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs">
+                  <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="bg-[#f8faf1] border-b border-[#ddddd9]">
+                        <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
                           <th className="p-3 font-bold">Name</th>
                           <th className="p-3 font-bold">Contact Email</th>
-                          <th className="p-3 font-bold">Type Segment</th>
+                          <th className="p-3 font-bold">Phone</th>
+                          <th className="p-3 font-bold">Registered Date</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#ddddd9]">
-                        <tr>
-                          <td className="p-3 font-bold">Riya Mehta</td>
-                          <td className="p-3">riya@gmail.com</td>
-                          <td className="p-3 font-bold text-emerald-600">VIP Customer</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 font-bold">Aarav Shah</td>
-                          <td className="p-3">aarav@yahoo.com</td>
-                          <td className="p-3 font-semibold text-[#666666]">Regular</td>
-                        </tr>
+                        {!dbData.users || dbData.users.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="p-8 text-center text-[#666] font-semibold italic bg-white">
+                              No registered customers found in the database.
+                            </td>
+                          </tr>
+                        ) : (
+                          dbData.users.map((u: any) => (
+                            <tr key={u.id} className="hover:bg-[#f8faf1]/20 transition-colors">
+                              <td className="p-3 font-bold text-[#17231b]">{u.name}</td>
+                              <td className="p-3 text-neutral-600">{u.email}</td>
+                              <td className="p-3 text-neutral-600">{u.phone || "—"}</td>
+                              <td className="p-3 text-neutral-500">
+                                {u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

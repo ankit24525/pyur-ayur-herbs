@@ -589,7 +589,7 @@ function CheckoutForm() {
                   className="accent-[#244f31]"
                 />
                 <div>
-                  <span className="block text-xs font-bold text-[#17231b]">UPI, Cards, Net Banking</span>
+                  <span className="block text-xs font-bold text-[#17231b]">Google Pay, PhonePe, Cards, UPI (Online Payment)</span>
                   <span className="text-[10px] font-semibold text-[#80a03c]">Get {settings.prepaidDiscount}% Instant Discount</span>
                 </div>
               </div>

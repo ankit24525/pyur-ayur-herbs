@@ -1475,40 +1475,86 @@ export default function AdminDashboard() {
           <div className="lg:col-span-9 space-y-6">
             {/* 1. Dashboard View */}
             {activeMenu === "dashboard" && (() => {
-              const baselineRevenue = 184520;
-              const baselineOrders = 126;
-              
-              const currentOrdersTotal = dbData.orders
+              const displayRevenue = dbData.orders
                 .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
                 .reduce((acc: number, o: any) => acc + o.total, 0);
 
-              const displayRevenue = baselineRevenue + currentOrdersTotal;
-              const displayOrders = baselineOrders + dbData.orders.length;
-              const displayAvgOrder = Math.round(displayRevenue / displayOrders);
+              const displayOrders = dbData.orders.length;
+              const displayAvgOrder = displayOrders > 0 ? Math.round(displayRevenue / displayOrders) : 0;
+              const conversionRate = displayOrders > 0 ? ((displayOrders / (dbData.leads?.length || 1)) * 100).toFixed(1) : "0.0";
 
-              // Compute status distributions
-              const deliveredCount = dbData.orders.filter((o: any) => o.status === "Delivered").length;
-              const processingCount = dbData.orders.filter((o: any) => o.status === "Processing" || o.status === "Verified").length;
-              const shippedCount = dbData.orders.filter((o: any) => o.status === "Shipped").length;
-              const cancelledCount = dbData.orders.filter((o: any) => o.status === "Cancelled").length;
+              // Compute status distributions dynamically
+              const totalCount = dbData.orders.length || 1;
+              const displayDeliveredPct = Math.round(dbData.orders.filter((o: any) => o.status === "Delivered").length / totalCount * 100);
+              const displayProcessingPct = Math.round(dbData.orders.filter((o: any) => o.status === "Processing" || o.status === "Verified" || o.status === "Pending Payment").length / totalCount * 100);
+              const displayShippedPct = Math.round(dbData.orders.filter((o: any) => o.status === "Shipped").length / totalCount * 100);
+              const displayCancelledPct = Math.round(dbData.orders.filter((o: any) => o.status === "Cancelled").length / totalCount * 100);
 
-              const displayDeliveredPct = Math.round(((82 * baselineOrders / 100) + deliveredCount) / displayOrders * 100);
-              const displayProcessingPct = Math.round(((9 * baselineOrders / 100) + processingCount) / displayOrders * 100);
-              const displayShippedPct = Math.round(((6 * baselineOrders / 100) + shippedCount) / displayOrders * 100);
-              const displayCancelledPct = Math.round(((3 * baselineOrders / 100) + cancelledCount) / displayOrders * 100);
+              // Dynamic Recent Orders
+              const recentOrdersToRender = [...dbData.orders].reverse().slice(0, 4);
 
-              // Dynamic Recent Orders combined with mockup default
-              const recentOrdersList = [...dbData.orders].reverse().slice(0, 4);
-              const defaultRecentOrders = [
-                { id: "#KP10231", customer: "Ankit", total: 1299 },
-                { id: "#KP10232", customer: "Rahul", total: 899 },
-                { id: "#KP10233", customer: "Priya", total: 1599 },
-                { id: "#KP10234", customer: "Amit", total: 699 }
-              ];
-              const recentOrdersToRender = [
-                ...recentOrdersList.map(o => ({ id: o.id.substring(0, 9), customer: o.customer, total: o.total })),
-                ...defaultRecentOrders
-              ].slice(0, 4);
+              // Dynamic Top Products Calculation from orders items string
+              const productSales: { [name: string]: number } = {};
+              dbData.orders.forEach((o: any) => {
+                if (o.status === "Cancelled") return;
+                const itemsString = o.items || "";
+                const itemsList = itemsString.split(", ");
+                itemsList.forEach((item: string) => {
+                  const match = item.match(/(.+)\s+x(\d+)/);
+                  if (match) {
+                    const name = match[1].trim();
+                    const qty = parseInt(match[2]) || 0;
+                    productSales[name] = (productSales[name] || 0) + qty;
+                  }
+                });
+              });
+              const topProducts = Object.entries(productSales)
+                .map(([name, qty]) => ({ name, qty }))
+                .sort((a, b) => b.qty - a.qty)
+                .slice(0, 3);
+
+              // Dynamic Low Stock Alerts
+              const lowStockProducts = dbData.products
+                .filter((p: any) => (p.stockQty ?? 0) <= (p.lowStockThreshold ?? 10))
+                .slice(0, 3);
+
+              // Last 7 days dynamic sales chart calculation
+              const getSalesHistory = () => {
+                const days = 7;
+                const result = [];
+                for (let i = days - 1; i >= 0; i--) {
+                  const d = new Date();
+                  d.setDate(d.getDate() - i);
+                  const label = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                  
+                  const daySales = dbData.orders
+                    .filter((o: any) => {
+                      const matchDate = o.date || "";
+                      return matchDate.toLowerCase().includes(label.toLowerCase()) && o.status !== "Cancelled";
+                    })
+                    .reduce((acc: number, o: any) => acc + o.total, 0);
+                  
+                  result.push({ label, sales: daySales });
+                }
+                return result;
+              };
+
+              const salesHistory = getSalesHistory();
+              const maxSales = Math.max(...salesHistory.map(s => s.sales), 1000);
+              
+              const points = salesHistory.map((s, idx) => {
+                const x = 50 + idx * (700 / 6);
+                const y = 150 - (s.sales / maxSales) * 110;
+                return { x, y, label: s.label, val: s.sales };
+              });
+              
+              const pathD = points.length > 0 
+                ? `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(" ")
+                : "";
+                
+              const areaD = points.length > 0
+                ? `${pathD} L ${points[points.length-1].x} 150 L ${points[0].x} 150 Z`
+                : "";
 
               return (
                 <div className="space-y-6">
@@ -1522,34 +1568,30 @@ export default function AdminDashboard() {
                     <div className="bg-white border border-[#ddddd9] p-4 rounded-xl shadow-xs">
                       <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block">Revenue</span>
                       <span className="text-xl font-black text-[#17231b] mt-1 block">₹{displayRevenue.toLocaleString("en-IN")}</span>
-                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">↑ 18.4%</span>
+                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">Live Update</span>
                     </div>
                     <div className="bg-white border border-[#ddddd9] p-4 rounded-xl shadow-xs">
                       <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block">Orders</span>
                       <span className="text-xl font-black text-[#17231b] mt-1 block">{displayOrders}</span>
-                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">↑ 12.2%</span>
+                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">Live Update</span>
                     </div>
                     <div className="bg-white border border-[#ddddd9] p-4 rounded-xl shadow-xs">
                       <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block">Conversion</span>
-                      <span className="text-xl font-black text-[#17231b] mt-1 block">4.8%</span>
-                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">↑ 0.8%</span>
+                      <span className="text-xl font-black text-[#17231b] mt-1 block">{conversionRate}%</span>
+                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">Leads Ratio</span>
                     </div>
                     <div className="bg-white border border-[#ddddd9] p-4 rounded-xl shadow-xs">
                       <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block">Avg Order</span>
                       <span className="text-xl font-black text-[#17231b] mt-1 block">₹{displayAvgOrder.toLocaleString("en-IN")}</span>
-                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">↑ 6.3%</span>
+                      <span className="text-[10px] font-bold text-emerald-600 mt-1 block">Live Update</span>
                     </div>
                   </div>
 
                   {/* Sales Overview SVG Line Chart */}
                   <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Sales Overview</h3>
-                      <select className="rounded border border-[#ddddd9] px-2 py-1 text-[10px] font-bold outline-none">
-                        <option>7 Days</option>
-                        <option>30 Days</option>
-                        <option>12 Months</option>
-                      </select>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b]">Sales History (Last 7 Days)</h3>
+                      <div className="text-[10px] font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded border border-[#80a03c]">Real-time</div>
                     </div>
                     <div className="mt-4">
                       <svg viewBox="0 0 800 200" className="w-full h-40">
@@ -1564,23 +1606,38 @@ export default function AdminDashboard() {
                         <line x1="0" y1="100" x2="800" y2="100" stroke="#f0f2ec" strokeWidth="1" />
                         <line x1="0" y1="150" x2="800" y2="150" stroke="#f0f2ec" strokeWidth="1" />
                         
-                        {/* Interactive Line path */}
-                        <path
-                          d="M 50 160 C 150 120, 200 135, 250 145 C 350 160, 400 90, 450 70 C 550 50, 650 120, 750 40"
-                          fill="none"
-                          stroke="#244f31"
-                          strokeWidth="3.5"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M 50 160 C 150 120, 200 135, 250 145 C 350 160, 400 90, 450 70 C 550 50, 650 120, 750 40 L 750 200 L 50 200 Z"
-                          fill="url(#salesGrad)"
-                          opacity="0.12"
-                        />
-                        {/* Dots on line intersections */}
-                        <circle cx="250" cy="145" r="4.5" fill="#244f31" stroke="white" strokeWidth="1.5" />
-                        <circle cx="450" cy="70" r="4.5" fill="#80a03c" stroke="white" strokeWidth="1.5" />
-                        <circle cx="750" cy="40" r="4.5" fill="#244f31" stroke="white" strokeWidth="1.5" />
+                        {/* Dynamic Line path */}
+                        {pathD && (
+                          <>
+                            <path
+                              d={pathD}
+                              fill="none"
+                              stroke="#244f31"
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                            />
+                            <path
+                              d={areaD}
+                              fill="url(#salesGrad)"
+                              opacity="0.12"
+                            />
+                          </>
+                        )}
+                        {/* Dots on line intersections and tooltips */}
+                        {points.map((p, idx) => (
+                          <g key={idx} className="group cursor-pointer">
+                            <circle cx={p.x} cy={p.y} r="4.5" fill="#244f31" stroke="white" strokeWidth="1.5" />
+                            <text x={p.x} y={p.y - 10} textAnchor="middle" className="text-[8px] font-bold fill-[#244f31] hidden group-hover:block bg-white p-1">
+                              ₹{p.val}
+                            </text>
+                          </g>
+                        ))}
+                        {/* Dynamic Labels */}
+                        <g className="text-[9px] font-bold fill-[#666666] text-[#666666]">
+                          {points.map((p, idx) => (
+                            <text key={idx} x={p.x} y="175" textAnchor="middle">{p.label}</text>
+                          ))}
+                        </g>
                       </svg>
                     </div>
                   </div>
@@ -1590,37 +1647,42 @@ export default function AdminDashboard() {
                     <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b] mb-3">Recent Orders</h3>
                       <div className="space-y-2 text-xs">
-                        {recentOrdersToRender.map((o, index) => (
-                          <div key={index} className="flex justify-between border-b pb-2">
-                            <span className="font-bold text-[#17231b]">{o.id}</span>
-                            <span className="text-[#666666]">{o.customer}</span>
-                            <span className="font-black text-[#244f31]">₹{o.total.toLocaleString("en-IN")}</span>
-                          </div>
-                        ))}
+                        {recentOrdersToRender.length === 0 ? (
+                          <div className="text-gray-500 italic py-4 text-center">No orders placed yet.</div>
+                        ) : (
+                          recentOrdersToRender.map((o, index) => (
+                            <div key={index} className="flex justify-between items-center border-b pb-2">
+                              <span className="font-bold text-[#17231b]">{o.id}</span>
+                              <span className="text-[#666666]">{o.customer}</span>
+                              <span className="font-black text-[#244f31]">₹{o.total.toLocaleString("en-IN")}</span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
 
                     <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-sm">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-[#17231b] mb-3">Top Products</h3>
                       <div className="space-y-3.5 text-xs">
-                        <div>
-                          <div className="flex justify-between text-[11px] font-bold">
-                            <span>Ashwagandha Capsules</span>
-                            <span>432 units sold</span>
-                          </div>
-                          <div className="w-full bg-[#eef5df] h-2 rounded-full mt-1 overflow-hidden">
-                            <div className="bg-[#244f31] h-full rounded-full" style={{ width: "90%" }} />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-[11px] font-bold">
-                            <span>Himalayan Shilajit</span>
-                            <span>318 units sold</span>
-                          </div>
-                          <div className="w-full bg-[#eef5df] h-2 rounded-full mt-1 overflow-hidden">
-                            <div className="bg-[#80a03c] h-full rounded-full" style={{ width: "70%" }} />
-                          </div>
-                        </div>
+                        {topProducts.length === 0 ? (
+                          <div className="text-gray-500 italic py-4 text-center">No sales recorded yet.</div>
+                        ) : (
+                          topProducts.map((p, idx) => {
+                            const maxQty = Math.max(...topProducts.map(tp => tp.qty), 1);
+                            const pct = Math.round((p.qty / maxQty) * 100);
+                            return (
+                              <div key={idx}>
+                                <div className="flex justify-between text-[11px] font-bold">
+                                  <span className="truncate max-w-[200px]">{p.name}</span>
+                                  <span>{p.qty} units sold</span>
+                                </div>
+                                <div className="w-full bg-[#eef5df] h-2 rounded-full mt-1 overflow-hidden">
+                                  <div className="bg-[#244f31] h-full rounded-full" style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1633,18 +1695,16 @@ export default function AdminDashboard() {
                         <span>Low Stock Alerts</span>
                       </h3>
                       <div className="space-y-2 text-xs">
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="font-semibold">Triphala Juice</span>
-                          <span className="font-black text-red-600">8 left</span>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="font-semibold">Shilajit Gold Resin</span>
-                          <span className="font-black text-red-600">12 left</span>
-                        </div>
-                        <div className="flex justify-between pb-1">
-                          <span className="font-semibold">Brahmi Capsules</span>
-                          <span className="font-black text-red-600">5 left</span>
-                        </div>
+                        {lowStockProducts.length === 0 ? (
+                          <div className="text-emerald-700 font-semibold italic py-4 text-center">All inventory is fully stocked!</div>
+                        ) : (
+                          lowStockProducts.map((p: any, idx: number) => (
+                            <div key={idx} className="flex justify-between border-b pb-2">
+                              <span className="font-semibold">{p.name}</span>
+                              <span className="font-black text-red-600">{p.stockQty ?? 0} left</span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
 

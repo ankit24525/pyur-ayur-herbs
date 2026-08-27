@@ -496,6 +496,8 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (!isAdminLoggedIn) return;
+
     if (activeMenu === "settings") {
       setLoading(false);
       return;
@@ -511,7 +513,7 @@ export default function AdminDashboard() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [activeMenu]);
+  }, [activeMenu, isAdminLoggedIn]);
 
   const saveKey = async (key: string, value: any) => {
     try {
@@ -1285,14 +1287,6 @@ export default function AdminDashboard() {
       subTab === tab ? "bg-[#eef5df] text-[#244f31]" : "bg-white border border-[#ddddd9] text-[#666666] hover:bg-[#f8faf1]"
     }`;
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f7f2] font-black text-[#244f31] text-sm tracking-wider">
-        🔄 LOADING PYUR AYUR ADMIN PORTAL...
-      </div>
-    );
-  }
-
   // Auth guard: show spinner while sessionStorage check is pending (avoids flash)
   if (!authChecked) {
     return (
@@ -1504,6 +1498,13 @@ export default function AdminDashboard() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f7f2] font-black text-[#244f31] text-sm tracking-wider">
+        🔄 LOADING PYUR AYUR ADMIN PORTAL...
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#f5f7f2] text-[#17231b]">

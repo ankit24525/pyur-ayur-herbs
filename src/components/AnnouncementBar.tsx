@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, X, Smartphone } from "lucide-react";
 
 export default function AnnouncementBar({
@@ -11,6 +11,61 @@ export default function AnnouncementBar({
   data?: { visible: boolean; text: string; code: string; btnText: string; link: string };
 }) {
   const [visible, setVisible] = useState(true);
+  const [settings, setSettings] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/admin/all", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) setSettings(data.settings);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!settings?.flashSaleTimer) return;
+    
+    // Parse HH:MM:SS format
+    const parts = settings.flashSaleTimer.split(":");
+    let totalSeconds = 0;
+    if (parts.length === 3) {
+      totalSeconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+    } else if (parts.length === 2) {
+      totalSeconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    } else {
+      totalSeconds = parseInt(parts[0]) || 0;
+    }
+    
+    if (totalSeconds <= 0) return;
+    
+    const startTime = Date.now();
+    
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = totalSeconds - elapsed;
+      
+      if (remaining <= 0) {
+        setTimeLeft("00:00:00");
+        clearInterval(interval);
+        return;
+      }
+      
+      const hrs = Math.floor(remaining / 3600);
+      const mins = Math.floor((remaining % 3600) / 60);
+      const secs = remaining % 60;
+      
+      const formatted = [
+        String(hrs).padStart(2, "0"),
+        String(mins).padStart(2, "0"),
+        String(secs).padStart(2, "0")
+      ].join(":");
+      
+      setTimeLeft(formatted);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [settings?.flashSaleTimer]);
 
   const isVisible = data ? data.visible : true;
   const text = data ? data.text : "ADDITIONAL 10% OFF WITH PYUR COINS";
@@ -43,6 +98,11 @@ export default function AnnouncementBar({
           {code && (
             <span className="hidden font-mono font-bold text-[#f2c94c] md:inline">
               | CODE: {code}
+            </span>
+          )}
+          {timeLeft && (
+            <span className="ml-1.5 inline-flex items-center gap-1 bg-red-600/90 text-white font-mono font-black text-[10px] md:text-[11px] px-2 py-0.5 rounded leading-none">
+              ⏱️ Sale Ends: {timeLeft}
             </span>
           )}
         </div>

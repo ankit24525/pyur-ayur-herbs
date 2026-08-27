@@ -7,11 +7,9 @@ import SiteHeader from "@/components/SiteHeader";
 import HeroSlider from "@/components/HeroSlider";
 import ConcernFilter from "@/components/ConcernFilter";
 import ProductRail from "@/components/ProductRail";
-import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
 import TrustSection from "@/components/TrustSection";
 import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
 import TestimonialsSection from "@/components/TestimonialsSection";
-import PressSection from "@/components/PressSection";
 import SiteFooter from "@/components/SiteFooter";
 import { products, Product, concerns } from "@/lib/store";
 import { X, Smartphone, User, CheckCircle2 } from "lucide-react";
@@ -239,12 +237,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* Free Ayurvedic Doctor Consultation Banner */}
-      <DoctorConsultationBanner
-        data={cmsData.consultationBanner}
-        openModalDirectly={consultationModalOpen}
-        onCloseModal={() => setConsultationModalOpen(false)}
-      />
+
 
       {/* Why Pyur Ayur Herbs Trust Section */}
       <TrustSection />
@@ -254,9 +247,6 @@ export default function Home() {
 
       {/* Customer Reviews & Transformations */}
       <TestimonialsSection />
-
-      {/* As Featured In Press Bar */}
-      <PressSection />
 
       {/* Main Footer */}
       <SiteFooter />

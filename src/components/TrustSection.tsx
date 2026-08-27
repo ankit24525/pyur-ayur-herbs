@@ -11,8 +11,8 @@ export default function TrustSection() {
     },
     {
       icon: Shield,
-      title: "AYUSH Certified",
-      desc: "Formulated following strict Ministry of AYUSH GMP safety standards.",
+      title: "Manufactured at an AYUSH GMP-Licensed Facility",
+      desc: "Our formulations are made at a facility that follows Ministry of AYUSH GMP standards.",
     },
     {
       icon: Leaf,

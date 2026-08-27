@@ -80,11 +80,11 @@ export default function SiteFooter() {
               </div>
             </div>
 
-            {/* Address */}
+            {/* Address & GSTIN */}
             <p className="text-xs text-[#555555] leading-relaxed italic mb-5 max-w-sm font-medium">
               Pyur Ayur Herbs Private Limited,<br />
-              12, Botanical Enclave, Sector 62,<br />
-              Noida, Uttar Pradesh - 201301
+              Registered Office Address: 12, Botanical Enclave, Sector 62, Noida, UP - 201301<br />
+              GSTIN: 09AAPCP8765A1Z5
             </p>
 
             {/* Support Phone */}

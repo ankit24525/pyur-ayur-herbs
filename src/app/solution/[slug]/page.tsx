@@ -65,7 +65,7 @@ const concernDetailsMap: Record<
       "Cold-pressed organic Amla juices and daily Triphala gut routines for overall family health and vital longevity.",
   },
   "womens-health": {
-    title: "Women's Period Harmony & PCOS Care",
+    title: "Women's Period Harmony & Hormonal Care",
     subtitle: "SHATAVARI & ASHOKA FORMULATION FOR HORMONAL BALANCE",
     bg: "from-[#3e2c1e] via-[#244f31] to-[#122c1b]",
     description:
@@ -232,11 +232,6 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
         </div>
       </section>
 
-      {/* Free Doctor Consultation Section */}
-      <DoctorConsultationBanner
-        openModalDirectly={consultationModalOpen}
-        onCloseModal={() => setConsultationModalOpen(false)}
-      />
 
       {/* Solution FAQ Guide */}
       <section className="bg-white py-12 border-y border-[#ddddd9]">

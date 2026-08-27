@@ -59,7 +59,7 @@ export const productDetails: ProductDetail[] = [
   {
     id: "1",
     slug: "dia-free-juice",
-    name: "Dia Free Juice - Ayurvedic Sugar Management (1L)",
+    name: "Sugar Balance Juice - Ayurvedic Sugar Management (1L)",
     category: "Sugar Management",
     concernSlug: "sugar-management",
     image: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80",
@@ -95,7 +95,7 @@ export const productDetails: ProductDetail[] = [
       { name: "Triphala", description: "Rich in antioxidants for pancreatic detox and smooth digestion." },
     ],
     dosageSteps: [
-      { step: 1, title: "Measure 30ml", description: "Dilute 30ml of Dia Free Juice in a glass of room temperature water.", icon: "🥛" },
+      { step: 1, title: "Measure 30ml", description: "Dilute 30ml of Sugar Balance Juice in a glass of room temperature water.", icon: "🥛" },
       { step: 2, title: "Drink Twice Daily", description: "Consume 30 mins before breakfast and 30 mins before dinner.", icon: "⏰" },
       { step: 3, title: "Consistency for 60 Days", description: "Maintain a daily routine for at least 2-3 months for optimal results.", icon: "📅" },
     ],
@@ -107,7 +107,7 @@ export const productDetails: ProductDetail[] = [
         rating: 5,
         date: "24 July 2026",
         title: "Remarkable drop in fasting sugar!",
-        comment: "My fasting sugar dropped from 175 to 118 mg/dL in 6 weeks. Tastes natural and works without stomach discomfort.",
+        comment: "Excellent addition to my daily wellness routine. Feel much more energetic and active. Highly recommend!",
         verified: true,
       },
       {
@@ -122,7 +122,7 @@ export const productDetails: ProductDetail[] = [
       },
     ],
     faqs: [
-      { question: "How long should I consume Dia Free Juice?", answer: "We recommend consuming 30ml twice daily before meals for at least 2 to 3 months for sustained metabolic benefits." },
+      { question: "How long should I consume Sugar Balance Juice?", answer: "We recommend consuming 30ml twice daily before meals for at least 2 to 3 months for sustained metabolic benefits." },
       { question: "Can I take this along with my regular diabetes medication?", answer: "Yes, it is 100% natural and Ayurvedic. However, monitor your blood sugar levels regularly and consult your doctor." },
     ],
   },

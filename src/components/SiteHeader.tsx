@@ -623,17 +623,6 @@ export default function SiteHeader({
                   {link.label}
                 </a>
               ))}
-              <hr className="my-2 border-[#ddddd9]" />
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  onOpenConsultationModal();
-                }}
-                className="flex items-center gap-2 rounded-lg bg-[#244f31] p-3 text-sm font-bold text-white shadow"
-              >
-                <Sparkles className="size-4 text-[#f2c94c]" />
-                <span>Book Free Doctor Consultation</span>
-              </button>
             </div>
           </div>
         </div>

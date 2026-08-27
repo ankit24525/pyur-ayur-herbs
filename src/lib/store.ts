@@ -78,7 +78,7 @@ export const concerns: Concern[] = [
 export const products: Product[] = [
   {
     id: "1",
-    name: "Dia Free Juice - Ayurvedic Sugar Management (1L)",
+    name: "Sugar Balance Juice - Ayurvedic Sugar Management (1L)",
     slug: "dia-free-juice",
     concern: "Sugar Management",
     price: 999,
@@ -197,14 +197,14 @@ export const products: Product[] = [
   },
   {
     id: "8",
-    name: "PCOS & Period Harmony Juice for Women (1L)",
+    name: "Women's Hormonal Balance Juice (1L)",
     slug: "pcos-period-harmony-juice",
     concern: "Women's Health",
     price: 899,
     compareAt: 1099,
     rating: 4.8,
     reviews: 1670,
-    badge: "DOCTOR RECOMMENDED",
+    badge: "AYURVEDA-BASED FORMULA",
     image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=500&q=80",
     ingredients: ["Shatavari", "Ashoka Bark", "Lodhra", "Manjistha", "Anantamul"],
     description: "Nourishing uterine tonic engineered with Shatavari & Ashoka to balance hormones, regulate period cycles, and ease cramps.",
@@ -228,7 +228,6 @@ export const headerSearchSuggestions = [
 export const menuLinks = [
   { label: "Shop All Products", href: "/#shop" },
   { label: "Select Concern", href: "/#concerns" },
-  { label: "Doctor Consultation", href: "/#consult" },
   { label: "Blog", href: "/blog" },
   { label: "Customer Reviews", href: "/#reviews" },
   { label: "Why Pyur Ayur Herbs", href: "/#trust" },
@@ -248,8 +247,8 @@ export const heroSlides = [
   },
   {
     id: 2,
-    title: "Dia-Free Ayurvedic Sugar Management Juice",
-    subtitle: "CLINICALLY BACKED 11-HERB METABOLIC FORMULA",
+    title: "Sugar Balance Ayurvedic Juice",
+    subtitle: "TRADITIONALLY FORMULATED WITH 11 HERBS",
     offer: "BUY 2 GET FREE KESAR RADIANCE OIL",
     ctaText: "EXPLORE SUGAR CARE",
     href: "#shop",

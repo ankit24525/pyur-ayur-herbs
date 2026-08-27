@@ -2,7 +2,7 @@
   "products": [
     {
       "id": "1",
-      "name": "Dia Free Juice - Ayurvedic Sugar Management (1L)",
+      "name": "Sugar Balance Juice - Ayurvedic Sugar Management (1L)",
       "slug": "dia-free-juice",
       "concern": "Sugar Management",
       "price": 999,
@@ -363,8 +363,8 @@
       },
       {
         "id": 2,
-        "title": "Dia-Free Ayurvedic Sugar Management Juice",
-        "subtitle": "CLINICALLY BACKED 11-HERB METABOLIC FORMULA",
+        "title": "Sugar Balance Ayurvedic Juice",
+        "subtitle": "TRADITIONALLY FORMULATED WITH 11 HERBS",
         "offer": "BUY 2 GET FREE KESAR RADIANCE OIL",
         "ctaText": "EXPLORE SUGAR CARE",
         "href": "#shop",

@@ -12,7 +12,7 @@ export default function TestimonialsSection() {
       product: "Dia Free Juice (1L)",
       rating: 5,
       comment:
-        "My fasting sugar levels dropped from 178 to 118 within 45 days of consistent morning consumption. No bitter aftertaste!",
+        "Switched to this juice as part of my morning routine and felt noticeably more energetic within weeks. Tastes great too!",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
     },
     {
@@ -44,7 +44,7 @@ export default function TestimonialsSection() {
           REAL STORIES, REAL RESULTS
         </span>
         <h2 className="mt-1 text-2xl font-black uppercase tracking-tight text-[#17231b] sm:text-3xl">
-          Loved By 500,000+ Health Seekers
+          Trusted by Thousands Across India
         </h2>
         <p className="mt-2 text-xs font-medium text-[#666666] md:text-sm">
           See how our natural Ayurvedic formulations have transformed daily lives across India.

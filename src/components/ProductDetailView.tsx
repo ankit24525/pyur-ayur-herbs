@@ -221,6 +221,22 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               <p className="mt-1 text-[11px] font-medium text-[#666666]">
                 Inclusive of all taxes. Free delivery on orders above ₹999.
               </p>
+
+              {/* Statutory Compliance Section: MRP, Batch No., Exp. Date, Ingredients */}
+              <div className="mt-3.5 pt-3 border-t border-dashed border-[#ddddd9] grid grid-cols-2 gap-y-1.5 text-[10.5px] text-[#555555]">
+                <div>
+                  <span className="font-semibold text-[#17231b]">Batch No:</span>{" "}
+                  <code className="bg-neutral-100 px-1 py-0.5 rounded text-[9px] font-bold">PAH-B{product.id}26</code>
+                </div>
+                <div>
+                  <span className="font-semibold text-[#17231b]">Expiry Date:</span>{" "}
+                  <span className="font-bold text-amber-700">24 months from Mfg.</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="font-semibold text-[#17231b]">Ingredients:</span>{" "}
+                  <span className="font-medium text-[#17231b]">{product.ingredients.map(i => i.name).join(", ") || "Ayurvedic herbs"}</span>
+                </div>
+              </div>
             </div>
 
             {/* Pack Size / Variant Selector */}

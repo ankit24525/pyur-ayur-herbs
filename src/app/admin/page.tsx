@@ -3736,13 +3736,96 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {subTab === "offers" && (
-                  <div className="text-xs border p-4 rounded-xl space-y-3">
-                    <span className="block font-bold text-sm">Active Cart Offers</span>
-                    <div className="flex justify-between items-center border-b pb-2">
-                      <span>Prepaid online checkout offer discount</span>
-                      <span className="font-bold text-[#244f31]">{dbData.settings.prepaidDiscount}% OFF</span>
+                 {subTab === "offers" && (
+                  <div className="text-xs border border-[#ddddd9] p-5 rounded-2xl space-y-4 max-w-xl bg-white shadow-xs">
+                    <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Configure Cart Offers</h4>
+                    
+                    <div className="space-y-4">
+                      {/* Prepaid Discount */}
+                      <div>
+                        <label className="block font-bold text-[#666666] mb-1">Prepaid Online Order Discount (%)</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 5"
+                          value={dbData.settings.prepaidDiscount || 0}
+                          onChange={(e) => setDbData({
+                            ...dbData,
+                            settings: { ...dbData.settings, prepaidDiscount: parseInt(e.target.value) || 0 }
+                          })}
+                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold"
+                        />
+                        <p className="mt-1 text-[10px] text-gray-400">Discount percentage applied automatically to prepaid/UPI orders during checkout.</p>
+                      </div>
+
+                      {/* Free Shipping Threshold */}
+                      <div>
+                        <label className="block font-bold text-[#666666] mb-1">Free Shipping Order Threshold (₹)</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 999"
+                          value={dbData.settings.shipping?.freeThreshold || 0}
+                          onChange={(e) => setDbData({
+                            ...dbData,
+                            settings: {
+                              ...dbData.settings,
+                              shipping: { ...(dbData.settings.shipping || {}), freeThreshold: parseInt(e.target.value) || 0 }
+                            }
+                          })}
+                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold"
+                        />
+                        <p className="mt-1 text-[10px] text-gray-400">Minimum order total required for free shipping.</p>
+                      </div>
+
+                      {/* Base Shipping Fee */}
+                      <div>
+                        <label className="block font-bold text-[#666666] mb-1">Base Shipping / Delivery Fee (₹)</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 49"
+                          value={dbData.settings.shipping?.baseRate || 0}
+                          onChange={(e) => setDbData({
+                            ...dbData,
+                            settings: {
+                              ...dbData.settings,
+                              shipping: { ...(dbData.settings.shipping || {}), baseRate: parseInt(e.target.value) || 0 }
+                            }
+                          })}
+                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold"
+                        />
+                        <p className="mt-1 text-[10px] text-gray-400">Default shipping fee charged for orders below the free threshold.</p>
+                      </div>
+
+                      {/* COD OTP Toggle */}
+                      <div className="flex items-center justify-between border-t border-[#ddddd9] pt-3">
+                        <div>
+                          <span className="block font-bold text-[#17231b]">Require OTP for Cash-On-Delivery (COD)</span>
+                          <span className="block text-[10px] text-gray-400">Sends a SMS OTP to verify customer mobile number before completing checkout.</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={dbData.settings.codOtpEnabled || false}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: { ...dbData.settings, codOtpEnabled: e.target.checked }
+                            })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#244f31]"></div>
+                        </label>
+                      </div>
                     </div>
+
+                    <button
+                      onClick={async () => {
+                        await handleSaveSettings("prepaidDiscount", dbData.settings.prepaidDiscount);
+                        await handleSaveSettings("shipping", dbData.settings.shipping);
+                        await handleSaveSettings("codOtpEnabled", dbData.settings.codOtpEnabled);
+                      }}
+                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2 mt-4"
+                    >
+                      Save Offers & Delivery Settings
+                    </button>
                   </div>
                 )}
 

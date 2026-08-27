@@ -487,6 +487,9 @@ export default function AdminDashboard() {
             ...(data.seo || {})
           }
         });
+        if (data.settings?.flashSaleTimer) {
+          setFlashSaleTimer(data.settings.flashSaleTimer);
+        }
       }
     } catch (e) {
       console.error("Error fetching database:", e);
@@ -3830,15 +3833,27 @@ export default function AdminDashboard() {
                 )}
 
                 {subTab === "flash-sales" && (
-                  <div className="text-xs space-y-4">
-                    <span className="block font-bold text-sm">Configure Flash Sale Ending Timer</span>
-                    <input
-                      type="text"
-                      value={flashSaleTimer}
-                      onChange={(e) => setFlashSaleTimer(e.target.value)}
-                      className="border p-2.5 rounded w-48 font-mono text-center text-lg"
-                    />
-                    <button onClick={() => alert("Flash sale clock timer adjusted!")} className="block bg-[#244f31] text-white px-4 py-2 rounded font-bold">Save Timer</button>
+                  <div className="text-xs border border-[#ddddd9] p-5 rounded-2xl space-y-4 max-w-sm bg-white shadow-xs">
+                    <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Configure Flash Sale Ending Timer</h4>
+                    <div className="space-y-3">
+                      <label className="block font-bold text-[#666666] mb-1">Sale Countdown Timer Value</label>
+                      <input
+                        type="text"
+                        value={flashSaleTimer}
+                        onChange={(e) => setFlashSaleTimer(e.target.value)}
+                        className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-mono text-center text-lg font-bold text-[#244f31]"
+                        placeholder="e.g. 12:00:00"
+                      />
+                      <p className="text-[10px] text-gray-400">Specify the duration or custom ending time format to show on the storefront promo banner.</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await handleSaveSettings("flashSaleTimer", flashSaleTimer);
+                      }}
+                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2"
+                    >
+                      Save Countdown Timer
+                    </button>
                   </div>
                 )}
               </div>

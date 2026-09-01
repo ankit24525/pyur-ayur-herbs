@@ -599,9 +599,18 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (!isAdminLoggedIn) return;
+    if (!isAdminLoggedIn) {
+      setLoading(false);
+      return;
+    }
 
+    isFetchingRef.current = false;
     void loadData();
+
+    // Safety timeout: ensure loading spinner never hangs indefinitely
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
 
     // Poll for real-time database updates (every 8 seconds, non-overlapping)
     const interval = setInterval(() => {
@@ -610,7 +619,10 @@ export default function AdminDashboard() {
       }
     }, 8000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(safetyTimer);
+      clearInterval(interval);
+    };
   }, [isAdminLoggedIn]);
 
   const saveKey = async (key: string, value: any) => {

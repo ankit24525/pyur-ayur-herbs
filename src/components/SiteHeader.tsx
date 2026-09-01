@@ -538,11 +538,17 @@ export default function SiteHeader({
           />
           <div className="relative z-10 flex w-full max-w-xs flex-col bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#ddddd9] pb-4">
-              <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-full bg-[#244f31] font-bold text-white">
-                  P
+              <div className="flex items-center gap-2.5">
+                <div className="relative flex size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#244f31]/20 overflow-hidden shrink-0">
+                  <Image
+                    src="/brand/pure-ayur-logo.png"
+                    alt="Pure Ayur Herbs Logo"
+                    width={36}
+                    height={36}
+                    className="size-full rounded-full object-cover"
+                  />
                 </div>
-                <span className="font-black text-[#244f31]">PYUR AYUR HERBS</span>
+                <span className="font-black text-[#244f31] text-sm tracking-wider uppercase">PURE AYUR HERBS</span>
               </div>
               <button
                 onClick={() => setMenuOpen(false)}

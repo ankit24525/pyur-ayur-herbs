@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   Mail,
+  Menu,
   Settings,
   Database,
   Truck,
@@ -55,8 +56,9 @@ export default function AdminDashboard() {
     activeMenuRef.current = activeMenu;
   }, [activeMenu]);
 
-  // Admin Auth State — checked against sessionStorage on mount
+  // Admin Auth & Navigation Sidebar State
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [isAdminSidebarOpen, setIsAdminSidebarOpen] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -1507,8 +1509,6 @@ export default function AdminDashboard() {
         🔄 LOADING PYUR AYUR ADMIN PORTAL...
       </div>
     );
-  }
-
   return (
     <main className="min-h-screen bg-[#f5f7f2] text-[#17231b]">
       {toastMsg && (
@@ -1520,7 +1520,14 @@ export default function AdminDashboard() {
       {/* Top Header Row */}
       <div className="bg-[#17231b] text-white py-3.5 px-6 shadow-md sticky top-0 z-30 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button className="text-xl font-bold hover:text-white/80">☰</button>
+          <button
+            onClick={() => setIsAdminSidebarOpen((prev) => !prev)}
+            className="flex items-center justify-center size-9 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition active:scale-95 cursor-pointer"
+            title={isAdminSidebarOpen ? "Close Admin Navigation" : "Open Admin Navigation"}
+            aria-label="Toggle Admin Navigation Menu"
+          >
+            {isAdminSidebarOpen ? <X className="size-5 text-emerald-400" /> : <Menu className="size-5" />}
+          </button>
           <div className="flex items-center gap-2.5">
             <div className="relative flex size-10 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden shrink-0">
               <Image
@@ -1564,10 +1571,75 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Mobile / Tablet Admin Navigation Drawer Overlay */}
+      {isAdminSidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsAdminSidebarOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 w-72 bg-white p-5 shadow-2xl overflow-y-auto flex flex-col justify-between border-r border-[#ddddd9] z-10">
+            <div>
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#f0f0eb]">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative flex size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden shrink-0">
+                    <Image
+                      src="/brand/pure-ayur-logo.png"
+                      alt="Pure Ayur Herbs Logo"
+                      width={36}
+                      height={36}
+                      className="size-full rounded-full object-cover"
+                    />
+                  </div>
+                  <span className="text-sm font-black tracking-wider uppercase text-[#17231b]">PURE AYUR ADMIN</span>
+                </div>
+                <button
+                  onClick={() => setIsAdminSidebarOpen(false)}
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition"
+                  aria-label="Close navigation"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block px-3 py-1 mb-1">
+                Store Control Menu
+              </span>
+
+              <div className="space-y-1">
+                <button onClick={() => { setActiveMenu("dashboard"); setSubTab("overview"); setIsAdminSidebarOpen(false); }} className={tabStyle("dashboard")}><TrendingUp className="size-4" /> 📊 Dashboard</button>
+                <button onClick={() => { setActiveMenu("orders"); setSubTab("all"); setIsAdminSidebarOpen(false); }} className={tabStyle("orders")}><ShoppingBag className="size-4" /> 🛒 Orders</button>
+                <button onClick={() => { setActiveMenu("products"); setSubTab("all"); setIsAdminSidebarOpen(false); }} className={tabStyle("products")}><Database className="size-4" /> 📦 Products</button>
+                <button onClick={() => { setActiveMenu("customers"); setSubTab("all"); setIsAdminSidebarOpen(false); }} className={tabStyle("customers")}><Users className="size-4" /> 👥 Customers</button>
+                <button onClick={() => { setActiveMenu("discounts"); setSubTab("coupons"); setIsAdminSidebarOpen(false); }} className={tabStyle("discounts")}><Ticket className="size-4" /> 🎟️ Discounts</button>
+                <button onClick={() => { setActiveMenu("marketing"); setSubTab("campaigns"); setIsAdminSidebarOpen(false); }} className={tabStyle("marketing")}><Megaphone className="size-4" /> 📢 Marketing</button>
+                <button onClick={() => { setActiveMenu("content"); setSubTab("blogs"); setIsAdminSidebarOpen(false); }} className={tabStyle("content")}><BookOpen className="size-4" /> 📝 Content</button>
+                <button onClick={() => { setActiveMenu("reviews"); setSubTab("all"); setIsAdminSidebarOpen(false); }} className={tabStyle("reviews")}><Star className="size-4" /> ⭐ Reviews</button>
+                <button onClick={() => { setActiveMenu("shipping"); setSubTab("all"); setIsAdminSidebarOpen(false); }} className={tabStyle("shipping")}><Truck className="size-4" /> 🚚 Shipping</button>
+                <button onClick={() => { setActiveMenu("analytics"); setSubTab("all"); setIsAdminSidebarOpen(false); }} className={tabStyle("analytics")}><TrendingUp className="size-4" /> 📈 Analytics</button>
+                <button onClick={() => { setActiveMenu("seo"); setSubTab("all"); setIsAdminSidebarOpen(false); }} className={tabStyle("seo")}><Search className="size-4" /> 🔍 SEO</button>
+                <button onClick={() => { setActiveMenu("support"); setSubTab("all"); setIsAdminSidebarOpen(false); }} className={tabStyle("support")}><MessageSquare className="size-4" /> 🎧 Support</button>
+                <button onClick={() => { setActiveMenu("settings"); setSubTab("general"); setIsAdminSidebarOpen(false); }} className={tabStyle("settings")}><Settings className="size-4" /> ⚙️ Settings</button>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#f0f0eb] mt-4">
+              <button
+                onClick={() => { setIsAdminSidebarOpen(false); handleAdminLogout(); }}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-rose-50 border border-rose-200 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition"
+              >
+                <Lock className="size-4" />
+                <span>Sign Out of Admin</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6">
         <div className="grid gap-6 lg:grid-cols-12">
-          {/* Left Navigation Sidebar - Exact Requested Structure */}
-          <div className="lg:col-span-3 space-y-1 bg-white border border-[#ddddd9] p-3 rounded-2xl shadow-sm h-fit">
+          {/* Left Navigation Sidebar - Desktop & Tablet */}
+          <div className={`space-y-1 bg-white border border-[#ddddd9] p-3 rounded-2xl shadow-sm h-fit ${isAdminSidebarOpen ? "lg:col-span-3 hidden lg:block" : "hidden lg:block lg:col-span-3"}`}>
             <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block px-3 py-1 mb-1">
               Store Control Menu
             </span>
@@ -6047,3 +6119,4 @@ export default function AdminDashboard() {
       </main>
     );
   }
+}

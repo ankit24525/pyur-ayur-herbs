@@ -236,6 +236,7 @@ export default function AdminDashboard() {
     faqs: [],
     testimonials: [],
     marketing: { campaigns: [], banners: [], popups: [], notifications: [] },
+    content: { announcement: {}, heroSlides: [], consultationBanner: {} },
     seo: { title: "", metaDesc: "", sitemapUrl: "", robotsTxt: "" },
     collections: [],
   });
@@ -578,7 +579,29 @@ export default function AdminDashboard() {
         }
 
         setDbData({
+          products: [],
+          orders: [],
+          coupons: [],
+          leads: [],
+          reviews: [],
+          blogs: [],
+          faqs: [],
+          testimonials: [],
+          collections: [],
           ...data,
+          marketing: {
+            campaigns: [],
+            banners: [],
+            popups: [],
+            notifications: [],
+            ...(data.marketing || {})
+          },
+          content: {
+            announcement: {},
+            heroSlides: [],
+            consultationBanner: {},
+            ...(data.content || {})
+          },
           settings,
           seo: {
             title: "Pyur Ayur Herbs - Original Ayurvedic Formulations",
@@ -610,14 +633,14 @@ export default function AdminDashboard() {
     // Safety timeout: ensure loading spinner never hangs indefinitely
     const safetyTimer = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+    }, 1500);
 
-    // Poll for real-time database updates (every 8 seconds, non-overlapping)
+    // Poll for real-time database updates (every 15 seconds, non-overlapping)
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         void loadData();
       }
-    }, 8000);
+    }, 15000);
 
     return () => {
       clearTimeout(safetyTimer);

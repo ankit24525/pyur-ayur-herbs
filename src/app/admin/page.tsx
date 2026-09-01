@@ -42,6 +42,7 @@ import {
   Globe,
   Lock,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -65,6 +66,30 @@ export default function AdminDashboard() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Notifications Dropdown State & Ref
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   // Admin Forgot Password State
   const [isAdminForgotPassword, setIsAdminForgotPassword] = useState(false);
@@ -214,6 +239,74 @@ export default function AdminDashboard() {
     seo: { title: "", metaDesc: "", sitemapUrl: "", robotsTxt: "" },
     collections: [],
   });
+
+  // Dynamic Admin Notifications list derived from live store DB data
+  const getAdminNotifications = () => {
+    const list: Array<{
+      id: string;
+      title: string;
+      message: string;
+      time: string;
+      type: "order" | "stock" | "lead" | "system";
+      unread: boolean;
+    }> = [];
+
+    // 1. Low inventory stock alerts
+    const lowStockProducts = (dbData.products || []).filter(
+      (p: any) => p.stock !== undefined && p.stock !== null && p.stock < 10
+    );
+    lowStockProducts.forEach((p: any) => {
+      list.push({
+        id: `stock-${p.id}`,
+        title: "Low Inventory Alert",
+        message: `Product "${p.title}" has only ${p.stock} units remaining.`,
+        time: "Inventory Warning",
+        type: "stock",
+        unread: !readNotificationIds.includes(`stock-${p.id}`),
+      });
+    });
+
+    // 2. Recent store orders
+    const recentOrders = (dbData.orders || []).slice(-4).reverse();
+    recentOrders.forEach((o: any) => {
+      list.push({
+        id: `order-${o.id}`,
+        title: `Order #${o.id} (${o.status || "Received"})`,
+        message: `Order from ${o.customer || "Customer"} for ₹${o.total || 0}.`,
+        time: o.date || "Recent",
+        type: "order",
+        unread: !readNotificationIds.includes(`order-${o.id}`),
+      });
+    });
+
+    // 3. Fresh Customer Leads / Contact Inquiries
+    const recentLeads = (dbData.leads || []).slice(-3).reverse();
+    recentLeads.forEach((l: any, idx: number) => {
+      list.push({
+        id: `lead-${l.id || idx}`,
+        title: "New Customer Inquiry",
+        message: `Inquiry submitted by ${l.name || l.email || "Store Visitor"}.`,
+        time: l.date || "Today",
+        type: "lead",
+        unread: !readNotificationIds.includes(`lead-${l.id || idx}`),
+      });
+    });
+
+    // 4. System Security & Config Status
+    list.push({
+      id: "system-otp",
+      title: "COD Security Active",
+      message: `OTP Verification is ${dbData.settings?.codOtpEnabled ? "enabled" : "disabled"} for Cash on Delivery orders.`,
+      time: "System",
+      type: "system",
+      unread: !readNotificationIds.includes("system-otp"),
+    });
+
+    return list;
+  };
+
+  const adminNotifications = getAdminNotifications();
+  const unreadNotificationCount = adminNotifications.filter((n) => n.unread).length;
 
   // Dynamic line chart history calculation based on Time Range, Metric Type, and Product Filter (Shared across Dashboard and Analytics tab)
   const getChartDataHistory = () => {
@@ -1316,6 +1409,7 @@ export default function AdminDashboard() {
                 height={96}
                 className="size-full rounded-full object-cover"
                 priority
+                unoptimized
               />
             </div>
             <h1 className="text-2xl font-black text-white tracking-wide">PURE AYUR HERBS</h1>
@@ -1509,6 +1603,8 @@ export default function AdminDashboard() {
         🔄 LOADING PYUR AYUR ADMIN PORTAL...
       </div>
     );
+  }
+
   return (
     <main className="min-h-screen bg-[#f5f7f2] text-[#17231b]">
       {toastMsg && (
@@ -1536,6 +1632,7 @@ export default function AdminDashboard() {
                 width={40}
                 height={40}
                 className="size-full rounded-full object-cover"
+                unoptimized
               />
             </div>
             <span className="text-base font-black tracking-wider uppercase">PURE AYUR ADMIN</span>
@@ -1552,10 +1649,102 @@ export default function AdminDashboard() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="relative p-1 text-white/80 hover:text-white">
-            <span className="absolute top-1 right-1 size-2 rounded-full bg-[#80a03c]" />
-            🔔
-          </button>
+          {/* Interactive Notifications Bell & Dropdown */}
+          <div className="relative" ref={notificationRef}>
+            <button
+              onClick={() => setIsNotificationsOpen((prev) => !prev)}
+              className="relative flex items-center justify-center p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition active:scale-95 cursor-pointer"
+              title="Store Notifications"
+              aria-label="Toggle Notifications Dropdown"
+            >
+              <Bell className="size-5 text-white" />
+              {unreadNotificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-[#80a03c] px-1 text-[10px] font-black text-white shadow-md border border-[#17231b]">
+                  {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown Panel */}
+            {isNotificationsOpen && (
+              <div className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl bg-white text-[#17231b] shadow-2xl border border-neutral-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* Panel Header */}
+                <div className="flex items-center justify-between px-4 py-3 bg-[#17231b] text-white border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <Bell className="size-4 text-[#80a03c]" />
+                    <span className="font-bold text-sm tracking-wide">Notifications</span>
+                    {unreadNotificationCount > 0 && (
+                      <span className="bg-[#80a03c] text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                        {unreadNotificationCount} new
+                      </span>
+                    )}
+                  </div>
+                  {unreadNotificationCount > 0 && (
+                    <button
+                      onClick={() => setReadNotificationIds(adminNotifications.map((n) => n.id))}
+                      className="text-[11px] text-emerald-400 hover:text-emerald-300 font-bold cursor-pointer transition"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+
+                {/* Notifications List */}
+                <div className="max-h-80 overflow-y-auto divide-y divide-neutral-100">
+                  {adminNotifications.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-neutral-400 font-medium">
+                      No notifications right now.
+                    </div>
+                  ) : (
+                    adminNotifications.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          if (!readNotificationIds.includes(item.id)) {
+                            setReadNotificationIds((prev) => [...prev, item.id]);
+                          }
+                        }}
+                        className={`p-3.5 flex items-start gap-3 hover:bg-neutral-50 transition cursor-pointer ${
+                          item.unread ? "bg-emerald-50/50" : ""
+                        }`}
+                      >
+                        <div className="p-2 rounded-xl bg-white border border-neutral-200 shadow-xs shrink-0 mt-0.5">
+                          {item.type === "stock" && <AlertTriangle className="size-4 text-amber-500" />}
+                          {item.type === "order" && <ShoppingBag className="size-4 text-[#244f31]" />}
+                          {item.type === "lead" && <MessageSquare className="size-4 text-blue-500" />}
+                          {item.type === "system" && <ShieldCheck className="size-4 text-emerald-600" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-bold text-[#17231b] truncate">{item.title}</p>
+                            <span className="text-[10px] font-medium text-neutral-400 shrink-0">{item.time}</span>
+                          </div>
+                          <p className="text-[11px] text-neutral-600 mt-0.5 line-clamp-2">{item.message}</p>
+                        </div>
+                        {item.unread && (
+                          <span className="size-2 rounded-full bg-[#80a03c] shrink-0 mt-1.5" />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Dropdown Footer */}
+                <div className="p-2.5 bg-neutral-50 border-t border-neutral-100 flex items-center justify-between text-xs">
+                  <button
+                    onClick={() => {
+                      setActiveMenu("orders");
+                      setSubTab("all");
+                      setIsNotificationsOpen(false);
+                    }}
+                    className="w-full text-center text-[#244f31] hover:text-[#17231b] font-bold text-[11px] py-1 cursor-pointer transition"
+                  >
+                    View All Orders & Activity →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-1 text-xs font-bold text-white/90">
             <span>Admin</span>
             <ChevronDown className="size-3.5 text-white/60" />
@@ -1589,6 +1778,7 @@ export default function AdminDashboard() {
                       width={36}
                       height={36}
                       className="size-full rounded-full object-cover"
+                      unoptimized
                     />
                   </div>
                   <span className="text-sm font-black tracking-wider uppercase text-[#17231b]">PURE AYUR ADMIN</span>
@@ -1640,6 +1830,19 @@ export default function AdminDashboard() {
         <div className="grid gap-6 lg:grid-cols-12">
           {/* Left Navigation Sidebar - Desktop & Tablet */}
           <div className={`space-y-1 bg-white border border-[#ddddd9] p-3 rounded-2xl shadow-sm h-fit ${isAdminSidebarOpen ? "lg:col-span-3 hidden lg:block" : "hidden lg:block lg:col-span-3"}`}>
+            <div className="flex items-center gap-2.5 px-3 py-2 mb-2 border-b border-[#f0f0eb]">
+              <div className="relative flex size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden shrink-0">
+                <Image
+                  src="/brand/pure-ayur-logo.png"
+                  alt="Pure Ayur Herbs Logo"
+                  width={36}
+                  height={36}
+                  className="size-full rounded-full object-cover"
+                  unoptimized
+                />
+              </div>
+              <span className="text-sm font-black tracking-wider uppercase text-[#17231b]">PURE AYUR ADMIN</span>
+            </div>
             <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block px-3 py-1 mb-1">
               Store Control Menu
             </span>
@@ -6119,4 +6322,3 @@ export default function AdminDashboard() {
       </main>
     );
   }
-}

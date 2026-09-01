@@ -345,6 +345,12 @@ export default function SiteHeader({
                       >
                         Contact Us
                       </Link>
+                      <Link
+                        href="/admin"
+                        className="rounded-lg px-3 py-1.5 text-xs font-bold text-[#244f31] transition hover:bg-[#eef5df]"
+                      >
+                        🔑 Admin Panel
+                      </Link>
                     </div>
                     <div className="border-t border-[#f0f0eb] pt-1 mt-1">
                       <button
@@ -605,6 +611,13 @@ export default function SiteHeader({
                       className="hover:text-[#244f31] flex items-center gap-1.5"
                     >
                       ⚙️ Account Settings
+                    </Link>
+                    <Link
+                      href="/admin"
+                      onClick={() => setMenuOpen(false)}
+                      className="hover:text-[#244f31] flex items-center gap-1.5 text-[#244f31] font-bold"
+                    >
+                      🔑 Admin Panel
                     </Link>
                   </div>
                 </div>

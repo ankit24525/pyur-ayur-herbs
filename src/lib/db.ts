@@ -34,10 +34,16 @@ async function getMongoClient(): Promise<MongoClient> {
     throw new Error("MONGODB_URI environment variable is missing from environment/env files.");
   }
 
-  client = new MongoClient(uri);
+  client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
   clientPromise = client.connect();
   return clientPromise;
 }
+
+let dbMemoryCache: { data: DBData; timestamp: number } | null = null;
+const CACHE_TTL_MS = 2500; // 2.5s in-memory cache for ultra-fast response
 
 // Read from local db.json file
 function readLocalDB(): DBData {
@@ -118,9 +124,16 @@ function writeLocalDB(data: DBData): boolean {
 }
 
 export async function readDB(): Promise<DBData> {
+  // Use in-memory cache if valid (< 2.5 seconds old)
+  if (dbMemoryCache && Date.now() - dbMemoryCache.timestamp < CACHE_TTL_MS) {
+    return dbMemoryCache.data;
+  }
+
   // If MongoDB is not configured, fall back to local db.json file automatically!
   if (!uri) {
-    return readLocalDB();
+    const data = readLocalDB();
+    dbMemoryCache = { data, timestamp: Date.now() };
+    return data;
   }
 
   try {
@@ -129,7 +142,7 @@ export async function readDB(): Promise<DBData> {
     const document = await db.collection("store_data").findOne({ _id: "main" as any });
     
     if (!document) {
-      return {
+      const defaultData: DBData = {
         products: [],
         orders: [],
         coupons: [],
@@ -144,6 +157,8 @@ export async function readDB(): Promise<DBData> {
           taxRate: 18,
         },
       };
+      dbMemoryCache = { data: defaultData, timestamp: Date.now() };
+      return defaultData;
     }
     
     // Remove MongoDB specific internal fields if they exist
@@ -170,15 +185,21 @@ export async function readDB(): Promise<DBData> {
       };
     }
 
+    dbMemoryCache = { data: cleanData as DBData, timestamp: Date.now() };
     return cleanData as DBData;
   } catch (error) {
     console.error("Error reading from MongoDB:", error);
     // Fall back to local db.json if reading from MongoDB fails
-    return readLocalDB();
+    const localData = readLocalDB();
+    dbMemoryCache = { data: localData, timestamp: Date.now() };
+    return localData;
   }
 }
 
 export async function writeDB(data: DBData): Promise<boolean> {
+  // Update in-memory cache immediately
+  dbMemoryCache = { data, timestamp: Date.now() };
+
   // If MongoDB is not configured, fall back to local db.json file automatically!
   if (!uri) {
     return writeLocalDB(data);

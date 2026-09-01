@@ -419,7 +419,11 @@ export default function AdminDashboard() {
     fullWidthBanner: false,
   });
 
+  const isFetchingRef = useRef(false);
+
   const loadData = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const res = await fetch("/api/admin/all", { cache: "no-store" });
       if (res.ok) {
@@ -495,28 +499,24 @@ export default function AdminDashboard() {
       console.error("Error fetching database:", e);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
   useEffect(() => {
     if (!isAdminLoggedIn) return;
 
-    if (activeMenu === "settings") {
-      setLoading(false);
-      return;
-    }
-
     void loadData();
 
-    // Poll for real-time database updates (every 5 seconds)
+    // Poll for real-time database updates (every 8 seconds, non-overlapping)
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         void loadData();
       }
-    }, 5000);
+    }, 8000);
 
     return () => clearInterval(interval);
-  }, [activeMenu, isAdminLoggedIn]);
+  }, [isAdminLoggedIn]);
 
   const saveKey = async (key: string, value: any) => {
     try {

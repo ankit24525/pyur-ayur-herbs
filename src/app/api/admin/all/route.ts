@@ -6,7 +6,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const db = await readDB();
-    return NextResponse.json(db);
+    const hasMongoUri = Boolean(process.env.MONGODB_URI);
+    return NextResponse.json({
+      ...db,
+      _dbStatus: {
+        mongoConfigured: hasMongoUri,
+        dbName: process.env.MONGODB_DB || "pure_ayur_herbs",
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

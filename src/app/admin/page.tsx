@@ -2563,6 +2563,25 @@ export default function AdminDashboard() {
             <span>View Store</span>
           </a>
 
+          {/* Database Live Status Badge */}
+          {dbData?._dbStatus && (
+            <div
+              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-bold border shadow-xs ${
+                dbData._dbStatus.mongoConfigured
+                  ? "bg-emerald-900/40 text-emerald-300 border-emerald-500/40"
+                  : "bg-amber-900/40 text-amber-300 border-amber-500/40"
+              }`}
+              title={
+                dbData._dbStatus.mongoConfigured
+                  ? `MongoDB Atlas Cloud Connected (${dbData._dbStatus.dbName})`
+                  : "MONGODB_URI is not set in environment variables. Falling back to local storage."
+              }
+            >
+              <span className={`size-2 rounded-full ${dbData._dbStatus.mongoConfigured ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+              <span>{dbData._dbStatus.mongoConfigured ? "MongoDB Atlas Active" : "Local DB (No Mongo)"}</span>
+            </div>
+          )}
+
           {/* Interactive Admin Profile Dropdown Menu */}
           <div className="relative" ref={adminMenuRef}>
             <button

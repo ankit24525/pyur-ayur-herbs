@@ -284,19 +284,12 @@ export default function SiteFooter() {
           <Link href="/terms-of-service" className="hover:text-[#80a03c] transition">Terms and Conditions</Link>
           <Link href="/shipping-policy" className="hover:text-[#80a03c] transition">Shipping Policy</Link>
           <Link href="/return-policy" className="hover:text-[#80a03c] transition">Cancellation Policy</Link>
-          <Link href="/admin" className="text-[#244f31] font-black hover:text-[#80a03c] transition flex items-center gap-1">
-            <span>🔐 Admin Portal</span>
-          </Link>
         </div>
       </div>
 
       {/* Copyright Bottom Bar */}
       <div className="bg-[#17231b] py-3.5 w-full text-center text-[10px] text-white/80 font-bold uppercase tracking-wider select-none flex items-center justify-center gap-2">
         <span>Pyur Ayur Herbs Private Limited | © Copyright {new Date().getFullYear()} Pyur Ayur</span>
-        <span>•</span>
-        <Link href="/admin" className="text-emerald-400 hover:text-white transition font-bold">
-          Admin Portal
-        </Link>
       </div>
     </footer>
   );

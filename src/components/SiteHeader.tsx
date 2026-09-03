@@ -17,7 +17,6 @@ import {
   Minus,
   Trash2,
   CheckCircle2,
-  ShieldCheck,
 } from "lucide-react";
 import { headerSearchSuggestions, menuLinks, products, Product } from "@/lib/store";
 
@@ -284,26 +283,6 @@ export default function SiteHeader({
 
           {/* Right Action Icons & Buttons */}
           <div className="flex items-center gap-2 md:gap-3">
-            {/* Direct Admin Portal Button */}
-            <a
-              href="/admin"
-              className="hidden items-center gap-1.5 rounded-md border border-[#244f31] bg-[#f8faf1] px-3 py-1.5 text-xs font-black uppercase tracking-wider text-[#244f31] transition hover:bg-[#244f31] hover:text-white sm:flex shadow-xs cursor-pointer"
-              title="Open Store Admin Portal"
-            >
-              <ShieldCheck className="size-3.5 text-[#80a03c]" />
-              <span>ADMIN</span>
-            </a>
-
-            {/* Mobile Admin Icon Button */}
-            <a
-              href="/admin"
-              className="sm:hidden rounded-md p-1.5 text-[#244f31] hover:bg-[#f8faf1] transition"
-              title="Admin Portal"
-              aria-label="Admin Portal"
-            >
-              <ShieldCheck className="size-6 text-[#244f31]" />
-            </a>
-
             {/* Get App Button */}
             <button
               onClick={onOpenAppModal}
@@ -366,13 +345,6 @@ export default function SiteHeader({
                       >
                         Contact Us
                       </Link>
-                      <a
-                        href="/admin"
-                        className="rounded-lg px-3 py-1.5 text-xs font-bold text-[#244f31] transition hover:bg-[#eef5df] flex items-center gap-1.5"
-                      >
-                        <ShieldCheck className="size-3.5 text-[#80a03c]" />
-                        <span>🔑 Admin Panel</span>
-                      </a>
                     </div>
                     <div className="border-t border-[#f0f0eb] pt-1 mt-1">
                       <button
@@ -634,13 +606,6 @@ export default function SiteHeader({
                     >
                       ⚙️ Account Settings
                     </Link>
-                    <Link
-                      href="/admin"
-                      onClick={() => setMenuOpen(false)}
-                      className="hover:text-[#244f31] flex items-center gap-1.5 text-[#244f31] font-bold"
-                    >
-                      🔑 Admin Panel
-                    </Link>
                   </div>
                 </div>
               ) : (
@@ -653,16 +618,6 @@ export default function SiteHeader({
                   <span>LOGIN / SIGN UP</span>
                 </Link>
               )}
-
-              {/* Direct Admin Portal Link in Mobile Drawer */}
-              <a
-                href="/admin"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-xl border border-[#244f31] bg-[#f8faf1] p-3 text-sm font-black text-[#244f31] hover:bg-[#244f31] hover:text-white transition shadow-xs cursor-pointer"
-              >
-                <ShieldCheck className="size-4 text-[#80a03c]" />
-                <span>🔐 ADMIN PORTAL</span>
-              </a>
 
               {menuLinks.map((link) => (
                 <a

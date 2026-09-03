@@ -243,7 +243,17 @@ export default function Home() {
 
       {/* Main Shop / Products Section */}
       <div id="shop">
-        {selectedConcern ? (
+        {catalog.length === 0 ? (
+          <div className="mx-auto max-w-[1440px] px-4 py-16 text-center">
+            <div className="mx-auto max-w-md rounded-2xl border border-dashed border-[#ddddd9] bg-white p-8 shadow-xs">
+              <span className="text-4xl">🌿</span>
+              <h3 className="mt-3 text-lg font-bold text-[#17231b]">No Products in Catalog</h3>
+              <p className="mt-1 text-xs text-[#666666]">
+                No products are currently published in the store. Add new products from the Admin Panel to display them here instantly.
+              </p>
+            </div>
+          </div>
+        ) : selectedConcern ? (
           <ProductRail
             title={`Remedies for ${selectedConcern}`}
             subtitle={`Showing ${filteredProducts.length} Ayurvedic formulations`}

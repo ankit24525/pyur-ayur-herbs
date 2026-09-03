@@ -307,11 +307,13 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
         </div>
 
         {/* Product Grid */}
-        {!isDataLoaded && sortedProducts.length === 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <ProductCardSkeleton key={i} />
-            ))}
+        {sortedProducts.length === 0 ? (
+          <div className="mx-auto max-w-md rounded-2xl border border-dashed border-[#ddddd9] bg-white p-8 text-center shadow-xs my-8">
+            <span className="text-4xl">🌿</span>
+            <h3 className="mt-3 text-lg font-bold text-[#17231b]">No Products Found</h3>
+            <p className="mt-1 text-xs text-[#666666]">
+              There are no products listed under this category yet.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">

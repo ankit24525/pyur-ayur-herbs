@@ -66,10 +66,10 @@ export default function Home() {
       fetch("/api/storefront", { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
-          if (data.products && Array.isArray(data.products)) {
+          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
             setCatalog(data.products);
           }
-          if (data.categories && Array.isArray(data.categories)) {
+          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
             setCategories(data.categories);
           }
           if (data.content) {
@@ -77,7 +77,9 @@ export default function Home() {
           }
           setIsDataLoaded(true);
           try {
-            localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
+            if (data.products && data.products.length > 0) {
+              localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
+            }
           } catch {}
         })
         .catch((e) => {

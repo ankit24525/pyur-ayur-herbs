@@ -322,6 +322,9 @@ export default function AdminDashboard() {
     setIsAdminLoggedIn(false);
     setLoginUsername("");
     setLoginPassword("");
+    if (typeof window !== "undefined") {
+      window.location.href = "/admin";
+    }
   };
 
   const [loading, setLoading] = useState(true);
@@ -861,37 +864,55 @@ export default function AdminDashboard() {
           ];
         }
 
-        setDbData({
-          products: [],
-          orders: [],
-          coupons: [],
-          leads: [],
-          reviews: [],
-          blogs: [],
-          faqs: [],
-          testimonials: [],
-          collections: [],
-          categories: [],
-          ...data,
-          marketing: {
-            campaigns: [],
-            banners: [],
-            popups: [],
-            notifications: [],
-            ...(data.marketing || {})
-          },
-          content: {
-            announcement: {},
-            heroSlides: [],
-            consultationBanner: {},
-            ...(data.content || {})
-          },
-          settings,
-          seo: {
-            title: "Pyur Ayur Herbs - Original Ayurvedic Formulations",
-            metaDesc: "Shop authentic gold-grade Shilajit, juices, and wellness supplements certified by Ayurvedic experts.",
-            ...(data.seo || {})
+        setDbData((prev: any) => {
+          let mergedProducts = (Array.isArray(data.products) && data.products.length > 0)
+            ? data.products
+            : (prev.products && prev.products.length > 0 ? prev.products : []);
+
+          if (mergedProducts.length === 0 && typeof window !== "undefined") {
+            try {
+              const localBackup = localStorage.getItem("pyur_admin_products_backup");
+              if (localBackup) {
+                const parsed = JSON.parse(localBackup);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  mergedProducts = parsed;
+                }
+              }
+            } catch {}
           }
+
+          return {
+            orders: [],
+            coupons: [],
+            leads: [],
+            reviews: [],
+            blogs: [],
+            faqs: [],
+            testimonials: [],
+            collections: [],
+            categories: [],
+            ...data,
+            products: mergedProducts,
+            marketing: {
+              campaigns: [],
+              banners: [],
+              popups: [],
+              notifications: [],
+              ...(data.marketing || {})
+            },
+            content: {
+              announcement: {},
+              heroSlides: [],
+              consultationBanner: {},
+              ...(data.content || {})
+            },
+            settings,
+            seo: {
+              title: "Pyur Ayur Herbs - Original Ayurvedic Formulations",
+              metaDesc: "Shop authentic gold-grade Shilajit, juices, and wellness supplements certified by Ayurvedic experts.",
+              ...(data.seo || {})
+            }
+          };
         });
 
         // Real-time detection: Trigger chime and toast when a new order is received
@@ -950,6 +971,9 @@ export default function AdminDashboard() {
           const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
           cached[key] = value;
           localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+          if (key === "products") {
+            localStorage.setItem("pyur_admin_products_backup", JSON.stringify(value));
+          }
           window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key, value } }));
         } catch {}
       }
@@ -960,13 +984,17 @@ export default function AdminDashboard() {
         body: JSON.stringify({ action: "updateKey", key, value }),
       });
       if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
         setDbData((prev: any) => ({ ...prev, [key]: value }));
+        return true;
       } else {
         const errData = await res.json().catch(() => ({}));
-        alert(`Error saving ${key}: ${errData.error || "Server error"}`);
+        alert(`Notice: Could not sync ${key} to cloud database: ${errData.error || "Server error"}`);
+        return false;
       }
     } catch (e) {
-      alert("Error saving data to server.");
+      console.error("Error saving data to server:", e);
+      return false;
     }
   };
 

@@ -358,11 +358,18 @@ export default function SiteHeader({
                     <div className="border-t border-[#f0f0eb] pt-1 mt-1">
                       <button
                         onClick={async () => {
-                          await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                          try {
+                            await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                          } catch {}
                           setUser(null);
-                          window.location.href = "/";
+                          if (typeof window !== "undefined") {
+                            localStorage.removeItem("pyur_session");
+                            localStorage.removeItem("pyur_user");
+                            sessionStorage.clear();
+                            window.location.href = "/";
+                          }
                         }}
-                        className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
+                        className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 cursor-pointer"
                       >
                         SIGN OUT
                       </button>
@@ -573,15 +580,22 @@ export default function SiteHeader({
                   <div className="flex items-center justify-between pb-2 border-b border-[#ddddd9]/60">
                     <div className="flex items-center gap-2">
                       <User className="size-4 text-[#244f31]" />
-                      <span className="font-bold text-[#17231b] text-sm">Hello, {user.name.split(" ")[0]}</span>
+                      <span className="font-bold text-[#17231b] text-sm">Hello, {(user?.name || "Member").split(" ")[0]}</span>
                     </div>
                     <button
                       onClick={async () => {
-                        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                        try {
+                          await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                        } catch {}
                         setUser(null);
-                        window.location.href = "/";
+                        if (typeof window !== "undefined") {
+                          localStorage.removeItem("pyur_session");
+                          localStorage.removeItem("pyur_user");
+                          sessionStorage.clear();
+                          window.location.href = "/";
+                        }
                       }}
-                      className="text-xs font-bold text-red-600 hover:underline"
+                      className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
                     >
                       Logout
                     </button>

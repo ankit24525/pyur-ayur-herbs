@@ -26,40 +26,34 @@ export interface DBData {
   sessions?: { token: string; userId: string; expiresAt: number }[];
 }
 
-let client: MongoClient | null = null;
-let clientPromise: Promise<MongoClient> | null = null;
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 4000): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Database operation timed out after ${timeoutMs}ms`)), timeoutMs)
-    ),
-  ]);
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+  var _mongoClient: MongoClient | undefined;
 }
 
 async function getMongoClient(): Promise<MongoClient> {
-  if (client) return client;
-  if (clientPromise) return clientPromise;
+  if (globalThis._mongoClient) return globalThis._mongoClient;
+  if (globalThis._mongoClientPromise) return globalThis._mongoClientPromise;
 
   if (!uri) {
     throw new Error("MONGODB_URI environment variable is missing.");
   }
 
-  client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 4000,
-    connectTimeoutMS: 4000,
-    socketTimeoutMS: 8000,
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 20000,
     maxPoolSize: 10,
   });
 
-  clientPromise = client.connect().catch((err) => {
-    client = null;
-    clientPromise = null;
+  globalThis._mongoClient = client;
+  globalThis._mongoClientPromise = client.connect().catch((err) => {
+    globalThis._mongoClient = undefined;
+    globalThis._mongoClientPromise = undefined;
     throw err;
   });
 
-  return clientPromise;
+  return globalThis._mongoClientPromise;
 }
 
 let dbMemoryCache: { data: DBData; timestamp: number } | null = null;
@@ -180,7 +174,7 @@ export async function readDB(): Promise<DBData> {
     return dbMemoryCache.data;
   }
 
-  // If MongoDB URI is not set, load local file instantly
+  // If MongoDB URI is not set, load local file
   if (!uri) {
     const data = readLocalDB();
     dbMemoryCache = { data, timestamp: Date.now() };
@@ -188,12 +182,9 @@ export async function readDB(): Promise<DBData> {
   }
 
   try {
-    const activeClient = await withTimeout(getMongoClient(), 3000);
+    const activeClient = await getMongoClient();
     const db = activeClient.db(dbName);
-    const document = await withTimeout(
-      db.collection("store_data").findOne({ _id: "main" as any }),
-      3000
-    );
+    const document = await db.collection("store_data").findOne({ _id: "main" as any });
 
     if (!document) {
       const defaultData = readLocalDB();
@@ -204,10 +195,19 @@ export async function readDB(): Promise<DBData> {
     const { _id, ...cleanData } = document as any;
     const sanitized = sanitizeDBData(cleanData);
 
+    // Safeguard: Never allow an empty products array from a fresh or stale DB to wipe out existing in-memory products
+    if (sanitized.products.length === 0 && dbMemoryCache?.data?.products && dbMemoryCache.data.products.length > 0) {
+      sanitized.products = dbMemoryCache.data.products;
+    }
+
     dbMemoryCache = { data: sanitized, timestamp: Date.now() };
     writeLocalDB(sanitized);
     return sanitized;
   } catch (error) {
+    console.error("[MongoDB Read Error]:", error);
+    if (dbMemoryCache?.data && dbMemoryCache.data.products && dbMemoryCache.data.products.length > 0) {
+      return dbMemoryCache.data;
+    }
     const localData = readLocalDB();
     dbMemoryCache = { data: localData, timestamp: Date.now() };
     return localData;
@@ -215,7 +215,7 @@ export async function readDB(): Promise<DBData> {
 }
 
 export async function writeDB(data: DBData): Promise<boolean> {
-  // 1. Always write to memory cache and local filesystem immediately (0ms!)
+  // 1. Always write to memory cache and local filesystem immediately
   dbMemoryCache = { data, timestamp: Date.now() };
   writeLocalDB(data);
 
@@ -225,23 +225,20 @@ export async function writeDB(data: DBData): Promise<boolean> {
 
   // 2. Persist to MongoDB with full write guarantee
   try {
-    const activeClient = await withTimeout(getMongoClient(), 4000);
+    const activeClient = await getMongoClient();
     const db = activeClient.db(dbName);
 
     const dataToSave = { ...data };
     delete (dataToSave as any)._id;
 
-    await withTimeout(
-      db.collection("store_data").replaceOne(
-        { _id: "main" as any },
-        dataToSave,
-        { upsert: true }
-      ),
-      4000
+    await db.collection("store_data").replaceOne(
+      { _id: "main" as any },
+      dataToSave,
+      { upsert: true }
     );
     return true;
   } catch (error) {
-    console.error("MongoDB write error:", error);
+    console.error("[MongoDB Write Error]:", error);
     return true;
   }
 }

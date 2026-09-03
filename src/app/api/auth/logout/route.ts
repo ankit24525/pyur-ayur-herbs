@@ -9,19 +9,22 @@ export async function POST(request: Request) {
     const token = extractSessionToken(cookieHeader);
 
     if (token) {
-      await deleteSession(token);
+      try {
+        await deleteSession(token);
+      } catch (e) {
+        console.error("[Auth/Logout] Session deletion warning:", e);
+      }
     }
 
-    return NextResponse.json(
-      { success: true },
-      {
-        headers: {
-          "Set-Cookie": clearSessionCookie(),
-        },
-      }
-    );
+    const response = NextResponse.json({ success: true, message: "Logged out successfully" });
+    response.cookies.delete("pyur_session");
+    response.headers.set("Set-Cookie", clearSessionCookie());
+    return response;
   } catch (error) {
     console.error("[Auth/Logout]", error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    const response = NextResponse.json({ success: true, message: "Logged out" });
+    response.cookies.delete("pyur_session");
+    response.headers.set("Set-Cookie", clearSessionCookie());
+    return response;
   }
 }

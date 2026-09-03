@@ -39,26 +39,73 @@ export default function Home() {
   });
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
-  // Load real-time database products and layout from /api/storefront
+  // Load real-time database products and layout from /api/storefront + Instant Local Cache
   useEffect(() => {
-    fetch("/api/storefront", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.products && Array.isArray(data.products)) {
-          setCatalog(data.products);
+    // 1. Instant cache hydration (0ms paint)
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("pyur_storefront_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.products && Array.isArray(parsed.products)) {
+            setCatalog(parsed.products);
+          }
+          if (parsed.categories && Array.isArray(parsed.categories)) {
+            setCategories(parsed.categories);
+          }
+          if (parsed.content) {
+            setCmsData(parsed.content);
+          }
+          setIsDataLoaded(true);
         }
-        if (data.categories && Array.isArray(data.categories)) {
-          setCategories(data.categories);
-        }
-        if (data.content) {
-          setCmsData(data.content);
-        }
-        setIsDataLoaded(true);
-      })
-      .catch((e) => {
-        console.error("Error loading storefront layout:", e);
-        setIsDataLoaded(true);
-      });
+      } catch {}
+    }
+
+    // 2. Fetch live data from backend
+    const loadStorefrontData = () => {
+      fetch("/api/storefront", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.products && Array.isArray(data.products)) {
+            setCatalog(data.products);
+          }
+          if (data.categories && Array.isArray(data.categories)) {
+            setCategories(data.categories);
+          }
+          if (data.content) {
+            setCmsData(data.content);
+          }
+          setIsDataLoaded(true);
+          try {
+            localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
+          } catch {}
+        })
+        .catch((e) => {
+          console.error("Error loading storefront layout:", e);
+          setIsDataLoaded(true);
+        });
+    };
+
+    loadStorefrontData();
+
+    // 3. Real-time listener for live updates from Admin panel
+    const handleLiveUpdate = (e: any) => {
+      if (e?.detail?.key === "products" && Array.isArray(e.detail.value)) {
+        setCatalog(e.detail.value);
+      }
+      if (e?.detail?.key === "categories" && Array.isArray(e.detail.value)) {
+        setCategories(e.detail.value);
+      }
+      loadStorefrontData();
+    };
+
+    window.addEventListener("pyur_storefront_updated", handleLiveUpdate);
+    window.addEventListener("storage", loadStorefrontData);
+
+    return () => {
+      window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
+      window.removeEventListener("storage", loadStorefrontData);
+    };
   }, []);
 
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);

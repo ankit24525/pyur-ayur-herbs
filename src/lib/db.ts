@@ -137,9 +137,13 @@ function sanitizeDBData(data: any): DBData {
 
 // Read from local db.json file (< 1ms)
 function readLocalDB(): DBData {
+  const tmpPath = "/tmp/pyur_db.json";
+  const standardPath = path.join(process.cwd(), "src/lib/db.json");
+
   try {
-    if (fs.existsSync(localDbPath)) {
-      const content = fs.readFileSync(localDbPath, "utf-8");
+    const filePath = fs.existsSync(tmpPath) ? tmpPath : standardPath;
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, "utf-8");
       const cleanData = JSON.parse(content);
       return sanitizeDBData(cleanData);
     }
@@ -151,13 +155,23 @@ function readLocalDB(): DBData {
 
 // Write to local db.json file (< 1ms)
 function writeLocalDB(data: DBData): boolean {
+  const tmpPath = "/tmp/pyur_db.json";
+  const standardPath = path.join(process.cwd(), "src/lib/db.json");
+  const jsonStr = JSON.stringify(data, null, 2);
+
+  let written = false;
+
   try {
-    fs.writeFileSync(localDbPath, JSON.stringify(data, null, 2), "utf-8");
-    return true;
-  } catch (e) {
-    console.error("Error writing local db.json:", e);
-    return false;
-  }
+    fs.writeFileSync(standardPath, jsonStr, "utf-8");
+    written = true;
+  } catch {}
+
+  try {
+    fs.writeFileSync(tmpPath, jsonStr, "utf-8");
+    written = true;
+  } catch {}
+
+  return written;
 }
 
 export async function readDB(): Promise<DBData> {

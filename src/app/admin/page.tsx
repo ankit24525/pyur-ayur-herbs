@@ -945,6 +945,15 @@ export default function AdminDashboard() {
 
   const saveKey = async (key: string, value: any) => {
     try {
+      if (typeof window !== "undefined") {
+        try {
+          const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+          cached[key] = value;
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+          window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key, value } }));
+        } catch {}
+      }
+
       const res = await fetch("/api/admin/all", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

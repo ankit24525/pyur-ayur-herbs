@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const { action, key, value, data } = body;
     const db = await readDB();
 
-    if (action === "updateKey" && key && value) {
+    if (action === "updateKey" && key && value !== undefined) {
       (db as any)[key] = value;
       const success = await writeDB(db);
       if (!success) {

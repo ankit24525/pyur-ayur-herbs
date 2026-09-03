@@ -100,21 +100,58 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
         } else {
           setCart([]);
         }
+
+        const cached = localStorage.getItem("pyur_storefront_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.products && Array.isArray(parsed.products)) {
+            setCatalog(parsed.products);
+          }
+          if (parsed.categories && Array.isArray(parsed.categories)) {
+            setCategories(parsed.categories);
+          }
+          setIsDataLoaded(true);
+        }
       } catch {}
     }
 
-    fetch("/api/storefront", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.products && Array.isArray(data.products)) {
-          setCatalog(data.products);
-        }
-        if (data.categories && Array.isArray(data.categories)) {
-          setCategories(data.categories);
-        }
-        setIsDataLoaded(true);
-      })
-      .catch(() => setIsDataLoaded(true));
+    const loadData = () => {
+      fetch("/api/storefront", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.products && Array.isArray(data.products)) {
+            setCatalog(data.products);
+          }
+          if (data.categories && Array.isArray(data.categories)) {
+            setCategories(data.categories);
+          }
+          setIsDataLoaded(true);
+          try {
+            localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
+          } catch {}
+        })
+        .catch(() => setIsDataLoaded(true));
+    };
+
+    loadData();
+
+    const handleLiveUpdate = (e: any) => {
+      if (e?.detail?.key === "products" && Array.isArray(e.detail.value)) {
+        setCatalog(e.detail.value);
+      }
+      if (e?.detail?.key === "categories" && Array.isArray(e.detail.value)) {
+        setCategories(e.detail.value);
+      }
+      loadData();
+    };
+
+    window.addEventListener("pyur_storefront_updated", handleLiveUpdate);
+    window.addEventListener("storage", loadData);
+
+    return () => {
+      window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
+      window.removeEventListener("storage", loadData);
+    };
   }, []);
 
   const handleAddToCart = (product: Product) => {

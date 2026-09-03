@@ -30,59 +30,33 @@ const getShortName = (name: string) => {
 export default function Home() {
   const router = useRouter();
   const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
-  const [catalog, setCatalog] = useState<Product[]>(products);
-  const [categories, setCategories] = useState<any[]>(concerns);
+  const [catalog, setCatalog] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [cmsData, setCmsData] = useState<any>({
     announcement: null,
     heroSlides: [],
-    consultationBanner: null
+    consultationBanner: null,
   });
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
-  // Instant local cache hydration & background SWR sync from /api/storefront
+  // Load real-time database products and layout from /api/storefront
   useEffect(() => {
-    // 1. Instant Cache Hydration: Read immediately from localStorage (0ms!)
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("pyur_storefront_cache");
-        if (cached) {
-          const data = JSON.parse(cached);
-          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-            setCatalog(data.products);
-          }
-          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-            setCategories(data.categories);
-          }
-          if (data.content) {
-            setCmsData(data.content);
-          }
-          setIsDataLoaded(true);
-        }
-      } catch (e) {
-        console.error("Error reading storefront cache:", e);
-      }
-    }
-
-    // 2. High-speed Background SWR Revalidation (reads optimized /api/storefront)
-    fetch("/api/storefront", { cache: "default" })
+    fetch("/api/storefront", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+        if (data.products && Array.isArray(data.products)) {
           setCatalog(data.products);
         }
-        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+        if (data.categories && Array.isArray(data.categories)) {
           setCategories(data.categories);
         }
         if (data.content) {
           setCmsData(data.content);
         }
         setIsDataLoaded(true);
-        try {
-          localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
-        } catch {}
       })
-      .catch((e) => console.error("Error loading storefront layout:", e))
-      .finally(() => {
+      .catch((e) => {
+        console.error("Error loading storefront layout:", e);
         setIsDataLoaded(true);
       });
   }, []);
@@ -155,18 +129,14 @@ export default function Home() {
     router.push(`/checkout?productId=${product.id}&quantity=1`);
   };
 
+  if (!isDataLoaded) {
+    return <StorefrontSkeleton />;
+  }
+
   // Filter products by selected concern if active
   const filteredProducts = selectedConcern
-    ? catalog.filter((p) => p.concern === selectedConcern)
+    ? catalog.filter((p) => (p.concern || "").toLowerCase() === selectedConcern.toLowerCase())
     : catalog;
-
-  const sugarProducts = catalog.filter((p) => p.concern === "Sugar Management");
-  const fitnessProducts = catalog.filter(
-    (p) => p.concern === "Gym & Fitness" || p.concern === "Energy & Vitality"
-  );
-  const skinDailyProducts = catalog.filter(
-    (p) => p.concern === "Skin & Hair" || p.concern === "Daily Ayurveda" || p.concern === "Women's Health"
-  );
 
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
@@ -190,7 +160,7 @@ export default function Home() {
           const shortName = getShortName(c.name);
           return (
             <button
-              key={c.id}
+              key={c.id || c.name}
               onClick={() => {
                 setSelectedConcern(isSelected ? null : c.name);
                 // Scroll to products catalog grid
@@ -225,12 +195,7 @@ export default function Home() {
 
       {/* Main Shop / Products Section */}
       <div id="shop">
-        {!isDataLoaded && catalog.length === 0 ? (
-          <>
-            <ProductRailSkeleton title="Top-Rated Ayurvedic Remedies" />
-            <ProductRailSkeleton title="Specialized Care Formulations" />
-          </>
-        ) : selectedConcern ? (
+        {selectedConcern ? (
           <ProductRail
             title={`Remedies for ${selectedConcern}`}
             subtitle={`Showing ${filteredProducts.length} Ayurvedic formulations`}
@@ -240,37 +205,33 @@ export default function Home() {
           />
         ) : (
           <>
+            {/* 1. All Bestselling Remedies Rail */}
             <ProductRail
-              title="Kapiva-Style Bestselling Remedies"
-              subtitle="Top-rated Ayurvedic juices, resins & elixirs backed by Vaidyas"
-              items={catalog.slice(0, 4)}
+              title="Top Bestselling Ayurvedic Remedies"
+              subtitle="All authentic gold-grade Ayurvedic juices, resins & elixirs"
+              items={catalog}
               onAddToCart={handleAddToCart}
               onBuyNow={handleBuyNow}
             />
 
-            <ProductRail
-              title="Sugar Management & Metabolic Care"
-              subtitle="11-Herb Ayurvedic solutions for healthy glucose regulation"
-              items={sugarProducts.length > 0 ? sugarProducts : catalog.slice(0, 4)}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
-
-            <ProductRail
-              title="Energy, Stamina & Gym Fitness"
-              subtitle="Pure Himalayan Shilajit and joint mobility formulas"
-              items={fitnessProducts.length > 0 ? fitnessProducts : catalog.slice(2, 6)}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
-
-            <ProductRail
-              title="Skin Radiance & Daily Wellness"
-              subtitle="Kumkumadi Saffron, Amla Vitamin C, and Women's Period Harmony"
-              items={skinDailyProducts.length > 0 ? skinDailyProducts : catalog.slice(4, 8)}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
+            {/* 2. Dynamic Rails for every category with active products */}
+            {categories.map((cat: any) => {
+              const catProducts = catalog.filter(
+                (p) => (p.concern || "").toLowerCase() === (cat.name || "").toLowerCase()
+              );
+              if (catProducts.length === 0) return null;
+              return (
+                <ProductRail
+                  key={cat.id || cat.name}
+                  title={`${cat.icon ? `${cat.icon} ` : ""}${cat.name} Formulations`}
+                  subtitle={`100% natural Ayurvedic care for ${cat.name}`}
+                  categorySlug={cat.id || (cat.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}
+                  items={catProducts}
+                  onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
+                />
+              );
+            })}
           </>
         )}
       </div>

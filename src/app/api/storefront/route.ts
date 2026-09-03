@@ -9,8 +9,8 @@ export async function GET() {
     const db = await readDB();
 
     const responseData = {
-      products: db.products && db.products.length > 0 ? db.products : products,
-      categories: db.categories && db.categories.length > 0 ? db.categories : concerns,
+      products: Array.isArray(db.products) ? db.products : [],
+      categories: Array.isArray(db.categories) && db.categories.length > 0 ? db.categories : concerns,
       content: db.content || { announcement: {}, heroSlides: [], consultationBanner: {} },
       reviews: db.reviews || [],
       testimonials: db.testimonials || [],
@@ -28,14 +28,16 @@ export async function GET() {
     return NextResponse.json(responseData, {
       status: 200,
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
       },
     });
   } catch (error) {
     console.error("Storefront API Error:", error);
     return NextResponse.json(
       {
-        products,
+        products: [],
         categories: concerns,
         content: { announcement: {}, heroSlides: [], consultationBanner: {} },
         reviews: [],
@@ -46,7 +48,12 @@ export async function GET() {
           prepaidDiscount: 5,
         },
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
     );
   }
 }

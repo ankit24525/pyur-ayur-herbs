@@ -7,7 +7,7 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import SiteHeader from "@/components/SiteHeader";
 import ConcernFilter from "@/components/ConcernFilter";
 import ProductCard from "@/components/ProductCard";
-import { ProductCardSkeleton } from "@/components/SkeletonLoader";
+import { ProductCardSkeleton, StorefrontSkeleton } from "@/components/SkeletonLoader";
 import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
 import SiteFooter from "@/components/SiteFooter";
 import { concerns, products, Product } from "@/lib/store";
@@ -79,8 +79,8 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
   const slug = resolvedParams.slug;
 
   const [sortBy, setSortBy] = useState("popular");
-  const [catalog, setCatalog] = useState<Product[]>(products);
-  const [categories, setCategories] = useState<any[]>(concerns);
+  const [catalog, setCatalog] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Modal States
@@ -91,7 +91,6 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
   // Cart State for Header
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
 
-  // Instant local cache hydration & background SWR sync
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
@@ -99,30 +98,18 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
         if (stored) {
           setCart(JSON.parse(stored));
         } else {
-          setCart([{ product: products[0], quantity: 1 }]);
-        }
-
-        const cached = localStorage.getItem("pyur_storefront_cache");
-        if (cached) {
-          const data = JSON.parse(cached);
-          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-            setCatalog(data.products);
-          }
-          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-            setCategories(data.categories);
-          }
-          setIsDataLoaded(true);
+          setCart([]);
         }
       } catch {}
     }
 
-    fetch("/api/storefront", { cache: "default" })
+    fetch("/api/storefront", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+        if (data.products && Array.isArray(data.products)) {
           setCatalog(data.products);
         }
-        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+        if (data.categories && Array.isArray(data.categories)) {
           setCategories(data.categories);
         }
         setIsDataLoaded(true);
@@ -199,6 +186,10 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
     if (sortBy === "rating") return b.rating - a.rating;
     return b.reviews - a.reviews;
   });
+
+  if (!isDataLoaded) {
+    return <StorefrontSkeleton />;
+  }
 
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">

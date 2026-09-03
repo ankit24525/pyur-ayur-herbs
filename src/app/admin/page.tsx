@@ -77,6 +77,10 @@ export default function AdminDashboard() {
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const globalSearchRef = useRef<HTMLDivElement>(null);
 
+  // Admin Profile Menu Dropdown State & Ref
+  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+  const adminMenuRef = useRef<HTMLDivElement>(null);
+
   // Dedicated Tab Search States
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [productConcernFilter, setProductConcernFilter] = useState("All");
@@ -90,11 +94,15 @@ export default function AdminDashboard() {
       if (globalSearchRef.current && !globalSearchRef.current.contains(event.target as Node)) {
         setIsGlobalSearchOpen(false);
       }
+      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
+        setIsAdminMenuOpen(false);
+      }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsNotificationsOpen(false);
         setIsGlobalSearchOpen(false);
+        setIsAdminMenuOpen(false);
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -1797,8 +1805,15 @@ export default function AdminDashboard() {
           >
             {isAdminSidebarOpen ? <X className="size-5 text-emerald-400" /> : <Menu className="size-5" />}
           </button>
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex size-10 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden shrink-0">
+          <button
+            onClick={() => {
+              setActiveMenu("dashboard");
+              setSubTab("overview");
+            }}
+            className="flex items-center gap-2.5 hover:opacity-90 transition text-left cursor-pointer"
+            title="Go to Admin Dashboard"
+          >
+            <div className="relative flex size-10 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden shrink-0 shadow-xs">
               <Image
                 src="/brand/pure-ayur-logo.png"
                 alt="Pure Ayur Herbs Logo"
@@ -1808,8 +1823,11 @@ export default function AdminDashboard() {
                 unoptimized
               />
             </div>
-            <span className="text-base font-black tracking-wider uppercase">PURE AYUR ADMIN</span>
-          </div>
+            <div className="flex flex-col">
+              <span className="text-base font-black tracking-wider uppercase leading-none text-white">PURE AYUR ADMIN</span>
+              <span className="text-[9px] font-bold text-emerald-400 tracking-widest mt-0.5">STORE MANAGEMENT</span>
+            </div>
+          </button>
         </div>
 
         <div className="relative max-w-md w-full mx-8 hidden md:block" ref={globalSearchRef}>
@@ -2184,13 +2202,110 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1 text-xs font-bold text-white/90">
-            <span>Admin</span>
-            <ChevronDown className="size-3.5 text-white/60" />
+          {/* Quick View Live Storefront Button */}
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-bold text-white transition active:scale-95 cursor-pointer shadow-xs"
+            title="Open Live Storefront in New Tab"
+          >
+            <Globe className="size-3.5 text-[#80a03c]" />
+            <span>View Store</span>
+          </a>
+
+          {/* Interactive Admin Profile Dropdown Menu */}
+          <div className="relative" ref={adminMenuRef}>
+            <button
+              onClick={() => setIsAdminMenuOpen((prev) => !prev)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-bold text-white transition active:scale-95 cursor-pointer"
+              title="Admin Account Options"
+              aria-label="Toggle Admin Profile Menu"
+            >
+              <div className="size-6 rounded-full bg-[#80a03c] flex items-center justify-center text-[11px] font-black text-white shadow-xs">
+                A
+              </div>
+              <span className="hidden md:inline font-bold">Admin</span>
+              <ChevronDown className={`size-3.5 text-white/60 transition-transform duration-200 ${isAdminMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Admin Dropdown Panel */}
+            {isAdminMenuOpen && (
+              <div className="absolute right-0 mt-3 w-64 rounded-2xl bg-white text-[#17231b] shadow-2xl border border-neutral-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* Panel Header */}
+                <div className="px-4 py-3 bg-[#17231b] text-white border-b border-white/10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-8 rounded-full bg-[#80a03c] flex items-center justify-center text-xs font-black text-white shadow-xs">
+                      A
+                    </div>
+                    <div>
+                      <p className="text-xs font-black">Store Administrator</p>
+                      <p className="text-[10px] text-emerald-400 font-semibold">Super Admin Privileges</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <div className="p-2 space-y-1 text-xs">
+                  <button
+                    onClick={() => {
+                      setActiveMenu("dashboard");
+                      setSubTab("overview");
+                      setIsAdminMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#f8faf1] text-left font-bold text-[#17231b] transition cursor-pointer"
+                  >
+                    <TrendingUp className="size-4 text-[#244f31]" />
+                    <span>Dashboard Overview</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveMenu("settings");
+                      setSubTab("general");
+                      setIsAdminMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-[#f8faf1] text-left font-bold text-[#17231b] transition cursor-pointer"
+                  >
+                    <Settings className="size-4 text-[#244f31]" />
+                    <span>Store Settings & WhatsApp</span>
+                  </button>
+
+                  <a
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsAdminMenuOpen(false)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#f8faf1] text-left font-bold text-[#17231b] transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Globe className="size-4 text-[#80a03c]" />
+                      <span>Live Website Storefront</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400">↗</span>
+                  </a>
+                </div>
+
+                {/* Logout Button */}
+                <div className="p-2 border-t border-neutral-100 bg-neutral-50">
+                  <button
+                    onClick={() => {
+                      setIsAdminMenuOpen(false);
+                      handleAdminLogout();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 font-black text-xs transition border border-rose-200/60 cursor-pointer"
+                  >
+                    <Lock className="size-3.5" />
+                    <span>Sign Out of Admin</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+
           <button
             onClick={handleAdminLogout}
-            className="flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-rose-600/80 border border-white/10 px-3 py-1.5 text-[10px] font-black text-white/80 hover:text-white transition"
+            className="flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-rose-600/80 border border-white/10 px-3 py-1.5 text-[10px] font-black text-white/80 hover:text-white transition cursor-pointer"
             title="Logout from admin"
           >
             <Lock className="size-3.5" />

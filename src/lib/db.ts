@@ -19,6 +19,8 @@ export interface DBData {
   marketing?: any;
   seo?: any;
   users?: any[];
+  categories?: any[];
+  collections?: any[];
   orderOtps?: any[];
   sessions?: { token: string; userId: string; expiresAt: number }[];
 }
@@ -58,6 +60,7 @@ function sanitizeDBData(data: any): DBData {
   if (!Array.isArray(data.users)) data.users = [];
   if (!Array.isArray(data.reviews)) data.reviews = [];
   if (!Array.isArray(data.collections)) data.collections = [];
+  if (!Array.isArray(data.categories)) data.categories = [];
 
   if (!data.marketing || typeof data.marketing !== "object") {
     data.marketing = { campaigns: [], banners: [], popups: [], notifications: [] };

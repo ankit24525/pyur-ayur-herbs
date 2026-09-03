@@ -353,7 +353,14 @@ export default function AdminDashboard() {
     content: { announcement: {}, heroSlides: [], consultationBanner: {} },
     seo: { title: "", metaDesc: "", sitemapUrl: "", robotsTxt: "" },
     collections: [],
+    categories: [],
   });
+
+  // Dynamic available categories list (custom created DB categories or default fallback concerns)
+  const availableCategories: Array<{ id: string; name: string; icon?: string; image?: string }> = 
+    dbData.categories && Array.isArray(dbData.categories) && dbData.categories.length > 0
+      ? dbData.categories
+      : concerns;
 
   // Dynamic Admin Notifications list derived from live store DB data
   const getAdminNotifications = () => {
@@ -864,6 +871,7 @@ export default function AdminDashboard() {
           faqs: [],
           testimonials: [],
           collections: [],
+          categories: [],
           ...data,
           marketing: {
             campaigns: [],
@@ -1156,23 +1164,28 @@ export default function AdminDashboard() {
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCategory.name) return;
+    if (!newCategory.name?.trim()) return;
 
     const currentCats = dbData.categories && dbData.categories.length > 0
       ? dbData.categories
       : concerns;
 
+    if (currentCats.some((c: any) => c.name.toLowerCase() === newCategory.name.trim().toLowerCase())) {
+      alert("A category with this name already exists!");
+      return;
+    }
+
     const newCat = {
       id: newCategory.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      name: newCategory.name,
-      icon: newCategory.icon || "🌿",
+      name: newCategory.name.trim(),
+      icon: newCategory.icon?.trim() || "🌿",
       image: newCategory.image || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=120&q=80",
     };
 
     const updated = [...currentCats, newCat];
     await saveKey("categories", updated);
     setNewCategory({ name: "", image: "", icon: "🌿" });
-    alert("New category added successfully!");
+    showToast(`🎉 Category "${newCat.name}" added successfully!`);
   };
 
   const handleDeleteCategory = async (catId: string) => {
@@ -1180,9 +1193,9 @@ export default function AdminDashboard() {
       const currentCats = dbData.categories && dbData.categories.length > 0
         ? dbData.categories
         : concerns;
-      const updated = currentCats.filter((c: any) => c.id !== catId);
+      const updated = currentCats.filter((c: any) => c.id !== catId && c.name !== catId);
       await saveKey("categories", updated);
-      alert("Category deleted successfully!");
+      showToast("Category deleted successfully!");
     }
   };
 
@@ -3325,7 +3338,12 @@ export default function AdminDashboard() {
                           className="px-3 py-2 rounded-xl border border-[#ddddd9] text-xs font-semibold outline-none focus:border-[#244f31] bg-white cursor-pointer"
                         >
                           <option value="All">All Categories / Concerns</option>
-                          {Array.from(new Set(dbData.products.map((p: any) => p.concern).filter(Boolean))).map((concern: any) => (
+                          {Array.from(
+                            new Set([
+                              ...availableCategories.map((c: any) => c.name),
+                              ...dbData.products.map((p: any) => p.concern),
+                            ].filter(Boolean))
+                          ).map((concern: any) => (
                             <option key={concern} value={concern}>{concern}</option>
                           ))}
                         </select>
@@ -3423,13 +3441,13 @@ export default function AdminDashboard() {
                             <select
                               value={editingProduct.concern}
                               onChange={(e) => setEditingProduct({ ...editingProduct, concern: e.target.value })}
-                              className="mt-1 w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31]"
+                              className="mt-1 w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31] bg-white cursor-pointer"
                             >
-                              <option>Sugar Management</option>
-                              <option>Gym & Fitness</option>
-                              <option>Energy & Vitality</option>
-                              <option>Skin & Hair</option>
-                              <option>Daily Ayurveda</option>
+                              {availableCategories.map((cat: any) => (
+                                <option key={cat.id || cat.name} value={cat.name}>
+                                  {cat.icon ? `${cat.icon} ` : ""}{cat.name}
+                                </option>
+                              ))}
                             </select>
                           </div>
                         </div>
@@ -3635,13 +3653,13 @@ export default function AdminDashboard() {
                         <select
                           value={newProduct.concern}
                           onChange={(e) => setNewProduct({ ...newProduct, concern: e.target.value })}
-                          className="mt-1 w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31]"
+                          className="mt-1 w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31] bg-white cursor-pointer"
                         >
-                          <option>Sugar Management</option>
-                          <option>Gym & Fitness</option>
-                          <option>Energy & Vitality</option>
-                          <option>Skin & Hair</option>
-                          <option>Daily Ayurveda</option>
+                          {availableCategories.map((cat: any) => (
+                            <option key={cat.id || cat.name} value={cat.name}>
+                              {cat.icon ? `${cat.icon} ` : ""}{cat.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -4416,8 +4434,13 @@ export default function AdminDashboard() {
                             onChange={(e) => setInventoryConcernFilter(e.target.value)}
                             className="px-3 py-2 rounded-xl border border-[#ddddd9] text-xs font-semibold outline-none focus:border-[#244f31] bg-white cursor-pointer"
                           >
-                            <option value="All">All Concerns</option>
-                            {Array.from(new Set(dbData.products.map((p: any) => p.concern))).map((concern: any) => (
+                            <option value="All">All Concerns / Categories</option>
+                            {Array.from(
+                              new Set([
+                                ...availableCategories.map((c: any) => c.name),
+                                ...dbData.products.map((p: any) => p.concern),
+                              ].filter(Boolean))
+                            ).map((concern: any) => (
                               <option key={concern} value={concern}>{concern}</option>
                             ))}
                           </select>
@@ -4759,14 +4782,11 @@ export default function AdminDashboard() {
                                   required
                                 >
                                   <option value="">Choose Category...</option>
-                                  <option value="Sugar Management">Sugar Management</option>
-                                  <option value="Gym & Fitness">Gym & Fitness</option>
-                                  <option value="Energy & Vitality">Energy & Vitality</option>
-                                  <option value="Heart Health">Heart Health</option>
-                                  <option value="Liver Care">Liver Care</option>
-                                  <option value="Daily Ayurveda">Daily Ayurveda</option>
-                                  <option value="Skin & Hair">Skin & Hair</option>
-                                  <option value="Women's Health">Women's Health</option>
+                                  {availableCategories.map((cat: any) => (
+                                    <option key={cat.id || cat.name} value={cat.name}>
+                                      {cat.icon ? `${cat.icon} ` : ""}{cat.name}
+                                    </option>
+                                  ))}
                                 </select>
                               ) : (
                                 <select

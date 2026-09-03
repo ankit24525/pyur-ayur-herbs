@@ -25,7 +25,7 @@ export default function SiteFooter() {
       .catch((e) => console.error("Error loading settings in footer:", e));
   }, []);
 
-  let cleanNumber = settings.whatsappNumber.replace(/\D/g, "");
+  let cleanNumber = (settings?.whatsappNumber || "919876543210").replace(/\D/g, "");
   if (cleanNumber.length === 10) {
     cleanNumber = "91" + cleanNumber;
   }

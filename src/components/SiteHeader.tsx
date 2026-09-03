@@ -85,10 +85,10 @@ export default function SiteHeader({
 
   useEffect(() => {
     isMountedRef.current = true;
-    prevCartCountRef.current = cart.reduce((acc, item) => acc + item.quantity, 0);
+    prevCartCountRef.current = (cart || []).reduce((acc, item) => acc + ((item && item.quantity) || 0), 0);
   }, []);
 
-  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const totalCartCount = (cart || []).reduce((acc, item) => acc + ((item && item.quantity) || 0), 0);
 
   useEffect(() => {
     if (!isMountedRef.current) return;
@@ -111,7 +111,7 @@ export default function SiteHeader({
   // Cycle search placeholders every 2.5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setSuggestionIdx((prev) => (prev + 1) % headerSearchSuggestions.length);
+      setSuggestionIdx((prev) => (prev + 1) % (headerSearchSuggestions.length || 1));
     }, 2500);
     return () => clearInterval(timer);
   }, []);
@@ -123,18 +123,21 @@ export default function SiteHeader({
       setIsSearching(false);
       return;
     }
-    const q = searchQuery.toLowerCase();
-    const filtered = catalog.filter(
+    const q = searchQuery.toLowerCase().trim();
+    const filtered = (catalog || []).filter(
       (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.concern.toLowerCase().includes(q) ||
-        p.ingredients.some((ing) => ing.toLowerCase().includes(q))
+        (p?.name || "").toLowerCase().includes(q) ||
+        (p?.concern || "").toLowerCase().includes(q) ||
+        (Array.isArray(p?.ingredients) && p.ingredients.some((ing: any) => (typeof ing === "string" ? ing : (ing as any)?.name || "").toLowerCase().includes(q)))
     );
     setSearchResults(filtered);
     setIsSearching(true);
   }, [searchQuery, catalog]);
 
-  const cartSubtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  const cartSubtotal = (cart || []).reduce(
+    (acc, item) => acc + ((item && item.product && item.product.price) || 0) * ((item && item.quantity) || 1),
+    0
+  );
   const freeShippingThreshold = 999;
   const progressToFreeShipping = Math.min(100, (cartSubtotal / freeShippingThreshold) * 100);
 

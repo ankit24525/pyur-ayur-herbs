@@ -1009,7 +1009,29 @@ export default function AdminDashboard() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setNewProduct((prev) => ({ ...prev, image: reader.result as string }));
+        const img = document.createElement("img");
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.82);
+          setNewProduct((prev) => ({ ...prev, image: compressed }));
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -1021,12 +1043,34 @@ export default function AdminDashboard() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setNewProduct((prev: any) => ({
-          ...prev,
-          images: [...(prev.images || []), reader.result as string]
-        }));
-        target.value = "";
-        showToast("Additional image added successfully!");
+        const img = document.createElement("img");
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.82);
+          setNewProduct((prev: any) => ({
+            ...prev,
+            images: [...(prev.images || []), compressed]
+          }));
+          target.value = "";
+          showToast("Additional image added successfully!");
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -1042,39 +1086,51 @@ export default function AdminDashboard() {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newProduct.name?.trim()) return;
+
+    const uniqueId = `prod_${Date.now()}`;
+    const cleanSlug = (newProduct.slug || newProduct.name)
+      .toLowerCase()
+      .trim()
+      .replace(/rs\.?|₹|[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || `product-${Date.now()}`;
+
     const prod = {
-      id: `${dbData.products.length + 1}`,
-      name: newProduct.name,
-      slug: newProduct.slug || newProduct.name.toLowerCase().replace(/rs\.?|₹|[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
-      concern: newProduct.concern,
-      price: parseFloat(newProduct.price),
-      compareAt: parseFloat(newProduct.compareAt) || parseFloat(newProduct.price) * 1.2,
+      id: uniqueId,
+      name: newProduct.name.trim(),
+      slug: cleanSlug,
+      concern: newProduct.concern || "Sugar Management",
+      price: parseFloat(newProduct.price) || 0,
+      compareAt: parseFloat(newProduct.compareAt) || (parseFloat(newProduct.price) || 0) * 1.2,
       rating: 5.0,
       reviews: 0,
       badge: newProduct.badge || "NEW",
       image: newProduct.image || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80",
       images: newProduct.images || [],
-      ingredients: newProduct.ingredients ? newProduct.ingredients.split(",").map(i => i.trim()) : ["Herbal Extract"],
+      ingredients: newProduct.ingredients ? newProduct.ingredients.split(",").map((i: string) => i.trim()) : ["Herbal Extract"],
       description: newProduct.description || "Premium Ayurvedic wellness support.",
-      coinsEarned: Math.round(parseFloat(newProduct.price) * 0.05),
+      coinsEarned: Math.round((parseFloat(newProduct.price) || 0) * 0.05),
       deliveryDays: "3 - 5 Days",
       inStock: true,
       sku: "PAH-" + newProduct.name.toUpperCase().replace(/[^A-Z0-9]+/g, "-") + "-" + Math.floor(100 + Math.random() * 900),
       stockQty: 50,
       lowStockThreshold: 10,
     };
-    const updated = [...dbData.products, prod];
-    await saveKey("products", updated);
+
+    const updated = [...(dbData.products || []), prod];
+    setDbData((prev: any) => ({ ...prev, products: updated }));
     setNewProduct({ name: "", slug: "", concern: "Sugar Management", price: "", compareAt: "", badge: "NEW", ingredients: "", description: "", image: "", images: [] });
     setSubTab("all");
-    showToast("New product added to catalog successfully!");
+    showToast("🎉 New product added to catalog successfully!");
+    await saveKey("products", updated);
   };
 
   const handleDeleteProduct = async (prodId: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      const updated = dbData.products.filter((p: any) => p.id !== prodId);
-      await saveKey("products", updated);
+      const updated = (dbData.products || []).filter((p: any) => p.id !== prodId);
+      setDbData((prev: any) => ({ ...prev, products: updated }));
       showToast("Product deleted successfully!");
+      await saveKey("products", updated);
     }
   };
 
@@ -1083,7 +1139,29 @@ export default function AdminDashboard() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setEditingProduct((prev: any) => ({ ...prev, image: reader.result as string }));
+        const img = document.createElement("img");
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.82);
+          setEditingProduct((prev: any) => ({ ...prev, image: compressed }));
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -1095,12 +1173,34 @@ export default function AdminDashboard() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setEditingProduct((prev: any) => ({
-          ...prev,
-          images: [...(prev.images || []), reader.result as string]
-        }));
-        target.value = "";
-        showToast("Additional image added successfully!");
+        const img = document.createElement("img");
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.82);
+          setEditingProduct((prev: any) => ({
+            ...prev,
+            images: [...(prev.images || []), compressed]
+          }));
+          target.value = "";
+          showToast("Additional image added successfully!");
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -1118,24 +1218,31 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editingProduct) return;
 
-    const updated = dbData.products.map((p: any) =>
+    const cleanSlug = (editingProduct.slug || editingProduct.name)
+      .toLowerCase()
+      .trim()
+      .replace(/rs\.?|₹|[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || `product-${editingProduct.id}`;
+
+    const updated = (dbData.products || []).map((p: any) =>
       p.id === editingProduct.id
         ? {
             ...editingProduct,
-            slug: editingProduct.slug || editingProduct.name.toLowerCase().replace(/rs\.?|₹|[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
-            price: parseFloat(editingProduct.price),
-            compareAt: parseFloat(editingProduct.compareAt) || parseFloat(editingProduct.price) * 1.2,
+            slug: cleanSlug,
+            price: parseFloat(editingProduct.price) || 0,
+            compareAt: parseFloat(editingProduct.compareAt) || (parseFloat(editingProduct.price) || 0) * 1.2,
             ingredients: typeof editingProduct.ingredients === "string" 
               ? editingProduct.ingredients.split(",").map((i: string) => i.trim()) 
               : editingProduct.ingredients,
-            images: editingProduct.images || [],
+            coinsEarned: Math.round((parseFloat(editingProduct.price) || 0) * 0.05),
           }
         : p
     );
 
-    await saveKey("products", updated);
+    setDbData((prev: any) => ({ ...prev, products: updated }));
     setEditingProduct(null);
     showToast("Product details updated successfully!");
+    await saveKey("products", updated);
   };
 
   const handleCategoryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

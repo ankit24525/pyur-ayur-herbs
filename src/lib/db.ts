@@ -29,7 +29,7 @@ export interface DBData {
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 800): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 4000): Promise<T> {
   return Promise.race([
     promise,
     new Promise<T>((_, reject) =>
@@ -47,10 +47,10 @@ async function getMongoClient(): Promise<MongoClient> {
   }
 
   client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 800,
-    connectTimeoutMS: 800,
-    socketTimeoutMS: 1000,
-    maxIdleTimeMS: 5000,
+    serverSelectionTimeoutMS: 4000,
+    connectTimeoutMS: 4000,
+    socketTimeoutMS: 8000,
+    maxPoolSize: 10,
   });
 
   clientPromise = client.connect().catch((err) => {
@@ -63,7 +63,7 @@ async function getMongoClient(): Promise<MongoClient> {
 }
 
 let dbMemoryCache: { data: DBData; timestamp: number } | null = null;
-const CACHE_TTL_MS = 3000; // 3s in-memory cache for ultra-fast response
+const CACHE_TTL_MS = 2000; // 2s in-memory cache for ultra-fast response
 
 // Ensure all DB data model fields exist with robust fallbacks
 function sanitizeDBData(data: any): DBData {
@@ -188,12 +188,11 @@ export async function readDB(): Promise<DBData> {
   }
 
   try {
-    // 2. Race MongoDB read with strict 800ms abort timeout
-    const activeClient = await withTimeout(getMongoClient(), 800);
+    const activeClient = await withTimeout(getMongoClient(), 3000);
     const db = activeClient.db(dbName);
     const document = await withTimeout(
       db.collection("store_data").findOne({ _id: "main" as any }),
-      800
+      3000
     );
 
     if (!document) {
@@ -206,10 +205,9 @@ export async function readDB(): Promise<DBData> {
     const sanitized = sanitizeDBData(cleanData);
 
     dbMemoryCache = { data: sanitized, timestamp: Date.now() };
-    writeLocalDB(sanitized); // sync to local file
+    writeLocalDB(sanitized);
     return sanitized;
   } catch (error) {
-    // Immediate fallback on any connection timeout/error
     const localData = readLocalDB();
     dbMemoryCache = { data: localData, timestamp: Date.now() };
     return localData;
@@ -225,9 +223,9 @@ export async function writeDB(data: DBData): Promise<boolean> {
     return true;
   }
 
-  // 2. Write to MongoDB with non-blocking timeout
+  // 2. Persist to MongoDB with full write guarantee
   try {
-    const activeClient = await withTimeout(getMongoClient(), 800);
+    const activeClient = await withTimeout(getMongoClient(), 4000);
     const db = activeClient.db(dbName);
 
     const dataToSave = { ...data };
@@ -239,11 +237,11 @@ export async function writeDB(data: DBData): Promise<boolean> {
         dataToSave,
         { upsert: true }
       ),
-      800
+      4000
     );
     return true;
   } catch (error) {
-    console.error("MongoDB write warning (saved locally):", error);
+    console.error("MongoDB write error:", error);
     return true;
   }
 }

@@ -151,6 +151,7 @@ export default function Home() {
         onOpenAppModal={() => setAppModalOpen(true)}
         onOpenLoginModal={() => setLoginModalOpen(true)}
         onOpenConsultationModal={() => setConsultationModalOpen(true)}
+        products={catalog}
       />
 
       {/* Mobile Circular Category Selector (Kapiva-Style) - Mobile Only */}

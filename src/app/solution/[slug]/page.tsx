@@ -204,6 +204,7 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
         onOpenAppModal={() => setAppModalOpen(true)}
         onOpenLoginModal={() => setLoginModalOpen(true)}
         onOpenConsultationModal={() => setConsultationModalOpen(true)}
+        products={catalog}
       />
 
       {/* Hero Header Banner */}

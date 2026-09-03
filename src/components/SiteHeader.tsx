@@ -27,6 +27,7 @@ interface SiteHeaderProps {
   onOpenAppModal: () => void;
   onOpenLoginModal: () => void;
   onOpenConsultationModal: () => void;
+  products?: Product[];
 }
 
 export default function SiteHeader({
@@ -36,6 +37,7 @@ export default function SiteHeader({
   onOpenAppModal,
   onOpenLoginModal,
   onOpenConsultationModal,
+  products: initialProducts,
 }: SiteHeaderProps) {
   const [suggestionIdx, setSuggestionIdx] = useState(0);
   const [user, setUser] = useState<any>(null);
@@ -50,18 +52,22 @@ export default function SiteHeader({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [catalog, setCatalog] = useState<Product[]>(products);
+  const [catalog, setCatalog] = useState<Product[]>(initialProducts || []);
 
   useEffect(() => {
-    fetch("/api/admin/products")
+    if (initialProducts && initialProducts.length > 0) {
+      setCatalog(initialProducts);
+      return;
+    }
+    fetch("/api/storefront", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.products && data.products.length > 0) {
+        if (data.products && Array.isArray(data.products)) {
           setCatalog(data.products);
         }
       })
-      .catch((e) => console.error("Error loading products for search:", e));
-  }, []);
+      .catch(() => {});
+  }, [initialProducts]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);

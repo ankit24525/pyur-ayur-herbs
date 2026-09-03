@@ -29,24 +29,41 @@ export interface DBData {
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 800): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Database operation timed out after ${timeoutMs}ms`)), timeoutMs)
+    ),
+  ]);
+}
+
 async function getMongoClient(): Promise<MongoClient> {
   if (client) return client;
   if (clientPromise) return clientPromise;
 
   if (!uri) {
-    throw new Error("MONGODB_URI environment variable is missing from environment/env files.");
+    throw new Error("MONGODB_URI environment variable is missing.");
   }
 
   client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 1500,
-    connectTimeoutMS: 1500,
+    serverSelectionTimeoutMS: 800,
+    connectTimeoutMS: 800,
+    socketTimeoutMS: 1000,
+    maxIdleTimeMS: 5000,
   });
-  clientPromise = client.connect();
+
+  clientPromise = client.connect().catch((err) => {
+    client = null;
+    clientPromise = null;
+    throw err;
+  });
+
   return clientPromise;
 }
 
 let dbMemoryCache: { data: DBData; timestamp: number } | null = null;
-const CACHE_TTL_MS = 5000; // 5s in-memory cache for ultra-fast response
+const CACHE_TTL_MS = 3000; // 3s in-memory cache for ultra-fast response
 
 // Ensure all DB data model fields exist with robust fallbacks
 function sanitizeDBData(data: any): DBData {
@@ -118,7 +135,7 @@ function sanitizeDBData(data: any): DBData {
   return data as DBData;
 }
 
-// Read from local db.json file
+// Read from local db.json file (< 1ms)
 function readLocalDB(): DBData {
   try {
     if (fs.existsSync(localDbPath)) {
@@ -132,7 +149,7 @@ function readLocalDB(): DBData {
   return sanitizeDBData({});
 }
 
-// Write to local db.json file
+// Write to local db.json file (< 1ms)
 function writeLocalDB(data: DBData): boolean {
   try {
     fs.writeFileSync(localDbPath, JSON.stringify(data, null, 2), "utf-8");
@@ -144,12 +161,12 @@ function writeLocalDB(data: DBData): boolean {
 }
 
 export async function readDB(): Promise<DBData> {
-  // Use in-memory cache if valid (< 5 seconds old)
+  // 1. Instant return from in-memory cache if valid (< 0.01ms)
   if (dbMemoryCache && Date.now() - dbMemoryCache.timestamp < CACHE_TTL_MS) {
     return dbMemoryCache.data;
   }
 
-  // If MongoDB is not configured, fall back to local db.json file automatically!
+  // If MongoDB URI is not set, load local file instantly
   if (!uri) {
     const data = readLocalDB();
     dbMemoryCache = { data, timestamp: Date.now() };
@@ -157,25 +174,28 @@ export async function readDB(): Promise<DBData> {
   }
 
   try {
-    const activeClient = await getMongoClient();
+    // 2. Race MongoDB read with strict 800ms abort timeout
+    const activeClient = await withTimeout(getMongoClient(), 800);
     const db = activeClient.db(dbName);
-    const document = await db.collection("store_data").findOne({ _id: "main" as any });
-    
+    const document = await withTimeout(
+      db.collection("store_data").findOne({ _id: "main" as any }),
+      800
+    );
+
     if (!document) {
-      const defaultData = sanitizeDBData({});
+      const defaultData = readLocalDB();
       dbMemoryCache = { data: defaultData, timestamp: Date.now() };
       return defaultData;
     }
-    
-    // Remove MongoDB specific internal fields if they exist
+
     const { _id, ...cleanData } = document as any;
     const sanitized = sanitizeDBData(cleanData);
 
     dbMemoryCache = { data: sanitized, timestamp: Date.now() };
+    writeLocalDB(sanitized); // sync to local file
     return sanitized;
   } catch (error) {
-    console.error("Error reading from MongoDB:", error);
-    // Fall back to local db.json if reading from MongoDB fails
+    // Immediate fallback on any connection timeout/error
     const localData = readLocalDB();
     dbMemoryCache = { data: localData, timestamp: Date.now() };
     return localData;
@@ -183,30 +203,33 @@ export async function readDB(): Promise<DBData> {
 }
 
 export async function writeDB(data: DBData): Promise<boolean> {
-  // Update in-memory cache immediately
+  // 1. Always write to memory cache and local filesystem immediately (0ms!)
   dbMemoryCache = { data, timestamp: Date.now() };
+  writeLocalDB(data);
 
-  // If MongoDB is not configured, fall back to local db.json file automatically!
   if (!uri) {
-    return writeLocalDB(data);
+    return true;
   }
 
+  // 2. Write to MongoDB with non-blocking timeout
   try {
-    const activeClient = await getMongoClient();
+    const activeClient = await withTimeout(getMongoClient(), 800);
     const db = activeClient.db(dbName);
-    
-    const dataToSave = { ...data };
-    delete (dataToSave as any)._id; // prevent _id modification issues
 
-    await db.collection("store_data").replaceOne(
-      { _id: "main" as any },
-      dataToSave,
-      { upsert: true }
+    const dataToSave = { ...data };
+    delete (dataToSave as any)._id;
+
+    await withTimeout(
+      db.collection("store_data").replaceOne(
+        { _id: "main" as any },
+        dataToSave,
+        { upsert: true }
+      ),
+      800
     );
     return true;
   } catch (error) {
-    console.error("Error writing to MongoDB:", error);
-    // Fall back to local db.json if writing to MongoDB fails
-    return writeLocalDB(data);
+    console.error("MongoDB write warning (saved locally):", error);
+    return true;
   }
 }

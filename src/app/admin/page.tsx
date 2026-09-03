@@ -69,8 +69,59 @@ export default function AdminDashboard() {
 
   // Notifications Dropdown State & Ref
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("pyur_admin_read_notifications");
+        return saved ? JSON.parse(saved) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const notificationRef = useRef<HTMLDivElement>(null);
+  const previousOrdersCountRef = useRef<number | null>(null);
+
+  // Play a browser synthesizer notification chime on new order
+  const playNotificationSound = () => {
+    try {
+      if (typeof window === "undefined") return;
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {}
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setReadNotificationIds((prev) => {
+      if (prev.includes(id)) return prev;
+      const updated = [...prev, id];
+      try {
+        localStorage.setItem("pyur_admin_read_notifications", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  const markAllNotificationsAsRead = () => {
+    const allIds = adminNotifications.map((n) => n.id);
+    setReadNotificationIds(allIds);
+    try {
+      localStorage.setItem("pyur_admin_read_notifications", JSON.stringify(allIds));
+    } catch {}
+  };
 
   // Global Header Universal Search State & Ref
   const [globalSearchQuery, setGlobalSearchQuery] = useState("");
@@ -277,58 +328,103 @@ export default function AdminDashboard() {
       title: string;
       message: string;
       time: string;
-      type: "order" | "stock" | "lead" | "system";
+      type: "order" | "stock" | "lead" | "review" | "system";
+      targetMenu: string;
+      targetSubTab?: string;
+      orderId?: string;
       unread: boolean;
     }> = [];
 
-    // 1. Low inventory stock alerts
+    // 1. Pending Reviews Moderation Queue
+    const pendingReviews = (dbData.reviews || []).filter((r: any) => r.status === "Pending");
+    pendingReviews.forEach((r: any, idx: number) => {
+      list.push({
+        id: `review-${r.id || idx}`,
+        title: "⭐ Review Awaiting Approval",
+        message: `${r.customer || "Buyer"} rated "${r.product || "Product"}" ${r.rating || 5}★: "${r.comment || "New review"}"`,
+        time: "Pending Moderation",
+        type: "review",
+        targetMenu: "reviews",
+        targetSubTab: "all",
+        unread: !readNotificationIds.includes(`review-${r.id || idx}`),
+      });
+    });
+
+    // 2. Pending OTP Verification Orders (High Priority)
+    const pendingOtpOrders = (dbData.orders || []).filter((o: any) => o.status === "Pending OTP");
+    pendingOtpOrders.forEach((o: any) => {
+      list.push({
+        id: `order-otp-${o.id}`,
+        title: `⚠️ Unverified COD Order #${o.id}`,
+        message: `Order from ${o.customer || "Customer"} (₹${o.total || 0}) is pending customer OTP verification.`,
+        time: o.date || "Just now",
+        type: "order",
+        targetMenu: "orders",
+        targetSubTab: "Pending OTP",
+        orderId: o.id,
+        unread: !readNotificationIds.includes(`order-otp-${o.id}`),
+      });
+    });
+
+    // 3. Low inventory stock alerts
     const lowStockProducts = (dbData.products || []).filter(
       (p: any) => p.stock !== undefined && p.stock !== null && p.stock < 10
     );
     lowStockProducts.forEach((p: any) => {
+      const prodName = p.name || p.title || "Product";
       list.push({
         id: `stock-${p.id}`,
-        title: "Low Inventory Alert",
-        message: `Product "${p.title}" has only ${p.stock} units remaining.`,
-        time: "Inventory Warning",
+        title: "📦 Low Inventory Alert",
+        message: `Product "${prodName}" has only ${p.stock} units left in stock.`,
+        time: "Low Stock",
         type: "stock",
+        targetMenu: "products",
+        targetSubTab: "inventory",
         unread: !readNotificationIds.includes(`stock-${p.id}`),
       });
     });
 
-    // 2. Recent store orders
-    const recentOrders = (dbData.orders || []).slice(-4).reverse();
+    // 4. Recent store orders
+    const recentOrders = (dbData.orders || []).slice(-6).reverse();
     recentOrders.forEach((o: any) => {
+      if (o.status === "Pending OTP") return; // already in high priority list
       list.push({
         id: `order-${o.id}`,
-        title: `Order #${o.id} (${o.status || "Received"})`,
+        title: `🛒 Order #${o.id} (${o.status || "Received"})`,
         message: `Order from ${o.customer || "Customer"} for ₹${o.total || 0}.`,
         time: o.date || "Recent",
         type: "order",
+        targetMenu: "orders",
+        targetSubTab: "all",
+        orderId: o.id,
         unread: !readNotificationIds.includes(`order-${o.id}`),
       });
     });
 
-    // 3. Fresh Customer Leads / Contact Inquiries
+    // 5. Fresh Customer Leads / Contact Inquiries
     const recentLeads = (dbData.leads || []).slice(-3).reverse();
     recentLeads.forEach((l: any, idx: number) => {
       list.push({
         id: `lead-${l.id || idx}`,
-        title: "New Customer Inquiry",
-        message: `Inquiry submitted by ${l.name || l.email || "Store Visitor"}.`,
+        title: "🎧 New Customer Inquiry",
+        message: `Inquiry from ${l.name || l.email || "Store Visitor"}: "${l.subject || l.message || "New message"}"`,
         time: l.date || "Today",
         type: "lead",
+        targetMenu: "support",
+        targetSubTab: "all",
         unread: !readNotificationIds.includes(`lead-${l.id || idx}`),
       });
     });
 
-    // 4. System Security & Config Status
+    // 6. System Security & Config Status
     list.push({
       id: "system-otp",
-      title: "COD Security Active",
+      title: "🛡️ COD Security Active",
       message: `OTP Verification is ${dbData.settings?.codOtpEnabled ? "enabled" : "disabled"} for Cash on Delivery orders.`,
       time: "System",
       type: "system",
+      targetMenu: "settings",
+      targetSubTab: "general",
       unread: !readNotificationIds.includes("system-otp"),
     });
 
@@ -755,6 +851,17 @@ export default function AdminDashboard() {
             ...(data.seo || {})
           }
         });
+
+        // Real-time detection: Trigger chime and toast when a new order is received
+        if (data.orders && Array.isArray(data.orders)) {
+          if (previousOrdersCountRef.current !== null && data.orders.length > previousOrdersCountRef.current) {
+            const newOrder = data.orders[data.orders.length - 1];
+            playNotificationSound();
+            showToast(`🔔 New Order Received: #${newOrder.id} (${newOrder.customer} - ₹${newOrder.total})`);
+          }
+          previousOrdersCountRef.current = data.orders.length;
+        }
+
         if (data.settings?.flashSaleTimer) {
           setFlashSaleTimer(data.settings.flashSaleTimer);
         }
@@ -781,12 +888,12 @@ export default function AdminDashboard() {
       setLoading(false);
     }, 1500);
 
-    // Poll for real-time database updates (every 15 seconds, non-overlapping)
+    // Poll for real-time database updates (every 5 seconds, non-overlapping)
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         void loadData();
       }
-    }, 15000);
+    }, 5000);
 
     return () => {
       clearTimeout(safetyTimer);
@@ -2138,7 +2245,7 @@ export default function AdminDashboard() {
                   </div>
                   {unreadNotificationCount > 0 && (
                     <button
-                      onClick={() => setReadNotificationIds(adminNotifications.map((n) => n.id))}
+                      onClick={markAllNotificationsAsRead}
                       className="text-[11px] text-emerald-400 hover:text-emerald-300 font-bold cursor-pointer transition"
                     >
                       Mark all read
@@ -2157,8 +2264,12 @@ export default function AdminDashboard() {
                       <div
                         key={item.id}
                         onClick={() => {
-                          if (!readNotificationIds.includes(item.id)) {
-                            setReadNotificationIds((prev) => [...prev, item.id]);
+                          markNotificationAsRead(item.id);
+                          if (item.targetMenu) {
+                            setActiveMenu(item.targetMenu);
+                            if (item.targetSubTab) setSubTab(item.targetSubTab);
+                            if (item.orderId) setOrderSearchQuery(item.orderId);
+                            setIsNotificationsOpen(false);
                           }
                         }}
                         className={`p-3.5 flex items-start gap-3 hover:bg-neutral-50 transition cursor-pointer ${
@@ -2168,6 +2279,7 @@ export default function AdminDashboard() {
                         <div className="p-2 rounded-xl bg-white border border-neutral-200 shadow-xs shrink-0 mt-0.5">
                           {item.type === "stock" && <AlertTriangle className="size-4 text-amber-500" />}
                           {item.type === "order" && <ShoppingBag className="size-4 text-[#244f31]" />}
+                          {item.type === "review" && <Star className="size-4 text-amber-500" />}
                           {item.type === "lead" && <MessageSquare className="size-4 text-blue-500" />}
                           {item.type === "system" && <ShieldCheck className="size-4 text-emerald-600" />}
                         </div>

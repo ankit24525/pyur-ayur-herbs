@@ -12,11 +12,23 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const db = await readDB();
-  const normalizedSlug = (slug || "").trim().toLowerCase();
+  const rawSlug = (slug || "").trim();
+  let decodedSlug = rawSlug;
+  try {
+    decodedSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
+  } catch {}
+  const normalizedSlug = rawSlug.toLowerCase();
   
-  const dbProduct = (db.products || []).find(
-    (p: any) => (p.slug || "").trim().toLowerCase() === normalizedSlug || p.id === normalizedSlug
-  );
+  const dbProduct = (db.products || []).find((p: any) => {
+    const pSlug = (p.slug || "").toLowerCase().trim();
+    const pId = String(p.id || "").toLowerCase().trim();
+    return (
+      pSlug === normalizedSlug ||
+      pSlug === decodedSlug ||
+      pId === normalizedSlug ||
+      pId === decodedSlug
+    );
+  });
   
   if (dbProduct) {
     const title = `${dbProduct.name} | Pyur Ayur Herbs`;
@@ -43,19 +55,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const db = await readDB();
   
-  const normalizedSlug = (slug || "").trim().toLowerCase();
+  const rawSlug = (slug || "").trim();
+  let decodedSlug = rawSlug;
+  try {
+    decodedSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
+  } catch {}
+  const normalizedSlug = rawSlug.toLowerCase();
 
   // Find in live database products first
-  const dbProduct = (db.products || []).find(
-    (p: any) => (p.slug || "").trim().toLowerCase() === normalizedSlug || p.id === normalizedSlug
-  );
+  const dbProduct = (db.products || []).find((p: any) => {
+    const pSlug = (p.slug || "").toLowerCase().trim();
+    const pId = String(p.id || "").toLowerCase().trim();
+    const pName = (p.name || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+    return (
+      pSlug === normalizedSlug ||
+      pSlug === decodedSlug ||
+      pId === normalizedSlug ||
+      pId === decodedSlug ||
+      pName === normalizedSlug ||
+      pName === decodedSlug
+    );
+  });
   
-  // Secondary lookup in static details
-  const staticProduct = (productDetails || []).find(
-    (p) => (p.slug || "").trim().toLowerCase() === normalizedSlug || p.id === normalizedSlug
-  );
-
-  const matchedProduct = dbProduct || staticProduct;
+  const matchedProduct = dbProduct;
 
   if (matchedProduct) {
     const price = Number(matchedProduct.price) || 0;

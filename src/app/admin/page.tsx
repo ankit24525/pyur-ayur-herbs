@@ -228,7 +228,20 @@ export default function AdminDashboard() {
     setAuthChecked(true);
   }, []);
 
-  // Inactivity auto-logout for Admin session (2 hours)
+  // Helper to get real storefront root URL (escapes admin.* subdomain rewriting)
+  const getStorefrontUrl = () => {
+    if (typeof window === "undefined") return "/";
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : "";
+    if (host.startsWith("admin.")) {
+      const rootHost = host.replace(/^admin\./, "");
+      return `${protocol}//${rootHost}${port}/`;
+    }
+    return "/";
+  };
+
+  // 10 minutes inactivity auto-logout for Admin session
   useEffect(() => {
     if (!isAdminLoggedIn) return;
 
@@ -237,11 +250,11 @@ export default function AdminDashboard() {
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
       
-      // 2 hours = 7,200,000 milliseconds
+      // 10 minutes = 600,000 milliseconds
       timeoutId = setTimeout(() => {
         handleAdminLogout();
-        showToast("Your admin session has expired. Please log in again.");
-      }, 7200000);
+        alert("Your admin session has expired due to 10 minutes of inactivity. Please log in again.");
+      }, 600000);
     };
 
     // Initialize timer
@@ -1892,7 +1905,7 @@ export default function AdminDashboard() {
 
           {/* Back to store link */}
           <div className="text-center mt-6">
-            <a href="/" className="text-xs text-white/40 hover:text-white/70 font-semibold transition">
+            <a href={getStorefrontUrl()} className="text-xs text-white/40 hover:text-white/70 font-semibold transition">
               ← Back to Store
             </a>
           </div>
@@ -2332,7 +2345,7 @@ export default function AdminDashboard() {
           </div>
           {/* Quick View Live Storefront Button */}
           <a
-            href="/"
+            href={getStorefrontUrl()}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-bold text-white transition active:scale-95 cursor-pointer shadow-xs"
@@ -2400,7 +2413,7 @@ export default function AdminDashboard() {
                   </button>
 
                   <a
-                    href="/"
+                    href={getStorefrontUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setIsAdminMenuOpen(false)}

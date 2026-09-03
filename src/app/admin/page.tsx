@@ -211,17 +211,24 @@ export default function AdminDashboard() {
     }
   };
 
-  // Check session on mount
+  // Check session on mount across tabs and storage
   useEffect(() => {
-    const token = sessionStorage.getItem("pyur_admin_token");
-    const expiry = sessionStorage.getItem("pyur_admin_expiry");
-    if (token && expiry && Date.now() < parseInt(expiry, 10)) {
-      setIsAdminLoggedIn(true);
+    try {
+      const token = localStorage.getItem("pyur_admin_token") || sessionStorage.getItem("pyur_admin_token");
+      const expiry = localStorage.getItem("pyur_admin_expiry") || sessionStorage.getItem("pyur_admin_expiry");
+      if (token && expiry && Date.now() < parseInt(expiry, 10)) {
+        setIsAdminLoggedIn(true);
+        // Sync across storage
+        localStorage.setItem("pyur_admin_token", token);
+        localStorage.setItem("pyur_admin_expiry", expiry);
+      }
+    } catch (e) {
+      console.error("Auth check error:", e);
     }
     setAuthChecked(true);
   }, []);
 
-  // 10 minutes inactivity auto-logout for Admin session
+  // Inactivity auto-logout for Admin session (2 hours)
   useEffect(() => {
     if (!isAdminLoggedIn) return;
 
@@ -230,18 +237,18 @@ export default function AdminDashboard() {
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
       
-      // 10 minutes = 600,000 milliseconds
+      // 2 hours = 7,200,000 milliseconds
       timeoutId = setTimeout(() => {
         handleAdminLogout();
-        alert("Your admin session has expired due to 10 minutes of inactivity. Please log in again.");
-      }, 600000);
+        showToast("Your admin session has expired. Please log in again.");
+      }, 7200000);
     };
 
     // Initialize timer
     resetTimer();
 
-    // Listen for common user interactions
-    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart"];
+    // Listen for user interactions and tab focus
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "focus"];
     const handleActivity = () => resetTimer();
 
     events.forEach((event) => {
@@ -268,8 +275,13 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        sessionStorage.setItem("pyur_admin_token", data.token);
-        sessionStorage.setItem("pyur_admin_expiry", String(Date.now() + data.expiresIn * 1000));
+        const expiryTime = String(Date.now() + (data.expiresIn || 86400) * 1000);
+        try {
+          localStorage.setItem("pyur_admin_token", data.token);
+          localStorage.setItem("pyur_admin_expiry", expiryTime);
+          sessionStorage.setItem("pyur_admin_token", data.token);
+          sessionStorage.setItem("pyur_admin_expiry", expiryTime);
+        } catch {}
         setIsAdminLoggedIn(true);
         setLoginError(null);
       } else {
@@ -283,8 +295,12 @@ export default function AdminDashboard() {
   };
 
   const handleAdminLogout = () => {
-    sessionStorage.removeItem("pyur_admin_token");
-    sessionStorage.removeItem("pyur_admin_expiry");
+    try {
+      localStorage.removeItem("pyur_admin_token");
+      localStorage.removeItem("pyur_admin_expiry");
+      sessionStorage.removeItem("pyur_admin_token");
+      sessionStorage.removeItem("pyur_admin_expiry");
+    } catch {}
     setIsAdminLoggedIn(false);
     setLoginUsername("");
     setLoginPassword("");

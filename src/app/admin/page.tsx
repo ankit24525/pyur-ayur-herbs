@@ -72,15 +72,37 @@ export default function AdminDashboard() {
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
   const notificationRef = useRef<HTMLDivElement>(null);
 
+  // Global Header Universal Search State & Ref
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
+  const globalSearchRef = useRef<HTMLDivElement>(null);
+
+  // Dedicated Tab Search States
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [productConcernFilter, setProductConcernFilter] = useState("All");
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setIsNotificationsOpen(false);
       }
+      if (globalSearchRef.current && !globalSearchRef.current.contains(event.target as Node)) {
+        setIsGlobalSearchOpen(false);
+      }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsNotificationsOpen(false);
+        setIsGlobalSearchOpen(false);
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        const input = document.getElementById("admin-global-search-input") as HTMLInputElement | null;
+        if (input) {
+          input.focus();
+          setIsGlobalSearchOpen(true);
+        }
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -209,7 +231,6 @@ export default function AdminDashboard() {
     setLoginPassword("");
   };
 
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
   // Dynamic Database State loaded from process database
@@ -308,6 +329,123 @@ export default function AdminDashboard() {
 
   const adminNotifications = getAdminNotifications();
   const unreadNotificationCount = adminNotifications.filter((n) => n.unread).length;
+
+  // Universal Global Search results across products, orders, customers, coupons, reviews, and navigation
+  const getGlobalSearchResults = () => {
+    if (!globalSearchQuery.trim()) return null;
+    const q = globalSearchQuery.toLowerCase().trim();
+
+    // 1. Navigation sections & tools
+    const navItems = [
+      { name: "Dashboard Overview", menu: "dashboard", subTab: "overview", icon: TrendingUp, match: "overview home dashboard stats metrics revenue sales summary" },
+      { name: "Orders Management", menu: "orders", subTab: "all", icon: ShoppingBag, match: "orders purchases sales fulfillment cod prepaid tracking customer orders" },
+      { name: "All Products", menu: "products", subTab: "all", icon: Database, match: "products items catalog herbs remedies supplements inventory" },
+      { name: "Add New Product", menu: "products", subTab: "add", icon: PlusCircle, match: "add product create item upload new sku" },
+      { name: "Inventory & Stock", menu: "products", subTab: "inventory", icon: Layers, match: "inventory stock sku valuation low out of stock quantity" },
+      { name: "Product Categories", menu: "products", subTab: "categories", icon: Layers, match: "categories taxonomy concerns collections" },
+      { name: "Product Collections", menu: "products", subTab: "collections", icon: Layers, match: "collections automated rules manual bundles" },
+      { name: "Customers & Leads", menu: "customers", subTab: "all", icon: Users, match: "customers users buyers leads contacts clients accounts" },
+      { name: "Coupons & Discounts", menu: "discounts", subTab: "coupons", icon: Ticket, match: "discounts coupons promo promo-codes vouchers offers discount" },
+      { name: "Flash Sales Countdown", menu: "discounts", subTab: "flash", icon: Clock, match: "flash sale timer countdown promotion urgency banner clock" },
+      { name: "Marketing & Campaigns", menu: "marketing", subTab: "campaigns", icon: Megaphone, match: "marketing ads campaigns banners popups notifications meta pixel" },
+      { name: "Storefront CMS & Content", menu: "content", subTab: "homepage", icon: Layout, match: "content cms homepage banners hero slides doctor announcement header" },
+      { name: "Blog Posts & Articles", menu: "content", subTab: "blogs", icon: BookOpen, match: "blogs articles posts media content news wellness ayurveda" },
+      { name: "Customer Reviews", menu: "reviews", subTab: "all", icon: Star, match: "reviews testimonials ratings feedback moderation approve reject" },
+      { name: "Shipping & Rates", menu: "shipping", subTab: "all", icon: Truck, match: "shipping delivery courier free threshold rates partners shiprocket" },
+      { name: "Analytics & Reports", menu: "analytics", subTab: "all", icon: TrendingUp, match: "analytics revenue graphs charts profit conversion sales metrics" },
+      { name: "SEO & Meta Tags", menu: "seo", subTab: "all", icon: Globe, match: "seo meta tags search title sitemap indexing keywords google" },
+      { name: "Support Inquiries", menu: "support", subTab: "all", icon: HelpCircle, match: "support help contact messages customer service tickets inquiries" },
+      { name: "Settings & WhatsApp API", menu: "settings", subTab: "general", icon: Settings, match: "settings configuration store name email whatsapp api token credentials cod otp" },
+    ].filter(
+      (item) => item.name.toLowerCase().includes(q) || item.match.toLowerCase().includes(q)
+    );
+
+    // 2. Products
+    const matchedProducts = (dbData.products || []).filter((p: any) =>
+      p.name?.toLowerCase().includes(q) ||
+      p.concern?.toLowerCase().includes(q) ||
+      p.sku?.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q) ||
+      (Array.isArray(p.ingredients) ? p.ingredients.join(" ").toLowerCase().includes(q) : p.ingredients?.toLowerCase().includes(q))
+    ).slice(0, 5);
+
+    // 3. Orders
+    const matchedOrders = (dbData.orders || []).filter((o: any) =>
+      o.id?.toLowerCase().includes(q) ||
+      o.customer?.toLowerCase().includes(q) ||
+      o.phone?.includes(q) ||
+      o.items?.toLowerCase().includes(q) ||
+      o.status?.toLowerCase().includes(q)
+    ).slice(0, 5);
+
+    // 4. Customers
+    const matchedCustomers = (dbData.users || []).filter((u: any) =>
+      u.name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.phone?.includes(q)
+    ).slice(0, 4);
+
+    // 5. Coupons
+    const matchedCoupons = (dbData.coupons || []).filter((c: any) =>
+      c.code?.toLowerCase().includes(q) ||
+      c.value?.toString().includes(q)
+    ).slice(0, 3);
+
+    // 6. Reviews
+    const matchedReviews = (dbData.reviews || []).filter((r: any) =>
+      r.product?.toLowerCase().includes(q) ||
+      r.customer?.toLowerCase().includes(q) ||
+      r.comment?.toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    const totalCount =
+      navItems.length +
+      matchedProducts.length +
+      matchedOrders.length +
+      matchedCustomers.length +
+      matchedCoupons.length +
+      matchedReviews.length;
+
+    return {
+      navItems,
+      matchedProducts,
+      matchedOrders,
+      matchedCustomers,
+      matchedCoupons,
+      matchedReviews,
+      totalCount,
+    };
+  };
+
+  const globalSearchResults = getGlobalSearchResults();
+
+  // Filtered products list for All Products tab
+  const filteredProductsList = (dbData.products || []).filter((prod: any) => {
+    const matchesConcern = productConcernFilter === "All" || prod.concern === productConcernFilter;
+    if (!matchesConcern) return false;
+    if (!productSearchQuery.trim()) return true;
+    const q = productSearchQuery.toLowerCase().trim();
+    const matchesName = prod.name?.toLowerCase().includes(q);
+    const matchesSku = prod.sku?.toLowerCase().includes(q);
+    const matchesConcernText = prod.concern?.toLowerCase().includes(q);
+    const matchesDesc = prod.description?.toLowerCase().includes(q);
+    const matchesIngredients = Array.isArray(prod.ingredients)
+      ? prod.ingredients.some((ing: string) => ing.toLowerCase().includes(q))
+      : prod.ingredients?.toLowerCase().includes(q);
+    const matchesPrice = prod.price?.toString().includes(q);
+    return matchesName || matchesSku || matchesConcernText || matchesDesc || matchesIngredients || matchesPrice;
+  });
+
+  // Filtered customers list for Customers tab
+  const filteredCustomersList = (dbData.users || []).filter((u: any) => {
+    if (!customerSearchQuery.trim()) return true;
+    const q = customerSearchQuery.toLowerCase().trim();
+    return (
+      u.name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.phone?.includes(q)
+    );
+  });
 
   // Dynamic line chart history calculation based on Time Range, Metric Type, and Product Filter (Shared across Dashboard and Analytics tab)
   const getChartDataHistory = () => {
@@ -1674,13 +1812,279 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="relative max-w-md w-full mx-8 hidden md:block">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/50" />
+        <div className="relative max-w-md w-full mx-8 hidden md:block" ref={globalSearchRef}>
+          <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-white/60 pointer-events-none" />
           <input
+            id="admin-global-search-input"
             type="text"
-            placeholder="Search..."
-            className="w-full bg-white/10 text-xs text-white placeholder-white/50 pl-10 pr-4 py-2 rounded-xl outline-none border border-white/10 focus:bg-white/20 focus:border-[#80a03c]"
+            placeholder="Search orders, products, customers, settings... (⌘K)"
+            value={globalSearchQuery}
+            onChange={(e) => {
+              setGlobalSearchQuery(e.target.value);
+              setIsGlobalSearchOpen(true);
+            }}
+            onFocus={() => {
+              if (globalSearchQuery.trim()) setIsGlobalSearchOpen(true);
+            }}
+            className="w-full bg-white/10 text-xs text-white placeholder-white/50 pl-10 pr-9 py-2 rounded-xl outline-none border border-white/10 focus:bg-white/20 focus:border-[#80a03c] transition-all"
           />
+          {globalSearchQuery && (
+            <button
+              onClick={() => {
+                setGlobalSearchQuery("");
+                setIsGlobalSearchOpen(false);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition"
+              title="Clear search"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+
+          {/* Universal Search Results Popover Dropdown */}
+          {isGlobalSearchOpen && globalSearchResults && (
+            <div className="absolute left-0 right-0 top-full mt-2 bg-white text-[#17231b] rounded-2xl shadow-2xl border border-neutral-200 z-50 overflow-hidden max-h-[75vh] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* Header Bar */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-[#f8faf1] border-b border-[#ddddd9] text-xs font-bold text-[#244f31]">
+                <div className="flex items-center gap-1.5">
+                  <Search className="size-3.5 text-[#80a03c]" />
+                  <span>Search Results ({globalSearchResults.totalCount})</span>
+                </div>
+                <span className="text-[10px] text-gray-500 font-normal">Press ESC to exit</span>
+              </div>
+
+              {globalSearchResults.totalCount === 0 ? (
+                <div className="p-8 text-center text-xs text-gray-500 space-y-1">
+                  <Search className="size-8 text-gray-300 mx-auto mb-2" />
+                  <p className="font-bold text-gray-700">No store records found for "{globalSearchQuery}"</p>
+                  <p className="text-[11px] text-gray-400">Try searching for an order ID, customer name, product, or setting.</p>
+                </div>
+              ) : (
+                <div className="p-2 space-y-3">
+                  {/* 1. Navigation Pages */}
+                  {globalSearchResults.navItems.length > 0 && (
+                    <div>
+                      <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        Admin Sections & Tools
+                      </div>
+                      <div className="space-y-1">
+                        {globalSearchResults.navItems.map((item, idx) => {
+                          const Icon = item.icon;
+                          return (
+                            <button
+                              key={`nav-${idx}`}
+                              onClick={() => {
+                                setActiveMenu(item.menu);
+                                setSubTab(item.subTab);
+                                setIsGlobalSearchOpen(false);
+                                setGlobalSearchQuery("");
+                              }}
+                              className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-[#eef5df]/60 text-left transition group"
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <div className="size-7 rounded-lg bg-[#f8faf1] border border-[#ddddd9] flex items-center justify-center text-[#244f31] group-hover:bg-[#244f31] group-hover:text-white transition">
+                                  <Icon className="size-3.5" />
+                                </div>
+                                <span className="text-xs font-bold text-[#17231b] group-hover:text-[#244f31]">
+                                  {item.name}
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-semibold text-gray-400 group-hover:text-[#80a03c]">
+                                Jump to Tab →
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. Products */}
+                  {globalSearchResults.matchedProducts.length > 0 && (
+                    <div>
+                      <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        Products ({globalSearchResults.matchedProducts.length})
+                      </div>
+                      <div className="space-y-1">
+                        {globalSearchResults.matchedProducts.map((prod: any) => (
+                          <button
+                            key={`prod-${prod.id}`}
+                            onClick={() => {
+                              setActiveMenu("products");
+                              setSubTab("all");
+                              setProductSearchQuery(prod.name);
+                              setIsGlobalSearchOpen(false);
+                              setGlobalSearchQuery("");
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#f8faf1] text-left transition group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <img
+                                src={prod.image}
+                                alt={prod.name}
+                                className="size-8 rounded-lg object-cover border border-[#ddddd9] shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <h4 className="text-xs font-bold text-[#17231b] truncate group-hover:text-[#244f31]">
+                                  {prod.name}
+                                </h4>
+                                <span className="text-[10px] text-gray-500">
+                                  {prod.concern} {prod.sku ? `• SKU: ${prod.sku}` : ""}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-[#244f31] shrink-0 ml-2">
+                              ₹{prod.price}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. Orders */}
+                  {globalSearchResults.matchedOrders.length > 0 && (
+                    <div>
+                      <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        Orders ({globalSearchResults.matchedOrders.length})
+                      </div>
+                      <div className="space-y-1">
+                        {globalSearchResults.matchedOrders.map((order: any) => (
+                          <button
+                            key={`ord-${order.id}`}
+                            onClick={() => {
+                              setActiveMenu("orders");
+                              setSubTab("all");
+                              setOrderSearchQuery(order.id);
+                              setSelectedOrder(order);
+                              setIsGlobalSearchOpen(false);
+                              setGlobalSearchQuery("");
+                            }}
+                            className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-[#f8faf1] text-left transition group"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-[#244f31]">
+                                  #{order.id}
+                                </span>
+                                <span className="text-xs font-medium text-gray-700">
+                                  {order.customer}
+                                </span>
+                                {order.phone && (
+                                  <span className="text-[10px] text-gray-400">({order.phone})</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-gray-500">
+                                {order.items || "Order items"}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-black text-[#17231b] block">
+                                ₹{order.total || 0}
+                              </span>
+                              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                                {order.status || "Received"}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. Customers */}
+                  {globalSearchResults.matchedCustomers.length > 0 && (
+                    <div>
+                      <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        Customers ({globalSearchResults.matchedCustomers.length})
+                      </div>
+                      <div className="space-y-1">
+                        {globalSearchResults.matchedCustomers.map((u: any) => (
+                          <button
+                            key={`user-${u.id}`}
+                            onClick={() => {
+                              setActiveMenu("customers");
+                              setSubTab("all");
+                              setCustomerSearchQuery(u.name || u.email);
+                              setIsGlobalSearchOpen(false);
+                              setGlobalSearchQuery("");
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#f8faf1] text-left transition"
+                          >
+                            <div>
+                              <span className="text-xs font-bold text-[#17231b] block">{u.name}</span>
+                              <span className="text-[10px] text-gray-500">{u.email}</span>
+                            </div>
+                            <span className="text-[10px] text-gray-500">{u.phone || "—"}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5. Coupons */}
+                  {globalSearchResults.matchedCoupons.length > 0 && (
+                    <div>
+                      <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        Coupons ({globalSearchResults.matchedCoupons.length})
+                      </div>
+                      <div className="space-y-1">
+                        {globalSearchResults.matchedCoupons.map((c: any, idx: number) => (
+                          <button
+                            key={`c-${idx}`}
+                            onClick={() => {
+                              setActiveMenu("discounts");
+                              setSubTab("coupons");
+                              setIsGlobalSearchOpen(false);
+                              setGlobalSearchQuery("");
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#f8faf1] text-left transition"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Ticket className="size-3.5 text-[#80a03c]" />
+                              <span className="text-xs font-black text-[#244f31]">{c.code}</span>
+                            </div>
+                            <span className="text-xs font-bold text-gray-700">
+                              {c.type === "Percentage" ? `${c.value}% OFF` : `₹${c.value} OFF`}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 6. Reviews */}
+                  {globalSearchResults.matchedReviews.length > 0 && (
+                    <div>
+                      <div className="px-3 py-1 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                        Reviews ({globalSearchResults.matchedReviews.length})
+                      </div>
+                      <div className="space-y-1">
+                        {globalSearchResults.matchedReviews.map((r: any, idx: number) => (
+                          <button
+                            key={`rev-${idx}`}
+                            onClick={() => {
+                              setActiveMenu("reviews");
+                              setSubTab("all");
+                              setIsGlobalSearchOpen(false);
+                              setGlobalSearchQuery("");
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#f8faf1] text-left transition"
+                          >
+                            <div>
+                              <span className="text-xs font-bold text-[#17231b] block">{r.product}</span>
+                              <span className="text-[10px] text-gray-500 line-clamp-1">{r.comment}</span>
+                            </div>
+                            <span className="text-xs font-bold text-yellow-600">{r.rating}★</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -2576,37 +2980,98 @@ export default function AdminDashboard() {
                 </div>
 
                 {subTab === "all" && (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {dbData.products.map((prod: any) => (
-                      <div key={prod.id} className="flex gap-3 border border-[#ddddd9] p-3 rounded-xl bg-[#f8faf1]">
-                        <img src={prod.image} alt="" className="size-16 rounded object-cover" />
-                        <div className="flex-1">
-                          <h4 className="text-xs font-bold text-[#17231b] line-clamp-1">{prod.name}</h4>
-                          <span className="text-[10px] text-[#666666]">{prod.concern}</span>
-                          <div className="mt-1 flex items-baseline gap-2">
-                            <span className="text-xs font-black text-[#244f31]">₹{prod.price}</span>
-                            <span className="text-[10px] line-through text-[#666666]">₹{prod.compareAt}</span>
-                          </div>
-                          <div className="mt-2.5 flex items-center gap-2">
+                  <div className="space-y-4">
+                    {/* Products Search and Filters Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f8faf1]/60 border border-[#ddddd9] p-4 rounded-xl shadow-xs">
+                      <div className="flex flex-1 flex-wrap items-center gap-3 min-w-[280px]">
+                        <div className="relative flex-1 min-w-[220px]">
+                          <Search className="absolute left-3 top-2.5 size-4 text-[#666666]" />
+                          <input
+                            type="text"
+                            placeholder="Search products by title, SKU, concern, ingredients, price..."
+                            value={productSearchQuery}
+                            onChange={(e) => setProductSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2 rounded-xl border border-[#ddddd9] text-xs outline-none focus:border-[#244f31] bg-white"
+                          />
+                          {productSearchQuery && (
                             <button
-                              onClick={() => setEditingProduct({
-                                ...prod,
-                                ingredients: Array.isArray(prod.ingredients) ? prod.ingredients.join(", ") : (prod.ingredients || "")
-                              })}
-                              className="rounded border border-[#244f31] px-2.5 py-1 text-[10px] font-bold text-[#244f31] hover:bg-[#244f31] hover:text-white transition"
+                              onClick={() => setProductSearchQuery("")}
+                              className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
+                              title="Clear search"
                             >
-                              Edit
+                              <X className="size-4" />
                             </button>
-                            <button
-                              onClick={() => handleDeleteProduct(prod.id)}
-                              className="rounded border border-red-600 px-2.5 py-1 text-[10px] font-bold text-red-600 hover:bg-red-600 hover:text-white transition"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          )}
                         </div>
+                        <select
+                          value={productConcernFilter}
+                          onChange={(e) => setProductConcernFilter(e.target.value)}
+                          className="px-3 py-2 rounded-xl border border-[#ddddd9] text-xs font-semibold outline-none focus:border-[#244f31] bg-white cursor-pointer"
+                        >
+                          <option value="All">All Categories / Concerns</option>
+                          {Array.from(new Set(dbData.products.map((p: any) => p.concern).filter(Boolean))).map((concern: any) => (
+                            <option key={concern} value={concern}>{concern}</option>
+                          ))}
+                        </select>
                       </div>
-                    ))}
+                      <div className="text-[11px] font-bold text-gray-500">
+                        Showing {filteredProductsList.length} of {dbData.products.length} products
+                      </div>
+                    </div>
+
+                    {filteredProductsList.length === 0 ? (
+                      <div className="text-center py-12 bg-white rounded-xl border border-[#ddddd9] space-y-2">
+                        <Search className="size-10 text-gray-300 mx-auto" />
+                        <h4 className="text-xs font-bold text-gray-700">No matching products found</h4>
+                        <p className="text-[11px] text-gray-500">Try adjusting your search keyword or selected category filter.</p>
+                        {(productSearchQuery || productConcernFilter !== "All") && (
+                          <button
+                            onClick={() => { setProductSearchQuery(""); setProductConcernFilter("All"); }}
+                            className="mt-2 px-3 py-1.5 text-xs font-bold text-[#244f31] bg-[#eef5df] rounded-lg hover:bg-[#244f31] hover:text-white transition cursor-pointer"
+                          >
+                            Reset Filters
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {filteredProductsList.map((prod: any) => (
+                          <div key={prod.id} className="flex gap-3 border border-[#ddddd9] p-3 rounded-xl bg-[#f8faf1] hover:border-[#80a03c] transition">
+                            <img src={prod.image} alt="" className="size-16 rounded object-cover border border-[#ddddd9]" />
+                            <div className="flex-1">
+                              <h4 className="text-xs font-bold text-[#17231b] line-clamp-1">{prod.name}</h4>
+                              <span className="text-[10px] text-[#666666]">{prod.concern}</span>
+                              <div className="mt-1 flex items-baseline gap-2">
+                                <span className="text-xs font-black text-[#244f31]">₹{prod.price}</span>
+                                <span className="text-[10px] line-through text-[#666666]">₹{prod.compareAt}</span>
+                                {prod.sku && (
+                                  <span className="text-[9px] bg-white px-1.5 py-0.5 rounded border border-[#ddddd9] text-gray-500 font-mono">
+                                    {prod.sku}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-2.5 flex items-center gap-2">
+                                <button
+                                  onClick={() => setEditingProduct({
+                                    ...prod,
+                                    ingredients: Array.isArray(prod.ingredients) ? prod.ingredients.join(", ") : (prod.ingredients || "")
+                                  })}
+                                  className="rounded border border-[#244f31] px-2.5 py-1 text-[10px] font-bold text-[#244f31] hover:bg-[#244f31] hover:text-white transition"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(prod.id)}
+                                  className="rounded border border-red-600 px-2.5 py-1 text-[10px] font-bold text-red-600 hover:bg-red-600 hover:text-white transition"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -3801,37 +4266,65 @@ export default function AdminDashboard() {
                 </div>
 
                 {subTab === "all" && (
-                  <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
-                          <th className="p-3 font-bold">Name</th>
-                          <th className="p-3 font-bold">Contact Email</th>
-                          <th className="p-3 font-bold">Phone</th>
-                          <th className="p-3 font-bold">Registered Date</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#ddddd9]">
-                        {!dbData.users || dbData.users.length === 0 ? (
-                          <tr>
-                            <td colSpan={4} className="p-8 text-center text-[#666] font-semibold italic bg-white">
-                              No registered customers found in the database.
-                            </td>
+                  <div className="space-y-4">
+                    {/* Customer Search Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f8faf1]/60 border border-[#ddddd9] p-4 rounded-xl shadow-xs">
+                      <div className="relative flex-1 min-w-[220px]">
+                        <Search className="absolute left-3 top-2.5 size-4 text-[#666666]" />
+                        <input
+                          type="text"
+                          placeholder="Search customers by name, email, or phone number..."
+                          value={customerSearchQuery}
+                          onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                          className="w-full pl-9 pr-8 py-2 rounded-xl border border-[#ddddd9] text-xs outline-none focus:border-[#244f31] bg-white"
+                        />
+                        {customerSearchQuery && (
+                          <button
+                            onClick={() => setCustomerSearchQuery("")}
+                            className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600"
+                            title="Clear search"
+                          >
+                            <X className="size-4" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-[11px] font-bold text-gray-500">
+                        Showing {filteredCustomersList.length} of {(dbData.users || []).length} customers
+                      </div>
+                    </div>
+
+                    <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
+                            <th className="p-3 font-bold">Name</th>
+                            <th className="p-3 font-bold">Contact Email</th>
+                            <th className="p-3 font-bold">Phone</th>
+                            <th className="p-3 font-bold">Registered Date</th>
                           </tr>
-                        ) : (
-                          dbData.users.map((u: any) => (
-                            <tr key={u.id} className="hover:bg-[#f8faf1]/20 transition-colors">
-                              <td className="p-3 font-bold text-[#17231b]">{u.name}</td>
-                              <td className="p-3 text-neutral-600">{u.email}</td>
-                              <td className="p-3 text-neutral-600">{u.phone || "—"}</td>
-                              <td className="p-3 text-neutral-500">
-                                {u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                        </thead>
+                        <tbody className="divide-y divide-[#ddddd9]">
+                          {!filteredCustomersList || filteredCustomersList.length === 0 ? (
+                            <tr>
+                              <td colSpan={4} className="p-8 text-center text-[#666] font-semibold italic bg-white">
+                                {customerSearchQuery ? `No customers matched "${customerSearchQuery}".` : "No registered customers found in the database."}
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                          ) : (
+                            filteredCustomersList.map((u: any) => (
+                              <tr key={u.id} className="hover:bg-[#f8faf1]/40 transition-colors">
+                                <td className="p-3 font-bold text-[#17231b]">{u.name}</td>
+                                <td className="p-3 text-neutral-600">{u.email}</td>
+                                <td className="p-3 text-neutral-600">{u.phone || "—"}</td>
+                                <td className="p-3 text-neutral-500">
+                                  {u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
 

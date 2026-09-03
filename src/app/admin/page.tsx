@@ -29,6 +29,10 @@ import {
   X,
   Trash2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  PanelLeft,
+  PanelLeftClose,
   Layers,
   Megaphone,
   Bell,
@@ -60,6 +64,7 @@ export default function AdminDashboard() {
   // Admin Auth & Navigation Sidebar State
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isAdminSidebarOpen, setIsAdminSidebarOpen] = useState(false);
+  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -1934,12 +1939,34 @@ export default function AdminDashboard() {
       <div className="bg-[#17231b] text-white py-3.5 px-6 shadow-md sticky top-0 z-30 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => setIsAdminSidebarOpen((prev) => !prev)}
-            className="flex items-center justify-center size-9 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition active:scale-95 cursor-pointer"
-            title={isAdminSidebarOpen ? "Close Admin Navigation" : "Open Admin Navigation"}
-            aria-label="Toggle Admin Navigation Menu"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                setIsAdminSidebarOpen((prev) => !prev);
+              } else {
+                setIsDesktopSidebarCollapsed((prev) => !prev);
+              }
+            }}
+            className={`flex items-center justify-center size-9 rounded-xl border transition active:scale-95 cursor-pointer ${
+              isAdminSidebarOpen || isDesktopSidebarCollapsed
+                ? "bg-white/20 border-emerald-400/50 text-emerald-300"
+                : "bg-white/10 hover:bg-white/20 border-white/10 text-white"
+            }`}
+            title={
+              isAdminSidebarOpen
+                ? "Close Mobile Navigation"
+                : isDesktopSidebarCollapsed
+                ? "Expand Sidebar"
+                : "Collapse Sidebar"
+            }
+            aria-label="Toggle Admin Navigation Sidebar"
           >
-            {isAdminSidebarOpen ? <X className="size-5 text-emerald-400" /> : <Menu className="size-5" />}
+            {isAdminSidebarOpen ? (
+              <X className="size-5 text-emerald-400" />
+            ) : isDesktopSidebarCollapsed ? (
+              <PanelLeft className="size-5 text-emerald-300" />
+            ) : (
+              <Menu className="size-5" />
+            )}
           </button>
           <button
             onClick={() => {
@@ -2521,43 +2548,76 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-6">
-        <div className="grid gap-6 lg:grid-cols-12">
-          {/* Left Navigation Sidebar - Desktop & Tablet */}
-          <div className={`space-y-1 bg-white border border-[#ddddd9] p-3 rounded-2xl shadow-sm h-fit ${isAdminSidebarOpen ? "lg:col-span-3 hidden lg:block" : "hidden lg:block lg:col-span-3"}`}>
-            <div className="flex items-center gap-2.5 px-3 py-2 mb-2 border-b border-[#f0f0eb]">
-              <div className="relative flex size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden shrink-0">
-                <Image
-                  src="/brand/pure-ayur-logo.png"
-                  alt="Pure Ayur Herbs Logo"
-                  width={36}
-                  height={36}
-                  className="size-full rounded-full object-cover"
-                  unoptimized
-                />
+      <div className="mx-auto max-w-[1700px] px-4 py-8 md:px-6">
+        <div className="grid gap-6 lg:grid-cols-12 transition-all duration-300">
+          {/* Left Navigation Sidebar - Desktop */}
+          {!isDesktopSidebarCollapsed && (
+            <div className="hidden lg:block lg:col-span-3 space-y-1 bg-white border border-[#ddddd9] p-3 rounded-2xl shadow-sm h-fit sticky top-20 transition-all duration-300 animate-in fade-in slide-in-from-left-4">
+              <div className="flex items-center justify-between px-3 py-2 mb-2 border-b border-[#f0f0eb]">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative flex size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#80a03c] overflow-hidden shrink-0">
+                    <Image
+                      src="/brand/pure-ayur-logo.png"
+                      alt="Pure Ayur Herbs Logo"
+                      width={36}
+                      height={36}
+                      className="size-full rounded-full object-cover"
+                      unoptimized
+                    />
+                  </div>
+                  <span className="text-sm font-black tracking-wider uppercase text-[#17231b]">PURE AYUR ADMIN</span>
+                </div>
+                <button
+                  onClick={() => setIsDesktopSidebarCollapsed(true)}
+                  className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition cursor-pointer"
+                  title="Collapse Sidebar for Full Width View"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
               </div>
-              <span className="text-sm font-black tracking-wider uppercase text-[#17231b]">PURE AYUR ADMIN</span>
+              <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block px-3 py-1 mb-1">
+                Store Control Menu
+              </span>
+              <button onClick={() => { setActiveMenu("dashboard"); setSubTab("overview"); }} className={tabStyle("dashboard")}><TrendingUp className="size-4" /> 📊 Dashboard</button>
+              <button onClick={() => { setActiveMenu("orders"); setSubTab("all"); }} className={tabStyle("orders")}><ShoppingBag className="size-4" /> 🛒 Orders</button>
+              <button onClick={() => { setActiveMenu("products"); setSubTab("all"); }} className={tabStyle("products")}><Database className="size-4" /> 📦 Products</button>
+              <button onClick={() => { setActiveMenu("customers"); setSubTab("all"); }} className={tabStyle("customers")}><Users className="size-4" /> 👥 Customers</button>
+              <button onClick={() => { setActiveMenu("discounts"); setSubTab("coupons"); }} className={tabStyle("discounts")}><Ticket className="size-4" /> 🎟️ Discounts</button>
+              <button onClick={() => { setActiveMenu("marketing"); setSubTab("campaigns"); }} className={tabStyle("marketing")}><Megaphone className="size-4" /> 📢 Marketing</button>
+              <button onClick={() => { setActiveMenu("content"); setSubTab("blogs"); }} className={tabStyle("content")}><BookOpen className="size-4" /> 📝 Content</button>
+              <button onClick={() => { setActiveMenu("reviews"); setSubTab("all"); }} className={tabStyle("reviews")}><Star className="size-4" /> ⭐ Reviews</button>
+              <button onClick={() => { setActiveMenu("shipping"); setSubTab("all"); }} className={tabStyle("shipping")}><Truck className="size-4" /> 🚚 Shipping</button>
+              <button onClick={() => { setActiveMenu("analytics"); setSubTab("all"); }} className={tabStyle("analytics")}><TrendingUp className="size-4" /> 📈 Analytics</button>
+              <button onClick={() => { setActiveMenu("seo"); setSubTab("all"); }} className={tabStyle("seo")}><Search className="size-4" /> 🔍 SEO</button>
+              <button onClick={() => { setActiveMenu("support"); setSubTab("all"); }} className={tabStyle("support")}><MessageSquare className="size-4" /> 🎧 Support</button>
+              <button onClick={() => { setActiveMenu("settings"); setSubTab("general"); }} className={tabStyle("settings")}><Settings className="size-4" /> ⚙️ Settings</button>
             </div>
-            <span className="text-[10px] font-bold text-[#666666] uppercase tracking-wider block px-3 py-1 mb-1">
-              Store Control Menu
-            </span>
-            <button onClick={() => { setActiveMenu("dashboard"); setSubTab("overview"); }} className={tabStyle("dashboard")}><TrendingUp className="size-4" /> 📊 Dashboard</button>
-            <button onClick={() => { setActiveMenu("orders"); setSubTab("all"); }} className={tabStyle("orders")}><ShoppingBag className="size-4" /> 🛒 Orders</button>
-            <button onClick={() => { setActiveMenu("products"); setSubTab("all"); }} className={tabStyle("products")}><Database className="size-4" /> 📦 Products</button>
-            <button onClick={() => { setActiveMenu("customers"); setSubTab("all"); }} className={tabStyle("customers")}><Users className="size-4" /> 👥 Customers</button>
-            <button onClick={() => { setActiveMenu("discounts"); setSubTab("coupons"); }} className={tabStyle("discounts")}><Ticket className="size-4" /> 🎟️ Discounts</button>
-            <button onClick={() => { setActiveMenu("marketing"); setSubTab("campaigns"); }} className={tabStyle("marketing")}><Megaphone className="size-4" /> 📢 Marketing</button>
-            <button onClick={() => { setActiveMenu("content"); setSubTab("blogs"); }} className={tabStyle("content")}><BookOpen className="size-4" /> 📝 Content</button>
-            <button onClick={() => { setActiveMenu("reviews"); setSubTab("all"); }} className={tabStyle("reviews")}><Star className="size-4" /> ⭐ Reviews</button>
-            <button onClick={() => { setActiveMenu("shipping"); setSubTab("all"); }} className={tabStyle("shipping")}><Truck className="size-4" /> 🚚 Shipping</button>
-            <button onClick={() => { setActiveMenu("analytics"); setSubTab("all"); }} className={tabStyle("analytics")}><TrendingUp className="size-4" /> 📈 Analytics</button>
-            <button onClick={() => { setActiveMenu("seo"); setSubTab("all"); }} className={tabStyle("seo")}><Search className="size-4" /> 🔍 SEO</button>
-            <button onClick={() => { setActiveMenu("support"); setSubTab("all"); }} className={tabStyle("support")}><MessageSquare className="size-4" /> 🎧 Support</button>
-            <button onClick={() => { setActiveMenu("settings"); setSubTab("general"); }} className={tabStyle("settings")}><Settings className="size-4" /> ⚙️ Settings</button>
-          </div>
+          )}
 
           {/* Right Workspace Workstation */}
-          <div className="lg:col-span-9 space-y-6">
+          <div className={`${isDesktopSidebarCollapsed ? "lg:col-span-12" : "lg:col-span-9"} space-y-6 transition-all duration-300`}>
+            {/* Quick Full-Width Sidebar Expand Pill Bar */}
+            {isDesktopSidebarCollapsed && (
+              <div className="hidden lg:flex items-center justify-between bg-white border border-[#ddddd9] px-4 py-2.5 rounded-2xl shadow-xs animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#17231b]">
+                  <button
+                    onClick={() => setIsDesktopSidebarCollapsed(false)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#f8faf1] hover:bg-[#eef5df] border border-[#244f31]/20 text-[#244f31] font-bold text-xs transition cursor-pointer"
+                    title="Expand Admin Navigation Sidebar"
+                  >
+                    <PanelLeft className="size-3.5" />
+                    <span>Expand Navigation Sidebar</span>
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-400 font-medium">Full Width Workspace Mode</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                  <span className="capitalize">{activeMenu}</span>
+                  <span className="text-gray-300">/</span>
+                  <span className="capitalize text-[#244f31]">{subTab}</span>
+                </div>
+              </div>
+            )}
             {/* 1. Dashboard View */}
             {activeMenu === "dashboard" && (() => {
               const liveRevenue = dbData.orders

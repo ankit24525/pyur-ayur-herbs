@@ -1143,7 +1143,29 @@ export default function AdminDashboard() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setNewCategory((prev) => ({ ...prev, image: reader.result as string }));
+        const img = document.createElement("img");
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 320;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.85);
+          setNewCategory((prev) => ({ ...prev, image: compressed }));
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -1180,7 +1202,7 @@ export default function AdminDashboard() {
       : concerns;
 
     if (currentCats.some((c: any) => c.name.toLowerCase() === newCategory.name.trim().toLowerCase())) {
-      alert("A category with this name already exists!");
+      showToast("⚠️ A category with this name already exists!");
       return;
     }
 
@@ -1192,9 +1214,10 @@ export default function AdminDashboard() {
     };
 
     const updated = [...currentCats, newCat];
-    await saveKey("categories", updated);
+    setDbData((prev: any) => ({ ...prev, categories: updated }));
     setNewCategory({ name: "", image: "", icon: "🌿" });
-    showToast(`🎉 Category "${newCat.name}" added successfully!`);
+    showToast(`🎉 Category "${newCat.name}" created successfully!`);
+    await saveKey("categories", updated);
   };
 
   const handleDeleteCategory = async (catId: string) => {
@@ -1203,8 +1226,9 @@ export default function AdminDashboard() {
         ? dbData.categories
         : concerns;
       const updated = currentCats.filter((c: any) => c.id !== catId && c.name !== catId);
-      await saveKey("categories", updated);
+      setDbData((prev: any) => ({ ...prev, categories: updated }));
       showToast("Category deleted successfully!");
+      await saveKey("categories", updated);
     }
   };
 

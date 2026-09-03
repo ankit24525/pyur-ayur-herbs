@@ -259,5 +259,49 @@
       "otp": "269226",
       "expiresAt": 1786945458531
     }
+  ],
+  "categories": [
+    {
+      "id": "sugar",
+      "name": "Sugar Management",
+      "icon": "🩸",
+      "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=120&q=80"
+    },
+    {
+      "id": "energy",
+      "name": "Energy and Vitality",
+      "icon": "⚡",
+      "image": "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=120&q=80"
+    },
+    {
+      "id": "gym",
+      "name": "Gym and Fitness",
+      "icon": "💪",
+      "image": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=120&q=80"
+    },
+    {
+      "id": "liver",
+      "name": "Liver Care",
+      "icon": "🌿",
+      "image": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=120&q=80"
+    },
+    {
+      "id": "daily",
+      "name": "Daily Ayurveda",
+      "icon": "🍵",
+      "image": "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=120&q=80"
+    },
+    {
+      "id": "skin",
+      "name": "Skin and Hair",
+      "icon": "✨",
+      "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=120&q=80"
+    },
+    {
+      "id": "women",
+      "name": "Womens Health",
+      "icon": "🌸",
+      "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=120&q=80"
+    }
   ]
 }

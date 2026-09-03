@@ -51,10 +51,28 @@ function CheckoutForm() {
     }
   }, [successParam, orderIdParam, errorParam]);
 
-  const [catalog, setCatalog] = useState<Product[]>(products);
-  const [product, setProduct] = useState<Product>(products[0]);
+  const fallbackProd: Product = {
+    id: prodId || "1",
+    name: "Ayurvedic Formulation",
+    slug: "ayurvedic-formulation",
+    concern: "Ayurveda",
+    price: 999,
+    compareAt: 1199,
+    rating: 5.0,
+    reviews: 1,
+    badge: "100% PURE",
+    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80",
+    ingredients: ["Natural Herbs"],
+    description: "Ayurvedic wellness remedy.",
+    coinsEarned: 50,
+    deliveryDays: "3 - 5 Days",
+    inStock: true,
+  };
+
+  const [catalog, setCatalog] = useState<Product[]>([]);
+  const [product, setProduct] = useState<Product>(fallbackProd);
   const [loadingProduct, setLoadingProduct] = useState(true);
-  const subtotal = product.price * qty;
+  const subtotal = (product?.price || 0) * qty;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -67,12 +85,12 @@ function CheckoutForm() {
   });
 
   useEffect(() => {
-    fetch("/api/admin/products")
+    fetch("/api/storefront", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.products && data.products.length > 0) {
           setCatalog(data.products);
-          const found = data.products.find((p: any) => p.id === prodId);
+          const found = data.products.find((p: any) => p.id === prodId || p.slug === prodId);
           if (found) setProduct(found);
         }
       })

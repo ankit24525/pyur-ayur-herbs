@@ -29,8 +29,18 @@ interface ProductDetailViewProps {
 }
 
 export function ProductDetailView({ product }: ProductDetailViewProps) {
+  const fallbackVariants = product.variants && product.variants.length > 0 ? product.variants : [
+    {
+      id: `${product.id || "1"}-single`,
+      name: "Standard Pack",
+      price: product.price || 0,
+      mrp: product.mrp || (product.price || 0) * 1.2,
+      discount: product.discount || "NEW",
+    }
+  ];
+
   const [selectedImage, setSelectedImage] = useState(product.image);
-  const [selectedVariant, setSelectedVariant] = useState(product.variants[0]);
+  const [selectedVariant, setSelectedVariant] = useState(fallbackVariants[0]);
   const [quantity, setQuantity] = useState(1);
   const [pincode, setPincode] = useState("");
   const [pincodeVerified, setPincodeVerified] = useState(false);
@@ -38,14 +48,32 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
 
   useEffect(() => {
     setSelectedImage(product.image);
-    setSelectedVariant(product.variants[0]);
+    const validVars = product.variants && product.variants.length > 0 ? product.variants : [
+      {
+        id: `${product.id || "1"}-single`,
+        name: "Standard Pack",
+        price: product.price || 0,
+        mrp: product.mrp || (product.price || 0) * 1.2,
+        discount: product.discount || "NEW",
+      }
+    ];
+    setSelectedVariant(validVars[0]);
     setQuantity(1);
-  }, [product.id, product.image, product.variants]);
+  }, [product.id, product.image, product.variants, product.price, product.mrp, product.discount]);
 
   // Cart State for SiteHeader
-  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([
-    { product: products[0], quantity: 1 },
-  ]);
+  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("pyur_cart");
+        if (stored) {
+          setCart(JSON.parse(stored));
+        }
+      } catch {}
+    }
+  }, []);
 
   // Track product view event for Meta Ads & Recently Viewed List
   useEffect(() => {

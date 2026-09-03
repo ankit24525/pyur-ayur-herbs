@@ -11,6 +11,7 @@ import TrustSection from "@/components/TrustSection";
 import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import SiteFooter from "@/components/SiteFooter";
+import { StorefrontSkeleton, HeroSkeleton, ConcernFilterSkeleton, ProductRailSkeleton } from "@/components/SkeletonLoader";
 import { products, Product, concerns } from "@/lib/store";
 import { X, Smartphone, User, CheckCircle2 } from "lucide-react";
 
@@ -36,23 +37,54 @@ export default function Home() {
     heroSlides: [],
     consultationBanner: null
   });
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
-  // Load dynamic catalog and CMS layout settings from database on mount
+  // Instant local cache hydration & background SWR sync from /api/storefront
   useEffect(() => {
-    fetch("/api/admin/all", { cache: "no-store" })
+    // 1. Instant Cache Hydration: Read immediately from localStorage (0ms!)
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("pyur_storefront_cache");
+        if (cached) {
+          const data = JSON.parse(cached);
+          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+            setCatalog(data.products);
+          }
+          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+            setCategories(data.categories);
+          }
+          if (data.content) {
+            setCmsData(data.content);
+          }
+          setIsDataLoaded(true);
+        }
+      } catch (e) {
+        console.error("Error reading storefront cache:", e);
+      }
+    }
+
+    // 2. High-speed Background SWR Revalidation (reads optimized /api/storefront)
+    fetch("/api/storefront", { cache: "default" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.products && data.products.length > 0) {
+        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
           setCatalog(data.products);
         }
-        if (data.categories && data.categories.length > 0) {
+        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
           setCategories(data.categories);
         }
         if (data.content) {
           setCmsData(data.content);
         }
+        setIsDataLoaded(true);
+        try {
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
+        } catch {}
       })
-      .catch((e) => console.error("Error loading storefront layout:", e));
+      .catch((e) => console.error("Error loading storefront layout:", e))
+      .finally(() => {
+        setIsDataLoaded(true);
+      });
   }, []);
 
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
@@ -188,11 +220,17 @@ export default function Home() {
       <ConcernFilter
         selectedConcern={selectedConcern}
         onSelectConcern={(concern) => setSelectedConcern(concern)}
+        categories={categories}
       />
 
       {/* Main Shop / Products Section */}
       <div id="shop">
-        {selectedConcern ? (
+        {!isDataLoaded && catalog.length === 0 ? (
+          <>
+            <ProductRailSkeleton title="Top-Rated Ayurvedic Remedies" />
+            <ProductRailSkeleton title="Specialized Care Formulations" />
+          </>
+        ) : selectedConcern ? (
           <ProductRail
             title={`Remedies for ${selectedConcern}`}
             subtitle={`Showing ${filteredProducts.length} Ayurvedic formulations`}

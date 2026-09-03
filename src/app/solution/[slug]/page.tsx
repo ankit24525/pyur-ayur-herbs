@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import Link from "next/link";
 import { Filter, ChevronDown, Sparkles, HelpCircle } from "lucide-react";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import SiteHeader from "@/components/SiteHeader";
 import ConcernFilter from "@/components/ConcernFilter";
 import ProductCard from "@/components/ProductCard";
+import { ProductCardSkeleton } from "@/components/SkeletonLoader";
 import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
 import SiteFooter from "@/components/SiteFooter";
 import { concerns, products, Product } from "@/lib/store";
@@ -78,31 +79,76 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
   const slug = resolvedParams.slug;
 
   const [sortBy, setSortBy] = useState("popular");
+  const [catalog, setCatalog] = useState<Product[]>(products);
+  const [categories, setCategories] = useState<any[]>(concerns);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  // Cart State for Header
-  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([
-    { product: products[0], quantity: 1 },
-  ]);
-
+  // Modal States
   const [appModalOpen, setAppModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [consultationModalOpen, setConsultationModalOpen] = useState(false);
 
+  // Cart State for Header
+  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
+
+  // Instant local cache hydration & background SWR sync
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("pyur_cart");
+        if (stored) {
+          setCart(JSON.parse(stored));
+        } else {
+          setCart([{ product: products[0], quantity: 1 }]);
+        }
+
+        const cached = localStorage.getItem("pyur_storefront_cache");
+        if (cached) {
+          const data = JSON.parse(cached);
+          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+            setCatalog(data.products);
+          }
+          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+            setCategories(data.categories);
+          }
+          setIsDataLoaded(true);
+        }
+      } catch {}
+    }
+
+    fetch("/api/storefront", { cache: "default" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+          setCatalog(data.products);
+        }
+        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+        setIsDataLoaded(true);
+      })
+      .catch(() => setIsDataLoaded(true));
+  }, []);
+
   const handleAddToCart = (product: Product) => {
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.product.id === product.id);
+      let updated;
       if (existing) {
-        return prevCart.map((item) =>
+        updated = prevCart.map((item) =>
           item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
+      } else {
+        updated = [...prevCart, { product, quantity: 1 }];
       }
-      return [...prevCart, { product, quantity: 1 }];
+      try { localStorage.setItem("pyur_cart", JSON.stringify(updated)); } catch {}
+      return updated;
     });
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
-    setCart((prevCart) =>
-      prevCart
+    setCart((prevCart) => {
+      const updated = prevCart
         .map((item) => {
           if (item.product.id === productId) {
             const newQty = item.quantity + delta;
@@ -110,12 +156,18 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
           }
           return item;
         })
-        .filter(Boolean) as { product: Product; quantity: number }[]
-    );
+        .filter(Boolean) as { product: Product; quantity: number }[];
+      try { localStorage.setItem("pyur_cart", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
   };
 
   const handleRemoveItem = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+    setCart((prevCart) => {
+      const updated = prevCart.filter((item) => item.product.id !== productId);
+      try { localStorage.setItem("pyur_cart", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
   };
 
   const handleBuyNow = (product: Product) => {
@@ -123,19 +175,25 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
   };
 
   const details = concernDetailsMap[slug] || {
-    title: "Ayurvedic Herbal Solutions",
-    subtitle: "PURE BOTANICAL FORMULATIONS BACKED BY VAIDYAS",
+    title: slug
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ") + " Ayurvedic Remedies",
+    subtitle: "AUTHENTIC AYURVEDIC FORMULATIONS CERTIFIED BY VAIDYAS",
     bg: "from-[#1d3b24] via-[#244f31] to-[#122c1b]",
     description: "Discover our full range of 100% natural Ayurvedic juices, resins, and wellness elixirs.",
   };
 
   // Filter products by slug or matching category
-  const filteredProducts = products.filter((p) => {
-    const pSlug = p.concern.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    return pSlug.includes(slug) || slug.includes(pSlug) || true;
+  const normalizedSlug = slug.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const filteredProducts = catalog.filter((p) => {
+    const pConcernNorm = (p.concern || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    return pConcernNorm.includes(normalizedSlug) || normalizedSlug.includes(pConcernNorm) || slug === "all";
   });
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
+  const displayProducts = filteredProducts.length > 0 ? filteredProducts : catalog;
+
+  const sortedProducts = [...displayProducts].sort((a, b) => {
     if (sortBy === "price-low") return a.price - b.price;
     if (sortBy === "price-high") return b.price - a.price;
     if (sortBy === "rating") return b.rating - a.rating;
@@ -220,16 +278,24 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
-          {sortedProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={handleAddToCart}
-              onBuyNow={handleBuyNow}
-            />
-          ))}
-        </div>
+        {!isDataLoaded && sortedProducts.length === 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+            {sortedProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+                onBuyNow={handleBuyNow}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
 

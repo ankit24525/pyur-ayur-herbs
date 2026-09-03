@@ -90,3 +90,10 @@ body {
   animation: toastFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Modern Shimmer Loading Animation */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+

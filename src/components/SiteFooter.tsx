@@ -12,7 +12,7 @@ export default function SiteFooter() {
   });
 
   useEffect(() => {
-    fetch("/api/admin/all", { cache: "no-store" })
+    fetch("/api/storefront", { cache: "default" })
       .then((res) => res.json())
       .then((data) => {
         if (data.settings) {

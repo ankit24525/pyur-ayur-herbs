@@ -15,7 +15,7 @@ export default function AnnouncementBar({
   const [timeLeft, setTimeLeft] = useState<string>("");
 
   useEffect(() => {
-    fetch("/api/admin/all", { cache: "no-store" })
+    fetch("/api/storefront", { cache: "default" })
       .then((res) => res.json())
       .then((data) => {
         if (data.settings) setSettings(data.settings);

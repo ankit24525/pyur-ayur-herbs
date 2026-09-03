@@ -8,15 +8,25 @@ import { concerns as staticConcerns } from "@/lib/store";
 interface ConcernFilterProps {
   selectedConcern: string | null;
   onSelectConcern: (concernName: string | null) => void;
+  categories?: any[];
 }
 
-export default function ConcernFilter({ selectedConcern, onSelectConcern }: ConcernFilterProps) {
-  const [categories, setCategories] = useState<any[]>([]);
+export default function ConcernFilter({
+  selectedConcern,
+  onSelectConcern,
+  categories: propCategories,
+}: ConcernFilterProps) {
+  const [categories, setCategories] = useState<any[]>(propCategories || staticConcerns);
   const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/admin/all")
+    if (propCategories && propCategories.length > 0) {
+      setCategories(propCategories);
+      return;
+    }
+
+    fetch("/api/storefront", { cache: "default" })
       .then((res) => res.json())
       .then((data) => {
         if (data.categories && data.categories.length > 0) {
@@ -28,22 +38,7 @@ export default function ConcernFilter({ selectedConcern, onSelectConcern }: Conc
       .catch(() => {
         setCategories(staticConcerns);
       });
-  }, []);
-
-  // Sync state triggers
-  useEffect(() => {
-    const handleSync = () => {
-      fetch("/api/admin/all")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.categories && data.categories.length > 0) {
-            setCategories(data.categories);
-          }
-        });
-    };
-    window.addEventListener("focus", handleSync);
-    return () => window.removeEventListener("focus", handleSync);
-  }, []);
+  }, [propCategories]);
 
   const handleScroll = (direction: "left" | "right") => {
     if (scrollRef.current) {

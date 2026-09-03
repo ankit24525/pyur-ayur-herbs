@@ -17,6 +17,7 @@ export interface DBData {
   faqs?: any[];
   testimonials?: any[];
   marketing?: any;
+  content?: any;
   seo?: any;
   users?: any[];
   categories?: any[];

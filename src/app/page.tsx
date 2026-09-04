@@ -256,13 +256,48 @@ export default function Home() {
             </div>
           </div>
         ) : selectedConcern ? (
-          <ProductRail
-            title={`Remedies for ${selectedConcern}`}
-            subtitle={`Showing ${filteredProducts.length} Ayurvedic formulations`}
-            items={filteredProducts}
-            onAddToCart={handleAddToCart}
-            onBuyNow={handleBuyNow}
-          />
+          filteredProducts.length > 0 ? (
+            <ProductRail
+              title={`Remedies for ${selectedConcern}`}
+              subtitle={`Showing ${filteredProducts.length} Ayurvedic formulations`}
+              items={filteredProducts}
+              onAddToCart={handleAddToCart}
+              onBuyNow={handleBuyNow}
+            />
+          ) : (
+            <div className="mx-auto max-w-[1440px] px-4 py-12 md:py-16 text-center">
+              <div className="mx-auto max-w-lg rounded-3xl border border-[#ddddd9] bg-gradient-to-b from-white via-white to-[#f8faf1] p-8 sm:p-12 shadow-sm text-center">
+                <div className="mx-auto flex size-20 items-center justify-center rounded-2xl bg-[#eef5df] border border-[#80a03c]/30 text-3xl mb-5 shadow-xs">
+                  <span>{categories.find((c: any) => (c.name || "").toLowerCase() === selectedConcern.toLowerCase())?.icon || "🌿"}</span>
+                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#80a03c]/15 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#244f31]">
+                  ⏳ Formulations Coming Soon
+                </span>
+                <h3 className="mt-4 text-2xl font-black text-[#17231b] sm:text-3xl">
+                  {selectedConcern} Care Coming Soon!
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-[#666666]">
+                  Our expert Ayurvedic Vaidyas are currently preparing 100% natural, certified gold-grade formulations for <strong>{selectedConcern}</strong>. Authentic remedies will be launching here very soon!
+                </p>
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    onClick={() => setSelectedConcern(null)}
+                    className="w-full sm:w-auto rounded-xl bg-[#244f31] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-[#1b3b24] cursor-pointer"
+                  >
+                    Explore All Available Remedies
+                  </button>
+                  <a
+                    href={`https://wa.me/919876543210?text=${encodeURIComponent(`नमस्ते! मुझे ${selectedConcern} के आयुर्वेदिक इलाज के बारे में जानकारी चाहिए।`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto rounded-xl border border-[#25D366] bg-[#25D366]/10 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-[#128C7E] transition hover:bg-[#25D366]/20 flex items-center justify-center gap-1.5"
+                  >
+                    <span>Ask Doctor on WhatsApp</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          )
         ) : (
           <>
             {/* 1. All Bestselling Remedies Rail */}

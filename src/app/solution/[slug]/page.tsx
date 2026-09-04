@@ -308,12 +308,35 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
 
         {/* Product Grid */}
         {sortedProducts.length === 0 ? (
-          <div className="mx-auto max-w-md rounded-2xl border border-dashed border-[#ddddd9] bg-white p-8 text-center shadow-xs my-8">
-            <span className="text-4xl">🌿</span>
-            <h3 className="mt-3 text-lg font-bold text-[#17231b]">No Products Found</h3>
-            <p className="mt-1 text-xs text-[#666666]">
-              There are no products listed under this category yet.
+          <div className="mx-auto max-w-lg rounded-3xl border border-[#ddddd9] bg-gradient-to-b from-white via-white to-[#f8faf1] p-8 sm:p-12 text-center shadow-sm my-8">
+            <div className="mx-auto flex size-20 items-center justify-center rounded-2xl bg-[#eef5df] border border-[#80a03c]/30 text-3xl mb-5 shadow-xs">
+              <span>{categories.find((c: any) => (c.name || "").toLowerCase() === details.title?.toLowerCase())?.icon || "🌿"}</span>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#80a03c]/15 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#244f31]">
+              ⏳ Formulations Coming Soon
+            </span>
+            <h3 className="mt-4 text-2xl font-black text-[#17231b] sm:text-3xl">
+              {details.title} Formulations Coming Soon!
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-[#666666]">
+              Our expert Ayurvedic Vaidyas are currently preparing 100% natural, certified gold-grade formulations for <strong>{details.title}</strong>. Authentic remedies will be available here very soon!
             </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/"
+                className="w-full sm:w-auto rounded-xl bg-[#244f31] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-[#1b3b24]"
+              >
+                Explore All Available Remedies
+              </Link>
+              <a
+                href={`https://wa.me/919876543210?text=${encodeURIComponent(`नमस्ते! मुझे ${details.title} के आयुर्वेदिक इलाज के बारे में जानकारी चाहिए।`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto rounded-xl border border-[#25D366] bg-[#25D366]/10 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-[#128C7E] transition hover:bg-[#25D366]/20 flex items-center justify-center gap-1.5"
+              >
+                <span>Ask Doctor on WhatsApp</span>
+              </a>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">

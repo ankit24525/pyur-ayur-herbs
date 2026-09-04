@@ -208,11 +208,15 @@ function ProfileDashboard() {
     );
   }
 
-  // Handle Sign Out
-  const handleSignOut = async () => {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    router.push("/");
-    setTimeout(() => window.location.reload(), 100);
+  // Handle Sign Out (Instant UI response)
+  const handleSignOut = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("pyur_session");
+      localStorage.removeItem("pyur_user");
+      sessionStorage.clear();
+    }
+    fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+    window.location.href = "/";
   };
 
   // Address Submit (Add/Edit)

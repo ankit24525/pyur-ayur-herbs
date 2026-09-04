@@ -357,17 +357,15 @@ export default function SiteHeader({
                     </div>
                     <div className="border-t border-[#f0f0eb] pt-1 mt-1">
                       <button
-                        onClick={async () => {
-                          try {
-                            await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-                          } catch {}
+                        onClick={() => {
                           setUser(null);
                           if (typeof window !== "undefined") {
                             localStorage.removeItem("pyur_session");
                             localStorage.removeItem("pyur_user");
                             sessionStorage.clear();
-                            window.location.href = "/";
                           }
+                          fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+                          window.location.href = "/";
                         }}
                         className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 cursor-pointer"
                       >
@@ -583,17 +581,15 @@ export default function SiteHeader({
                       <span className="font-bold text-[#17231b] text-sm">Hello, {(user?.name || "Member").split(" ")[0]}</span>
                     </div>
                     <button
-                      onClick={async () => {
-                        try {
-                          await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-                        } catch {}
+                      onClick={() => {
                         setUser(null);
                         if (typeof window !== "undefined") {
                           localStorage.removeItem("pyur_session");
                           localStorage.removeItem("pyur_user");
                           sessionStorage.clear();
-                          window.location.href = "/";
                         }
+                        fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+                        window.location.href = "/";
                       }}
                       className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
                     >

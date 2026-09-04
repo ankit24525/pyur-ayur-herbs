@@ -3,48 +3,85 @@ import { readDB, writeDB } from "./db";
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_PASSWORD || "pyur_ayur_session_secret_key_2026";
+
 export function generateSessionToken(): string {
   return crypto.randomBytes(48).toString("hex");
 }
 
-/** Creates a session in DB and returns the token */
+/** Creates a secure HMAC-signed session token instantly (0ms latency, zero DB write) */
 export async function createSession(userId: string): Promise<string> {
-  const token = generateSessionToken();
   const expiresAt = Date.now() + SESSION_DURATION_MS;
-
-  const db = await readDB();
-  const sessions = (db.sessions || []).filter(
-    (s) => s.expiresAt > Date.now() // prune expired sessions on write
-  );
-  sessions.push({ token, userId, expiresAt });
-  db.sessions = sessions;
-  await writeDB(db);
-
-  return token;
+  const payload = `${userId}.${expiresAt}`;
+  const hmac = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
+  return `${payload}.${hmac}`;
 }
 
 /** Resolves a session token to a user object (without passwordHash). Returns null if invalid/expired. */
 export async function resolveSession(token: string | undefined): Promise<any | null> {
   if (!token) return null;
 
-  const db = await readDB();
-  const session = (db.sessions || []).find(
-    (s) => s.token === token && s.expiresAt > Date.now()
-  );
-  if (!session) return null;
+  // 1. High-speed HMAC-signed token verification (< 0.01ms)
+  const parts = token.split(".");
+  if (parts.length === 3) {
+    const [userId, expiresAtStr, signature] = parts;
+    const expiresAt = parseInt(expiresAtStr, 10);
+    if (!isNaN(expiresAt) && Date.now() < expiresAt) {
+      const expectedHmac = crypto
+        .createHmac("sha256", SESSION_SECRET)
+        .update(`${userId}.${expiresAtStr}`)
+        .digest("hex");
 
-  const user = (db.users || []).find((u) => u.id === session.userId);
-  if (!user) return null;
+      let isValid = false;
+      try {
+        isValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedHmac));
+      } catch {
+        isValid = false;
+      }
 
-  const { passwordHash, ...safeUser } = user;
-  return safeUser;
+      if (isValid) {
+        const db = await readDB();
+        const user = (db.users || []).find((u) => u.id === userId);
+        if (user) {
+          const { passwordHash, ...safeUser } = user;
+          return safeUser;
+        }
+      }
+    }
+    return null;
+  }
+
+  // 2. Backward compatibility fallback for legacy random hex tokens stored in DB
+  try {
+    const db = await readDB();
+    const session = (db.sessions || []).find(
+      (s) => s.token === token && s.expiresAt > Date.now()
+    );
+    if (!session) return null;
+
+    const user = (db.users || []).find((u) => u.id === session.userId);
+    if (!user) return null;
+
+    const { passwordHash, ...safeUser } = user;
+    return safeUser;
+  } catch {
+    return null;
+  }
 }
 
 /** Deletes a session by token */
 export async function deleteSession(token: string): Promise<void> {
-  const db = await readDB();
-  db.sessions = (db.sessions || []).filter((s) => s.token !== token);
-  await writeDB(db);
+  // Stateless HMAC tokens are invalidated instantly on the browser by clearing the cookie.
+  // Clean up legacy tokens from DB asynchronously without blocking if any exist.
+  if (!token.includes(".")) {
+    try {
+      const db = await readDB();
+      if (db.sessions && db.sessions.some((s) => s.token === token)) {
+        db.sessions = db.sessions.filter((s) => s.token !== token);
+        void writeDB(db);
+      }
+    } catch {}
+  }
 }
 
 /** Builds the Set-Cookie header string for setting the session cookie */

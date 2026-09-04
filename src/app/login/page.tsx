@@ -154,11 +154,7 @@ function LoginFormContent() {
       }
 
       // Success login / signup — session cookie set by server automatically
-      // No need to store anything in localStorage
-      router.push(redirectUrl);
-      setTimeout(() => {
-        window.location.reload();
-      }, 150);
+      window.location.href = redirectUrl;
     } catch (err) {
       setError("Failed to connect to the server.");
       setLoading(false);

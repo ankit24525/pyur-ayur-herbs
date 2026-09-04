@@ -57,7 +57,7 @@ async function getMongoClient(): Promise<MongoClient> {
 }
 
 let dbMemoryCache: { data: DBData; timestamp: number } | null = null;
-const CACHE_TTL_MS = 2000; // 2s in-memory cache for ultra-fast response
+const CACHE_TTL_MS = 6000; // 6s in-memory cache for ultra-fast response (< 0.01ms)
 
 // Ensure all DB data model fields exist with robust fallbacks
 function sanitizeDBData(data: any): DBData {

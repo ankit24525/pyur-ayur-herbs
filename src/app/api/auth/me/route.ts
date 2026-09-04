@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveSession, extractSessionToken } from "@/lib/session";
+import { resolveSession, extractSessionToken, clearSessionCookie } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -10,12 +10,22 @@ export async function GET(request: Request) {
     const user = await resolveSession(token);
 
     if (!user) {
-      return NextResponse.json({ success: false, user: null }, { status: 401 });
+      const res = NextResponse.json({ success: false, user: null }, { status: 401 });
+      res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      if (token) {
+        res.headers.set("Set-Cookie", clearSessionCookie());
+        res.cookies.delete("pyur_session");
+      }
+      return res;
     }
 
-    return NextResponse.json({ success: true, user });
+    const res = NextResponse.json({ success: true, user });
+    res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    return res;
   } catch (error) {
     console.error("[Auth/Me]", error);
-    return NextResponse.json({ success: false, user: null }, { status: 500 });
+    const res = NextResponse.json({ success: false, user: null }, { status: 500 });
+    res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    return res;
   }
 }

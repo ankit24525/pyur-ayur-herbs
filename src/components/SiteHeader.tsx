@@ -42,12 +42,24 @@ export default function SiteHeader({
   const [suggestionIdx, setSuggestionIdx] = useState(0);
   const [user, setUser] = useState<any>(null);
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.user) setUser(data.user);
+    fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+      .then((res) => {
+        if (!res.ok) {
+          setUser(null);
+          return null;
+        }
+        return res.json();
       })
-      .catch(() => {});
+      .then((data) => {
+        if (data && data.success && data.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        setUser(null);
+      });
   }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -357,14 +369,22 @@ export default function SiteHeader({
                     </div>
                     <div className="border-t border-[#f0f0eb] pt-1 mt-1">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           setUser(null);
                           if (typeof window !== "undefined") {
                             localStorage.removeItem("pyur_session");
                             localStorage.removeItem("pyur_user");
                             sessionStorage.clear();
+                            document.cookie = "pyur_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
                           }
-                          fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+                          try {
+                            await fetch("/api/auth/logout", {
+                              method: "POST",
+                              credentials: "include",
+                              cache: "no-store",
+                              keepalive: true,
+                            });
+                          } catch {}
                           window.location.href = "/";
                         }}
                         className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 cursor-pointer"
@@ -581,14 +601,22 @@ export default function SiteHeader({
                       <span className="font-bold text-[#17231b] text-sm">Hello, {(user?.name || "Member").split(" ")[0]}</span>
                     </div>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setUser(null);
                         if (typeof window !== "undefined") {
                           localStorage.removeItem("pyur_session");
                           localStorage.removeItem("pyur_user");
                           sessionStorage.clear();
+                          document.cookie = "pyur_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
                         }
-                        fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+                        try {
+                          await fetch("/api/auth/logout", {
+                            method: "POST",
+                            credentials: "include",
+                            cache: "no-store",
+                            keepalive: true,
+                          });
+                        } catch {}
                         window.location.href = "/";
                       }}
                       className="text-xs font-bold text-red-600 hover:underline cursor-pointer"

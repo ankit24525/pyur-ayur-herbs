@@ -16,15 +16,29 @@ export async function POST(request: Request) {
       }
     }
 
-    const response = NextResponse.json({ success: true, message: "Logged out successfully" });
+    const response = NextResponse.json(
+      { success: true, message: "Logged out successfully" },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Set-Cookie": clearSessionCookie(),
+        },
+      }
+    );
     response.cookies.delete("pyur_session");
-    response.headers.set("Set-Cookie", clearSessionCookie());
     return response;
   } catch (error) {
     console.error("[Auth/Logout]", error);
-    const response = NextResponse.json({ success: true, message: "Logged out" });
+    const response = NextResponse.json(
+      { success: true, message: "Logged out" },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Set-Cookie": clearSessionCookie(),
+        },
+      }
+    );
     response.cookies.delete("pyur_session");
-    response.headers.set("Set-Cookie", clearSessionCookie());
     return response;
   }
 }

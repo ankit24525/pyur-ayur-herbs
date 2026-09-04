@@ -208,14 +208,22 @@ function ProfileDashboard() {
     );
   }
 
-  // Handle Sign Out (Instant UI response)
-  const handleSignOut = () => {
+  // Handle Sign Out (Clean & Permanent)
+  const handleSignOut = async () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("pyur_session");
       localStorage.removeItem("pyur_user");
       sessionStorage.clear();
+      document.cookie = "pyur_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
     }
-    fetch("/api/auth/logout", { method: "POST", credentials: "include" }).catch(() => {});
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+        keepalive: true,
+      });
+    } catch {}
     window.location.href = "/";
   };
 

@@ -92,7 +92,7 @@ export function buildSessionCookie(token: string): string {
 
 /** Builds the Set-Cookie header string to clear the session cookie */
 export function clearSessionCookie(): string {
-  return `pyur_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+  return `pyur_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax`;
 }
 
 /** Extracts pyur_session cookie value from a Cookie header string */

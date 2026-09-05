@@ -141,12 +141,113 @@ export default function SiteHeader({
   const prevCartCountRef = useRef(0);
   const isMountedRef = useRef(false);
 
+  // Fallback sync from localStorage if cart prop is empty or corrupted
+  const [localCart, setLocalCart] = useState<{ product: Product; quantity: number }[]>([]);
+
   useEffect(() => {
     isMountedRef.current = true;
-    prevCartCountRef.current = (cart || []).reduce((acc, item) => acc + ((item && item.quantity) || 0), 0);
+
+    const syncCart = () => {
+      if (typeof window === "undefined") return;
+      try {
+        const stored = localStorage.getItem("pyur_cart");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            // Keep only strictly valid items
+            const valid = parsed.filter(
+              (item: any) => item && item.product && typeof item.product === "object" && item.product.id
+            );
+            setLocalCart(valid);
+            // Purge corrupted/invalid items from localStorage
+            if (valid.length !== parsed.length) {
+              localStorage.setItem("pyur_cart", JSON.stringify(valid));
+            }
+            return;
+          }
+        }
+        setLocalCart([]);
+      } catch {
+        setLocalCart([]);
+      }
+    };
+
+    syncCart();
+    window.addEventListener("storage", syncCart);
+    window.addEventListener("pyur_cart_updated", syncCart);
+    return () => {
+      window.removeEventListener("storage", syncCart);
+      window.removeEventListener("pyur_cart_updated", syncCart);
+    };
   }, []);
 
-  const totalCartCount = (cart || []).reduce((acc, item) => acc + ((item && item.quantity) || 0), 0);
+  // Use cart prop if populated, else use validated localCart
+  const activeCart = cart && cart.length > 0 ? cart : localCart;
+  const validCartItems = (activeCart || []).filter(
+    (item: any) => item && item.product && typeof item.product === "object" && item.product.id
+  );
+
+  const totalCartCount = validCartItems.reduce((acc, item) => acc + (Number(item.quantity) || 1), 0);
+  const cartSubtotal = validCartItems.reduce(
+    (acc, item) => acc + (Number(item.product?.price) || 0) * (Number(item.quantity) || 1),
+    0
+  );
+  const freeShippingThreshold = 999;
+  const progressToFreeShipping = Math.min(100, (cartSubtotal / freeShippingThreshold) * 100);
+
+  const handleItemQuantityChange = (productId: string, delta: number) => {
+    if (typeof onUpdateQuantity === "function") {
+      onUpdateQuantity(productId, delta);
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("pyur_cart");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const updated = parsed
+              .map((item: any) => {
+                if (item && item.product && item.product.id === productId) {
+                  const newQty = (Number(item.quantity) || 1) + delta;
+                  return newQty > 0 ? { ...item, quantity: newQty } : null;
+                }
+                return item;
+              })
+              .filter(Boolean);
+            localStorage.setItem("pyur_cart", JSON.stringify(updated));
+            setLocalCart(updated);
+            window.dispatchEvent(new Event("pyur_cart_updated"));
+          }
+        }
+      } catch {}
+    }
+  };
+
+  const handleItemRemove = (productId: string) => {
+    if (typeof onRemoveItem === "function") {
+      onRemoveItem(productId);
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("pyur_cart");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const updated = parsed.filter(
+              (item: any) => item && item.product && item.product.id !== productId
+            );
+            localStorage.setItem("pyur_cart", JSON.stringify(updated));
+            setLocalCart(updated);
+            window.dispatchEvent(new Event("pyur_cart_updated"));
+          }
+        }
+      } catch {}
+    }
+  };
+
+  useEffect(() => {
+    prevCartCountRef.current = totalCartCount;
+  }, []);
 
   useEffect(() => {
     if (!isMountedRef.current) return;
@@ -165,39 +266,6 @@ export default function SiteHeader({
     }
     prevCartCountRef.current = totalCartCount;
   }, [totalCartCount]);
-
-  // Cycle search placeholders every 2.5 seconds
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSuggestionIdx((prev) => (prev + 1) % (headerSearchSuggestions.length || 1));
-    }, 2500);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Live search filter
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
-    const q = searchQuery.toLowerCase().trim();
-    const filtered = (catalog || []).filter(
-      (p) =>
-        (p?.name || "").toLowerCase().includes(q) ||
-        (p?.concern || "").toLowerCase().includes(q) ||
-        (Array.isArray(p?.ingredients) && p.ingredients.some((ing: any) => (typeof ing === "string" ? ing : (ing as any)?.name || "").toLowerCase().includes(q)))
-    );
-    setSearchResults(filtered);
-    setIsSearching(true);
-  }, [searchQuery, catalog]);
-
-  const cartSubtotal = (cart || []).reduce(
-    (acc, item) => acc + ((item && item.product && item.product.price) || 0) * ((item && item.quantity) || 1),
-    0
-  );
-  const freeShippingThreshold = 999;
-  const progressToFreeShipping = Math.min(100, (cartSubtotal / freeShippingThreshold) * 100);
 
   const handleVerifyPincode = (e: React.FormEvent) => {
     e.preventDefault();
@@ -773,73 +841,94 @@ export default function SiteHeader({
 
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-4">
-              {cart.length > 0 ? (
+              {validCartItems.length > 0 ? (
                 <div className="space-y-4">
-                  {cart.map(({ product, quantity }) => (
-                    <div
-                      key={product.id}
-                      className="flex gap-3 rounded-lg border border-[#ddddd9] p-3"
-                    >
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        width={64}
-                        height={64}
-                        className="size-16 rounded object-cover"
-                      />
-                      <div className="flex flex-1 flex-col justify-between">
-                        <div>
-                          <h4 className="line-clamp-1 text-xs font-bold text-[#17231b]">
-                            {product.name}
-                          </h4>
-                          <span className="text-[10px] font-semibold text-[#80a03c]">
-                            Earn {product.coinsEarned * quantity} Pyur Coins 🪙
-                          </span>
+                  {validCartItems.map((item) => {
+                    const product = item.product;
+                    const quantity = Number(item.quantity) || 1;
+                    const price = Number(product.price) || 0;
+                    const compareAt = Number(product.compareAt) || Math.round(price * 1.2);
+                    const coinsEarned = Number(product.coinsEarned) || Math.round(price * 0.05);
+                    const imageSrc = product.image || "/brand/pure-ayur-logo.png";
+                    return (
+                      <div
+                        key={product.id || String(Math.random())}
+                        className="flex gap-3 rounded-lg border border-[#ddddd9] p-3 bg-white"
+                      >
+                        <div className="relative size-16 shrink-0 rounded overflow-hidden bg-gray-50 border border-gray-100">
+                          <Image
+                            src={imageSrc}
+                            alt={product.name || "Ayurvedic product"}
+                            fill
+                            sizes="64px"
+                            className="object-cover"
+                          />
                         </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-1 text-xs font-bold text-[#17231b]">
-                            <span>₹{product.price * quantity}</span>
-                            <span className="text-[10px] text-[#666666] line-through">
-                              ₹{product.compareAt * quantity}
+                        <div className="flex flex-1 flex-col justify-between min-w-0">
+                          <div>
+                            <h4 className="line-clamp-1 text-xs font-bold text-[#17231b]">
+                              {product.name || "Ayurvedic Formulation"}
+                            </h4>
+                            <span className="text-[10px] font-semibold text-[#80a03c]">
+                              Earn {coinsEarned * quantity} Pyur Coins 🪙
                             </span>
                           </div>
-                          <div className="flex items-center rounded border border-[#ddddd9]">
-                            <button
-                              onClick={() => onUpdateQuantity(product.id, -1)}
-                              className="p-1 hover:bg-[#f8faf1]"
-                            >
-                              <Minus className="size-3" />
-                            </button>
-                            <span className="px-2 text-xs font-bold">{quantity}</span>
-                            <button
-                              onClick={() => onUpdateQuantity(product.id, 1)}
-                              className="p-1 hover:bg-[#f8faf1]"
-                            >
-                              <Plus className="size-3" />
-                            </button>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-1 text-xs font-bold text-[#17231b]">
+                              <span>₹{price * quantity}</span>
+                              {compareAt > price && (
+                                <span className="text-[10px] text-[#666666] line-through">
+                                  ₹{compareAt * quantity}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center rounded border border-[#ddddd9]">
+                              <button
+                                onClick={() => handleItemQuantityChange(product.id, -1)}
+                                className="p-1 hover:bg-[#f8faf1] transition"
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus className="size-3" />
+                              </button>
+                              <span className="px-2 text-xs font-bold">{quantity}</span>
+                              <button
+                                onClick={() => handleItemQuantityChange(product.id, 1)}
+                                className="p-1 hover:bg-[#f8faf1] transition"
+                                aria-label="Increase quantity"
+                              >
+                                <Plus className="size-3" />
+                              </button>
+                            </div>
                           </div>
                         </div>
+                        <button
+                          onClick={() => handleItemRemove(product.id)}
+                          className="self-start p-1 text-[#666666] hover:text-[#c9704c] transition"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => onRemoveItem(product.id)}
-                        className="self-start text-[#666666] hover:text-[#c9704c]"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="flex h-full flex-col items-center justify-center text-center">
+                <div className="flex h-full flex-col items-center justify-center text-center py-12">
                   <ShoppingBag className="size-12 text-[#ddddd9]" />
                   <p className="mt-3 text-sm font-bold text-[#17231b]">Your herbal basket is empty</p>
-                  <p className="mt-1 text-xs text-[#666666]">Explore our Kapiva-inspired remedies!</p>
+                  <p className="mt-1 text-xs text-[#666666]">Explore our 100% pure Ayurvedic remedies!</p>
+                  <button
+                    onClick={() => setCartOpen(false)}
+                    className="mt-4 rounded-xl bg-[#244f31] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#1d3b24]"
+                  >
+                    Start Shopping
+                  </button>
                 </div>
               )}
             </div>
 
             {/* Footer Checkout */}
-            {cart.length > 0 && (
+            {validCartItems.length > 0 && (
               <div className="border-t border-[#ddddd9] bg-white p-4">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-bold text-[#17231b]">Total Payable</span>
@@ -850,8 +939,10 @@ export default function SiteHeader({
                 </div>
                 <button
                   onClick={() => {
-                    if (cart.length > 0) {
-                      window.location.href = `/checkout?productId=${cart[0].product.id}&quantity=${cart[0].quantity}`;
+                    if (validCartItems.length > 0 && validCartItems[0].product?.id) {
+                      window.location.href = `/checkout?productId=${validCartItems[0].product.id}&quantity=${validCartItems[0].quantity || 1}`;
+                    } else {
+                      setCartOpen(false);
                     }
                   }}
                   className="w-full rounded-lg bg-[#244f31] py-3 text-sm font-bold tracking-wider text-white shadow-lg transition hover:bg-[#1d3b24]"

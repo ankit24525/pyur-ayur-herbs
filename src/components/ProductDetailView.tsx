@@ -88,7 +88,13 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
       try {
         const stored = localStorage.getItem("pyur_cart");
         if (stored) {
-          setCart(JSON.parse(stored));
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const valid = parsed.filter(
+              (item: any) => item && item.product && typeof item.product === "object" && item.product.id
+            );
+            setCart(valid);
+          }
         }
       } catch {}
     }

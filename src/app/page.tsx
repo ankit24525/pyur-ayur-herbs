@@ -112,21 +112,30 @@ export default function Home() {
 
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
 
-  // Load cart from localStorage
+  // Load cart from localStorage safely
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("pyur_cart");
-      if (stored) {
-        try {
-          setCart(JSON.parse(stored));
-        } catch (e) {
-          console.error("Failed to parse cart:", e);
+      try {
+        const stored = localStorage.getItem("pyur_cart");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const valid = parsed.filter((item: any) => item && item.product && item.product.id && item.product.name);
+            setCart(valid);
+            if (valid.length !== parsed.length) {
+              localStorage.setItem("pyur_cart", JSON.stringify(valid));
+            }
+          } else {
+            setCart([]);
+            localStorage.removeItem("pyur_cart");
+          }
+        } else {
+          setCart([]);
         }
-      } else {
-        // Default item if cart is empty
-        const defaultCart = [{ product: products[0], quantity: 1 }];
-        setCart(defaultCart);
-        localStorage.setItem("pyur_cart", JSON.stringify(defaultCart));
+      } catch (e) {
+        console.error("Failed to parse cart:", e);
+        setCart([]);
+        try { localStorage.removeItem("pyur_cart"); } catch {}
       }
     }
   }, []);

@@ -153,7 +153,12 @@ function LoginFormContent() {
         return;
       }
 
-      // Success login / signup — session cookie set by server automatically
+      // Success login / signup — cache user immediately for instant 0ms header profile display
+      if (data.user && typeof window !== "undefined") {
+        try {
+          localStorage.setItem("pyur_user", JSON.stringify(data.user));
+        } catch {}
+      }
       window.location.href = redirectUrl;
     } catch (err) {
       setError("Failed to connect to the server.");

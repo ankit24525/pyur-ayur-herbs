@@ -40,12 +40,38 @@ export default function SiteHeader({
   products: initialProducts,
 }: SiteHeaderProps) {
   const [suggestionIdx, setSuggestionIdx] = useState(0);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("pyur_user");
+        return cached ? JSON.parse(cached) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+  const [mounted, setMounted] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
+    // 1. Instant sync from local cache on mount
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("pyur_user");
+        if (cached) {
+          setUser(JSON.parse(cached));
+        }
+      } catch {}
+    }
+
+    // 2. Validate session in background
     fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
       .then((res) => {
         if (!res.ok) {
           setUser(null);
+          try { localStorage.removeItem("pyur_user"); } catch {}
           return null;
         }
         return res.json();
@@ -53,12 +79,15 @@ export default function SiteHeader({
       .then((data) => {
         if (data && data.success && data.user) {
           setUser(data.user);
+          try { localStorage.setItem("pyur_user", JSON.stringify(data.user)); } catch {}
         } else {
           setUser(null);
+          try { localStorage.removeItem("pyur_user"); } catch {}
         }
       })
-      .catch(() => {
-        setUser(null);
+      .catch(() => {})
+      .finally(() => {
+        setAuthChecked(true);
       });
   }, []);
   const [searchQuery, setSearchQuery] = useState("");
@@ -313,7 +342,9 @@ export default function SiteHeader({
             </button>
 
             {/* Login Button / Profile */}
-            {user ? (
+            {!mounted ? (
+              <div className="h-7 w-20 hidden sm:block" />
+            ) : user ? (
               <>
                 <div className="relative group hidden sm:block">
                   <Link
@@ -321,13 +352,13 @@ export default function SiteHeader({
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase text-[#17231b] bg-[#f8faf1] rounded-md border border-[#ddddd9] hover:bg-[#eef2db] transition"
                   >
                     <User className="size-3.5 text-[#244f31]" />
-                    <span>Hi, {user.name.split(" ")[0]}!</span>
+                    <span>Hi, {(user?.name || "Member").split(" ")[0]}!</span>
                   </Link>
                   
                   {/* Hover Dropdown Menu */}
                   <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-[#ddddd9] bg-white p-2 shadow-xl opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200">
                     <div className="px-3 py-2 border-b border-[#f0f0eb] text-xs font-semibold text-[#666666]">
-                      Hi, {user.name}!
+                      Hi, {user?.name || "Member"}!
                     </div>
                     <div className="flex flex-col py-1">
                       <Link
@@ -593,7 +624,9 @@ export default function SiteHeader({
             </div>
 
             <div className="mt-6 flex flex-col gap-4">
-              {user ? (
+              {!mounted ? (
+                <div className="h-11 rounded-xl bg-gray-100 animate-pulse" />
+              ) : user ? (
                 <div className="bg-[#f8faf1] p-3.5 rounded-xl border border-[#ddddd9] flex flex-col gap-2.5">
                   <div className="flex items-center justify-between pb-2 border-b border-[#ddddd9]/60">
                     <div className="flex items-center gap-2">

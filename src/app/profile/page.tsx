@@ -29,9 +29,26 @@ function ProfileDashboard() {
   const router = useRouter();
   const initialTab = searchParams.get("tab") || "orders";
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("pyur_user");
+        return cached ? JSON.parse(cached) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        if (localStorage.getItem("pyur_user")) return false;
+      } catch {}
+    }
+    return true;
+  });
 
   // Orders & Coins State
   const [orders, setOrders] = useState<any[]>([]);
@@ -70,12 +87,39 @@ function ProfileDashboard() {
 
   // Load user session from server (httpOnly cookie)
   useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("pyur_user");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setUser(parsed);
+          setAddresses(parsed.savedAddresses || []);
+          setSettingsForm({
+            name: parsed.name || "",
+            phone: parsed.phone || "",
+            password: "",
+            confirmPassword: "",
+          });
+          setLoading(false);
+        }
+      } catch {}
+    }
+
+    fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+      .then((res) => {
+        if (!res.ok) {
+          setUser(null);
+          try { localStorage.removeItem("pyur_user"); } catch {}
+          router.push("/login");
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
-        if (data.success && data.user) {
+        if (data && data.success && data.user) {
           const parsed = data.user;
           setUser(parsed);
+          try { localStorage.setItem("pyur_user", JSON.stringify(parsed)); } catch {}
           setAddresses(parsed.savedAddresses || []);
           setSettingsForm({
             name: parsed.name,
@@ -84,6 +128,7 @@ function ProfileDashboard() {
             confirmPassword: "",
           });
         } else {
+          try { localStorage.removeItem("pyur_user"); } catch {}
           router.push("/login");
         }
       })

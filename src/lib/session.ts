@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { readDB, writeDB } from "./db";
 
-const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const SESSION_DURATION_MS = 15 * 60 * 1000; // 15 minutes of inactivity timeout
 
 const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_PASSWORD || "pyur_ayur_session_secret_key_2026";
 

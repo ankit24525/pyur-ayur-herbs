@@ -2,6 +2,7 @@ import ProductClickRouter from "@/components/ProductClickRouter";
 import MetaPixel from "@/components/MetaPixel";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import ToastContainer from "@/components/ToastContainer";
+import SessionTimeoutHandler from "@/components/SessionTimeoutHandler";
 import type { Metadata } from "next";
 import { readDB } from "@/lib/db";
 import "./globals.css";
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <MetaPixel />
         <WhatsAppWidget />
         <ToastContainer />
+        <SessionTimeoutHandler />
         {children}
       </body>
     </html>

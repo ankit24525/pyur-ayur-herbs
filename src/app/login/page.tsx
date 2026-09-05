@@ -157,6 +157,7 @@ function LoginFormContent() {
       if (data.user && typeof window !== "undefined") {
         try {
           localStorage.setItem("pyur_user", JSON.stringify(data.user));
+          localStorage.setItem("pyur_last_activity", Date.now().toString());
         } catch {}
       }
       window.location.href = redirectUrl;
@@ -393,6 +394,13 @@ function LoginFormContent() {
             : "Register now to save address defaults, check out faster, and earn wellness coins."}
         </p>
       </div>
+
+      {searchParams.get("expired") === "1" && !error && !successMsg && (
+        <div className="mb-4 p-3.5 bg-amber-50 text-amber-900 text-xs font-semibold rounded-xl border border-amber-200 flex items-center gap-2.5">
+          <span className="text-base">⏰</span>
+          <span>Your session has expired after 15 minutes of inactivity. Please sign in again.</span>
+        </div>
+      )}
 
       {successMsg && (
         <div className="mb-4 p-3 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-100">

@@ -134,6 +134,25 @@ function ProfileDashboard() {
       })
       .catch(() => router.push("/login"))
       .finally(() => setLoading(false));
+
+    const handleAuthSync = () => {
+      try {
+        const cached = localStorage.getItem("pyur_user");
+        if (!cached) {
+          router.push("/login?expired=1");
+        }
+      } catch {
+        router.push("/login?expired=1");
+      }
+    };
+
+    window.addEventListener("pyur_auth_change", handleAuthSync);
+    window.addEventListener("storage", handleAuthSync);
+
+    return () => {
+      window.removeEventListener("pyur_auth_change", handleAuthSync);
+      window.removeEventListener("storage", handleAuthSync);
+    };
   }, [router]);
 
   // Sync activeTab with search param

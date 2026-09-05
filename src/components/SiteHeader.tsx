@@ -89,6 +89,23 @@ export default function SiteHeader({
       .finally(() => {
         setAuthChecked(true);
       });
+
+    const handleAuthSync = () => {
+      try {
+        const cached = localStorage.getItem("pyur_user");
+        setUser(cached ? JSON.parse(cached) : null);
+      } catch {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener("pyur_auth_change", handleAuthSync);
+    window.addEventListener("storage", handleAuthSync);
+
+    return () => {
+      window.removeEventListener("pyur_auth_change", handleAuthSync);
+      window.removeEventListener("storage", handleAuthSync);
+    };
   }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);

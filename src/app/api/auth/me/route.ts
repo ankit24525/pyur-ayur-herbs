@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveSession, extractSessionToken, clearSessionCookie } from "@/lib/session";
+import { resolveSession, extractSessionToken, clearSessionCookie, createSession, buildSessionCookie } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +19,11 @@ export async function GET(request: Request) {
       return res;
     }
 
+    // Refresh sliding session cookie for active user (15 min inactivity window)
+    const newToken = await createSession(user.id);
     const res = NextResponse.json({ success: true, user });
     res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    res.headers.set("Set-Cookie", buildSessionCookie(newToken));
     return res;
   } catch (error) {
     console.error("[Auth/Me]", error);

@@ -27,7 +27,7 @@ export default function ReturnPolicyPage() {
           </div>
 
           <p className="mt-4 text-xs text-[#666666] leading-relaxed md:text-sm">
-            At <b>Pyur Ayur Herbs</b>, we stand behind the quality of our Ayurvedic products. If you are not satisfied with your purchase, we offer a hassle-free <b>7-Day Easy Return & Replacement Policy</b> from the date of delivery.
+            At <b>Pure Ayur Herbs</b>, we stand behind the quality of our Ayurvedic products. If you are not satisfied with your purchase, we offer a hassle-free <b>7-Day Easy Return & Replacement Policy</b> from the date of delivery.
           </p>
 
           <div className="mt-8 space-y-6">
@@ -50,13 +50,13 @@ export default function ReturnPolicyPage() {
               </h3>
               <ol className="mt-2 list-decimal list-inside text-xs text-[#666666] space-y-2 pl-2">
                 <li>
-                  <b>Submit Request:</b> Email us at <a href="mailto:support@pyurayurherbs.com" className="text-[#244f31] font-bold underline">support@pyurayurherbs.com</a> or WhatsApp us at <b>+91 98765 43210</b> with your Order ID and photo/video of the issue.
+                  <b>Submit Request:</b> Email us at <a href="mailto:support@pureayurherbs.com" className="text-[#244f31] font-bold underline">support@pureayurherbs.com</a> or WhatsApp us at <b>+91 98765 43210</b> with your Order ID and photo/video of the issue.
                 </li>
                 <li>
                   <b>Pickup Schedule:</b> Once approved, we will arrange a reverse pickup from your address within 24-48 hours.
                 </li>
                 <li>
-                  <b>Refund/Replacement:</b> Once the package is received and inspected, we will initiate your replacement delivery or issue a full refund to your original payment method / Pyur wallet within 5 business days.
+                  <b>Refund/Replacement:</b> Once the package is received and inspected, we will initiate your replacement delivery or issue a full refund to your original payment method / Pure wallet within 5 business days.
                 </li>
               </ol>
             </div>

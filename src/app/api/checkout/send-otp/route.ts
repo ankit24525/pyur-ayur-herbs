@@ -64,12 +64,12 @@ async function sendOrderOTPEmail(toEmail: string, otp: string): Promise<boolean>
     const resend = new Resend(apiKey);
 
     const { error } = await resend.emails.send({
-      from: `Pyur Ayur Herbs <${fromEmail}>`,
+      from: `Pure Ayur Herbs <${fromEmail}>`,
       to: toEmail,
-      subject: "Your Order Verification Code - Pyur Ayur Herbs",
+      subject: "Your Order Verification Code - Pure Ayur Herbs",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddddd9; border-radius: 12px; background-color: #ffffff;">
-          <h2 style="color: #244f31; text-align: center; text-transform: uppercase; margin-bottom: 5px;">Pyur Ayur Herbs</h2>
+          <h2 style="color: #244f31; text-align: center; text-transform: uppercase; margin-bottom: 5px;">Pure Ayur Herbs</h2>
           <p style="text-align: center; font-size: 11px; color: #666666; margin-top: 0; margin-bottom: 20px;">100% Certified Ministry of AYUSH Wellness</p>
           <hr style="border: 0; border-top: 1px solid #ddddd9; margin: 20px 0;" />
           <p>Hello,</p>
@@ -80,7 +80,7 @@ async function sendOrderOTPEmail(toEmail: string, otp: string): Promise<boolean>
           <p style="font-size: 12px; color: #444;">This code is valid for <strong>10 minutes</strong>. Please do not share it with anyone.</p>
           <p style="font-size: 11px; color: #666666;">If you did not place this order, please ignore this email and contact our support team.</p>
           <hr style="border: 0; border-top: 1px solid #ddddd9; margin: 20px 0;" />
-          <p style="font-size: 10px; text-align: center; color: #999999;">© ${new Date().getFullYear()} Pyur Ayur Herbs Store. India.</p>
+          <p style="font-size: 10px; text-align: center; color: #999999;">© ${new Date().getFullYear()} Pure Ayur Herbs Store. India.</p>
         </div>
       `,
     });

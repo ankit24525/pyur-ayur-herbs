@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 
   if (blog) {
-    const title = `${blog.title} | Pyur Ayur Journal`;
+    const title = `${blog.title} | Pure Ayur Journal`;
     const description = blog.content ? blog.content.substring(0, 155) + "..." : "Read this article to discover holistic wellness guidance.";
     return {
       title,
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: "Ayurvedic Journal | Pyur Ayur Herbs",
+    title: "Ayurvedic Journal | Pure Ayur Herbs",
     description: "Holistic wellness guides and healthy recipes certified by Ayurvedic practitioners."
   };
 }

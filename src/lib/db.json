@@ -3,6 +3,13 @@
   "orders": [],
   "coupons": [
     {
+      "code": "PURE10",
+      "type": "Percentage",
+      "value": "10",
+      "status": "Active",
+      "used": 142
+    },
+    {
       "code": "PYUR10",
       "type": "Percentage",
       "value": "10",
@@ -19,8 +26,8 @@
   ],
   "leads": [],
   "settings": {
-    "storeName": "Pyur Ayur Herbs Online Store",
-    "companyLegalName": "Pyur Ayur Herbs Private Limited",
+    "storeName": "Pure Ayur Herbs Online Store",
+    "companyLegalName": "Pure Ayur Herbs Private Limited",
     "registeredAddress": "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
     "gstin": "09AAPCP8765A1Z5",
     "socialLinks": {
@@ -30,7 +37,7 @@
       "twitter": "https://twitter.com",
       "linkedin": ""
     },
-    "supportEmail": "support@pyurayurherbs.com",
+    "supportEmail": "support@pureayurherbs.com",
     "whatsappNumber": "",
     "whatsappMessage": "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
     "codOtpEnabled": true,
@@ -45,8 +52,8 @@
       ]
     },
     "email": {
-      "senderName": "Pyur Ayur support team",
-      "smtpHost": "smtp.pyurayurherbs.com"
+      "senderName": "Pure Ayur support team",
+      "smtpHost": "smtp.pureayurherbs.com"
     },
     "notifications": {
       "orderPlacedSms": true,
@@ -54,11 +61,11 @@
     },
     "adminUsers": [
       {
-        "email": "admin@pyurayurherbs.com",
+        "email": "admin@pureayurherbs.com",
         "role": "Primary Owner"
       },
       {
-        "email": "vaidya.specialist@pyurayurherbs.com",
+        "email": "vaidya.specialist@pureayurherbs.com",
         "role": "Ayurveda Doctor"
       }
     ]
@@ -155,9 +162,9 @@
     ]
   },
   "seo": {
-    "title": "Pyur Ayur Herbs | Premium Ayurvedic Remedies",
+    "title": "Pure Ayur Herbs | Premium Ayurvedic Remedies",
     "metaDesc": "Shop certified Himalayan Shilajit, Dia Free sugar management juices, and organic skincare remedies.",
-    "sitemapUrl": "https://pyurayurherbs.com/sitemap.xml",
+    "sitemapUrl": "https://pureayurherbs.com/sitemap.xml",
     "robotsTxt": "User-agent: *\nAllow: /"
   },
   "collections": [
@@ -200,8 +207,8 @@
   "content": {
     "announcement": {
       "visible": true,
-      "text": "ADDITIONAL 10% OFF WITH PYUR COINS",
-      "code": "PYUR10",
+      "text": "ADDITIONAL 10% OFF WITH PURE COINS",
+      "code": "PURE10",
       "btnText": "GET APP",
       "link": "#"
     },
@@ -211,7 +218,7 @@
         "id": 1,
         "title": "100% Pure Himalayan Shilajit Gold Resin",
         "subtitle": "AUTHENTIC AYURVEDA FOR PEAK STAMINA & ENERGY",
-        "offer": "GET EXTRA 10% OFF WITH CODE: PYUR10",
+        "offer": "GET EXTRA 10% OFF WITH CODE: PURE10",
         "ctaText": "SHOP SHILAJIT RESIN",
         "href": "#shop",
         "badge": "100% Pure Sourced",
@@ -233,7 +240,7 @@
         "id": 3,
         "title": "Kumkumadi Saffron Skin Radiance Elixir",
         "subtitle": "26 POTENT BOTANICALS FOR INTENSE NATURAL GLOW",
-        "offer": "EARN 2X PYUR COINS ON EVERY BOTTLE",
+        "offer": "EARN 2X PURE COINS ON EVERY BOTTLE",
         "ctaText": "UNLOCK GLOW RITUAL",
         "href": "#shop",
         "badge": "Kashmiri Saffron",
@@ -253,11 +260,11 @@
       "availableSlotText": "Today, 4:30 PM"
     },
     "footer": {
-      "companyLegalName": "Pyur Ayur Herbs Private Limited",
+      "companyLegalName": "Pure Ayur Herbs Private Limited",
       "registeredAddress": "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
       "gstin": "09AAPCP8765A1Z5",
       "supportWhatsapp": "",
-      "supportEmail": "info@pyurayurherbs.com",
+      "supportEmail": "info@pureayurherbs.com",
       "column1Title": "Shop All",
       "column1Links": [
         { "label": "Glowing Skin Juices", "url": "/products/kapiva-glowing-skin-juice" },
@@ -283,7 +290,7 @@
       "showLeafPattern": true,
       "showMarketplaces": true,
       "showPaymentGateways": true,
-      "copyrightText": "Pyur Ayur Herbs Private Limited | © Copyright 2026 Pyur Ayur"
+      "copyrightText": "Pure Ayur Herbs Private Limited | © Copyright 2026 Pure Ayur"
     }
   },
   "users": [

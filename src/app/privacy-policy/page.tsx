@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
           </div>
 
           <p className="mt-4 text-xs text-[#666666] leading-relaxed md:text-sm">
-            At <b>Pyur Ayur Herbs</b>, we value your trust. This Privacy Policy describes how we collect, use, process, and protect your personal information when you visit or shop on our store.
+            At <b>Pure Ayur Herbs</b>, we value your trust. This Privacy Policy describes how we collect, use, process, and protect your personal information when you visit or shop on our store.
           </p>
 
           <div className="mt-8 space-y-6 text-xs text-[#666666] leading-relaxed md:text-sm">

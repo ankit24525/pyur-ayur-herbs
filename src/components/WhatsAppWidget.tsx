@@ -56,7 +56,7 @@ export default function WhatsAppWidget() {
                 <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-emerald-400 border border-white animate-pulse" />
               </div>
               <div>
-                <h4 className="text-sm font-bold leading-tight">Pyur Ayur Bot</h4>
+                <h4 className="text-sm font-bold leading-tight">Pure Ayur Bot</h4>
                 <p className="text-[10px] text-white/80">Typically replies instantly</p>
               </div>
             </div>
@@ -74,7 +74,7 @@ export default function WhatsAppWidget() {
             {/* Bot message bubble */}
             <div className="flex items-start max-w-[85%] animate-in fade-in-50 duration-200">
               <div className="bg-white text-neutral-800 text-xs p-3 rounded-2xl rounded-tl-none shadow-sm font-medium leading-relaxed">
-                Namaste! Welcome to Pyur Ayur Herbs. 🌿 How can I help you today?
+                Namaste! Welcome to Pure Ayur Herbs. 🌿 How can I help you today?
               </div>
             </div>
 

@@ -94,7 +94,7 @@ function sanitizeDBData(data: any): DBData {
 
   if (!data.seo || typeof data.seo !== "object") {
     data.seo = {
-      title: "Pyur Ayur Herbs - Original Ayurvedic Formulations",
+      title: "Pure Ayur Herbs - Original Ayurvedic Formulations",
       metaDesc: "Shop authentic gold-grade Shilajit, juices, and wellness supplements certified by Ayurvedic experts.",
       sitemapUrl: "",
       robotsTxt: "",
@@ -103,8 +103,8 @@ function sanitizeDBData(data: any): DBData {
 
   if (!data.settings || typeof data.settings !== "object") {
     data.settings = {
-      storeName: "Pyur Ayur Herbs Store",
-      companyLegalName: "Pyur Ayur Herbs Private Limited",
+      storeName: "Pure Ayur Herbs Store",
+      companyLegalName: "Pure Ayur Herbs Private Limited",
       registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
       gstin: "09AAPCP8765A1Z5",
       socialLinks: {
@@ -114,7 +114,7 @@ function sanitizeDBData(data: any): DBData {
         twitter: "https://twitter.com",
         linkedin: "",
       },
-      supportEmail: "support@pyurayurherbs.com",
+      supportEmail: "support@pureayurherbs.com",
       whatsappNumber: "",
       whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
       codOtpEnabled: true,
@@ -136,7 +136,7 @@ function sanitizeDBData(data: any): DBData {
       }
     };
   } else {
-    if (!data.settings.companyLegalName) data.settings.companyLegalName = "Pyur Ayur Herbs Private Limited";
+    if (!data.settings.companyLegalName) data.settings.companyLegalName = "Pure Ayur Herbs Private Limited";
     if (!data.settings.registeredAddress) data.settings.registeredAddress = "12, Botanical Enclave, Sector 62, Noida, UP - 201301";
     if (!data.settings.gstin) data.settings.gstin = "09AAPCP8765A1Z5";
     if (!data.settings.socialLinks || typeof data.settings.socialLinks !== "object") {

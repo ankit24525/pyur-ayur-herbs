@@ -22,7 +22,7 @@ export default function ShippingPolicyPage() {
           </div>
 
           <p className="mt-4 text-xs text-[#666666] leading-relaxed md:text-sm">
-            At <b>Pyur Ayur Herbs</b>, we ensure safe, hygienic packaging and fast delivery across India.
+            At <b>Pure Ayur Herbs</b>, we ensure safe, hygienic packaging and fast delivery across India.
           </p>
 
           <div className="mt-8 space-y-6 text-xs text-[#666666] leading-relaxed md:text-sm">

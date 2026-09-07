@@ -12,7 +12,7 @@ export default function ContactUsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [settings, setSettings] = useState<any>({
-    supportEmail: "support@pyurayurherbs.com",
+    supportEmail: "support@pureayurherbs.com",
     whatsappNumber: "919876543210",
   });
 

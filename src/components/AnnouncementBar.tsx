@@ -68,8 +68,8 @@ export default function AnnouncementBar({
   }, [settings?.flashSaleTimer]);
 
   const isVisible = data ? data.visible : true;
-  const text = data ? data.text : "ADDITIONAL 10% OFF WITH PYUR COINS";
-  const code = data ? data.code : "PYUR10";
+  const text = data ? data.text : "ADDITIONAL 10% OFF WITH PURE COINS";
+  const code = data ? data.code : "PURE10";
   const btnText = data ? data.btnText : "GET APP";
   const link = data ? data.link : "#";
 

@@ -253,7 +253,7 @@ export default function CartPage() {
                             </div>
                             <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-[#80a03c]">
                               <Sparkles className="size-3" />
-                              Earn {coinsEarned * quantity} Pyur Coins 🪙
+                              Earn {coinsEarned * quantity} Pure Coins 🪙
                             </p>
                           </div>
 
@@ -337,7 +337,7 @@ export default function CartPage() {
                   {totalCoins > 0 && (
                     <div className="mt-4 p-2.5 rounded-xl bg-[#f8faf1] border border-[#ddddd9]/60 flex items-center gap-2 text-xs font-bold text-[#244f31]">
                       <span>🪙</span>
-                      <span>You will earn {totalCoins} Pyur Coins on this order!</span>
+                      <span>You will earn {totalCoins} Pure Coins on this order!</span>
                     </div>
                   )}
 

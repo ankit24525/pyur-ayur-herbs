@@ -342,7 +342,7 @@ export default function Home() {
 
 
 
-      {/* Why Pyur Ayur Herbs Trust Section */}
+      {/* Why Pure Ayur Herbs Trust Section */}
       <TrustSection />
 
       {/* 2-Minute Health Assessment Quiz */}
@@ -371,9 +371,9 @@ export default function Home() {
             <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#244f31] text-white shadow-md mb-4">
               <Smartphone className="size-8 text-[#f2c94c]" />
             </div>
-            <h3 className="text-xl font-black text-[#17231b]">Download Pyur Ayur App</h3>
+            <h3 className="text-xl font-black text-[#17231b]">Download Pure Ayur App</h3>
             <p className="mt-2 text-xs text-[#666666]">
-              Get 15% OFF on app-first orders & earn 2X Pyur Coins on every purchase!
+              Get 15% OFF on app-first orders & earn 2X Pure Coins on every purchase!
             </p>
             <div className="mt-5 space-y-2">
               <button
@@ -415,10 +415,10 @@ export default function Home() {
             </button>
             <div className="flex items-center gap-2">
               <User className="size-5 text-[#244f31]" />
-              <h3 className="text-lg font-bold text-[#17231b]">Login to Pyur Ayur</h3>
+              <h3 className="text-lg font-bold text-[#17231b]">Login to Pure Ayur</h3>
             </div>
             <p className="mt-1 text-xs text-[#666666]">
-              Enter your mobile number to get OTP and manage your orders & Pyur Coins.
+              Enter your mobile number to get OTP and manage your orders & Pure Coins.
             </p>
             <form
               onSubmit={(e) => {

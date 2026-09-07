@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     // Sort orders by date/id descending (newest first)
     userOrders.reverse();
 
-    // Calculate Pyur Coins:
+    // Calculate Pure Coins:
     // 1. Welcome Bonus = 100
     // 2. Earned from orders = 5% of order total
     let coinsBalance = 100;
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
         id: "TX-WELCOME",
         type: "credit",
         amount: 100,
-        description: "Welcome Bonus - Joined Pyur Ayur Herbs",
+        description: "Welcome Bonus - Joined Pure Ayur Herbs",
         date: "Joined Date",
       },
     ];

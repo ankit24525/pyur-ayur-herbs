@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
   
   if (dbProduct) {
-    const title = `${dbProduct.name} | Pyur Ayur Herbs`;
+    const title = `${dbProduct.name} | Pure Ayur Herbs`;
     const description = dbProduct.description || "Premium certified herbal remedy formulated by Ayurvedic Vaidyas.";
     return {
       title,
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
   
   return {
-    title: "Product Details | Pyur Ayur Herbs",
+    title: "Product Details | Pure Ayur Herbs",
     description: "Authentic Himalayan Ayurvedic formulations."
   };
 }

@@ -279,7 +279,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                 <span className="text-[#666666]">| {product.reviews || 0} Verified Ratings</span>
               </div>
               <div className="inline-flex items-center gap-1 rounded-full bg-[#fff6d9] px-3 py-1 text-xs font-bold text-[#6b5700]">
-                <span>Earn 🪙 {(Number(product.coins) || 50) * quantity} Pyur Coins</span>
+                <span>Earn 🪙 {(Number(product.coins) || 50) * quantity} Pure Coins</span>
               </div>
             </div>
 

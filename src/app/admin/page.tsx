@@ -337,7 +337,7 @@ export default function AdminDashboard() {
     leads: [],
     settings: {
       storeName: "",
-      companyLegalName: "Pyur Ayur Herbs Private Limited",
+      companyLegalName: "Pure Ayur Herbs Private Limited",
       registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
       gstin: "09AAPCP8765A1Z5",
       socialLinks: {
@@ -823,8 +823,8 @@ export default function AdminDashboard() {
         
         // Deep merge settings defaults to prevent crashes
         const settings = {
-          storeName: "Pyur Ayur Herbs Store",
-          companyLegalName: "Pyur Ayur Herbs Private Limited",
+          storeName: "Pure Ayur Herbs Store",
+          companyLegalName: "Pure Ayur Herbs Private Limited",
           registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
           gstin: "09AAPCP8765A1Z5",
           socialLinks: {
@@ -835,7 +835,7 @@ export default function AdminDashboard() {
             linkedin: "",
             ...(data.settings?.socialLinks || {}),
           },
-          supportEmail: "support@pyurayurherbs.com",
+          supportEmail: "support@pureayurherbs.com",
           whatsappNumber: "",
           whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
           codOtpEnabled: true,
@@ -930,7 +930,7 @@ export default function AdminDashboard() {
             },
             settings: (activeMenuRef.current === "settings" && prev?.settings) ? prev.settings : settings,
             seo: {
-              title: "Pyur Ayur Herbs - Original Ayurvedic Formulations",
+              title: "Pure Ayur Herbs - Original Ayurvedic Formulations",
               metaDesc: "Shop authentic gold-grade Shilajit, juices, and wellness supplements certified by Ayurvedic experts.",
               ...(data.seo || {})
             }
@@ -1962,7 +1962,7 @@ export default function AdminDashboard() {
                       type="text"
                       value={adminForgotEmail}
                       onChange={(e) => setAdminForgotEmail(e.target.value)}
-                      placeholder="e.g. admin@pyurayurherbs.com"
+                      placeholder="e.g. admin@pureayurherbs.com"
                       required
                       className="w-full rounded-xl border border-[#ddddd9] bg-[#f8f8f8] pl-10 pr-4 py-2.5 text-xs font-semibold text-[#17231b] outline-none focus:border-[#244f31] focus:bg-white transition"
                     />
@@ -2124,11 +2124,11 @@ export default function AdminDashboard() {
 
   const renderFooterCMSEditor = () => {
     const footer = dbData.content?.footer || {};
-    const companyLegalName = footer.companyLegalName !== undefined ? footer.companyLegalName : (dbData.settings?.companyLegalName || "Pyur Ayur Herbs Private Limited");
+    const companyLegalName = footer.companyLegalName !== undefined ? footer.companyLegalName : (dbData.settings?.companyLegalName || "Pure Ayur Herbs Private Limited");
     const registeredAddress = footer.registeredAddress !== undefined ? footer.registeredAddress : (dbData.settings?.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301");
     const gstin = footer.gstin !== undefined ? footer.gstin : (dbData.settings?.gstin || "09AAPCP8765A1Z5");
     const supportWhatsapp = footer.supportWhatsapp !== undefined ? footer.supportWhatsapp : (dbData.settings?.whatsappNumber || "");
-    const supportEmail = footer.supportEmail !== undefined ? footer.supportEmail : (dbData.settings?.supportEmail || "info@pyurayurherbs.com");
+    const supportEmail = footer.supportEmail !== undefined ? footer.supportEmail : (dbData.settings?.supportEmail || "info@pureayurherbs.com");
 
     const column1Title = footer.column1Title || "Shop All";
     const column1Links = Array.isArray(footer.column1Links) && footer.column1Links.length > 0 ? footer.column1Links : [
@@ -2158,7 +2158,7 @@ export default function AdminDashboard() {
     const showLeafPattern = footer.showLeafPattern !== false;
     const showMarketplaces = footer.showMarketplaces !== false;
     const showPaymentGateways = footer.showPaymentGateways !== false;
-    const copyrightText = footer.copyrightText !== undefined ? footer.copyrightText : `${companyLegalName} | © Copyright ${new Date().getFullYear()} Pyur Ayur`;
+    const copyrightText = footer.copyrightText !== undefined ? footer.copyrightText : `${companyLegalName} | © Copyright ${new Date().getFullYear()} Pure Ayur`;
 
     const updateFooterState = (field: string, value: any) => {
       const current = dbData.content?.footer || {};
@@ -2302,7 +2302,7 @@ export default function AdminDashboard() {
                 type="text"
                 value={companyLegalName}
                 onChange={(e) => updateFooterState("companyLegalName", e.target.value)}
-                placeholder="Pyur Ayur Herbs Private Limited"
+                placeholder="Pure Ayur Herbs Private Limited"
                 className="w-full rounded border p-2 bg-white"
               />
             </div>
@@ -2344,7 +2344,7 @@ export default function AdminDashboard() {
                 type="email"
                 value={supportEmail}
                 onChange={(e) => updateFooterState("supportEmail", e.target.value)}
-                placeholder="info@pyurayurherbs.com"
+                placeholder="info@pureayurherbs.com"
                 className="w-full rounded border p-2 bg-white"
               />
             </div>
@@ -2361,7 +2361,7 @@ export default function AdminDashboard() {
                 type="url"
                 value={social.instagram || ""}
                 onChange={(e) => updateFooterState("socialLinks", { ...social, instagram: e.target.value })}
-                placeholder="https://instagram.com/pyurayurherbs"
+                placeholder="https://instagram.com/pureayurherbs"
                 className="w-full rounded border p-2 bg-white"
               />
             </div>
@@ -2371,7 +2371,7 @@ export default function AdminDashboard() {
                 type="url"
                 value={social.facebook || ""}
                 onChange={(e) => updateFooterState("socialLinks", { ...social, facebook: e.target.value })}
-                placeholder="https://facebook.com/pyurayurherbs"
+                placeholder="https://facebook.com/pureayurherbs"
                 className="w-full rounded border p-2 bg-white"
               />
             </div>
@@ -2381,7 +2381,7 @@ export default function AdminDashboard() {
                 type="url"
                 value={social.youtube || ""}
                 onChange={(e) => updateFooterState("socialLinks", { ...social, youtube: e.target.value })}
-                placeholder="https://youtube.com/@pyurayurherbs"
+                placeholder="https://youtube.com/@pureayurherbs"
                 className="w-full rounded border p-2 bg-white"
               />
             </div>
@@ -2391,7 +2391,7 @@ export default function AdminDashboard() {
                 type="url"
                 value={social.twitter || ""}
                 onChange={(e) => updateFooterState("socialLinks", { ...social, twitter: e.target.value })}
-                placeholder="https://x.com/pyurayurherbs"
+                placeholder="https://x.com/pureayurherbs"
                 className="w-full rounded border p-2 bg-white"
               />
             </div>
@@ -2401,7 +2401,7 @@ export default function AdminDashboard() {
                 type="url"
                 value={social.linkedin || ""}
                 onChange={(e) => updateFooterState("socialLinks", { ...social, linkedin: e.target.value })}
-                placeholder="https://linkedin.com/company/pyurayurherbs"
+                placeholder="https://linkedin.com/company/pureayurherbs"
                 className="w-full rounded border p-2 bg-white"
               />
             </div>
@@ -2577,7 +2577,7 @@ export default function AdminDashboard() {
               type="text"
               value={copyrightText}
               onChange={(e) => updateFooterState("copyrightText", e.target.value)}
-              placeholder="Pyur Ayur Herbs Private Limited | © Copyright 2026 Pyur Ayur"
+              placeholder="Pure Ayur Herbs Private Limited | © Copyright 2026 Pure Ayur"
               className="w-full rounded border p-2 bg-white font-mono text-xs"
             />
           </div>
@@ -2599,7 +2599,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7f2] font-black text-[#244f31] text-sm tracking-wider">
-        🔄 LOADING PYUR AYUR ADMIN PORTAL...
+        🔄 LOADING PURE AYUR ADMIN PORTAL...
       </div>
     );
   }
@@ -5384,7 +5384,7 @@ export default function AdminDashboard() {
                           <label className="block font-bold text-[#666666] mb-1">Coupon Code *</label>
                           <input
                             type="text"
-                            placeholder="e.g. PYUR20"
+                            placeholder="e.g. PURE20"
                             required
                             value={newCoupon.code}
                             onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value })}
@@ -6072,7 +6072,7 @@ export default function AdminDashboard() {
                       <div>
                         <label className="block font-bold text-[#666666] mb-1">SMS Message Template Text *</label>
                         <textarea
-                          placeholder="e.g. Hey, you forgot items in your cart! Complete your purchase now and get 10% off. Use code: PYUR10"
+                          placeholder="e.g. Hey, you forgot items in your cart! Complete your purchase now and get 10% off. Use code: PURE10"
                           required
                           value={newNotification.message}
                           onChange={(e) => setNewNotification({ ...newNotification, message: e.target.value })}
@@ -6238,7 +6238,7 @@ export default function AdminDashboard() {
                                   required={!newSlide.fullWidthBanner}
                                   value={newSlide.offer}
                                   onChange={(e) => setNewSlide({ ...newSlide, offer: e.target.value })}
-                                  placeholder="e.g. GET EXTRA 10% OFF WITH CODE: PYUR10"
+                                  placeholder="e.g. GET EXTRA 10% OFF WITH CODE: PURE10"
                                   className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white disabled:opacity-50"
                                   disabled={newSlide.fullWidthBanner}
                                 />
@@ -6379,7 +6379,7 @@ export default function AdminDashboard() {
                                 setDbData({ ...dbData, content: updated });
                               }}
                               onBlur={() => void handleSaveCMSContent(dbData.content)}
-                              placeholder="e.g. ADDITIONAL 10% OFF WITH PYUR COINS"
+                              placeholder="e.g. ADDITIONAL 10% OFF WITH PURE COINS"
                               className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
                             />
                           </div>
@@ -6396,7 +6396,7 @@ export default function AdminDashboard() {
                                 setDbData({ ...dbData, content: updated });
                               }}
                               onBlur={() => void handleSaveCMSContent(dbData.content)}
-                              placeholder="e.g. PYUR10"
+                              placeholder="e.g. PURE10"
                               className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
                             />
                           </div>
@@ -7570,7 +7570,7 @@ export default function AdminDashboard() {
                           autoComplete="off"
                           value={dbData.settings.companyLegalName || ""}
                           onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, companyLegalName: e.target.value } })}
-                          placeholder="e.g. Pyur Ayur Herbs Private Limited"
+                          placeholder="e.g. Pure Ayur Herbs Private Limited"
                           className="w-full rounded border p-2 bg-white"
                         />
                       </div>
@@ -7613,7 +7613,7 @@ export default function AdminDashboard() {
                                 socialLinks: { ...(dbData.settings.socialLinks || {}), instagram: e.target.value }
                               }
                             })}
-                            placeholder="https://instagram.com/pyurayurherbs"
+                            placeholder="https://instagram.com/pureayurherbs"
                             className="w-full rounded border p-2 bg-white"
                           />
                         </div>
@@ -7634,7 +7634,7 @@ export default function AdminDashboard() {
                                 socialLinks: { ...(dbData.settings.socialLinks || {}), facebook: e.target.value }
                               }
                             })}
-                            placeholder="https://facebook.com/pyurayurherbs"
+                            placeholder="https://facebook.com/pureayurherbs"
                             className="w-full rounded border p-2 bg-white"
                           />
                         </div>
@@ -7655,7 +7655,7 @@ export default function AdminDashboard() {
                                 socialLinks: { ...(dbData.settings.socialLinks || {}), youtube: e.target.value }
                               }
                             })}
-                            placeholder="https://youtube.com/@pyurayurherbs"
+                            placeholder="https://youtube.com/@pureayurherbs"
                             className="w-full rounded border p-2 bg-white"
                           />
                         </div>
@@ -7676,7 +7676,7 @@ export default function AdminDashboard() {
                                 socialLinks: { ...(dbData.settings.socialLinks || {}), twitter: e.target.value }
                               }
                             })}
-                            placeholder="https://x.com/pyurayurherbs"
+                            placeholder="https://x.com/pureayurherbs"
                             className="w-full rounded border p-2 bg-white"
                           />
                         </div>
@@ -7697,7 +7697,7 @@ export default function AdminDashboard() {
                                 socialLinks: { ...(dbData.settings.socialLinks || {}), linkedin: e.target.value }
                               }
                             })}
-                            placeholder="https://linkedin.com/company/pyurayurherbs"
+                            placeholder="https://linkedin.com/company/pureayurherbs"
                             className="w-full rounded border p-2 bg-white"
                           />
                         </div>

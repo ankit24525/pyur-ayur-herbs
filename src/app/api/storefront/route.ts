@@ -15,8 +15,8 @@ export async function GET() {
       reviews: db.reviews || [],
       testimonials: db.testimonials || [],
       settings: {
-        storeName: db.settings?.storeName || "Pyur Ayur Herbs Store",
-        companyLegalName: db.settings?.companyLegalName || "Pyur Ayur Herbs Private Limited",
+        storeName: db.settings?.storeName || "Pure Ayur Herbs Store",
+        companyLegalName: db.settings?.companyLegalName || "Pure Ayur Herbs Private Limited",
         registeredAddress: db.settings?.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
         gstin: db.settings?.gstin || "09AAPCP8765A1Z5",
         socialLinks: db.settings?.socialLinks || {
@@ -26,7 +26,7 @@ export async function GET() {
           twitter: "https://twitter.com",
           linkedin: ""
         },
-        supportEmail: db.settings?.supportEmail || "support@pyurayurherbs.com",
+        supportEmail: db.settings?.supportEmail || "support@pureayurherbs.com",
         whatsappNumber: db.settings?.whatsappNumber || "919876543210",
         whatsappMessage: db.settings?.whatsappMessage || "Namaste!",
         freeThreshold: db.settings?.shipping?.freeThreshold || 999,
@@ -53,8 +53,8 @@ export async function GET() {
         reviews: [],
         testimonials: [],
         settings: {
-          storeName: "Pyur Ayur Herbs Store",
-          companyLegalName: "Pyur Ayur Herbs Private Limited",
+          storeName: "Pure Ayur Herbs Store",
+          companyLegalName: "Pure Ayur Herbs Private Limited",
           registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
           gstin: "09AAPCP8765A1Z5",
           socialLinks: {

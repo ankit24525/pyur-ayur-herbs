@@ -386,11 +386,11 @@ function LoginFormContent() {
           />
         </div>
         <h2 className="text-xl font-black text-[#17231b]">
-          {isLogin ? "Welcome Back to Pyur Ayur" : "Begin Your Wellness Journey"}
+          {isLogin ? "Welcome Back to Pure Ayur" : "Begin Your Wellness Journey"}
         </h2>
         <p className="text-xs text-gray-500 mt-1">
           {isLogin
-            ? "Sign in to manage your orders, track shippings, and redeem Pyur Coins."
+            ? "Sign in to manage your orders, track shippings, and redeem Pure Coins."
             : "Register now to save address defaults, check out faster, and earn wellness coins."}
         </p>
       </div>
@@ -554,7 +554,7 @@ export default function LoginPage() {
 
       {/* Mini Footer */}
       <footer className="py-4 border-t border-[#ddddd9] text-center text-[10px] text-gray-400 bg-white">
-        © {new Date().getFullYear()} Pyur Ayur Herbs. 100% Ministry of AYUSH Certified.
+        © {new Date().getFullYear()} Pure Ayur Herbs. 100% Ministry of AYUSH Certified.
       </footer>
     </div>
   );

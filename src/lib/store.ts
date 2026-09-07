@@ -93,7 +93,7 @@ export const menuLinks = [
   { label: "Select Concern", href: "/#concerns" },
   { label: "Blog", href: "/blog" },
   { label: "Customer Reviews", href: "/#reviews" },
-  { label: "Why Pyur Ayur Herbs", href: "/#trust" },
+  { label: "Why Pure Ayur Herbs", href: "/#trust" },
 ];
 
 export const heroSlides = [
@@ -101,7 +101,7 @@ export const heroSlides = [
     id: 1,
     title: "100% Pure Himalayan Shilajit Gold Resin",
     subtitle: "AUTHENTIC AYURVEDA FOR PEAK STAMINA & ENERGY",
-    offer: "GET EXTRA 10% OFF WITH CODE: PYUR10",
+    offer: "GET EXTRA 10% OFF WITH CODE: PURE10",
     ctaText: "SHOP SHILAJIT RESIN",
     href: "#shop",
     badge: "100% Pure Sourced",
@@ -123,7 +123,7 @@ export const heroSlides = [
     id: 3,
     title: "Kumkumadi Saffron Skin Radiance Elixir",
     subtitle: "26 POTENT BOTANICALS FOR INTENSE NATURAL GLOW",
-    offer: "EARN 2X PYUR COINS ON EVERY BOTTLE",
+    offer: "EARN 2X PURE COINS ON EVERY BOTTLE",
     ctaText: "UNLOCK GLOW RITUAL",
     href: "#shop",
     badge: "Kashmiri Saffron",

@@ -597,12 +597,12 @@ function ProfileDashboard() {
             {activeTab === "wallet" && (
               <div>
                 <h2 className="text-lg font-bold text-[#244f31] mb-2">My Wallet</h2>
-                <p className="text-xs text-[#666666] mb-6">Earn Pyur Coins on every purchase and redeem them at checkout for discount rates.</p>
+                <p className="text-xs text-[#666666] mb-6">Earn Pure Coins on every purchase and redeem them at checkout for discount rates.</p>
 
                 {/* Coin balance Card */}
                 <div className="bg-gradient-to-br from-[#244f31] to-[#80a03c] p-6 rounded-2xl text-white flex justify-between items-center mb-6 shadow-md">
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wider font-bold opacity-80">Available Pyur Coins</span>
+                    <span className="text-xs uppercase tracking-wider font-bold opacity-80">Available Pure Coins</span>
                     <span className="text-4xl font-black tracking-tight">🪙 {coinsBalance}</span>
                   </div>
                   <div className="flex flex-col items-end text-xs text-right font-medium opacity-90 max-w-[200px]">

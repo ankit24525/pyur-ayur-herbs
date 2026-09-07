@@ -31,7 +31,7 @@ export default function TrustSection() {
       <div className="mx-auto max-w-[1440px] px-4 md:px-6">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-2xl font-black uppercase tracking-tight text-[#17231b] sm:text-3xl">
-            Why Pyur Ayur Herbs?
+            Why Pure Ayur Herbs?
           </h2>
           <p className="mt-2 text-xs font-medium text-[#666666] md:text-sm">
             Bridging ancient Ayurvedic wisdom with modern clinical research for purity you can taste & feel.

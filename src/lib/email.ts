@@ -16,12 +16,12 @@ export async function sendOTPEmail(toEmail: string, otp: string): Promise<boolea
 
   try {
     const { data, error } = await resend.emails.send({
-      from: `Pyur Ayur Herbs Store <${fromEmail}>`,
+      from: `Pure Ayur Herbs Store <${fromEmail}>`,
       to: toEmail,
-      subject: "Your OTP Verification Code - Pyur Ayur Herbs",
+      subject: "Your OTP Verification Code - Pure Ayur Herbs",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddddd9; border-radius: 12px; background-color: #ffffff;">
-          <h2 style="color: #244f31; text-align: center; text-transform: uppercase; margin-bottom: 5px;">Pyur Ayur Herbs</h2>
+          <h2 style="color: #244f31; text-align: center; text-transform: uppercase; margin-bottom: 5px;">Pure Ayur Herbs</h2>
           <p style="text-align: center; font-size: 11px; color: #666666; margin-top: 0; margin-bottom: 20px;">100% Certified Ministry of AYUSH Wellness</p>
           <hr style="border: 0; border-top: 1px solid #ddddd9; margin: 20px 0;" />
           <p>Hello,</p>
@@ -31,7 +31,7 @@ export async function sendOTPEmail(toEmail: string, otp: string): Promise<boolea
           </div>
           <p style="font-size: 11px; color: #666666;">This code is valid for 10 minutes. If you did not make this request, you can safely ignore this email.</p>
           <hr style="border: 0; border-top: 1px solid #ddddd9; margin: 20px 0;" />
-          <p style="font-size: 10px; text-align: center; color: #999999;">© ${new Date().getFullYear()} Pyur Ayur Herbs Store. India.</p>
+          <p style="font-size: 10px; text-align: center; color: #999999;">© ${new Date().getFullYear()} Pure Ayur Herbs Store. India.</p>
         </div>
       `,
     });

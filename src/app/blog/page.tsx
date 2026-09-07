@@ -88,7 +88,7 @@ export default function BlogListingPage() {
               <span>Ayurvedic Journal</span>
             </span>
             <h1 className="text-3xl md:text-4xl font-black uppercase text-[#17231b]">
-              Pyur Ayur Journal
+              Pure Ayur Journal
             </h1>
             <p className="mt-3 text-xs md:text-sm text-[#666666] leading-relaxed max-w-xl mx-auto">
               Discover time-tested holistic advice, herbal remedy insights, healthy recipes, and health guides certified by our team of Ayurvedic doctors.

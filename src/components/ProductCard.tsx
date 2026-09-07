@@ -60,7 +60,7 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
           </span>
         </div>
 
-        {/* Pyur Coins Pill */}
+        {/* Pure Coins Pill */}
         <div className="mt-2.5 inline-flex w-fit items-center gap-1 rounded-full bg-[#eef5df] px-2.5 py-1 text-[11px] font-bold text-[#244f31]">
           <span>Earn</span>
           <span className="flex size-4 items-center justify-center rounded-full bg-[#f2c94c] text-[10px] text-black">

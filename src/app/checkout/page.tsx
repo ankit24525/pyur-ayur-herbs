@@ -449,7 +449,7 @@ function CheckoutForm() {
           Order ID: {orderComplete.orderId}
         </p>
         <p className="mt-1 text-xs text-[#666666] max-w-md">
-          Thank you for choosing Pyur Ayur Herbs. We have received your order details and started preparing your package. A tracking link will be sent to <b>{formData.phone}</b> shortly.
+          Thank you for choosing Pure Ayur Herbs. We have received your order details and started preparing your package. A tracking link will be sent to <b>{formData.phone}</b> shortly.
         </p>
         <div className="mt-6 flex flex-col gap-3 min-w-[200px]">
           <Link
@@ -801,7 +801,7 @@ export default function CheckoutPage() {
             <ArrowLeft className="size-4" />
             <span>Back to Store</span>
           </Link>
-          <span className="text-sm font-black tracking-widest uppercase">PYUR AYUR HERBS</span>
+          <span className="text-sm font-black tracking-widest uppercase">PURE AYUR HERBS</span>
           <span className="text-xs font-medium text-white/75 hidden sm:inline">🛡️ Safe Checkout Portal</span>
         </div>
       </div>

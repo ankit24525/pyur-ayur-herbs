@@ -870,7 +870,7 @@ export default function SiteHeader({
                               {product.name || "Ayurvedic Formulation"}
                             </h4>
                             <span className="text-[10px] font-semibold text-[#80a03c]">
-                              Earn {coinsEarned * quantity} Pyur Coins 🪙
+                              Earn {coinsEarned * quantity} Pure Coins 🪙
                             </span>
                           </div>
                           <div className="flex items-center justify-between mt-2">

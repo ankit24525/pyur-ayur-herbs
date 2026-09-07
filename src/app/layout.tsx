@@ -11,8 +11,8 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const db = await readDB();
     const seo = db.seo || {
-      title: "Pyur Ayur Herbs | Premium Botanicals & Wellness",
-      metaDesc: "Ayurvedic wellness storefront for Pyur Ayur Herbs. Sourced from high-altitude Himalayas."
+      title: "Pure Ayur Herbs | Premium Botanicals & Wellness",
+      metaDesc: "Ayurvedic wellness storefront for Pure Ayur Herbs. Sourced from high-altitude Himalayas."
     };
     return {
       title: seo.title,
@@ -24,13 +24,13 @@ export async function generateMetadata(): Promise<Metadata> {
         description: seo.metaDesc,
         type: "website",
         locale: "en_IN",
-        siteName: "Pyur Ayur Herbs",
+        siteName: "Pure Ayur Herbs",
       }
     };
   } catch (e) {
     return {
-      title: "Pyur Ayur Herbs | Premium Botanicals & Wellness",
-      description: "Ayurvedic wellness storefront for Pyur Ayur Herbs. Sourced from high-altitude Himalayas."
+      title: "Pure Ayur Herbs | Premium Botanicals & Wellness",
+      description: "Ayurvedic wellness storefront for Pure Ayur Herbs. Sourced from high-altitude Himalayas."
     };
   }
 }

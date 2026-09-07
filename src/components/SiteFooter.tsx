@@ -8,10 +8,10 @@ import { Phone, Mail, CreditCard, ShieldCheck, Wallet, Truck, Smartphone } from 
 export default function SiteFooter() {
   const [footerData, setFooterData] = useState<any>(null);
   const [settings, setSettings] = useState<any>({
-    storeName: "Pyur Ayur Herbs",
-    supportEmail: "info@pyurayurherbs.com",
+    storeName: "Pure Ayur Herbs",
+    supportEmail: "info@pureayurherbs.com",
     whatsappNumber: "919876543210",
-    companyLegalName: "Pyur Ayur Herbs Private Limited",
+    companyLegalName: "Pure Ayur Herbs Private Limited",
     registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
     gstin: "09AAPCP8765A1Z5",
     socialLinks: {
@@ -57,11 +57,11 @@ export default function SiteFooter() {
     return () => window.removeEventListener("pyur_storefront_updated", handleUpdate);
   }, []);
 
-  const companyName = footerData?.companyLegalName || settings?.companyLegalName || "Pyur Ayur Herbs Private Limited";
+  const companyName = footerData?.companyLegalName || settings?.companyLegalName || "Pure Ayur Herbs Private Limited";
   const registeredAddress = footerData?.registeredAddress || settings?.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301";
   const gstin = footerData?.gstin || settings?.gstin || "09AAPCP8765A1Z5";
   const whatsappNum = footerData?.supportWhatsapp || settings?.whatsappNumber || "919876543210";
-  const supportEmail = footerData?.supportEmail || settings?.supportEmail || "info@pyurayurherbs.com";
+  const supportEmail = footerData?.supportEmail || settings?.supportEmail || "info@pureayurherbs.com";
 
   let cleanNumber = (whatsappNum || "919876543210").replace(/\D/g, "");
   if (cleanNumber.length === 10) {
@@ -100,7 +100,7 @@ export default function SiteFooter() {
   const showLeafPattern = footerData?.showLeafPattern !== false;
   const showMarketplaces = footerData?.showMarketplaces !== false;
   const showPaymentGateways = footerData?.showPaymentGateways !== false;
-  const copyrightText = footerData?.copyrightText || `${companyName} | © Copyright ${new Date().getFullYear()} Pyur Ayur`;
+  const copyrightText = footerData?.copyrightText || `${companyName} | © Copyright ${new Date().getFullYear()} Pure Ayur`;
 
   // Overlapping botanical leaf designs for the top border strip
   const leavesPattern = showLeafPattern ? (
@@ -131,7 +131,7 @@ export default function SiteFooter() {
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4 lg:grid-cols-5">
           {/* Column 1: Brand details */}
           <div className="md:col-span-2">
-            {/* Pyur Ayur framed logo */}
+            {/* Pure Ayur framed logo */}
             <div className="border-2 border-[#244f31] p-3 rounded-xl inline-flex items-center gap-3 mb-6 bg-white select-none shadow-sm">
               <div className="relative flex size-12 items-center justify-center rounded-full overflow-hidden border border-[#244f31]/10 bg-white shrink-0">
                 <Image

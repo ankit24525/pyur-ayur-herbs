@@ -380,7 +380,7 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
             <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-5">
               <h3 className="text-sm font-bold text-[#17231b]">Are these remedies 100% natural & safe?</h3>
               <p className="mt-1.5 text-xs leading-relaxed text-[#666666]">
-                Yes, all Pyur Ayur Herb products are 100% plant-based, cold-pressed, free from added refined sugars, and certified by the Ministry of AYUSH.
+                Yes, all Pure Ayur Herb products are 100% plant-based, cold-pressed, free from added refined sugars, and certified by the Ministry of AYUSH.
               </p>
             </div>
           </div>

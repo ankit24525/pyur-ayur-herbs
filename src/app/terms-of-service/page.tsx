@@ -22,7 +22,7 @@ export default function TermsOfServicePage() {
           </div>
 
           <p className="mt-4 text-xs text-[#666666] leading-relaxed md:text-sm">
-            Welcome to <b>Pyur Ayur Herbs</b>. By accessing or shopping on our website, you agree to comply with and be bound by the following terms and conditions.
+            Welcome to <b>Pure Ayur Herbs</b>. By accessing or shopping on our website, you agree to comply with and be bound by the following terms and conditions.
           </p>
 
           <div className="mt-8 space-y-6 text-xs text-[#666666] leading-relaxed md:text-sm">
@@ -43,7 +43,7 @@ export default function TermsOfServicePage() {
             <div>
               <h3 className="text-sm font-bold text-[#17231b]">3. Intellectual Property</h3>
               <p className="mt-2">
-                All branding, graphics, product copy, formulas, and layouts belong to Pyur Ayur Herbs and cannot be duplicated without permission.
+                All branding, graphics, product copy, formulas, and layouts belong to Pure Ayur Herbs and cannot be duplicated without permission.
               </p>
             </div>
           </div>

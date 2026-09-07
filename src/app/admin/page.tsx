@@ -906,7 +906,7 @@ export default function AdminDashboard() {
               consultationBanner: {},
               ...(data.content || {})
             },
-            settings,
+            settings: (activeMenuRef.current === "settings" && prev?.settings) ? prev.settings : settings,
             seo: {
               title: "Pyur Ayur Herbs - Original Ayurvedic Formulations",
               metaDesc: "Shop authentic gold-grade Shilajit, juices, and wellness supplements certified by Ayurvedic experts.",
@@ -6969,11 +6969,15 @@ export default function AdminDashboard() {
                 </div>
 
                 {subTab === "general" && (
-                  <div className="text-xs space-y-3">
+                  <form autoComplete="off" onSubmit={(e) => e.preventDefault()} className="text-xs space-y-3">
                     <div>
                       <label className="block font-bold">Store Brand Name</label>
                       <input
                         type="text"
+                        name="admin_setting_store_brand"
+                        id="admin_setting_store_brand"
+                        autoComplete="off"
+                        data-form-type="other"
                         value={dbData.settings.storeName}
                         onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, storeName: e.target.value } })}
                         className="mt-1 w-full rounded border p-2"
@@ -6983,6 +6987,11 @@ export default function AdminDashboard() {
                       <label className="block font-bold">Support Desk Email</label>
                       <input
                         type="email"
+                        name="admin_setting_support_desk_email"
+                        id="admin_setting_support_desk_email"
+                        autoComplete="off"
+                        data-form-type="other"
+                        data-lpignore="true"
                         value={dbData.settings.supportEmail}
                         onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, supportEmail: e.target.value } })}
                         className="mt-1 w-full rounded border p-2"
@@ -6992,15 +7001,27 @@ export default function AdminDashboard() {
                       <label className="block font-bold">Business WhatsApp Number (with country code, e.g. 919876543210)</label>
                       <input
                         type="text"
+                        name="admin_setting_store_support_whatsapp"
+                        id="admin_setting_store_support_whatsapp"
+                        autoComplete="new-password"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        data-form-type="other"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
                         value={dbData.settings.whatsappNumber || ""}
                         onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, whatsappNumber: e.target.value } })}
                         placeholder="e.g. 919876543210"
-                        className="mt-1 w-full rounded border p-2"
+                        className="mt-1 w-full rounded border p-2 font-mono"
                       />
                     </div>
                     <div>
                       <label className="block font-bold">Default Support Greeting Message</label>
                       <textarea
+                        name="admin_setting_whatsapp_greeting"
+                        id="admin_setting_whatsapp_greeting"
+                        autoComplete="off"
                         value={dbData.settings.whatsappMessage || ""}
                         onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, whatsappMessage: e.target.value } })}
                         placeholder="e.g. नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।"
@@ -7033,11 +7054,12 @@ export default function AdminDashboard() {
                           alert("Error saving settings.");
                         }
                       }}
+                      type="button"
                       className="bg-[#244f31] text-white px-5 py-2.5 rounded-lg font-bold mt-2 hover:bg-[#1d3b24] transition shadow-xs"
                     >
                       Save General Settings
                     </button>
-                  </div>
+                  </form>
                 )}
 
                 {subTab === "payment" && (

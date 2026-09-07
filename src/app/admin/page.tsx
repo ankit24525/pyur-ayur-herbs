@@ -815,7 +815,7 @@ export default function AdminDashboard() {
         const settings = {
           storeName: "Pyur Ayur Herbs Store",
           supportEmail: "support@pyurayurherbs.com",
-          whatsappNumber: "919876543210",
+          whatsappNumber: "",
           whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
           codOtpEnabled: true,
           prepaidDiscount: 5,
@@ -7007,7 +7007,36 @@ export default function AdminDashboard() {
                         className="mt-1 w-full rounded border p-2 h-20"
                       />
                     </div>
-                    <button onClick={() => handleSaveSettings("storeName", dbData.settings.storeName)} className="bg-[#244f31] text-white px-4 py-2 rounded font-bold mt-2">Save General Settings</button>
+                    <button
+                      onClick={async () => {
+                        const updatedSettings = {
+                          ...dbData.settings,
+                          storeName: dbData.settings.storeName,
+                          supportEmail: dbData.settings.supportEmail,
+                          whatsappNumber: dbData.settings.whatsappNumber || "",
+                          whatsappMessage: dbData.settings.whatsappMessage || "",
+                        };
+                        try {
+                          const res = await fetch("/api/admin/all", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ action: "saveSettings", data: updatedSettings }),
+                          });
+                          if (res.ok) {
+                            setDbData((prev: any) => ({ ...prev, settings: updatedSettings }));
+                            alert("General settings saved successfully!");
+                          } else {
+                            const errData = await res.json().catch(() => ({}));
+                            alert(`Error saving settings: ${errData.error || "Server error"}`);
+                          }
+                        } catch {
+                          alert("Error saving settings.");
+                        }
+                      }}
+                      className="bg-[#244f31] text-white px-5 py-2.5 rounded-lg font-bold mt-2 hover:bg-[#1d3b24] transition shadow-xs"
+                    >
+                      Save General Settings
+                    </button>
                   </div>
                 )}
 

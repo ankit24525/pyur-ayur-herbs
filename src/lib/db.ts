@@ -104,7 +104,7 @@ function sanitizeDBData(data: any): DBData {
     data.settings = {
       storeName: "Pyur Ayur Herbs Store",
       supportEmail: "support@pyurayurherbs.com",
-      whatsappNumber: "919876543210",
+      whatsappNumber: "",
       whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
       codOtpEnabled: true,
       prepaidDiscount: 5,

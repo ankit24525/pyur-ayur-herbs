@@ -6146,7 +6146,6 @@ export default function AdminDashboard() {
               <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm">
                 <div className="flex flex-wrap items-center gap-2 mb-5">
                   <button onClick={() => setSubTab("homepage")} className={subTabStyle("homepage")}>Homepage</button>
-                  <button onClick={() => setSubTab("footer")} className={subTabStyle("footer")}>Footer</button>
                   <button onClick={() => setSubTab("blogs")} className={subTabStyle("blogs")}>Blogs</button>
                   <button onClick={() => setSubTab("faqs")} className={subTabStyle("faqs")}>FAQs</button>
                   <button onClick={() => setSubTab("testimonials")} className={subTabStyle("testimonials")}>Testimonials</button>
@@ -6711,12 +6710,6 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })()}
-
-                {subTab === "footer" && (
-                  <div className="space-y-6 text-xs">
-                    {renderFooterCMSEditor()}
-                  </div>
-                )}
 
                 {subTab === "blogs" && (
                   <div className="space-y-6">

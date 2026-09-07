@@ -148,7 +148,7 @@ export default function ContactUsPage() {
                 <div>
                   <h4 className="text-xs font-bold text-[#17231b]">Corporate Address</h4>
                   <p className="text-xs text-[#666666]">
-                    Pyur Ayur Herbs, 12, Botanical Enclave, Sector 62, Noida, UP, India
+                    {settings.companyLegalName ? `${settings.companyLegalName}, ` : ""}{settings.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301"}
                   </p>
                 </div>
               </div>

@@ -20,6 +20,16 @@
   "leads": [],
   "settings": {
     "storeName": "Pyur Ayur Herbs Online Store",
+    "companyLegalName": "Pyur Ayur Herbs Private Limited",
+    "registeredAddress": "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
+    "gstin": "09AAPCP8765A1Z5",
+    "socialLinks": {
+      "instagram": "https://instagram.com",
+      "facebook": "https://facebook.com",
+      "youtube": "https://youtube.com",
+      "twitter": "https://twitter.com",
+      "linkedin": ""
+    },
     "supportEmail": "support@pyurayurherbs.com",
     "whatsappNumber": "",
     "whatsappMessage": "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
@@ -241,6 +251,39 @@
       "doctorImage": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80",
       "doctorsOnlineText": "14 Doctors Currently Online",
       "availableSlotText": "Today, 4:30 PM"
+    },
+    "footer": {
+      "companyLegalName": "Pyur Ayur Herbs Private Limited",
+      "registeredAddress": "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
+      "gstin": "09AAPCP8765A1Z5",
+      "supportWhatsapp": "",
+      "supportEmail": "info@pyurayurherbs.com",
+      "column1Title": "Shop All",
+      "column1Links": [
+        { "label": "Glowing Skin Juices", "url": "/products/kapiva-glowing-skin-juice" },
+        { "label": "Shilajit Resins", "url": "/products/pure-himalayan-shilajit" },
+        { "label": "My Account", "url": "/profile?tab=orders" },
+        { "label": "Faqs", "url": "/contact-us" },
+        { "label": "Innovation Fund", "url": "/solution/daily-ayurveda" }
+      ],
+      "column2Title": "About Us",
+      "column2Links": [
+        { "label": "About Us", "url": "/contact-us" },
+        { "label": "Blog", "url": "/blog" },
+        { "label": "Media", "url": "/solution/gym-and-fitness" },
+        { "label": "Contact Us", "url": "/contact-us" }
+      ],
+      "socialLinks": {
+        "instagram": "https://instagram.com",
+        "facebook": "https://facebook.com",
+        "youtube": "https://youtube.com",
+        "twitter": "https://twitter.com",
+        "linkedin": ""
+      },
+      "showLeafPattern": true,
+      "showMarketplaces": true,
+      "showPaymentGateways": true,
+      "copyrightText": "Pyur Ayur Herbs Private Limited | © Copyright 2026 Pyur Ayur"
     }
   },
   "users": [

@@ -337,6 +337,16 @@ export default function AdminDashboard() {
     leads: [],
     settings: {
       storeName: "",
+      companyLegalName: "Pyur Ayur Herbs Private Limited",
+      registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
+      gstin: "09AAPCP8765A1Z5",
+      socialLinks: {
+        instagram: "https://instagram.com",
+        facebook: "https://facebook.com",
+        youtube: "https://youtube.com",
+        twitter: "https://twitter.com",
+        linkedin: "",
+      },
       supportEmail: "",
       whatsappNumber: "",
       whatsappMessage: "",
@@ -353,7 +363,7 @@ export default function AdminDashboard() {
     faqs: [],
     testimonials: [],
     marketing: { campaigns: [], banners: [], popups: [], notifications: [] },
-    content: { announcement: {}, heroSlides: [], consultationBanner: {} },
+    content: { announcement: {}, heroSlides: [], consultationBanner: {}, footer: {} },
     seo: { title: "", metaDesc: "", sitemapUrl: "", robotsTxt: "" },
     collections: [],
     categories: [],
@@ -814,6 +824,17 @@ export default function AdminDashboard() {
         // Deep merge settings defaults to prevent crashes
         const settings = {
           storeName: "Pyur Ayur Herbs Store",
+          companyLegalName: "Pyur Ayur Herbs Private Limited",
+          registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
+          gstin: "09AAPCP8765A1Z5",
+          socialLinks: {
+            instagram: "https://instagram.com",
+            facebook: "https://facebook.com",
+            youtube: "https://youtube.com",
+            twitter: "https://twitter.com",
+            linkedin: "",
+            ...(data.settings?.socialLinks || {}),
+          },
           supportEmail: "support@pyurayurherbs.com",
           whatsappNumber: "",
           whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
@@ -904,6 +925,7 @@ export default function AdminDashboard() {
               announcement: {},
               heroSlides: [],
               consultationBanner: {},
+              footer: {},
               ...(data.content || {})
             },
             settings: (activeMenuRef.current === "settings" && prev?.settings) ? prev.settings : settings,
@@ -2099,6 +2121,480 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
+  const renderFooterCMSEditor = () => {
+    const footer = dbData.content?.footer || {};
+    const companyLegalName = footer.companyLegalName !== undefined ? footer.companyLegalName : (dbData.settings?.companyLegalName || "Pyur Ayur Herbs Private Limited");
+    const registeredAddress = footer.registeredAddress !== undefined ? footer.registeredAddress : (dbData.settings?.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301");
+    const gstin = footer.gstin !== undefined ? footer.gstin : (dbData.settings?.gstin || "09AAPCP8765A1Z5");
+    const supportWhatsapp = footer.supportWhatsapp !== undefined ? footer.supportWhatsapp : (dbData.settings?.whatsappNumber || "");
+    const supportEmail = footer.supportEmail !== undefined ? footer.supportEmail : (dbData.settings?.supportEmail || "info@pyurayurherbs.com");
+
+    const column1Title = footer.column1Title || "Shop All";
+    const column1Links = Array.isArray(footer.column1Links) && footer.column1Links.length > 0 ? footer.column1Links : [
+      { label: "Glowing Skin Juices", url: "/products/kapiva-glowing-skin-juice" },
+      { label: "Shilajit Resins", url: "/products/pure-himalayan-shilajit" },
+      { label: "My Account", url: "/profile?tab=orders" },
+      { label: "Faqs", url: "/contact-us" },
+      { label: "Innovation Fund", url: "/solution/daily-ayurveda" }
+    ];
+
+    const column2Title = footer.column2Title || "About Us";
+    const column2Links = Array.isArray(footer.column2Links) && footer.column2Links.length > 0 ? footer.column2Links : [
+      { label: "About Us", url: "/contact-us" },
+      { label: "Blog", url: "/blog" },
+      { label: "Media", url: "/solution/gym-and-fitness" },
+      { label: "Contact Us", url: "/contact-us" }
+    ];
+
+    const social = footer.socialLinks || dbData.settings?.socialLinks || {
+      instagram: "https://instagram.com",
+      facebook: "https://facebook.com",
+      youtube: "https://youtube.com",
+      twitter: "https://twitter.com",
+      linkedin: ""
+    };
+
+    const showLeafPattern = footer.showLeafPattern !== false;
+    const showMarketplaces = footer.showMarketplaces !== false;
+    const showPaymentGateways = footer.showPaymentGateways !== false;
+    const copyrightText = footer.copyrightText !== undefined ? footer.copyrightText : `${companyLegalName} | © Copyright ${new Date().getFullYear()} Pyur Ayur`;
+
+    const updateFooterState = (field: string, value: any) => {
+      const current = dbData.content?.footer || {};
+      const updatedFooter = {
+        ...current,
+        companyLegalName,
+        registeredAddress,
+        gstin,
+        supportWhatsapp,
+        supportEmail,
+        column1Title,
+        column1Links,
+        column2Title,
+        column2Links,
+        socialLinks: social,
+        showLeafPattern,
+        showMarketplaces,
+        showPaymentGateways,
+        copyrightText,
+        [field]: value
+      };
+      setDbData({
+        ...dbData,
+        content: {
+          ...(dbData.content || {}),
+          footer: updatedFooter
+        }
+      });
+    };
+
+    const handleSaveFooterCMS = async () => {
+      const finalFooter = {
+        companyLegalName,
+        registeredAddress,
+        gstin,
+        supportWhatsapp,
+        supportEmail,
+        column1Title,
+        column1Links,
+        column2Title,
+        column2Links,
+        socialLinks: social,
+        showLeafPattern,
+        showMarketplaces,
+        showPaymentGateways,
+        copyrightText,
+        ...(dbData.content?.footer || {})
+      };
+
+      const updatedContent = {
+        ...(dbData.content || {}),
+        footer: finalFooter
+      };
+
+      await handleSaveCMSContent(updatedContent);
+
+      // Harmonize with settings so both general settings and footer share the latest address & social links
+      const updatedSettings = {
+        ...dbData.settings,
+        companyLegalName,
+        registeredAddress,
+        gstin,
+        socialLinks: social,
+      };
+
+      try {
+        await fetch("/api/admin/all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "saveSettings", data: updatedSettings }),
+        });
+        setDbData((prev: any) => ({ ...prev, content: updatedContent, settings: updatedSettings }));
+        if (typeof window !== "undefined") {
+          try {
+            const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+            cached.content = updatedContent;
+            cached.settings = updatedSettings;
+            localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+            window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updatedContent } }));
+          } catch {}
+        }
+      } catch {}
+      alert("Storefront Footer CMS configuration saved successfully!");
+    };
+
+    return (
+      <div className="border border-[#ddddd9] p-5 rounded-2xl bg-white shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#ddddd9] pb-4 gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-black text-[#17231b]">Storefront Footer & Legal Entity CMS</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#eef5df] text-[#244f31]">Live on Site</span>
+            </div>
+            <span className="text-[10px] text-[#666666]">Configure the footer address, support contacts, social media handles, and column links</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const synced = {
+                  companyLegalName: dbData.settings?.companyLegalName || "",
+                  registeredAddress: dbData.settings?.registeredAddress || "",
+                  gstin: dbData.settings?.gstin || "",
+                  supportWhatsapp: dbData.settings?.whatsappNumber || "",
+                  supportEmail: dbData.settings?.supportEmail || "",
+                  socialLinks: dbData.settings?.socialLinks || {},
+                };
+                setDbData({
+                  ...dbData,
+                  content: {
+                    ...(dbData.content || {}),
+                    footer: {
+                      ...(dbData.content?.footer || {}),
+                      ...synced
+                    }
+                  }
+                });
+                alert("Footer data synchronized with General Settings! Click 'Save Footer' to commit.");
+              }}
+              className="px-3 py-1.5 rounded-lg border border-[#ddddd9] text-xs font-bold text-[#666666] hover:bg-[#f8faf1] transition cursor-pointer"
+            >
+              🔄 Sync from General Settings
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveFooterCMS}
+              className="bg-[#244f31] text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-[#1d3b24] shadow-xs transition cursor-pointer"
+            >
+              Save Footer
+            </button>
+          </div>
+        </div>
+
+        {/* 1. Legal Entity & Contact */}
+        <div className="bg-[#f8faf1]/40 border border-[#ddddd9] p-4 rounded-xl space-y-3">
+          <span className="block font-bold text-xs uppercase tracking-wider text-[#244f31]">🏢 Brand Details & Corporate Office</span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Company Legal Entity</label>
+              <input
+                type="text"
+                value={companyLegalName}
+                onChange={(e) => updateFooterState("companyLegalName", e.target.value)}
+                placeholder="Pyur Ayur Herbs Private Limited"
+                className="w-full rounded border p-2 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">GSTIN Number</label>
+              <input
+                type="text"
+                value={gstin}
+                onChange={(e) => updateFooterState("gstin", e.target.value)}
+                placeholder="09AAPCP8765A1Z5"
+                className="w-full rounded border p-2 bg-white font-mono"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block font-bold mb-1">Registered Address (displayed in Footer Column 1)</label>
+            <textarea
+              value={registeredAddress}
+              onChange={(e) => updateFooterState("registeredAddress", e.target.value)}
+              placeholder="12, Botanical Enclave, Sector 62, Noida, UP - 201301"
+              rows={2}
+              className="w-full rounded border p-2 bg-white"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Support WhatsApp / Phone Number</label>
+              <input
+                type="text"
+                value={supportWhatsapp}
+                onChange={(e) => updateFooterState("supportWhatsapp", e.target.value)}
+                placeholder="919876543210"
+                className="w-full rounded border p-2 bg-white font-mono"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Support Email Desk</label>
+              <input
+                type="email"
+                value={supportEmail}
+                onChange={(e) => updateFooterState("supportEmail", e.target.value)}
+                placeholder="info@pyurayurherbs.com"
+                className="w-full rounded border p-2 bg-white"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Social Media Links */}
+        <div className="bg-[#f8faf1]/40 border border-[#ddddd9] p-4 rounded-xl space-y-3">
+          <span className="block font-bold text-xs uppercase tracking-wider text-[#244f31]">🌐 Social Media Links (Footer Column 4)</span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Instagram URL</label>
+              <input
+                type="url"
+                value={social.instagram || ""}
+                onChange={(e) => updateFooterState("socialLinks", { ...social, instagram: e.target.value })}
+                placeholder="https://instagram.com/pyurayurherbs"
+                className="w-full rounded border p-2 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Facebook URL</label>
+              <input
+                type="url"
+                value={social.facebook || ""}
+                onChange={(e) => updateFooterState("socialLinks", { ...social, facebook: e.target.value })}
+                placeholder="https://facebook.com/pyurayurherbs"
+                className="w-full rounded border p-2 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">YouTube URL</label>
+              <input
+                type="url"
+                value={social.youtube || ""}
+                onChange={(e) => updateFooterState("socialLinks", { ...social, youtube: e.target.value })}
+                placeholder="https://youtube.com/@pyurayurherbs"
+                className="w-full rounded border p-2 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Twitter / X URL</label>
+              <input
+                type="url"
+                value={social.twitter || ""}
+                onChange={(e) => updateFooterState("socialLinks", { ...social, twitter: e.target.value })}
+                placeholder="https://x.com/pyurayurherbs"
+                className="w-full rounded border p-2 bg-white"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block font-bold mb-1">LinkedIn URL</label>
+              <input
+                type="url"
+                value={social.linkedin || ""}
+                onChange={(e) => updateFooterState("socialLinks", { ...social, linkedin: e.target.value })}
+                placeholder="https://linkedin.com/company/pyurayurherbs"
+                className="w-full rounded border p-2 bg-white"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Footer Column Navigation Links */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Column 1 Links */}
+          <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-[#f8faf1]/20">
+            <div className="flex items-center justify-between border-b border-[#ddddd9] pb-2">
+              <span className="font-bold text-xs uppercase tracking-wider text-[#17231b]">Column 1 Links</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const links = [...column1Links, { label: "New Link", url: "/" }];
+                  updateFooterState("column1Links", links);
+                }}
+                className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                + Add Link
+              </button>
+            </div>
+            <div>
+              <label className="block font-bold mb-1 text-[11px]">Column Title</label>
+              <input
+                type="text"
+                value={column1Title}
+                onChange={(e) => updateFooterState("column1Title", e.target.value)}
+                className="w-full rounded border p-2 bg-white font-bold"
+              />
+            </div>
+            <div className="space-y-2">
+              {column1Links.map((link: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-[#ddddd9]">
+                  <input
+                    type="text"
+                    value={link.label}
+                    onChange={(e) => {
+                      const copy = [...column1Links];
+                      copy[idx] = { ...copy[idx], label: e.target.value };
+                      updateFooterState("column1Links", copy);
+                    }}
+                    placeholder="Link Label"
+                    className="w-1/2 rounded border p-1 text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={link.url}
+                    onChange={(e) => {
+                      const copy = [...column1Links];
+                      copy[idx] = { ...copy[idx], url: e.target.value };
+                      updateFooterState("column1Links", copy);
+                    }}
+                    placeholder="/url"
+                    className="w-1/2 rounded border p-1 text-xs font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const copy = column1Links.filter((_: any, i: number) => i !== idx);
+                      updateFooterState("column1Links", copy);
+                    }}
+                    className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Column 2 Links */}
+          <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-[#f8faf1]/20">
+            <div className="flex items-center justify-between border-b border-[#ddddd9] pb-2">
+              <span className="font-bold text-xs uppercase tracking-wider text-[#17231b]">Column 2 Links</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const links = [...column2Links, { label: "New Link", url: "/" }];
+                  updateFooterState("column2Links", links);
+                }}
+                className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                + Add Link
+              </button>
+            </div>
+            <div>
+              <label className="block font-bold mb-1 text-[11px]">Column Title</label>
+              <input
+                type="text"
+                value={column2Title}
+                onChange={(e) => updateFooterState("column2Title", e.target.value)}
+                className="w-full rounded border p-2 bg-white font-bold"
+              />
+            </div>
+            <div className="space-y-2">
+              {column2Links.map((link: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-[#ddddd9]">
+                  <input
+                    type="text"
+                    value={link.label}
+                    onChange={(e) => {
+                      const copy = [...column2Links];
+                      copy[idx] = { ...copy[idx], label: e.target.value };
+                      updateFooterState("column2Links", copy);
+                    }}
+                    placeholder="Link Label"
+                    className="w-1/2 rounded border p-1 text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={link.url}
+                    onChange={(e) => {
+                      const copy = [...column2Links];
+                      copy[idx] = { ...copy[idx], url: e.target.value };
+                      updateFooterState("column2Links", copy);
+                    }}
+                    placeholder="/url"
+                    className="w-1/2 rounded border p-1 text-xs font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const copy = column2Links.filter((_: any, i: number) => i !== idx);
+                      updateFooterState("column2Links", copy);
+                    }}
+                    className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Display Toggles & Copyright */}
+        <div className="bg-[#f8faf1]/40 border border-[#ddddd9] p-4 rounded-xl space-y-3">
+          <span className="block font-bold text-xs uppercase tracking-wider text-[#244f31]">🎨 Visual Elements & Copyright</span>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="flex items-center gap-2 border p-2.5 rounded-lg bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showLeafPattern}
+                onChange={(e) => updateFooterState("showLeafPattern", e.target.checked)}
+                className="size-4 accent-[#244f31]"
+              />
+              <span className="font-bold text-xs">Botanical Leaf Top Strip</span>
+            </label>
+            <label className="flex items-center gap-2 border p-2.5 rounded-lg bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showMarketplaces}
+                onChange={(e) => updateFooterState("showMarketplaces", e.target.checked)}
+                className="size-4 accent-[#244f31]"
+              />
+              <span className="font-bold text-xs">"Also available on" Badges</span>
+            </label>
+            <label className="flex items-center gap-2 border p-2.5 rounded-lg bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showPaymentGateways}
+                onChange={(e) => updateFooterState("showPaymentGateways", e.target.checked)}
+                className="size-4 accent-[#244f31]"
+              />
+              <span className="font-bold text-xs">"We Accept" Payment Badges</span>
+            </label>
+          </div>
+          <div>
+            <label className="block font-bold mb-1">Bottom Copyright Bar Text</label>
+            <input
+              type="text"
+              value={copyrightText}
+              onChange={(e) => updateFooterState("copyrightText", e.target.value)}
+              placeholder="Pyur Ayur Herbs Private Limited | © Copyright 2026 Pyur Ayur"
+              className="w-full rounded border p-2 bg-white font-mono text-xs"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <button
+            type="button"
+            onClick={handleSaveFooterCMS}
+            className="bg-[#244f31] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-[#1d3b24] shadow transition cursor-pointer text-xs flex items-center gap-2"
+          >
+            Save Storefront Footer Configuration
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -5650,6 +6146,7 @@ export default function AdminDashboard() {
               <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm">
                 <div className="flex flex-wrap items-center gap-2 mb-5">
                   <button onClick={() => setSubTab("homepage")} className={subTabStyle("homepage")}>Homepage</button>
+                  <button onClick={() => setSubTab("footer")} className={subTabStyle("footer")}>Footer</button>
                   <button onClick={() => setSubTab("blogs")} className={subTabStyle("blogs")}>Blogs</button>
                   <button onClick={() => setSubTab("faqs")} className={subTabStyle("faqs")}>FAQs</button>
                   <button onClick={() => setSubTab("testimonials")} className={subTabStyle("testimonials")}>Testimonials</button>
@@ -6208,9 +6705,18 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Section D: Storefront Footer CMS Editor */}
+                      {renderFooterCMSEditor()}
                     </div>
                   );
                 })()}
+
+                {subTab === "footer" && (
+                  <div className="space-y-6 text-xs">
+                    {renderFooterCMSEditor()}
+                  </div>
+                )}
 
                 {subTab === "blogs" && (
                   <div className="space-y-6">
@@ -6969,53 +7475,73 @@ export default function AdminDashboard() {
                 </div>
 
                 {subTab === "general" && (
-                  <form autoComplete="off" onSubmit={(e) => e.preventDefault()} className="text-xs space-y-3">
-                    <div>
-                      <label className="block font-bold">Store Brand Name</label>
-                      <input
-                        type="text"
-                        name="admin_setting_store_brand"
-                        id="admin_setting_store_brand"
-                        autoComplete="off"
-                        data-form-type="other"
-                        value={dbData.settings.storeName}
-                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, storeName: e.target.value } })}
-                        className="mt-1 w-full rounded border p-2"
-                      />
+                  <form autoComplete="off" onSubmit={(e) => e.preventDefault()} className="text-xs space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="block font-bold">Store Brand Name</label>
+                        <input
+                          type="text"
+                          name="admin_setting_store_brand"
+                          id="admin_setting_store_brand"
+                          autoComplete="off"
+                          data-form-type="other"
+                          value={dbData.settings.storeName}
+                          onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, storeName: e.target.value } })}
+                          className="mt-1 w-full rounded border p-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold">Support Desk Email</label>
+                        <input
+                          type="email"
+                          name="admin_setting_support_desk_email"
+                          id="admin_setting_support_desk_email"
+                          autoComplete="off"
+                          data-form-type="other"
+                          data-lpignore="true"
+                          value={dbData.settings.supportEmail}
+                          onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, supportEmail: e.target.value } })}
+                          className="mt-1 w-full rounded border p-2"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block font-bold">Support Desk Email</label>
-                      <input
-                        type="email"
-                        name="admin_setting_support_desk_email"
-                        id="admin_setting_support_desk_email"
-                        autoComplete="off"
-                        data-form-type="other"
-                        data-lpignore="true"
-                        value={dbData.settings.supportEmail}
-                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, supportEmail: e.target.value } })}
-                        className="mt-1 w-full rounded border p-2"
-                      />
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="block font-bold">Business WhatsApp Number (with country code)</label>
+                        <input
+                          type="text"
+                          name="admin_setting_store_support_whatsapp"
+                          id="admin_setting_store_support_whatsapp"
+                          autoComplete="new-password"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck={false}
+                          data-form-type="other"
+                          data-lpignore="true"
+                          data-1p-ignore="true"
+                          value={dbData.settings.whatsappNumber || ""}
+                          onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, whatsappNumber: e.target.value } })}
+                          placeholder="e.g. 919876543210"
+                          className="mt-1 w-full rounded border p-2 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold">GSTIN Registration Number</label>
+                        <input
+                          type="text"
+                          name="admin_setting_gstin"
+                          id="admin_setting_gstin"
+                          autoComplete="off"
+                          data-form-type="other"
+                          value={dbData.settings.gstin || ""}
+                          onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, gstin: e.target.value } })}
+                          placeholder="e.g. 09AAPCP8765A1Z5"
+                          className="mt-1 w-full rounded border p-2 font-mono"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block font-bold">Business WhatsApp Number (with country code, e.g. 919876543210)</label>
-                      <input
-                        type="text"
-                        name="admin_setting_store_support_whatsapp"
-                        id="admin_setting_store_support_whatsapp"
-                        autoComplete="new-password"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
-                        data-form-type="other"
-                        data-lpignore="true"
-                        data-1p-ignore="true"
-                        value={dbData.settings.whatsappNumber || ""}
-                        onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, whatsappNumber: e.target.value } })}
-                        placeholder="e.g. 919876543210"
-                        className="mt-1 w-full rounded border p-2 font-mono"
-                      />
-                    </div>
+
                     <div>
                       <label className="block font-bold">Default Support Greeting Message</label>
                       <textarea
@@ -7025,9 +7551,159 @@ export default function AdminDashboard() {
                         value={dbData.settings.whatsappMessage || ""}
                         onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, whatsappMessage: e.target.value } })}
                         placeholder="e.g. नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।"
-                        className="mt-1 w-full rounded border p-2 h-20"
+                        className="mt-1 w-full rounded border p-2 h-16"
                       />
                     </div>
+
+                    {/* Registered Corporate Address Section */}
+                    <div className="border border-[#ddddd9] p-4 rounded-xl bg-[#f8faf1]/40 space-y-3">
+                      <div className="border-b border-[#ddddd9] pb-2">
+                        <span className="block font-bold text-sm text-[#17231b]">🏢 Corporate & Registered Office Address</span>
+                        <span className="text-[10px] text-[#666666]">Displayed in the storefront footer, contact page, and on invoices</span>
+                      </div>
+                      <div>
+                        <label className="block font-bold mb-1">Company Legal Entity Name</label>
+                        <input
+                          type="text"
+                          name="admin_setting_company_name"
+                          id="admin_setting_company_name"
+                          autoComplete="off"
+                          value={dbData.settings.companyLegalName || ""}
+                          onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, companyLegalName: e.target.value } })}
+                          placeholder="e.g. Pyur Ayur Herbs Private Limited"
+                          className="w-full rounded border p-2 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold mb-1">Full Registered Address</label>
+                        <textarea
+                          name="admin_setting_registered_address"
+                          id="admin_setting_registered_address"
+                          autoComplete="off"
+                          value={dbData.settings.registeredAddress || ""}
+                          onChange={(e) => setDbData({ ...dbData, settings: { ...dbData.settings, registeredAddress: e.target.value } })}
+                          placeholder="e.g. 12, Botanical Enclave, Sector 62, Noida, UP - 201301"
+                          rows={2}
+                          className="w-full rounded border p-2 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Social Media Links Section */}
+                    <div className="border border-[#ddddd9] p-4 rounded-xl bg-[#f8faf1]/40 space-y-3">
+                      <div className="border-b border-[#ddddd9] pb-2">
+                        <span className="block font-bold text-sm text-[#17231b]">🌐 Official Social Media Profiles</span>
+                        <span className="text-[10px] text-[#666666]">Connect the storefront footer icons to your brand social channels</span>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="block font-bold mb-1 flex items-center gap-1.5">
+                            <span className="size-2 rounded-full bg-pink-500 inline-block"></span>
+                            Instagram Profile URL
+                          </label>
+                          <input
+                            type="url"
+                            name="admin_social_instagram"
+                            autoComplete="off"
+                            value={dbData.settings.socialLinks?.instagram || ""}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                socialLinks: { ...(dbData.settings.socialLinks || {}), instagram: e.target.value }
+                              }
+                            })}
+                            placeholder="https://instagram.com/pyurayurherbs"
+                            className="w-full rounded border p-2 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold mb-1 flex items-center gap-1.5">
+                            <span className="size-2 rounded-full bg-blue-600 inline-block"></span>
+                            Facebook Page URL
+                          </label>
+                          <input
+                            type="url"
+                            name="admin_social_facebook"
+                            autoComplete="off"
+                            value={dbData.settings.socialLinks?.facebook || ""}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                socialLinks: { ...(dbData.settings.socialLinks || {}), facebook: e.target.value }
+                              }
+                            })}
+                            placeholder="https://facebook.com/pyurayurherbs"
+                            className="w-full rounded border p-2 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold mb-1 flex items-center gap-1.5">
+                            <span className="size-2 rounded-full bg-red-600 inline-block"></span>
+                            YouTube Channel URL
+                          </label>
+                          <input
+                            type="url"
+                            name="admin_social_youtube"
+                            autoComplete="off"
+                            value={dbData.settings.socialLinks?.youtube || ""}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                socialLinks: { ...(dbData.settings.socialLinks || {}), youtube: e.target.value }
+                              }
+                            })}
+                            placeholder="https://youtube.com/@pyurayurherbs"
+                            className="w-full rounded border p-2 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold mb-1 flex items-center gap-1.5">
+                            <span className="size-2 rounded-full bg-neutral-900 inline-block"></span>
+                            Twitter / X Profile URL
+                          </label>
+                          <input
+                            type="url"
+                            name="admin_social_twitter"
+                            autoComplete="off"
+                            value={dbData.settings.socialLinks?.twitter || ""}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                socialLinks: { ...(dbData.settings.socialLinks || {}), twitter: e.target.value }
+                              }
+                            })}
+                            placeholder="https://x.com/pyurayurherbs"
+                            className="w-full rounded border p-2 bg-white"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block font-bold mb-1 flex items-center gap-1.5">
+                            <span className="size-2 rounded-full bg-sky-700 inline-block"></span>
+                            LinkedIn Page URL (Optional)
+                          </label>
+                          <input
+                            type="url"
+                            name="admin_social_linkedin"
+                            autoComplete="off"
+                            value={dbData.settings.socialLinks?.linkedin || ""}
+                            onChange={(e) => setDbData({
+                              ...dbData,
+                              settings: {
+                                ...dbData.settings,
+                                socialLinks: { ...(dbData.settings.socialLinks || {}), linkedin: e.target.value }
+                              }
+                            })}
+                            placeholder="https://linkedin.com/company/pyurayurherbs"
+                            className="w-full rounded border p-2 bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <button
                       onClick={async () => {
                         const updatedSettings = {
@@ -7036,6 +7712,16 @@ export default function AdminDashboard() {
                           supportEmail: dbData.settings.supportEmail,
                           whatsappNumber: dbData.settings.whatsappNumber || "",
                           whatsappMessage: dbData.settings.whatsappMessage || "",
+                          companyLegalName: dbData.settings.companyLegalName || "",
+                          registeredAddress: dbData.settings.registeredAddress || "",
+                          gstin: dbData.settings.gstin || "",
+                          socialLinks: {
+                            instagram: dbData.settings.socialLinks?.instagram || "",
+                            facebook: dbData.settings.socialLinks?.facebook || "",
+                            youtube: dbData.settings.socialLinks?.youtube || "",
+                            twitter: dbData.settings.socialLinks?.twitter || "",
+                            linkedin: dbData.settings.socialLinks?.linkedin || "",
+                          },
                         };
                         try {
                           const res = await fetch("/api/admin/all", {
@@ -7045,7 +7731,15 @@ export default function AdminDashboard() {
                           });
                           if (res.ok) {
                             setDbData((prev: any) => ({ ...prev, settings: updatedSettings }));
-                            alert("General settings saved successfully!");
+                            if (typeof window !== "undefined") {
+                              try {
+                                const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+                                cached.settings = updatedSettings;
+                                localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+                                window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "settings", value: updatedSettings } }));
+                              } catch {}
+                            }
+                            alert("General settings, Address & Social Media links saved successfully!");
                           } else {
                             const errData = await res.json().catch(() => ({}));
                             alert(`Error saving settings: ${errData.error || "Server error"}`);
@@ -7055,7 +7749,7 @@ export default function AdminDashboard() {
                         }
                       }}
                       type="button"
-                      className="bg-[#244f31] text-white px-5 py-2.5 rounded-lg font-bold mt-2 hover:bg-[#1d3b24] transition shadow-xs"
+                      className="bg-[#244f31] text-white px-5 py-2.5 rounded-lg font-bold mt-2 hover:bg-[#1d3b24] transition shadow-xs cursor-pointer"
                     >
                       Save General Settings
                     </button>

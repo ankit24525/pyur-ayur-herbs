@@ -84,11 +84,12 @@ function sanitizeDBData(data: any): DBData {
   }
 
   if (!data.content || typeof data.content !== "object") {
-    data.content = { announcement: {}, heroSlides: [], consultationBanner: {} };
+    data.content = { announcement: {}, heroSlides: [], consultationBanner: {}, footer: {} };
   } else {
     if (!data.content.announcement) data.content.announcement = {};
     if (!Array.isArray(data.content.heroSlides)) data.content.heroSlides = [];
     if (!data.content.consultationBanner) data.content.consultationBanner = {};
+    if (!data.content.footer) data.content.footer = {};
   }
 
   if (!data.seo || typeof data.seo !== "object") {
@@ -103,6 +104,16 @@ function sanitizeDBData(data: any): DBData {
   if (!data.settings || typeof data.settings !== "object") {
     data.settings = {
       storeName: "Pyur Ayur Herbs Store",
+      companyLegalName: "Pyur Ayur Herbs Private Limited",
+      registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
+      gstin: "09AAPCP8765A1Z5",
+      socialLinks: {
+        instagram: "https://instagram.com",
+        facebook: "https://facebook.com",
+        youtube: "https://youtube.com",
+        twitter: "https://twitter.com",
+        linkedin: "",
+      },
       supportEmail: "support@pyurayurherbs.com",
       whatsappNumber: "",
       whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
@@ -124,6 +135,19 @@ function sanitizeDBData(data: any): DBData {
         enabled: true
       }
     };
+  } else {
+    if (!data.settings.companyLegalName) data.settings.companyLegalName = "Pyur Ayur Herbs Private Limited";
+    if (!data.settings.registeredAddress) data.settings.registeredAddress = "12, Botanical Enclave, Sector 62, Noida, UP - 201301";
+    if (!data.settings.gstin) data.settings.gstin = "09AAPCP8765A1Z5";
+    if (!data.settings.socialLinks || typeof data.settings.socialLinks !== "object") {
+      data.settings.socialLinks = {
+        instagram: "https://instagram.com",
+        facebook: "https://facebook.com",
+        youtube: "https://youtube.com",
+        twitter: "https://twitter.com",
+        linkedin: "",
+      };
+    }
   }
 
   return data as DBData;

@@ -16,6 +16,16 @@ export async function GET() {
       testimonials: db.testimonials || [],
       settings: {
         storeName: db.settings?.storeName || "Pyur Ayur Herbs Store",
+        companyLegalName: db.settings?.companyLegalName || "Pyur Ayur Herbs Private Limited",
+        registeredAddress: db.settings?.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
+        gstin: db.settings?.gstin || "09AAPCP8765A1Z5",
+        socialLinks: db.settings?.socialLinks || {
+          instagram: "https://instagram.com",
+          facebook: "https://facebook.com",
+          youtube: "https://youtube.com",
+          twitter: "https://twitter.com",
+          linkedin: ""
+        },
         supportEmail: db.settings?.supportEmail || "support@pyurayurherbs.com",
         whatsappNumber: db.settings?.whatsappNumber || "919876543210",
         whatsappMessage: db.settings?.whatsappMessage || "Namaste!",
@@ -39,11 +49,21 @@ export async function GET() {
       {
         products: [],
         categories: concerns,
-        content: { announcement: {}, heroSlides: [], consultationBanner: {} },
+        content: { announcement: {}, heroSlides: [], consultationBanner: {}, footer: {} },
         reviews: [],
         testimonials: [],
         settings: {
           storeName: "Pyur Ayur Herbs Store",
+          companyLegalName: "Pyur Ayur Herbs Private Limited",
+          registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
+          gstin: "09AAPCP8765A1Z5",
+          socialLinks: {
+            instagram: "https://instagram.com",
+            facebook: "https://facebook.com",
+            youtube: "https://youtube.com",
+            twitter: "https://twitter.com",
+            linkedin: ""
+          },
           freeThreshold: 999,
           prepaidDiscount: 5,
         },

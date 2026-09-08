@@ -100,6 +100,9 @@ export default function SiteFooter() {
   const showLeafPattern = footerData?.showLeafPattern !== false;
   const showMarketplaces = footerData?.showMarketplaces !== false;
   const showPaymentGateways = footerData?.showPaymentGateways !== false;
+  const showColumnLinks = footerData?.showColumnLinks !== false;
+  const showColumn1 = showColumnLinks && footerData?.showColumn1 !== false;
+  const showColumn2 = showColumnLinks && footerData?.showColumn2 !== false;
   const copyrightText = footerData?.copyrightText || `${companyName} | © Copyright ${new Date().getFullYear()} Pure Ayur`;
 
   // Overlapping botanical leaf designs for the top border strip
@@ -185,32 +188,36 @@ export default function SiteFooter() {
           </div>
 
           {/* Column 2: Dynamic Link Block 1 */}
-          <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
-              {col1Title}
-            </h4>
-            <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
-              {col1Links.map((link: any, idx: number) => (
-                <Link key={idx} href={link.url || "#"} className="hover:text-[#80a03c] transition">
-                  {link.label}
-                </Link>
-              ))}
+          {showColumn1 && (
+            <div className="flex flex-col gap-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
+                {col1Title}
+              </h4>
+              <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
+                {col1Links.filter((link: any) => link.visible !== false && !link.hidden).map((link: any, idx: number) => (
+                  <Link key={idx} href={link.url || "#"} className="hover:text-[#80a03c] transition">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Column 3: Dynamic Link Block 2 */}
-          <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
-              {col2Title}
-            </h4>
-            <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
-              {col2Links.map((link: any, idx: number) => (
-                <Link key={idx} href={link.url || "#"} className="hover:text-[#80a03c] transition">
-                  {link.label}
-                </Link>
-              ))}
+          {showColumn2 && (
+            <div className="flex flex-col gap-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
+                {col2Title}
+              </h4>
+              <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
+                {col2Links.filter((link: any) => link.visible !== false && !link.hidden).map((link: any, idx: number) => (
+                  <Link key={idx} href={link.url || "#"} className="hover:text-[#80a03c] transition">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Column 4: Follow Us & Socials */}
           <div className="flex flex-col gap-4">

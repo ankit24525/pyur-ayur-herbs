@@ -290,6 +290,9 @@
       "showLeafPattern": true,
       "showMarketplaces": true,
       "showPaymentGateways": true,
+      "showColumnLinks": true,
+      "showColumn1": true,
+      "showColumn2": true,
       "copyrightText": "Pure Ayur Herbs Private Limited | © Copyright 2026 Pure Ayur"
     }
   },

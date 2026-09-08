@@ -2158,6 +2158,9 @@ export default function AdminDashboard() {
     const showLeafPattern = footer.showLeafPattern !== false;
     const showMarketplaces = footer.showMarketplaces !== false;
     const showPaymentGateways = footer.showPaymentGateways !== false;
+    const showColumnLinks = footer.showColumnLinks !== false;
+    const showColumn1 = footer.showColumn1 !== false;
+    const showColumn2 = footer.showColumn2 !== false;
     const copyrightText = footer.copyrightText !== undefined ? footer.copyrightText : `${companyLegalName} | © Copyright ${new Date().getFullYear()} Pure Ayur`;
 
     const updateFooterState = (field: string, value: any) => {
@@ -2177,6 +2180,9 @@ export default function AdminDashboard() {
         showLeafPattern,
         showMarketplaces,
         showPaymentGateways,
+        showColumnLinks,
+        showColumn1,
+        showColumn2,
         copyrightText,
         [field]: value
       };
@@ -2191,6 +2197,7 @@ export default function AdminDashboard() {
 
     const handleSaveFooterCMS = async () => {
       const finalFooter = {
+        ...(dbData.content?.footer || {}),
         companyLegalName,
         registeredAddress,
         gstin,
@@ -2204,8 +2211,10 @@ export default function AdminDashboard() {
         showLeafPattern,
         showMarketplaces,
         showPaymentGateways,
+        showColumnLinks,
+        showColumn1,
+        showColumn2,
         copyrightText,
-        ...(dbData.content?.footer || {})
       };
 
       const updatedContent = {
@@ -2411,19 +2420,37 @@ export default function AdminDashboard() {
         {/* 3. Footer Column Navigation Links */}
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Column 1 Links */}
-          <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-[#f8faf1]/20">
-            <div className="flex items-center justify-between border-b border-[#ddddd9] pb-2">
-              <span className="font-bold text-xs uppercase tracking-wider text-[#17231b]">Column 1 Links</span>
-              <button
-                type="button"
-                onClick={() => {
-                  const links = [...column1Links, { label: "New Link", url: "/" }];
-                  updateFooterState("column1Links", links);
-                }}
-                className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                + Add Link
-              </button>
+          <div className={`border p-4 rounded-xl space-y-3 transition ${showColumn1 ? "border-[#ddddd9] bg-[#f8faf1]/20" : "border-amber-200 bg-amber-50/20"}`}>
+            <div className="flex flex-wrap items-center justify-between border-b border-[#ddddd9] pb-2 gap-2">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs uppercase tracking-wider text-[#17231b]">Column 1 Links</span>
+                {!showColumn1 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                    Hidden on Storefront
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-[#244f31] bg-white px-2 py-1 rounded border border-[#ddddd9] hover:bg-emerald-50 transition select-none">
+                  <input
+                    type="checkbox"
+                    checked={showColumn1}
+                    onChange={(e) => updateFooterState("showColumn1", e.target.checked)}
+                    className="size-3.5 accent-[#244f31]"
+                  />
+                  <span>{showColumn1 ? "Visible" : "Hidden"}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const links = [...column1Links, { label: "New Link", url: "/", visible: true }];
+                    updateFooterState("column1Links", links);
+                  }}
+                  className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  + Add Link
+                </button>
+              </div>
             </div>
             <div>
               <label className="block font-bold mb-1 text-[11px]">Column Title</label>
@@ -2435,59 +2462,93 @@ export default function AdminDashboard() {
               />
             </div>
             <div className="space-y-2">
-              {column1Links.map((link: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-[#ddddd9]">
-                  <input
-                    type="text"
-                    value={link.label}
-                    onChange={(e) => {
-                      const copy = [...column1Links];
-                      copy[idx] = { ...copy[idx], label: e.target.value };
-                      updateFooterState("column1Links", copy);
-                    }}
-                    placeholder="Link Label"
-                    className="w-1/2 rounded border p-1 text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={link.url}
-                    onChange={(e) => {
-                      const copy = [...column1Links];
-                      copy[idx] = { ...copy[idx], url: e.target.value };
-                      updateFooterState("column1Links", copy);
-                    }}
-                    placeholder="/url"
-                    className="w-1/2 rounded border p-1 text-xs font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const copy = column1Links.filter((_: any, i: number) => i !== idx);
-                      updateFooterState("column1Links", copy);
-                    }}
-                    className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+              {column1Links.map((link: any, idx: number) => {
+                const isLinkVisible = link.visible !== false && !link.hidden;
+                return (
+                  <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg border transition ${isLinkVisible ? "bg-white border-[#ddddd9]" : "bg-neutral-50 border-neutral-200 opacity-60"}`}>
+                    <button
+                      type="button"
+                      title={isLinkVisible ? "Click to hide link on storefront" : "Click to show link on storefront"}
+                      onClick={() => {
+                        const copy = [...column1Links];
+                        copy[idx] = { ...copy[idx], visible: !isLinkVisible };
+                        updateFooterState("column1Links", copy);
+                      }}
+                      className={`p-1.5 rounded transition ${isLinkVisible ? "text-[#244f31] hover:bg-emerald-50" : "text-neutral-400 hover:bg-neutral-200"}`}
+                    >
+                      {isLinkVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                    </button>
+                    <input
+                      type="text"
+                      value={link.label}
+                      onChange={(e) => {
+                        const copy = [...column1Links];
+                        copy[idx] = { ...copy[idx], label: e.target.value };
+                        updateFooterState("column1Links", copy);
+                      }}
+                      placeholder="Link Label"
+                      className={`w-1/2 rounded border p-1 text-xs ${!isLinkVisible ? "line-through text-neutral-400" : ""}`}
+                    />
+                    <input
+                      type="text"
+                      value={link.url}
+                      onChange={(e) => {
+                        const copy = [...column1Links];
+                        copy[idx] = { ...copy[idx], url: e.target.value };
+                        updateFooterState("column1Links", copy);
+                      }}
+                      placeholder="/url"
+                      className="w-1/2 rounded border p-1 text-xs font-mono"
+                    />
+                    <button
+                      type="button"
+                      title="Delete link"
+                      onClick={() => {
+                        const copy = column1Links.filter((_: any, i: number) => i !== idx);
+                        updateFooterState("column1Links", copy);
+                      }}
+                      className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           {/* Column 2 Links */}
-          <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-[#f8faf1]/20">
-            <div className="flex items-center justify-between border-b border-[#ddddd9] pb-2">
-              <span className="font-bold text-xs uppercase tracking-wider text-[#17231b]">Column 2 Links</span>
-              <button
-                type="button"
-                onClick={() => {
-                  const links = [...column2Links, { label: "New Link", url: "/" }];
-                  updateFooterState("column2Links", links);
-                }}
-                className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                + Add Link
-              </button>
+          <div className={`border p-4 rounded-xl space-y-3 transition ${showColumn2 ? "border-[#ddddd9] bg-[#f8faf1]/20" : "border-amber-200 bg-amber-50/20"}`}>
+            <div className="flex flex-wrap items-center justify-between border-b border-[#ddddd9] pb-2 gap-2">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs uppercase tracking-wider text-[#17231b]">Column 2 Links</span>
+                {!showColumn2 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                    Hidden on Storefront
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-[#244f31] bg-white px-2 py-1 rounded border border-[#ddddd9] hover:bg-emerald-50 transition select-none">
+                  <input
+                    type="checkbox"
+                    checked={showColumn2}
+                    onChange={(e) => updateFooterState("showColumn2", e.target.checked)}
+                    className="size-3.5 accent-[#244f31]"
+                  />
+                  <span>{showColumn2 ? "Visible" : "Hidden"}</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const links = [...column2Links, { label: "New Link", url: "/", visible: true }];
+                    updateFooterState("column2Links", links);
+                  }}
+                  className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  + Add Link
+                </button>
+              </div>
             </div>
             <div>
               <label className="block font-bold mb-1 text-[11px]">Column Title</label>
@@ -2499,42 +2560,58 @@ export default function AdminDashboard() {
               />
             </div>
             <div className="space-y-2">
-              {column2Links.map((link: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-[#ddddd9]">
-                  <input
-                    type="text"
-                    value={link.label}
-                    onChange={(e) => {
-                      const copy = [...column2Links];
-                      copy[idx] = { ...copy[idx], label: e.target.value };
-                      updateFooterState("column2Links", copy);
-                    }}
-                    placeholder="Link Label"
-                    className="w-1/2 rounded border p-1 text-xs"
-                  />
-                  <input
-                    type="text"
-                    value={link.url}
-                    onChange={(e) => {
-                      const copy = [...column2Links];
-                      copy[idx] = { ...copy[idx], url: e.target.value };
-                      updateFooterState("column2Links", copy);
-                    }}
-                    placeholder="/url"
-                    className="w-1/2 rounded border p-1 text-xs font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const copy = column2Links.filter((_: any, i: number) => i !== idx);
-                      updateFooterState("column2Links", copy);
-                    }}
-                    className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+              {column2Links.map((link: any, idx: number) => {
+                const isLinkVisible = link.visible !== false && !link.hidden;
+                return (
+                  <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg border transition ${isLinkVisible ? "bg-white border-[#ddddd9]" : "bg-neutral-50 border-neutral-200 opacity-60"}`}>
+                    <button
+                      type="button"
+                      title={isLinkVisible ? "Click to hide link on storefront" : "Click to show link on storefront"}
+                      onClick={() => {
+                        const copy = [...column2Links];
+                        copy[idx] = { ...copy[idx], visible: !isLinkVisible };
+                        updateFooterState("column2Links", copy);
+                      }}
+                      className={`p-1.5 rounded transition ${isLinkVisible ? "text-[#244f31] hover:bg-emerald-50" : "text-neutral-400 hover:bg-neutral-200"}`}
+                    >
+                      {isLinkVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                    </button>
+                    <input
+                      type="text"
+                      value={link.label}
+                      onChange={(e) => {
+                        const copy = [...column2Links];
+                        copy[idx] = { ...copy[idx], label: e.target.value };
+                        updateFooterState("column2Links", copy);
+                      }}
+                      placeholder="Link Label"
+                      className={`w-1/2 rounded border p-1 text-xs ${!isLinkVisible ? "line-through text-neutral-400" : ""}`}
+                    />
+                    <input
+                      type="text"
+                      value={link.url}
+                      onChange={(e) => {
+                        const copy = [...column2Links];
+                        copy[idx] = { ...copy[idx], url: e.target.value };
+                        updateFooterState("column2Links", copy);
+                      }}
+                      placeholder="/url"
+                      className="w-1/2 rounded border p-1 text-xs font-mono"
+                    />
+                    <button
+                      type="button"
+                      title="Delete link"
+                      onClick={() => {
+                        const copy = column2Links.filter((_: any, i: number) => i !== idx);
+                        updateFooterState("column2Links", copy);
+                      }}
+                      className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -2542,7 +2619,34 @@ export default function AdminDashboard() {
         {/* 4. Display Toggles & Copyright */}
         <div className="bg-[#f8faf1]/40 border border-[#ddddd9] p-4 rounded-xl space-y-3">
           <span className="block font-bold text-xs uppercase tracking-wider text-[#244f31]">🎨 Visual Elements & Copyright</span>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="flex items-center gap-2 border p-2.5 rounded-lg bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showColumnLinks}
+                onChange={(e) => updateFooterState("showColumnLinks", e.target.checked)}
+                className="size-4 accent-[#244f31]"
+              />
+              <span className="font-bold text-xs">All Navigation Columns (Master)</span>
+            </label>
+            <label className="flex items-center gap-2 border p-2.5 rounded-lg bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showColumn1}
+                onChange={(e) => updateFooterState("showColumn1", e.target.checked)}
+                className="size-4 accent-[#244f31]"
+              />
+              <span className="font-bold text-xs">Show Column 1 ({column1Title})</span>
+            </label>
+            <label className="flex items-center gap-2 border p-2.5 rounded-lg bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showColumn2}
+                onChange={(e) => updateFooterState("showColumn2", e.target.checked)}
+                className="size-4 accent-[#244f31]"
+              />
+              <span className="font-bold text-xs">Show Column 2 ({column2Title})</span>
+            </label>
             <label className="flex items-center gap-2 border p-2.5 rounded-lg bg-white cursor-pointer select-none">
               <input
                 type="checkbox"

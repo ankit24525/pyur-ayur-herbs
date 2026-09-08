@@ -1928,7 +1928,7 @@ export default function AdminDashboard() {
     return success;
   };
 
-  const handleSaveSlide = async (e: React.FormEvent) => {
+  const handleSaveSlide = (e: React.FormEvent) => {
     e.preventDefault();
     const content = dbData.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
     const currentSlides = content.heroSlides || [];
@@ -1942,23 +1942,12 @@ export default function AdminDashboard() {
       updatedSlides = currentSlides.map((s: any) => s.id === editingSlide.id ? newSlide : s);
     }
 
-    // Automatically sanitize and compress any large base64 image strings across all slides to keep payload small
-    const sanitizedSlides = await Promise.all(
-      updatedSlides.map(async (s: any) => {
-        if (s.image && typeof s.image === "string" && s.image.startsWith("data:image/") && s.image.length > 180000) {
-          const compressed = await compressBase64String(s.image, 1600, 900, 0.82);
-          return { ...s, image: compressed };
-        }
-        return s;
-      })
-    );
+    const updatedContent = { ...content, heroSlides: updatedSlides };
 
-    const updatedContent = { ...content, heroSlides: sanitizedSlides };
-
-    // Instantly update dbData so table and preview reflect the new text with zero lag
+    // 1. Instant 0ms UI update: Table and preview reflect changes immediately
     setDbData((prev: any) => ({ ...prev, content: updatedContent }));
 
-    // Instantly close modal & reset input fields
+    // 2. Instant 0ms close: Close modal & reset input fields with ZERO delay
     setEditingSlide(null);
     setNewSlide({
       id: 0,
@@ -1973,11 +1962,40 @@ export default function AdminDashboard() {
       fullWidthBanner: false
     });
 
+    // 3. Instant toast feedback
     showToast(editingSlide === "new" ? "Hero Slide created successfully!" : "Hero Slide updated successfully!");
-    await saveKey("content", updatedContent);
+
+    // 4. Instant storefront cache & event dispatch (0ms live update across all tabs)
+    if (typeof window !== "undefined") {
+      try {
+        const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+        cached.content = updatedContent;
+        localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+        window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updatedContent } }));
+      } catch {}
+    }
+
+    // 5. Async background processing (Does not block UI whatsoever!)
+    void (async () => {
+      let slidesToSave = updatedSlides;
+      try {
+        slidesToSave = await Promise.all(
+          updatedSlides.map(async (s: any) => {
+            if (s.image && typeof s.image === "string" && s.image.startsWith("data:image/") && s.image.length > 180000) {
+              const compressed = await compressBase64String(s.image, 1600, 900, 0.82);
+              return { ...s, image: compressed };
+            }
+            return s;
+          })
+        );
+      } catch {}
+
+      const finalContent = { ...content, heroSlides: slidesToSave };
+      await saveKey("content", finalContent);
+    })();
   };
 
-  const handleDeleteSlide = async (slideId: number) => {
+  const handleDeleteSlide = (slideId: number) => {
     if (confirm("Are you sure you want to delete this slide?")) {
       const content = dbData.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
       const currentSlides = content.heroSlides || [];
@@ -1985,7 +2003,15 @@ export default function AdminDashboard() {
       const updatedContent = { ...content, heroSlides: updatedSlides };
       setDbData((prev: any) => ({ ...prev, content: updatedContent }));
       showToast("Hero Slide deleted successfully!");
-      await saveKey("content", updatedContent);
+      if (typeof window !== "undefined") {
+        try {
+          const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+          cached.content = updatedContent;
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+          window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updatedContent } }));
+        } catch {}
+      }
+      void saveKey("content", updatedContent);
     }
   };
 
@@ -6693,7 +6719,7 @@ export default function AdminDashboard() {
                                         <button
                                           type="button"
                                           disabled={idx === 0}
-                                          onClick={async () => {
+                                          onClick={() => {
                                             const slides = [...activeSlides];
                                             const temp = slides[idx];
                                             slides[idx] = slides[idx - 1];
@@ -6701,7 +6727,15 @@ export default function AdminDashboard() {
                                             const updated = { ...content, heroSlides: slides };
                                             setDbData((prev: any) => ({ ...prev, content: updated }));
                                             showToast("Slide order updated!");
-                                            await saveKey("content", updated);
+                                            if (typeof window !== "undefined") {
+                                              try {
+                                                const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+                                                cached.content = updated;
+                                                localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+                                                window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updated } }));
+                                              } catch {}
+                                            }
+                                            void saveKey("content", updated);
                                           }}
                                           className="p-1 border border-[#ddddd9] bg-white hover:bg-gray-50 disabled:opacity-40 rounded"
                                         >
@@ -6710,7 +6744,7 @@ export default function AdminDashboard() {
                                         <button
                                           type="button"
                                           disabled={idx === activeSlides.length - 1}
-                                          onClick={async () => {
+                                          onClick={() => {
                                             const slides = [...activeSlides];
                                             const temp = slides[idx];
                                             slides[idx] = slides[idx + 1];
@@ -6718,7 +6752,15 @@ export default function AdminDashboard() {
                                             const updated = { ...content, heroSlides: slides };
                                             setDbData((prev: any) => ({ ...prev, content: updated }));
                                             showToast("Slide order updated!");
-                                            await saveKey("content", updated);
+                                            if (typeof window !== "undefined") {
+                                              try {
+                                                const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+                                                cached.content = updated;
+                                                localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+                                                window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updated } }));
+                                              } catch {}
+                                            }
+                                            void saveKey("content", updated);
                                           }}
                                           className="p-1 border border-[#ddddd9] bg-white hover:bg-gray-50 disabled:opacity-40 rounded"
                                         >

@@ -90,7 +90,7 @@ export default function Home() {
 
     loadStorefrontData();
 
-    // 3. Real-time listener for live updates from Admin panel
+    // 3. Real-time listener for live updates from Admin panel (Instant 0ms update)
     const handleLiveUpdate = (e: any) => {
       if (e?.detail?.key === "products" && Array.isArray(e.detail.value)) {
         setCatalog(e.detail.value);
@@ -98,15 +98,30 @@ export default function Home() {
       if (e?.detail?.key === "categories" && Array.isArray(e.detail.value)) {
         setCategories(e.detail.value);
       }
+      if (e?.detail?.key === "content" && e.detail.value) {
+        setCmsData(e.detail.value);
+      }
+      loadStorefrontData();
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "pyur_storefront_cache" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.content) setCmsData(parsed.content);
+          if (parsed.products && Array.isArray(parsed.products)) setCatalog(parsed.products);
+          if (parsed.categories && Array.isArray(parsed.categories)) setCategories(parsed.categories);
+        } catch {}
+      }
       loadStorefrontData();
     };
 
     window.addEventListener("pyur_storefront_updated", handleLiveUpdate);
-    window.addEventListener("storage", loadStorefrontData);
+    window.addEventListener("storage", handleStorageChange);
 
     return () => {
       window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
-      window.removeEventListener("storage", loadStorefrontData);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 

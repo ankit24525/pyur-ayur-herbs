@@ -5,6 +5,37 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { heroSlides as defaultSlides } from "@/lib/store";
 
+const getSlideBackgroundStyle = (bgColor?: string, isFullWidth?: boolean): React.CSSProperties => {
+  if (isFullWidth || !bgColor) return {};
+  const trimmed = bgColor.trim();
+  if (
+    trimmed.startsWith("#") ||
+    trimmed.startsWith("rgb") ||
+    trimmed.startsWith("hsl") ||
+    trimmed.startsWith("linear-gradient")
+  ) {
+    return { background: trimmed };
+  }
+  return {};
+};
+
+const getSlideBackgroundClass = (bgColor?: string, isFullWidth?: boolean): string => {
+  if (isFullWidth) return "";
+  const trimmed = bgColor?.trim() || "";
+  if (
+    trimmed.startsWith("#") ||
+    trimmed.startsWith("rgb") ||
+    trimmed.startsWith("hsl") ||
+    trimmed.startsWith("linear-gradient")
+  ) {
+    return "";
+  }
+  if (trimmed.startsWith("from-") || trimmed.includes("bg-")) {
+    return trimmed.startsWith("bg-") ? trimmed : `bg-gradient-to-r ${trimmed}`;
+  }
+  return "bg-gradient-to-r from-[#1d3b24] via-[#244f31] to-[#0f2416]";
+};
+
 export default function HeroSlider({ slides }: { slides?: any[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -29,7 +60,8 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
         {activeSlides.map((slide, idx) => (
           <div
             key={slide.id || idx}
-            className={`relative w-full shrink-0 overflow-hidden ${slide.fullWidthBanner ? "" : `bg-gradient-to-r ${slide.bgColor || "from-[#1d3b24] via-[#244f31] to-[#0f2416]"}`} text-white`}
+            style={getSlideBackgroundStyle(slide.bgColor, slide.fullWidthBanner)}
+            className={`relative w-full shrink-0 overflow-hidden ${getSlideBackgroundClass(slide.bgColor, slide.fullWidthBanner)} text-white`}
           >
             {slide.fullWidthBanner ? (
               <a
@@ -58,7 +90,14 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                       }}
                       className="size-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-[#17231b]/75 backdrop-blur-xxs" />
+                    <div
+                      className="absolute inset-0 backdrop-blur-xxs"
+                      style={{
+                        backgroundColor: slide.bgColor && (slide.bgColor.startsWith("#") || slide.bgColor.startsWith("rgb"))
+                          ? `${slide.bgColor}cc`
+                          : "rgba(23, 35, 27, 0.75)"
+                      }}
+                    />
                   </div>
                 )}
 

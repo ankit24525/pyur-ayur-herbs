@@ -798,6 +798,9 @@ export default function AdminDashboard() {
 
   // CMS slide states
   const [editingSlide, setEditingSlide] = useState<any>(null);
+  const [bgColorMode, setBgColorMode] = useState<"solid" | "presets" | "customGrad">("solid");
+  const [gradStartColor, setGradStartColor] = useState<string>("#1d3b24");
+  const [gradEndColor, setGradEndColor] = useState<string>("#0f2416");
   const [newSlide, setNewSlide] = useState({
     id: 0,
     title: "",
@@ -807,9 +810,37 @@ export default function AdminDashboard() {
     href: "",
     badge: "",
     image: "",
-    bgColor: "from-[#1d3b24] via-[#244f31] to-[#0f2416]",
+    bgColor: "#1d3b24",
     fullWidthBanner: false,
   });
+
+  const getPreviewBgStyle = (bgColor?: string): React.CSSProperties => {
+    if (!bgColor) return { background: "#1d3b24" };
+    const trimmed = bgColor.trim();
+    if (trimmed.startsWith("#") || trimmed.startsWith("rgb") || trimmed.startsWith("hsl") || trimmed.startsWith("linear-gradient")) {
+      return { background: trimmed };
+    }
+    if (trimmed.includes("from-")) {
+      if (trimmed.includes("#1d3b24")) return { background: "linear-gradient(to right, #1d3b24, #244f31, #0f2416)" };
+      if (trimmed.includes("#2d6b3f")) return { background: "linear-gradient(to right, #2d6b3f, #1d4629, #122c1b)" };
+      if (trimmed.includes("#3e2c1e")) return { background: "linear-gradient(to right, #3e2c1e, #63432b, #2b1d13)" };
+      if (trimmed.includes("#1a365d")) return { background: "linear-gradient(to right, #1a365d, #2a4365, #0f172a)" };
+      return { background: "linear-gradient(to right, #1d3b24, #244f31, #0f2416)" };
+    }
+    return { background: trimmed };
+  };
+
+  const getHexColorValue = (bgColor?: string): string => {
+    if (!bgColor) return "#1d3b24";
+    const trimmed = bgColor.trim();
+    if (/^#[0-9A-F]{6}$/i.test(trimmed)) return trimmed;
+    if (/^#[0-9A-F]{3}$/i.test(trimmed)) {
+      return `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}`;
+    }
+    const match = trimmed.match(/#([0-9a-f]{6})/i);
+    if (match) return `#${match[1]}`;
+    return "#1d3b24";
+  };
 
   const isFetchingRef = useRef(false);
 
@@ -6529,19 +6560,202 @@ export default function AdminDashboard() {
                                   />
                                 </div>
                               </div>
-                              <div>
-                                <label className="block font-bold mb-1">Background Gradient Presets (Standard Layout Only)</label>
-                                <select
-                                  value={newSlide.bgColor}
-                                  onChange={(e) => setNewSlide({ ...newSlide, bgColor: e.target.value })}
-                                  className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white disabled:opacity-50"
-                                  disabled={newSlide.fullWidthBanner}
-                                >
-                                  <option value="from-[#1d3b24] via-[#244f31] to-[#0f2416]">Ayurvedic Deep Forest Green</option>
-                                  <option value="from-[#2d6b3f] via-[#1d4629] to-[#122c1b]">Monsoon Herb Green</option>
-                                  <option value="from-[#3e2c1e] via-[#63432b] to-[#2b1d13]">Kumkumadi Amber Spice</option>
-                                  <option value="from-[#1a365d] via-[#2a4365] to-[#1A365D]">Calming BP Blue</option>
-                                </select>
+                              {/* Slide Background Color & Gradient Editor */}
+                              <div className="bg-[#f8faf1] border border-[#ddddd9] p-4 rounded-2xl space-y-3 shadow-xs">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div>
+                                    <label className="block font-bold text-xs text-[#17231b]">Slide Background Color / Styling</label>
+                                    <span className="text-[10px] text-[#666666]">Customize the banner backdrop color (visible behind text & on desktop layout).</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-gray-500">Live Preview:</span>
+                                    <div 
+                                      className="h-6 w-16 rounded-md border border-gray-300 shadow-inner flex items-center justify-center text-[9px] font-black text-white px-1 truncate"
+                                      style={getPreviewBgStyle(newSlide.bgColor)}
+                                    >
+                                      Sample
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Mode Selection Tabs */}
+                                <div className="flex flex-wrap items-center gap-1.5 border-b border-[#ddddd9] pb-2 text-[11px]">
+                                  <button
+                                    type="button"
+                                    onClick={() => setBgColorMode("solid")}
+                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "solid" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
+                                  >
+                                    🎨 Solid Color & Palette
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setBgColorMode("presets")}
+                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "presets" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
+                                  >
+                                    ✨ Theme Presets
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setBgColorMode("customGrad")}
+                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "customGrad" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
+                                  >
+                                    🌈 Custom 2-Color Gradient
+                                  </button>
+                                </div>
+
+                                {/* Mode 1: Solid Color & Swatches */}
+                                {bgColorMode === "solid" && (
+                                  <div className="space-y-3 pt-1">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                      <label className="flex items-center gap-2 cursor-pointer bg-white border border-[#ddddd9] px-2.5 py-1.5 rounded-xl hover:border-[#244f31] transition shadow-xs">
+                                        <input
+                                          type="color"
+                                          value={getHexColorValue(newSlide.bgColor)}
+                                          onChange={(e) => setNewSlide({ ...newSlide, bgColor: e.target.value })}
+                                          className="size-7 rounded-lg cursor-pointer border-0 bg-transparent"
+                                        />
+                                        <span className="text-[11px] font-bold text-[#17231b]">Pick Custom Color</span>
+                                      </label>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] font-bold text-gray-500">Hex Code:</span>
+                                        <input
+                                          type="text"
+                                          value={newSlide.bgColor.startsWith("#") ? newSlide.bgColor : getHexColorValue(newSlide.bgColor)}
+                                          onChange={(e) => setNewSlide({ ...newSlide, bgColor: e.target.value })}
+                                          placeholder="#1d3b24"
+                                          className="w-28 rounded-xl border border-[#ddddd9] p-1.5 outline-none focus:border-[#244f31] bg-white font-mono text-xs uppercase"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <span className="block text-[10px] font-bold text-gray-500 mb-1.5">Popular Ayurvedic & Brand Swatches:</span>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {[
+                                          { name: "Deep Forest", hex: "#1d3b24" },
+                                          { name: "Vaidya Emerald", hex: "#14532d" },
+                                          { name: "Pine Teal", hex: "#064e3b" },
+                                          { name: "Amber Kumkumadi", hex: "#3e2c1e" },
+                                          { name: "Saffron Spice", hex: "#78350f" },
+                                          { name: "Golden Turmeric", hex: "#b45309" },
+                                          { name: "Herbal Jamun", hex: "#701a75" },
+                                          { name: "Royal Indigo", hex: "#1e3a8a" },
+                                          { name: "Midnight Charcoal", hex: "#0f172a" },
+                                          { name: "Pure Obsidian", hex: "#0a0a0a" },
+                                        ].map((swatch) => (
+                                          <button
+                                            key={swatch.hex}
+                                            type="button"
+                                            onClick={() => setNewSlide({ ...newSlide, bgColor: swatch.hex })}
+                                            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold transition ${
+                                              newSlide.bgColor?.toLowerCase() === swatch.hex.toLowerCase()
+                                                ? "border-[#244f31] ring-2 ring-[#244f31]/30 bg-emerald-50"
+                                                : "border-[#ddddd9] bg-white hover:bg-gray-50"
+                                            }`}
+                                          >
+                                            <span className="size-3 rounded-full shrink-0 border border-black/10" style={{ backgroundColor: swatch.hex }} />
+                                            <span>{swatch.name}</span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Mode 2: Presets */}
+                                {bgColorMode === "presets" && (
+                                  <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
+                                    {[
+                                      { name: "Deep Forest Green", value: "from-[#1d3b24] via-[#244f31] to-[#0f2416]", preview: "linear-gradient(to right, #1d3b24, #244f31, #0f2416)" },
+                                      { name: "Monsoon Herb Green", value: "from-[#2d6b3f] via-[#1d4629] to-[#122c1b]", preview: "linear-gradient(to right, #2d6b3f, #1d4629, #122c1b)" },
+                                      { name: "Kumkumadi Amber Spice", value: "from-[#3e2c1e] via-[#63432b] to-[#2b1d13]", preview: "linear-gradient(to right, #3e2c1e, #63432b, #2b1d13)" },
+                                      { name: "Calming BP Ocean", value: "from-[#1a365d] via-[#2a4365] to-[#0f172a]", preview: "linear-gradient(to right, #1a365d, #2a4365, #0f172a)" },
+                                      { name: "Saffron Sunrise Gold", value: "linear-gradient(135deg, #78350f 0%, #b45309 50%, #451a03 100%)", preview: "linear-gradient(135deg, #78350f 0%, #b45309 50%, #451a03 100%)" },
+                                      { name: "Royal Ayurvedic Violet", value: "linear-gradient(135deg, #4c1d95 0%, #581c87 50%, #1e1b4b 100%)", preview: "linear-gradient(135deg, #4c1d95 0%, #581c87 50%, #1e1b4b 100%)" },
+                                      { name: "Crimson Ayurvedic Ruby", value: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #450a0a 100%)", preview: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #450a0a 100%)" },
+                                      { name: "Midnight Luxury Black", value: "linear-gradient(135deg, #09090b 0%, #18181b 50%, #030712 100%)", preview: "linear-gradient(135deg, #09090b 0%, #18181b 50%, #030712 100%)" },
+                                    ].map((preset) => (
+                                      <button
+                                        key={preset.name}
+                                        type="button"
+                                        onClick={() => setNewSlide({ ...newSlide, bgColor: preset.value })}
+                                        className={`p-2 rounded-xl border text-left transition ${
+                                          newSlide.bgColor === preset.value
+                                            ? "border-[#244f31] ring-2 ring-[#244f31]/30 bg-emerald-50/40"
+                                            : "border-[#ddddd9] bg-white hover:bg-gray-50"
+                                        }`}
+                                      >
+                                        <div className="h-6 rounded-lg mb-1.5 shadow-xs" style={{ background: preset.preview }} />
+                                        <span className="block font-bold text-[10px] text-[#17231b] truncate">{preset.name}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Mode 3: Custom 2-Color Gradient */}
+                                {bgColorMode === "customGrad" && (
+                                  <div className="space-y-3 pt-1">
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div className="bg-white border border-[#ddddd9] p-2 rounded-xl flex items-center justify-between shadow-xs">
+                                        <span className="text-[11px] font-bold text-[#17231b]">Gradient Start:</span>
+                                        <input
+                                          type="color"
+                                          value={gradStartColor}
+                                          onChange={(e) => {
+                                            setGradStartColor(e.target.value);
+                                            setNewSlide({ ...newSlide, bgColor: `linear-gradient(135deg, ${e.target.value} 0%, ${gradEndColor} 100%)` });
+                                          }}
+                                          className="size-7 rounded cursor-pointer border-0 bg-transparent"
+                                        />
+                                      </div>
+                                      <div className="bg-white border border-[#ddddd9] p-2 rounded-xl flex items-center justify-between shadow-xs">
+                                        <span className="text-[11px] font-bold text-[#17231b]">Gradient End:</span>
+                                        <input
+                                          type="color"
+                                          value={gradEndColor}
+                                          onChange={(e) => {
+                                            setGradEndColor(e.target.value);
+                                            setNewSlide({ ...newSlide, bgColor: `linear-gradient(135deg, ${gradStartColor} 0%, ${e.target.value} 100%)` });
+                                          }}
+                                          className="size-7 rounded cursor-pointer border-0 bg-transparent"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between bg-white border border-[#ddddd9] p-2 rounded-xl text-[10px]">
+                                      <span className="font-mono text-gray-500 truncate flex-1">{newSlide.bgColor}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setNewSlide({ ...newSlide, bgColor: `linear-gradient(135deg, ${gradStartColor} 0%, ${gradEndColor} 100%)` })}
+                                        className="ml-2 px-3 py-1 bg-[#244f31] text-white rounded-lg font-bold hover:bg-[#1c3e26]"
+                                      >
+                                        Apply
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Full Mini Banner Preview */}
+                                <div className="rounded-xl border border-[#ddddd9] overflow-hidden shadow-xs">
+                                  <div 
+                                    className="p-3.5 flex items-center justify-between transition-all"
+                                    style={getPreviewBgStyle(newSlide.bgColor)}
+                                  >
+                                    <div className="text-white space-y-0.5 max-w-[75%]">
+                                      <span className="inline-block bg-[#80a03c] text-white text-[8px] font-bold px-1.5 py-0.2 rounded-full uppercase">
+                                        {newSlide.badge || "BADGE"}
+                                      </span>
+                                      <div className="font-black text-xs leading-tight line-clamp-1">
+                                        {newSlide.title || "Slide Title Preview"}
+                                      </div>
+                                      <div className="text-[9px] text-white/80 line-clamp-1">
+                                        {newSlide.subtitle || "Slide caption description preview"}
+                                      </div>
+                                    </div>
+                                    <div className="px-2.5 py-1 bg-white/20 text-white rounded text-[9px] font-bold shrink-0 border border-white/30 shadow-xs">
+                                      {newSlide.ctaText || "SHOP NOW"}
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -6661,6 +6875,7 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => {
+                              setBgColorMode("solid");
                               setNewSlide({
                                 id: 0,
                                 title: "",
@@ -6670,7 +6885,7 @@ export default function AdminDashboard() {
                                 href: "#shop",
                                 badge: "NEW",
                                 image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80",
-                                bgColor: "from-[#1d3b24] via-[#244f31] to-[#0f2416]",
+                                bgColor: "#1d3b24",
                                 fullWidthBanner: false
                               });
                               setEditingSlide("new");
@@ -6711,8 +6926,15 @@ export default function AdminDashboard() {
                                       )}
                                     </td>
                                     <td className="p-3">
-                                      <div className="font-bold text-[#17231b]">{slide.title}</div>
-                                      <div className="text-[10px] text-[#666666] line-clamp-1">{slide.subtitle}</div>
+                                      <div className="flex items-center gap-2">
+                                        <span
+                                          className="w-4 h-4 rounded-full border border-black/10 shadow-xs shrink-0"
+                                          style={getPreviewBgStyle(slide.bgColor || "#1d3b24")}
+                                          title={`Background: ${slide.bgColor || "#1d3b24"}`}
+                                        />
+                                        <div className="font-bold text-[#17231b]">{slide.title}</div>
+                                      </div>
+                                      <div className="text-[10px] text-[#666666] line-clamp-1 ml-6">{slide.subtitle}</div>
                                     </td>
                                     <td className="p-3 text-center">
                                       <div className="flex items-center justify-center gap-1">
@@ -6773,7 +6995,15 @@ export default function AdminDashboard() {
                                         <button
                                           type="button"
                                           onClick={() => {
-                                            setNewSlide({ fullWidthBanner: false, ...slide });
+                                            const slideBg = slide.bgColor || "#1d3b24";
+                                            if (slideBg.startsWith("linear-gradient")) {
+                                              setBgColorMode("customGrad");
+                                            } else if (slideBg.includes("from-")) {
+                                              setBgColorMode("presets");
+                                            } else {
+                                              setBgColorMode("solid");
+                                            }
+                                            setNewSlide({ fullWidthBanner: false, ...slide, bgColor: slideBg });
                                             setEditingSlide(slide);
                                           }}
                                           className="text-[#244f31] font-bold hover:underline"

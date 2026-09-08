@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET() {
   try {
@@ -14,14 +15,23 @@ export async function GET() {
         dbName: process.env.MONGODB_DB || "pure_ayur_herbs",
       },
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("[GET /api/admin/all Error]:", error);
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch((err) => {
+      console.error("[/api/admin/all JSON Parse Error]:", err);
+      return null;
+    });
+
+    if (!body) {
+      return NextResponse.json({ success: false, error: "Invalid JSON body or payload exceeded size limit." }, { status: 400 });
+    }
+
     const { action, key, value, data } = body;
     const db = await readDB();
 
@@ -65,7 +75,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: false, error: "Invalid action parameters." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("[POST /api/admin/all Error]:", error?.message || error);
+    return NextResponse.json({ success: false, error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }

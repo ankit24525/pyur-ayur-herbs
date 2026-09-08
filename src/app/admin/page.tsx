@@ -1000,7 +1000,9 @@ export default function AdminDashboard() {
             localStorage.setItem("pyur_admin_products_backup", JSON.stringify(value));
           }
           window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key, value } }));
-        } catch {}
+        } catch (storageErr) {
+          console.warn("Could not write to localStorage cache:", storageErr);
+        }
       }
 
       const res = await fetch("/api/admin/all", {
@@ -1011,12 +1013,19 @@ export default function AdminDashboard() {
       if (res.ok) {
         return true;
       } else {
-        const errData = await res.json().catch(() => ({}));
-        showToast(`Notice: Could not sync ${key} to cloud database: ${errData.error || "Server error"}`);
+        let errorMsg = "Server error";
+        try {
+          const errData = await res.json();
+          errorMsg = errData.error || `HTTP ${res.status}: ${res.statusText || "Server error"}`;
+        } catch {
+          errorMsg = `HTTP ${res.status}: ${res.statusText || "Server error"}`;
+        }
+        showToast(`Notice: Could not sync ${key} to cloud database: ${errorMsg}`);
         return false;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error saving data to server:", e);
+      showToast(`Notice: Network error while syncing ${key}: ${e?.message || "Check connection"}`);
       return false;
     }
   };
@@ -1329,25 +1338,93 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSlideFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImageFile = (file: File, maxWidth = 1600, maxHeight = 900, quality = 0.82): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = document.createElement("img");
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => resolve(reader.result as string);
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const compressBase64String = (dataUrl: string, maxWidth = 1600, maxHeight = 900, quality = 0.82): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/") || dataUrl.length < 180000) {
+        return resolve(dataUrl);
+      }
+      const img = document.createElement("img");
+      img.onload = () => {
+        try {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  };
+
+  const handleSlideFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewSlide((prev) => ({ ...prev, image: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImageFile(file, 1600, 900, 0.82);
+        setNewSlide((prev) => ({ ...prev, image: compressed }));
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setNewSlide((prev) => ({ ...prev, image: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
-  const handleBlogFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBlogFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewBlog((prev: any) => ({ ...prev, image: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImageFile(file, 1200, 800, 0.82);
+        setNewBlog((prev: any) => ({ ...prev, image: compressed }));
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setNewBlog((prev: any) => ({ ...prev, image: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -1865,7 +1942,18 @@ export default function AdminDashboard() {
       updatedSlides = currentSlides.map((s: any) => s.id === editingSlide.id ? newSlide : s);
     }
 
-    const updatedContent = { ...content, heroSlides: updatedSlides };
+    // Automatically sanitize and compress any large base64 image strings across all slides to keep payload small
+    const sanitizedSlides = await Promise.all(
+      updatedSlides.map(async (s: any) => {
+        if (s.image && typeof s.image === "string" && s.image.startsWith("data:image/") && s.image.length > 180000) {
+          const compressed = await compressBase64String(s.image, 1600, 900, 0.82);
+          return { ...s, image: compressed };
+        }
+        return s;
+      })
+    );
+
+    const updatedContent = { ...content, heroSlides: sanitizedSlides };
 
     // Instantly update dbData so table and preview reflect the new text with zero lag
     setDbData((prev: any) => ({ ...prev, content: updatedContent }));
@@ -6588,7 +6676,13 @@ export default function AdminDashboard() {
                                 activeSlides.map((slide: any, idx: number) => (
                                   <tr key={slide.id} className="hover:bg-[#f8faf1]/20 transition">
                                     <td className="p-3">
-                                      <img src={slide.image} className="h-10 w-20 rounded object-cover border" />
+                                      {slide.image ? (
+                                        <img src={slide.image} alt={slide.title || "Slide"} className="h-10 w-20 rounded object-cover border border-[#ddddd9]" />
+                                      ) : (
+                                        <div className="h-10 w-20 rounded bg-emerald-50 border border-[#ddddd9] flex items-center justify-center text-[10px] text-[#244f31] font-bold">
+                                          No Image
+                                        </div>
+                                      )}
                                     </td>
                                     <td className="p-3">
                                       <div className="font-bold text-[#17231b]">{slide.title}</div>

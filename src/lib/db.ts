@@ -99,6 +99,13 @@ function sanitizeDBData(data: any): DBData {
       sitemapUrl: "",
       robotsTxt: "",
     };
+  } else {
+    if (typeof data.seo.title === "string") {
+      data.seo.title = data.seo.title.replace(/Pyur/gi, "Pure");
+    }
+    if (typeof data.seo.metaDesc === "string") {
+      data.seo.metaDesc = data.seo.metaDesc.replace(/Pyur/gi, "Pure");
+    }
   }
 
   if (!data.settings || typeof data.settings !== "object") {

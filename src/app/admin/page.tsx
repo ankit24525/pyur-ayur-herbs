@@ -921,7 +921,7 @@ export default function AdminDashboard() {
               notifications: [],
               ...(data.marketing || {})
             },
-            content: {
+            content: (activeMenuRef.current === "content" && prev?.content) ? prev.content : {
               announcement: {},
               heroSlides: [],
               consultationBanner: {},
@@ -988,6 +988,9 @@ export default function AdminDashboard() {
 
   const saveKey = async (key: string, value: any) => {
     try {
+      // Optimistic update of local state immediately
+      setDbData((prev: any) => ({ ...prev, [key]: value }));
+
       if (typeof window !== "undefined") {
         try {
           const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
@@ -1006,12 +1009,10 @@ export default function AdminDashboard() {
         body: JSON.stringify({ action: "updateKey", key, value }),
       });
       if (res.ok) {
-        const resData = await res.json().catch(() => ({}));
-        setDbData((prev: any) => ({ ...prev, [key]: value }));
         return true;
       } else {
         const errData = await res.json().catch(() => ({}));
-        alert(`Notice: Could not sync ${key} to cloud database: ${errData.error || "Server error"}`);
+        showToast(`Notice: Could not sync ${key} to cloud database: ${errData.error || "Server error"}`);
         return false;
       }
     } catch (e) {
@@ -1841,9 +1842,13 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSaveCMSContent = async (updatedContent: any) => {
-    await saveKey("content", updatedContent);
-    alert("Storefront CMS configuration saved successfully!");
+  const handleSaveCMSContent = async (updatedContent: any, showNotification = false) => {
+    setDbData((prev: any) => ({ ...prev, content: updatedContent }));
+    const success = await saveKey("content", updatedContent);
+    if (showNotification && success) {
+      showToast("Storefront CMS configuration saved successfully!");
+    }
+    return success;
   };
 
   const handleSaveSlide = async (e: React.FormEvent) => {
@@ -1861,7 +1866,11 @@ export default function AdminDashboard() {
     }
 
     const updatedContent = { ...content, heroSlides: updatedSlides };
-    await handleSaveCMSContent(updatedContent);
+
+    // Instantly update dbData so table and preview reflect the new text with zero lag
+    setDbData((prev: any) => ({ ...prev, content: updatedContent }));
+
+    // Instantly close modal & reset input fields
     setEditingSlide(null);
     setNewSlide({
       id: 0,
@@ -1875,6 +1884,9 @@ export default function AdminDashboard() {
       bgColor: "from-[#1d3b24] via-[#244f31] to-[#0f2416]",
       fullWidthBanner: false
     });
+
+    showToast(editingSlide === "new" ? "Hero Slide created successfully!" : "Hero Slide updated successfully!");
+    await saveKey("content", updatedContent);
   };
 
   const handleDeleteSlide = async (slideId: number) => {
@@ -1883,7 +1895,9 @@ export default function AdminDashboard() {
       const currentSlides = content.heroSlides || [];
       const updatedSlides = currentSlides.filter((s: any) => s.id !== slideId);
       const updatedContent = { ...content, heroSlides: updatedSlides };
-      await handleSaveCMSContent(updatedContent);
+      setDbData((prev: any) => ({ ...prev, content: updatedContent }));
+      showToast("Hero Slide deleted successfully!");
+      await saveKey("content", updatedContent);
     }
   };
 
@@ -6591,7 +6605,9 @@ export default function AdminDashboard() {
                                             slides[idx] = slides[idx - 1];
                                             slides[idx - 1] = temp;
                                             const updated = { ...content, heroSlides: slides };
-                                            await handleSaveCMSContent(updated);
+                                            setDbData((prev: any) => ({ ...prev, content: updated }));
+                                            showToast("Slide order updated!");
+                                            await saveKey("content", updated);
                                           }}
                                           className="p-1 border border-[#ddddd9] bg-white hover:bg-gray-50 disabled:opacity-40 rounded"
                                         >
@@ -6606,7 +6622,9 @@ export default function AdminDashboard() {
                                             slides[idx] = slides[idx + 1];
                                             slides[idx + 1] = temp;
                                             const updated = { ...content, heroSlides: slides };
-                                            await handleSaveCMSContent(updated);
+                                            setDbData((prev: any) => ({ ...prev, content: updated }));
+                                            showToast("Slide order updated!");
+                                            await saveKey("content", updated);
                                           }}
                                           className="p-1 border border-[#ddddd9] bg-white hover:bg-gray-50 disabled:opacity-40 rounded"
                                         >

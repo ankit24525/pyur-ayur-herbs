@@ -278,9 +278,11 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                 <span>{product.rating || 5.0}</span>
                 <span className="text-[#666666]">| {product.reviews || 0} Verified Ratings</span>
               </div>
-              <div className="inline-flex items-center gap-1 rounded-full bg-[#fff6d9] px-3 py-1 text-xs font-bold text-[#6b5700]">
-                <span>Earn 🪙 {(Number(product.coins) || 50) * quantity} Pure Coins</span>
-              </div>
+              {product.showCoins !== false && Number(product.coins || 0) > 0 && (
+                <div className="inline-flex items-center gap-1 rounded-full bg-[#fff6d9] px-3 py-1 text-xs font-bold text-[#6b5700]">
+                  <span>Earn 🪙 {Number(product.coins) * quantity} Pure Coins</span>
+                </div>
+              )}
             </div>
 
             {/* Price Box */}
@@ -414,7 +416,8 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                     image: product.image,
                     ingredients: ingredients.map((i) => i.name),
                     description: product.description || "",
-                    coinsEarned: Number(product.coins) || 50,
+                    coinsEarned: product.showCoins !== false ? Number(product.coins || 0) : 0,
+                    showCoins: product.showCoins !== false && Number(product.coins || 0) > 0,
                     deliveryDays: "3 - 5 Days",
                     inStock: true,
                   });

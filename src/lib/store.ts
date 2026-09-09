@@ -13,6 +13,7 @@ export type Product = {
   ingredients: string[];
   description: string;
   coinsEarned: number;
+  showCoins?: boolean;
   deliveryDays: string;
   inStock: boolean;
 };

@@ -60,14 +60,16 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
           </span>
         </div>
 
-        {/* Pure Coins Pill */}
-        <div className="mt-2.5 inline-flex w-fit items-center gap-1 rounded-full bg-[#eef5df] px-2.5 py-1 text-[11px] font-bold text-[#244f31]">
-          <span>Earn</span>
-          <span className="flex size-4 items-center justify-center rounded-full bg-[#f2c94c] text-[10px] text-black">
-            🪙
-          </span>
-          <span>{product.coinsEarned} Coins</span>
-        </div>
+        {/* Pure Coins Pill (Only shown if coins are enabled and > 0) */}
+        {product.showCoins !== false && Number(product.coinsEarned || 0) > 0 && (
+          <div className="mt-2.5 inline-flex w-fit items-center gap-1 rounded-full bg-[#eef5df] px-2.5 py-1 text-[11px] font-bold text-[#244f31]">
+            <span>Earn</span>
+            <span className="flex size-4 items-center justify-center rounded-full bg-[#f2c94c] text-[10px] text-black">
+              🪙
+            </span>
+            <span>{product.coinsEarned} Coins</span>
+          </div>
+        )}
 
         {/* Delivery ETA Tag */}
         <div className="mt-2 flex items-center gap-1.5 rounded bg-[#f8faf1] px-2 py-1 text-[10px] font-medium text-[#666666]">

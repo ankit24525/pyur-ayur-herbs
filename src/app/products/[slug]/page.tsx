@@ -98,7 +98,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       price,
       mrp,
       discount: badge,
-      coins: Number(matchedProduct.coinsEarned || matchedProduct.coins) || Math.round(price * 0.05),
+      coins: matchedProduct.showCoins === false
+        ? 0
+        : (matchedProduct.coinsEarned !== undefined ? Number(matchedProduct.coinsEarned) : (Number(matchedProduct.coins) || Math.round(price * 0.05))),
+      showCoins: matchedProduct.showCoins !== false && (
+        matchedProduct.coinsEarned !== undefined ? Number(matchedProduct.coinsEarned) > 0 : true
+      ),
       tag: matchedProduct.tag || "100% Certified Ayurvedic",
       description: matchedProduct.description || "Authentic Ayurvedic formula formulated with potent natural herbs.",
       variants: matchedProduct.variants && matchedProduct.variants.length > 0 ? matchedProduct.variants : [

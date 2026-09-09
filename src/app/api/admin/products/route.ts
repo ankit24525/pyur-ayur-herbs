@@ -24,7 +24,8 @@ export async function POST(request: Request) {
       image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80",
       ingredients: body.ingredients ? body.ingredients.split(",") : ["Natural herbs"],
       description: body.description || "",
-      coinsEarned: Math.round(parseFloat(body.price) * 0.05),
+      coinsEarned: body.coinsEarned !== undefined ? (parseInt(String(body.coinsEarned), 10) || 0) : Math.round(parseFloat(body.price) * 0.05),
+      showCoins: body.showCoins !== undefined ? Boolean(body.showCoins) : true,
       deliveryDays: "3 - 5 Days",
       inStock: true,
     };

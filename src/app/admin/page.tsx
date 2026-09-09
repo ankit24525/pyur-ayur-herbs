@@ -725,6 +725,8 @@ export default function AdminDashboard() {
     description: "",
     image: "",
     images: [] as string[],
+    coinsEarned: "",
+    showCoins: true,
   });
 
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -1186,13 +1188,18 @@ export default function AdminDashboard() {
       .replace(/rs\.?|₹|[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || `product-${Date.now()}`;
 
+    const parsedPrice = parseFloat(newProduct.price) || 0;
+    const defaultCoins = Math.round(parsedPrice * 0.05);
+    const coinsEarned = newProduct.coinsEarned !== "" ? (parseInt(String(newProduct.coinsEarned), 10) || 0) : defaultCoins;
+    const showCoins = Boolean(newProduct.showCoins && coinsEarned > 0);
+
     const prod = {
       id: uniqueId,
       name: newProduct.name.trim(),
       slug: cleanSlug,
       concern: newProduct.concern || "Sugar Management",
-      price: parseFloat(newProduct.price) || 0,
-      compareAt: parseFloat(newProduct.compareAt) || (parseFloat(newProduct.price) || 0) * 1.2,
+      price: parsedPrice,
+      compareAt: parseFloat(newProduct.compareAt) || parsedPrice * 1.2,
       rating: 5.0,
       reviews: 0,
       badge: newProduct.badge || "NEW",
@@ -1200,7 +1207,8 @@ export default function AdminDashboard() {
       images: newProduct.images || [],
       ingredients: newProduct.ingredients ? newProduct.ingredients.split(",").map((i: string) => i.trim()) : ["Herbal Extract"],
       description: newProduct.description || "Premium Ayurvedic wellness support.",
-      coinsEarned: Math.round((parseFloat(newProduct.price) || 0) * 0.05),
+      coinsEarned: coinsEarned,
+      showCoins: showCoins,
       deliveryDays: "3 - 5 Days",
       inStock: true,
       sku: "PAH-" + newProduct.name.toUpperCase().replace(/[^A-Z0-9]+/g, "-") + "-" + Math.floor(100 + Math.random() * 900),
@@ -1210,7 +1218,20 @@ export default function AdminDashboard() {
 
     const updated = [...(dbData.products || []), prod];
     setDbData((prev: any) => ({ ...prev, products: updated }));
-    setNewProduct({ name: "", slug: "", concern: "Sugar Management", price: "", compareAt: "", badge: "NEW", ingredients: "", description: "", image: "", images: [] });
+    setNewProduct({
+      name: "",
+      slug: "",
+      concern: "Sugar Management",
+      price: "",
+      compareAt: "",
+      badge: "NEW",
+      ingredients: "",
+      description: "",
+      image: "",
+      images: [],
+      coinsEarned: "",
+      showCoins: true,
+    });
     setSubTab("all");
     showToast("🎉 New product added to catalog successfully!");
     await saveKey("products", updated);
@@ -1315,17 +1336,25 @@ export default function AdminDashboard() {
       .replace(/rs\.?|₹|[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || `product-${editingProduct.id}`;
 
+    const parsedPrice = parseFloat(editingProduct.price) || 0;
+    const defaultCoins = Math.round(parsedPrice * 0.05);
+    const parsedCoins = editingProduct.coinsEarned !== "" && editingProduct.coinsEarned !== undefined
+      ? (parseInt(String(editingProduct.coinsEarned), 10) || 0)
+      : defaultCoins;
+    const showCoins = Boolean(editingProduct.showCoins && parsedCoins > 0);
+
     const updated = (dbData.products || []).map((p: any) =>
       p.id === editingProduct.id
         ? {
             ...editingProduct,
             slug: cleanSlug,
-            price: parseFloat(editingProduct.price) || 0,
-            compareAt: parseFloat(editingProduct.compareAt) || (parseFloat(editingProduct.price) || 0) * 1.2,
+            price: parsedPrice,
+            compareAt: parseFloat(editingProduct.compareAt) || parsedPrice * 1.2,
             ingredients: typeof editingProduct.ingredients === "string" 
               ? editingProduct.ingredients.split(",").map((i: string) => i.trim()) 
               : editingProduct.ingredients,
-            coinsEarned: Math.round((parseFloat(editingProduct.price) || 0) * 0.05),
+            coinsEarned: parsedCoins,
+            showCoins: showCoins,
           }
         : p
     );
@@ -4321,7 +4350,7 @@ export default function AdminDashboard() {
                             <div className="flex-1">
                               <h4 className="text-xs font-bold text-[#17231b] line-clamp-1">{prod.name}</h4>
                               <span className="text-[10px] text-[#666666]">{prod.concern}</span>
-                              <div className="mt-1 flex items-baseline gap-2">
+                              <div className="mt-1 flex flex-wrap items-center gap-2">
                                 <span className="text-xs font-black text-[#244f31]">₹{prod.price}</span>
                                 <span className="text-[10px] line-through text-[#666666]">₹{prod.compareAt}</span>
                                 {prod.sku && (
@@ -4329,12 +4358,23 @@ export default function AdminDashboard() {
                                     {prod.sku}
                                   </span>
                                 )}
+                                {prod.showCoins !== false && Number(prod.coinsEarned ?? 50) > 0 ? (
+                                  <span className="text-[9px] bg-[#fff6d9] text-[#7a6400] font-bold px-1.5 py-0.5 rounded border border-[#fae49d] inline-flex items-center gap-0.5">
+                                    🪙 {prod.coinsEarned ?? Math.round((prod.price || 0) * 0.05)} Coins
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] bg-gray-100 text-gray-500 font-medium px-1.5 py-0.5 rounded border border-gray-200">
+                                    Coins Hidden
+                                  </span>
+                                )}
                               </div>
                               <div className="mt-2.5 flex items-center gap-2">
                                 <button
                                   onClick={() => setEditingProduct({
                                     ...prod,
-                                    ingredients: Array.isArray(prod.ingredients) ? prod.ingredients.join(", ") : (prod.ingredients || "")
+                                    ingredients: Array.isArray(prod.ingredients) ? prod.ingredients.join(", ") : (prod.ingredients || ""),
+                                    showCoins: prod.showCoins !== false && (prod.coinsEarned === undefined || Number(prod.coinsEarned) > 0),
+                                    coinsEarned: prod.coinsEarned !== undefined ? prod.coinsEarned : Math.round((parseFloat(prod.price) || 0) * 0.05),
                                   })}
                                   className="rounded border border-[#244f31] px-2.5 py-1 text-[10px] font-bold text-[#244f31] hover:bg-[#244f31] hover:text-white transition"
                                 >
@@ -4427,6 +4467,73 @@ export default function AdminDashboard() {
                               className="mt-1 w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31]"
                             />
                           </div>
+                        </div>
+
+                        {/* Pure Coins Configuration */}
+                        <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-3.5 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="block text-xs font-bold text-[#17231b] flex items-center gap-1.5">
+                                <span>🪙 Pure Coins Reward</span>
+                              </span>
+                              <span className="text-[10px] text-[#666666]">
+                                Award loyalty coins to customer upon purchasing this product
+                              </span>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={editingProduct.showCoins !== false}
+                                onChange={(e) => setEditingProduct({ ...editingProduct, showCoins: e.target.checked })}
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#244f31]"></div>
+                              <span className="ml-2 text-xs font-bold text-[#17231b]">
+                                {editingProduct.showCoins !== false ? "Coins Enabled" : "Coins Hidden"}
+                              </span>
+                            </label>
+                          </div>
+
+                          {editingProduct.showCoins !== false ? (
+                            <div className="pt-2 border-t border-[#ddddd9] grid gap-3 sm:grid-cols-2 items-center">
+                              <div>
+                                <label className="block text-xs font-bold text-[#17231b]">Coins Amount (per unit)</label>
+                                <div className="relative mt-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="e.g. 50"
+                                    value={editingProduct.coinsEarned !== undefined ? editingProduct.coinsEarned : ""}
+                                    onChange={(e) => setEditingProduct({ ...editingProduct, coinsEarned: e.target.value })}
+                                    className="w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31] bg-white pr-16"
+                                  />
+                                  <span className="absolute right-2.5 top-2 text-[11px] font-bold text-gray-500">Coins</span>
+                                </div>
+                              </div>
+                              <div className="text-[11px] text-gray-600 bg-white p-2.5 rounded-lg border border-[#ddddd9]">
+                                <div className="font-bold text-[#244f31] flex items-center justify-between">
+                                  <span>Customer Will Earn:</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const p = parseFloat(editingProduct.price) || 0;
+                                      setEditingProduct({ ...editingProduct, coinsEarned: Math.round(p * 0.05) });
+                                    }}
+                                    className="text-[10px] text-[#80a03c] underline hover:text-[#244f31] font-bold cursor-pointer"
+                                  >
+                                    Reset to 5% (₹{Math.round((parseFloat(editingProduct.price) || 0) * 0.05)})
+                                  </button>
+                                </div>
+                                <p className="mt-1 text-[10px] text-[#17231b]">
+                                  🪙 <strong>{Number(editingProduct.coinsEarned || 0)} Pure Coins</strong> displayed on card & product page.
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="pt-2 border-t border-[#ddddd9] text-[11px] text-gray-500 bg-white p-2.5 rounded-lg border border-dashed border-[#ddddd9]">
+                              🚫 <strong>Coins Hidden:</strong> No coin badge or reward points will be shown or awarded to customers for this product.
+                            </div>
+                          )}
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -4639,6 +4746,73 @@ export default function AdminDashboard() {
                           className="mt-1 w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31]"
                         />
                       </div>
+                    </div>
+
+                    {/* Pure Coins Configuration */}
+                    <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="block text-xs font-bold text-[#17231b] flex items-center gap-1.5">
+                            <span>🪙 Pure Coins Reward</span>
+                          </span>
+                          <span className="text-[10px] text-[#666666]">
+                            Award loyalty coins to customer upon purchasing this product
+                          </span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newProduct.showCoins !== false}
+                            onChange={(e) => setNewProduct({ ...newProduct, showCoins: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#244f31]"></div>
+                          <span className="ml-2 text-xs font-bold text-[#17231b]">
+                            {newProduct.showCoins !== false ? "Coins Enabled" : "Coins Hidden"}
+                          </span>
+                        </label>
+                      </div>
+
+                      {newProduct.showCoins !== false ? (
+                        <div className="pt-2 border-t border-[#ddddd9] grid gap-3 sm:grid-cols-2 items-center">
+                          <div>
+                            <label className="block text-xs font-bold text-[#17231b]">Coins Amount (per unit)</label>
+                            <div className="relative mt-1">
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="e.g. 50"
+                                value={newProduct.coinsEarned}
+                                onChange={(e) => setNewProduct({ ...newProduct, coinsEarned: e.target.value })}
+                                className="w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31] bg-white pr-16"
+                              />
+                              <span className="absolute right-2.5 top-2 text-[11px] font-bold text-gray-500">Coins</span>
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-gray-600 bg-white p-2.5 rounded-lg border border-[#ddddd9]">
+                            <div className="font-bold text-[#244f31] flex items-center justify-between">
+                              <span>Customer Will Earn:</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const p = parseFloat(newProduct.price) || 0;
+                                  setNewProduct({ ...newProduct, coinsEarned: String(Math.round(p * 0.05)) });
+                                }}
+                                className="text-[10px] text-[#80a03c] underline hover:text-[#244f31] font-bold cursor-pointer"
+                              >
+                                Auto-calc 5% (₹{Math.round((parseFloat(newProduct.price) || 0) * 0.05)})
+                              </button>
+                            </div>
+                            <p className="mt-1 text-[10px] text-[#17231b]">
+                              🪙 <strong>{Number(newProduct.coinsEarned || Math.round((parseFloat(newProduct.price) || 0) * 0.05))} Pure Coins</strong> displayed on card & product page.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="pt-2 border-t border-[#ddddd9] text-[11px] text-gray-500 bg-white p-2.5 rounded-lg border border-dashed border-[#ddddd9]">
+                          🚫 <strong>Coins Hidden:</strong> No coin badge or reward points will be shown or awarded to customers for this product.
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">

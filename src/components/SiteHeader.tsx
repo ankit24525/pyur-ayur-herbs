@@ -848,7 +848,8 @@ export default function SiteHeader({
                     const quantity = Number(item.quantity) || 1;
                     const price = Number(product.price) || 0;
                     const compareAt = Number(product.compareAt) || Math.round(price * 1.2);
-                    const coinsEarned = Number(product.coinsEarned) || Math.round(price * 0.05);
+                    const isCoinsActive = product.showCoins !== false && (product.coinsEarned !== undefined ? Number(product.coinsEarned) > 0 : true);
+                    const coinsEarned = product.showCoins === false ? 0 : (product.coinsEarned !== undefined ? Number(product.coinsEarned) : Math.round(price * 0.05));
                     const imageSrc = product.image || "/brand/pure-ayur-logo.png";
                     return (
                       <div
@@ -869,9 +870,11 @@ export default function SiteHeader({
                             <h4 className="line-clamp-1 text-xs font-bold text-[#17231b]">
                               {product.name || "Ayurvedic Formulation"}
                             </h4>
-                            <span className="text-[10px] font-semibold text-[#80a03c]">
-                              Earn {coinsEarned * quantity} Pure Coins 🪙
-                            </span>
+                            {isCoinsActive && coinsEarned > 0 && (
+                              <span className="text-[10px] font-semibold text-[#80a03c]">
+                                Earn {coinsEarned * quantity} Pure Coins 🪙
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center justify-between mt-2">
                             <div className="flex items-center gap-1 text-xs font-bold text-[#17231b]">

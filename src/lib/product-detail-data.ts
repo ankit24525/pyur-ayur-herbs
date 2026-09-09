@@ -45,6 +45,7 @@ export type ProductDetail = {
   mrp: number;
   discount: string;
   coins: number;
+  showCoins?: boolean;
   tag: string;
   description: string;
   variants: ProductVariant[];

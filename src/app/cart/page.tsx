@@ -117,14 +117,12 @@ export default function CartPage() {
   const deliveryCharge = isFreeDelivery || subtotal === 0 ? 0 : 99;
   const totalPayable = subtotal + deliveryCharge;
 
-  const totalCoins = validCart.reduce(
-    (acc, item) =>
-      acc +
-      (Number(item.product?.coinsEarned) ||
-        Math.round((Number(item.product?.price) || 0) * 0.05)) *
-        (Number(item.quantity) || 1),
-    0
-  );
+  const totalCoins = validCart.reduce((acc, item) => {
+    const prod = item.product;
+    const isCoinsActive = prod?.showCoins !== false && (prod?.coinsEarned !== undefined ? Number(prod.coinsEarned) > 0 : true);
+    const coins = prod?.showCoins === false ? 0 : (prod?.coinsEarned !== undefined ? Number(prod.coinsEarned) : Math.round((Number(prod?.price) || 0) * 0.05));
+    return acc + (isCoinsActive ? coins * (Number(item.quantity) || 1) : 0);
+  }, 0);
 
   return (
     <div className="min-h-screen bg-[#f8faf1] text-[#17231b] flex flex-col justify-between">
@@ -219,7 +217,8 @@ export default function CartPage() {
                     const quantity = Number(item.quantity) || 1;
                     const price = Number(product.price) || 0;
                     const compareAt = Number(product.compareAt) || Math.round(price * 1.2);
-                    const coinsEarned = Number(product.coinsEarned) || Math.round(price * 0.05);
+                    const isCoinsActive = product.showCoins !== false && (product.coinsEarned !== undefined ? Number(product.coinsEarned) > 0 : true);
+                    const coinsEarned = product.showCoins === false ? 0 : (product.coinsEarned !== undefined ? Number(product.coinsEarned) : Math.round(price * 0.05));
                     const imageSrc = product.image || "/brand/pure-ayur-logo.png";
 
                     return (
@@ -251,10 +250,12 @@ export default function CartPage() {
                                 <Trash2 className="size-4" />
                               </button>
                             </div>
-                            <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-[#80a03c]">
-                              <Sparkles className="size-3" />
-                              Earn {coinsEarned * quantity} Pure Coins 🪙
-                            </p>
+                            {isCoinsActive && coinsEarned > 0 && (
+                              <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-[#80a03c]">
+                                <Sparkles className="size-3" />
+                                Earn {coinsEarned * quantity} Pure Coins 🪙
+                              </p>
+                            )}
                           </div>
 
                           <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">

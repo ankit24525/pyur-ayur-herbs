@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     const host = request.headers.get("host") || "localhost:3000";
     const protocol = host.includes("localhost") ? "http" : "https";
     const origin = `${protocol}://${host}`;
-    const redirectUrl = `${origin}/api/payment/phonepe/callback`;
+    const redirectUrl = `${origin}/api/payment/phonepe/callback?orderId=${orderId}&merchantOrderId=${orderId}`;
 
     console.log(
       `[PhonePe Initiate]: Starting payment for Order ${orderId} (Total: ₹${total}, Mode: ${

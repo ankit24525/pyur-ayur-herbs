@@ -37,6 +37,8 @@ async function handlePaymentCallback(request: Request, isGet: boolean) {
           const decoded = Buffer.from(responseBase64, "base64").toString("utf-8");
           const parsed = JSON.parse(decoded);
           merchantOrderId =
+            parsed.payload?.merchantOrderId ||
+            parsed.payload?.orderId ||
             parsed.data?.merchantTransactionId ||
             parsed.data?.merchantOrderId ||
             parsed.merchantOrderId ||
@@ -50,6 +52,8 @@ async function handlePaymentCallback(request: Request, isGet: boolean) {
       try {
         const body = await request.json();
         merchantOrderId =
+          body.payload?.merchantOrderId ||
+          body.payload?.orderId ||
           body.data?.merchantTransactionId ||
           body.data?.merchantOrderId ||
           body.merchantOrderId ||
@@ -58,6 +62,19 @@ async function handlePaymentCallback(request: Request, isGet: boolean) {
       } catch (e) {
         console.error("[PhonePe Callback POST json parse error]:", e);
       }
+    }
+  }
+
+  const db = await readDB();
+
+  // If merchantOrderId wasn't passed in params, find the most recent pending PhonePe order
+  if (!merchantOrderId) {
+    const pendingOrders = (db.orders || []).filter(
+      (o: any) => o.status === "Pending Payment" && o.method === "PhonePe"
+    );
+    if (pendingOrders.length > 0) {
+      merchantOrderId = pendingOrders[pendingOrders.length - 1].id;
+      console.log("[PhonePe Callback Fallback]: Matched latest pending order:", merchantOrderId);
     }
   }
 
@@ -71,8 +88,6 @@ async function handlePaymentCallback(request: Request, isGet: boolean) {
     }
     return NextResponse.json({ success: false, error: "Order ID missing" }, { status: 400 });
   }
-
-  const db = await readDB();
   const phonepeSettings = db.settings?.phonepe || {};
   const orders = db.orders || [];
   const orderIdx = orders.findIndex((o) => o.id === merchantOrderId);

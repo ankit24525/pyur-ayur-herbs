@@ -383,6 +383,8 @@ function CheckoutForm() {
           email: userEmail,
           subtotal,
           items: [{ productId: product.id, quantity: qty }],
+          appliedCoupon: appliedCoupon?.code,
+          couponDiscount,
         }),
       });
       const resData = await response.json();

@@ -8459,76 +8459,207 @@ export default function AdminDashboard() {
                         />
                       </div>
 
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="block font-bold">Merchant ID (MID)</label>
+                      <div className="flex items-center gap-4 text-xs font-bold bg-[#f8faf1] p-2.5 rounded-xl border border-[#ddddd9]">
+                        <span className="text-[#17231b]">Integration Mode:</span>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer">
                           <input
-                            type="text"
-                            value={dbData.settings.phonepe?.merchantId || ""}
-                            onChange={(e) => setDbData({
+                            type="radio"
+                            name="phonepeVersion"
+                            value="v2"
+                            checked={dbData.settings.phonepe?.version !== "v1"}
+                            onChange={() => setDbData({
                               ...dbData,
                               settings: {
                                 ...dbData.settings,
-                                phonepe: { ...(dbData.settings.phonepe || {}), merchantId: e.target.value }
+                                phonepe: { ...(dbData.settings.phonepe || {}), version: "v2" }
                               }
                             })}
-                            className="mt-1 w-full rounded border p-2"
-                            placeholder="e.g. PGBARCHUPGTEST"
+                            className="accent-[#244f31]"
                           />
-                        </div>
-                        <div>
-                          <label className="block font-bold">Salt Key</label>
+                          <span>PhonePe Standard V2 (Client ID & Secret - Recommended)</span>
+                        </label>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer">
                           <input
-                            type="text"
-                            value={dbData.settings.phonepe?.saltKey || ""}
-                            onChange={(e) => setDbData({
+                            type="radio"
+                            name="phonepeVersion"
+                            value="v1"
+                            checked={dbData.settings.phonepe?.version === "v1"}
+                            onChange={() => setDbData({
                               ...dbData,
                               settings: {
                                 ...dbData.settings,
-                                phonepe: { ...(dbData.settings.phonepe || {}), saltKey: e.target.value }
+                                phonepe: { ...(dbData.settings.phonepe || {}), version: "v1" }
                               }
                             })}
-                            className="mt-1 w-full rounded border p-2"
-                            placeholder="e.g. 099eb0cd-02cf..."
+                            className="accent-[#244f31]"
                           />
-                        </div>
+                          <span>Legacy V1 (Salt Key)</span>
+                        </label>
                       </div>
 
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="block font-bold">Salt Key Index</label>
-                          <input
-                            type="text"
-                            value={dbData.settings.phonepe?.saltIndex || ""}
-                            onChange={(e) => setDbData({
-                              ...dbData,
-                              settings: {
-                                ...dbData.settings,
-                                phonepe: { ...(dbData.settings.phonepe || {}), saltIndex: e.target.value }
-                              }
-                            })}
-                            className="mt-1 w-full rounded border p-2"
-                            placeholder="e.g. 1"
-                          />
+                      {dbData.settings.phonepe?.version !== "v1" ? (
+                        <div className="space-y-3">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <label className="block font-bold">Client ID</label>
+                              <input
+                                type="text"
+                                value={dbData.settings.phonepe?.clientId || dbData.settings.phonepe?.merchantId || ""}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), clientId: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2"
+                                placeholder="e.g. SU2809091756465845858220"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-bold">Client Secret</label>
+                              <input
+                                type="text"
+                                value={dbData.settings.phonepe?.clientSecret || dbData.settings.phonepe?.saltKey || ""}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), clientSecret: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2"
+                                placeholder="e.g. b5b68ea8-e763-4066-b64a..."
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-3">
+                            <div>
+                              <label className="block font-bold">Merchant ID (MID)</label>
+                              <input
+                                type="text"
+                                value={dbData.settings.phonepe?.merchantId || ""}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), merchantId: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2"
+                                placeholder="e.g. M22PKK6XIX8PE"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-bold">Client Version</label>
+                              <input
+                                type="text"
+                                value={dbData.settings.phonepe?.clientVersion || "1"}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), clientVersion: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2"
+                                placeholder="1"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-bold">Gateway Environment</label>
+                              <select
+                                value={dbData.settings.phonepe?.env || "sandbox"}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), env: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2 bg-white"
+                              >
+                                <option value="sandbox">Sandbox (Testing)</option>
+                                <option value="production">Production (Live)</option>
+                              </select>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <label className="block font-bold">Gateway Environment</label>
-                          <select
-                            value={dbData.settings.phonepe?.env || "sandbox"}
-                            onChange={(e) => setDbData({
-                              ...dbData,
-                              settings: {
-                                ...dbData.settings,
-                                phonepe: { ...(dbData.settings.phonepe || {}), env: e.target.value }
-                              }
-                            })}
-                            className="mt-1 w-full rounded border p-2 bg-white"
-                          >
-                            <option value="sandbox">Sandbox (Testing)</option>
-                            <option value="production">Production (Live)</option>
-                          </select>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <label className="block font-bold">Merchant ID (MID)</label>
+                              <input
+                                type="text"
+                                value={dbData.settings.phonepe?.merchantId || ""}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), merchantId: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2"
+                                placeholder="e.g. PGBARCHUPGTEST"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-bold">Salt Key</label>
+                              <input
+                                type="text"
+                                value={dbData.settings.phonepe?.saltKey || ""}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), saltKey: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2"
+                                placeholder="e.g. 099eb0cd-02cf..."
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <label className="block font-bold">Salt Key Index</label>
+                              <input
+                                type="text"
+                                value={dbData.settings.phonepe?.saltIndex || "1"}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), saltIndex: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2"
+                                placeholder="e.g. 1"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-bold">Gateway Environment</label>
+                              <select
+                                value={dbData.settings.phonepe?.env || "sandbox"}
+                                onChange={(e) => setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    phonepe: { ...(dbData.settings.phonepe || {}), env: e.target.value }
+                                  }
+                                })}
+                                className="mt-1 w-full rounded border p-2 bg-white"
+                              >
+                                <option value="sandbox">Sandbox (Testing)</option>
+                                <option value="production">Production (Live)</option>
+                              </select>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     <button

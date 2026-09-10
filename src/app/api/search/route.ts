@@ -1,36 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
-import { products } from "@/lib/store";
+import { readDB } from "@/lib/db";
 
-const suggestionTerms: Record<string, string[]> = {
-  energy: ["amla", "ashwagandha", "immunity"],
-  heart: ["amla", "skin", "immunity"],
-  gym: ["ashwagandha", "triphala", "digestion"],
-};
+export const dynamic = "force-dynamic";
 
-export function GET(request: NextRequest) {
-  const query = request.nextUrl.searchParams.get("q")?.trim().toLowerCase() ?? "";
-  const terms = [query, ...(suggestionTerms[query] ?? [])].filter(Boolean);
-  const matches = products.filter((product) => {
-    const haystack = [
-      product.name,
-      product.concern,
-      product.badge,
-      ...product.ingredients,
-    ].join(" ").toLowerCase();
+export async function GET(request: NextRequest) {
+  try {
+    const query = request.nextUrl.searchParams.get("q")?.trim().toLowerCase() ?? "";
+    const db = await readDB();
+    const products = Array.isArray(db.products) ? db.products : [];
 
-    return !terms.length || terms.some((term) => haystack.includes(term));
-  });
+    if (!query) {
+      return NextResponse.json({
+        query: "",
+        results: products.slice(0, 10).map(({ id, name, slug, concern, price, compareAt, image, inStock }: any) => ({
+          id,
+          name,
+          slug: slug || id,
+          concern,
+          price,
+          compareAt,
+          image,
+          inStock: inStock !== false,
+        })),
+      });
+    }
 
-  const results = (matches.length ? matches : products).slice(0, 5);
+    const terms = query.split(/\s+/).filter(Boolean);
 
-  return NextResponse.json({
-    query,
-    results: results.map(({ name, slug, concern, price, image }) => ({
-      name,
-      slug,
-      concern,
-      price,
-      image,
-    })),
-  });
+    const matches = products.filter((product: any) => {
+      const name = (product.name || "").toLowerCase();
+      const concern = (product.concern || "").toLowerCase();
+      const desc = (product.description || "").toLowerCase();
+      const badge = (product.badge || "").toLowerCase();
+      const ingr = Array.isArray(product.ingredients)
+        ? product.ingredients.join(" ").toLowerCase()
+        : String(product.ingredients || "").toLowerCase();
+
+      const haystack = `${name} ${concern} ${desc} ${badge} ${ingr}`;
+      return terms.every((term) => haystack.includes(term));
+    });
+
+    return NextResponse.json({
+      query,
+      results: matches.map(({ id, name, slug, concern, price, compareAt, image, inStock }: any) => ({
+        id,
+        name,
+        slug: slug || id,
+        concern,
+        price,
+        compareAt,
+        image,
+        inStock: inStock !== false,
+      })),
+    });
+  } catch (error: any) {
+    console.error("Search API Error:", error);
+    return NextResponse.json({ query: "", results: [] }, { status: 500 });
+  }
 }

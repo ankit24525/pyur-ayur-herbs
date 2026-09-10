@@ -127,6 +127,67 @@ export default function SiteHeader({
       .catch(() => {});
   }, [initialProducts]);
 
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Rotating placeholder suggestions every 2.8s
+  useEffect(() => {
+    if (!headerSearchSuggestions || headerSearchSuggestions.length === 0) return;
+    const interval = setInterval(() => {
+      setSuggestionIdx((prev) => (prev + 1) % headerSearchSuggestions.length);
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Instant client-side search across catalog
+  useEffect(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const terms = q.split(/\s+/).filter(Boolean);
+    const matches = (catalog || []).filter((product) => {
+      const name = (product.name || "").toLowerCase();
+      const concern = (product.concern || "").toLowerCase();
+      const desc = (product.description || "").toLowerCase();
+      const badge = (product.badge || "").toLowerCase();
+      const ingr = Array.isArray(product.ingredients)
+        ? product.ingredients.join(" ").toLowerCase()
+        : String(product.ingredients || "").toLowerCase();
+
+      const haystack = `${name} ${concern} ${desc} ${badge} ${ingr}`;
+      return terms.every((term) => haystack.includes(term));
+    });
+
+    setSearchResults(matches);
+    setIsSearching(true);
+  }, [searchQuery, catalog]);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const insideDesktop = searchContainerRef.current?.contains(target);
+      const insideMobile = mobileSearchContainerRef.current?.contains(target);
+      if (!insideDesktop && !insideMobile) {
+        setIsSearching(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    setIsSearching(false);
+    window.location.href = `/search?q=${encodeURIComponent(q)}`;
+  };
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [pincodeModalOpen, setPincodeModalOpen] = useState(false);
@@ -338,38 +399,57 @@ export default function SiteHeader({
           </button>
 
           {/* Center: Search Bar with Rotating Suggestions */}
-          <div className="relative flex-1 max-w-xl hidden md:block">
-            <div className="relative flex items-center rounded-lg border border-[#666666] bg-white px-3 py-2 transition-all focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31]">
-              <Search className="size-4 shrink-0 text-[#666666] md:size-5" />
+          <div ref={searchContainerRef} className="relative flex-1 max-w-xl hidden md:block">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center rounded-lg border border-[#666666] bg-white px-3 py-2 transition-all focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31]">
+              <button type="submit" aria-label="Search" className="text-[#666666] hover:text-[#244f31] transition">
+                <Search className="size-4 shrink-0 md:size-5" />
+              </button>
               <input
                 type="text"
                 value={searchQuery}
+                onFocus={() => {
+                  if (searchQuery.trim().length > 0) setIsSearching(true);
+                }}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search for "${headerSearchSuggestions[suggestionIdx]}"`}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setIsSearching(false);
+                }}
+                placeholder={`Search for "${headerSearchSuggestions[suggestionIdx] || "Ayurvedic remedies"}"`}
                 className="w-full pl-2 text-xs text-[#17231b] outline-none placeholder:text-[#666666] md:text-sm"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setIsSearching(false);
+                  }}
                   className="p-1 text-[#666666] hover:text-[#17231b]"
                 >
                   <X className="size-4" />
                 </button>
               )}
-            </div>
+            </form>
 
             {/* Live Search Results Dropdown */}
             {isSearching && (
               <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-[#ddddd9] bg-white shadow-xl">
                 {searchResults.length > 0 ? (
                   <div className="divide-y divide-[#ddddd9]">
-                    <div className="bg-[#f8faf1] px-4 py-2 text-xs font-bold text-[#244f31]">
-                      Found {searchResults.length} matching herbal products
+                    <div className="flex items-center justify-between bg-[#f8faf1] px-4 py-2 text-xs font-bold text-[#244f31]">
+                      <span>Found {searchResults.length} matching remedies</span>
+                      <Link
+                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                        onClick={() => setIsSearching(false)}
+                        className="text-[11px] font-semibold text-[#80a03c] hover:underline"
+                      >
+                        View all →
+                      </Link>
                     </div>
                     {searchResults.map((product) => (
-                      <a
+                      <Link
                         key={product.id}
-                        href={`/products/${product.slug}`}
+                        href={`/products/${product.slug || product.id}`}
                         onClick={() => {
                           setSearchQuery("");
                           setIsSearching(false);
@@ -381,35 +461,53 @@ export default function SiteHeader({
                           alt={product.name}
                           width={48}
                           height={48}
-                          className="size-12 rounded object-cover"
+                          className="size-12 rounded object-cover shrink-0"
                         />
-                        <div className="flex-1">
-                          <h4 className="line-clamp-1 text-xs font-bold text-[#17231b] md:text-sm">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="truncate text-xs font-bold text-[#17231b] md:text-sm">
                             {product.name}
                           </h4>
-                          <div className="flex items-center gap-2 text-xs text-[#666666]">
-                            <span className="font-semibold text-[#244f31]">₹{product.price}</span>
-                            <span className="line-through">₹{product.compareAt}</span>
-                            <span className="rounded bg-[#eef5df] px-1.5 py-0.5 text-[10px] font-bold text-[#244f31]">
+                          <div className="flex items-center gap-2 text-xs text-[#666666] mt-0.5">
+                            <span className="font-bold text-[#244f31]">₹{product.price}</span>
+                            {product.compareAt > product.price && (
+                              <span className="line-through text-[11px]">₹{product.compareAt}</span>
+                            )}
+                            <span className="rounded bg-[#eef5df] px-1.5 py-0.5 text-[10px] font-bold text-[#244f31] truncate">
                               {product.concern}
                             </span>
                           </div>
                         </div>
                         <button
+                          type="button"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
-                            onUpdateQuantity(product.id, 1);
+                            handleItemQuantityChange(product.id, 1);
                           }}
-                          className="rounded bg-[#80a03c] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#244f31]"
+                          className="rounded bg-[#80a03c] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#244f31] shrink-0"
                         >
                           ADD
                         </button>
-                      </a>
+                      </Link>
                     ))}
+                    <div className="bg-[#f8faf1] p-2.5 text-center">
+                      <Link
+                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                        onClick={() => setIsSearching(false)}
+                        className="text-xs font-bold text-[#244f31] hover:underline"
+                      >
+                        View all {searchResults.length} results for "{searchQuery}" →
+                      </Link>
+                    </div>
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-xs font-medium text-[#666666]">
-                    No matching products found for "{searchQuery}"
+                  <div className="p-5 text-center">
+                    <p className="text-xs font-medium text-[#666666]">
+                      No matching products found for "{searchQuery}"
+                    </p>
+                    <p className="text-[11px] text-[#999999] mt-1">
+                      Try searching for Shilajit, Sugar Care, Amla, or Ashwagandha.
+                    </p>
                   </div>
                 )}
               </div>
@@ -585,38 +683,57 @@ export default function SiteHeader({
 
         {/* Mobile Search Bar Row (Mobile only: md:hidden) */}
         <div className="px-3 pb-3 md:hidden">
-          <div className="relative">
-            <div className="relative flex items-center rounded-lg border border-[#666666] bg-white px-3 py-2 transition-all focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31]">
-              <Search className="size-4 shrink-0 text-[#666666]" />
+          <div ref={mobileSearchContainerRef} className="relative">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center rounded-lg border border-[#666666] bg-white px-3 py-2 transition-all focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31]">
+              <button type="submit" aria-label="Search" className="text-[#666666] hover:text-[#244f31] transition">
+                <Search className="size-4 shrink-0" />
+              </button>
               <input
                 type="text"
                 value={searchQuery}
+                onFocus={() => {
+                  if (searchQuery.trim().length > 0) setIsSearching(true);
+                }}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search for "${headerSearchSuggestions[suggestionIdx]}"`}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setIsSearching(false);
+                }}
+                placeholder={`Search for "${headerSearchSuggestions[suggestionIdx] || "Ayurvedic remedies"}"`}
                 className="w-full pl-2 text-xs text-[#17231b] outline-none placeholder:text-[#666666]"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setIsSearching(false);
+                  }}
                   className="p-1 text-[#666666] hover:text-[#17231b]"
                 >
                   <X className="size-4" />
                 </button>
               )}
-            </div>
+            </form>
 
             {/* Live Search Results Dropdown */}
             {isSearching && (
               <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-[#ddddd9] bg-white shadow-xl">
                 {searchResults.length > 0 ? (
                   <div className="divide-y divide-[#ddddd9]">
-                    <div className="bg-[#f8faf1] px-4 py-2 text-xs font-bold text-[#244f31]">
-                      Found {searchResults.length} matching herbal products
+                    <div className="flex items-center justify-between bg-[#f8faf1] px-4 py-2 text-xs font-bold text-[#244f31]">
+                      <span>Found {searchResults.length} matching remedies</span>
+                      <Link
+                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                        onClick={() => setIsSearching(false)}
+                        className="text-[11px] font-semibold text-[#80a03c] hover:underline"
+                      >
+                        View all →
+                      </Link>
                     </div>
                     {searchResults.map((product) => (
-                      <a
+                      <Link
                         key={product.id}
-                        href={`/products/${product.slug}`}
+                        href={`/products/${product.slug || product.id}`}
                         onClick={() => {
                           setSearchQuery("");
                           setIsSearching(false);
@@ -628,35 +745,53 @@ export default function SiteHeader({
                           alt={product.name}
                           width={48}
                           height={48}
-                          className="size-12 rounded object-cover"
+                          className="size-12 rounded object-cover shrink-0"
                         />
-                        <div className="flex-1">
-                          <h4 className="line-clamp-1 text-xs font-bold text-[#17231b]">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="truncate text-xs font-bold text-[#17231b]">
                             {product.name}
                           </h4>
-                          <div className="flex items-center gap-2 text-xs text-[#666666]">
-                            <span className="font-semibold text-[#244f31]">₹{product.price}</span>
-                            <span className="line-through">₹{product.compareAt}</span>
-                            <span className="rounded bg-[#eef5df] px-1.5 py-0.5 text-[10px] font-bold text-[#244f31]">
+                          <div className="flex items-center gap-2 text-xs text-[#666666] mt-0.5">
+                            <span className="font-bold text-[#244f31]">₹{product.price}</span>
+                            {product.compareAt > product.price && (
+                              <span className="line-through text-[11px]">₹{product.compareAt}</span>
+                            )}
+                            <span className="rounded bg-[#eef5df] px-1.5 py-0.5 text-[10px] font-bold text-[#244f31] truncate">
                               {product.concern}
                             </span>
                           </div>
                         </div>
                         <button
+                          type="button"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
-                            onUpdateQuantity(product.id, 1);
+                            handleItemQuantityChange(product.id, 1);
                           }}
-                          className="rounded bg-[#80a03c] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#244f31]"
+                          className="rounded bg-[#80a03c] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#244f31] shrink-0"
                         >
                           ADD
                         </button>
-                      </a>
+                      </Link>
                     ))}
+                    <div className="bg-[#f8faf1] p-2.5 text-center">
+                      <Link
+                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                        onClick={() => setIsSearching(false)}
+                        className="text-xs font-bold text-[#244f31] hover:underline"
+                      >
+                        View all {searchResults.length} results for "{searchQuery}" →
+                      </Link>
+                    </div>
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-xs font-medium text-[#666666]">
-                    No matching products found for "{searchQuery}"
+                  <div className="p-5 text-center">
+                    <p className="text-xs font-medium text-[#666666]">
+                      No matching products found for "{searchQuery}"
+                    </p>
+                    <p className="text-[11px] text-[#999999] mt-1">
+                      Try searching for Shilajit, Sugar Care, Amla, or Ashwagandha.
+                    </p>
                   </div>
                 )}
               </div>

@@ -80,17 +80,37 @@ function LoginFormContent() {
     }
   }, [phoneOtpSent, resendTimer]);
 
+  // Reset reCAPTCHA DOM and instance safely
+  const resetRecaptcha = () => {
+    if (typeof window === "undefined") return;
+    try {
+      if ((window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier.clear();
+      }
+    } catch {}
+    (window as any).recaptchaVerifier = null;
+    const container = document.getElementById("recaptcha-container");
+    if (container) {
+      container.innerHTML = "";
+    }
+  };
+
   // Setup Firebase invisible reCAPTCHA
   const getRecaptchaVerifier = () => {
     if (typeof window === "undefined") return null;
     if ((window as any).recaptchaVerifier) {
       return (window as any).recaptchaVerifier;
     }
+    const container = document.getElementById("recaptcha-container");
+    if (container) {
+      container.innerHTML = "";
+    }
     const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
       size: "invisible",
       callback: () => {},
       "expired-callback": () => {
         setError("reCAPTCHA expired. Please try requesting OTP again.");
+        resetRecaptcha();
       },
     });
     (window as any).recaptchaVerifier = verifier;
@@ -122,12 +142,7 @@ function LoginFormContent() {
       setSuccessMsg(`6-digit verification code sent to ${formattedPhone}`);
     } catch (err: any) {
       console.error("[Firebase Phone Auth Error]:", err);
-      if ((window as any).recaptchaVerifier) {
-        try {
-          (window as any).recaptchaVerifier.clear();
-        } catch {}
-        (window as any).recaptchaVerifier = null;
-      }
+      resetRecaptcha();
 
       if (err.code === "auth/invalid-phone-number") {
         setError("Invalid phone number format. Please check and try again.");
@@ -136,6 +151,10 @@ function LoginFormContent() {
       } else if (err.code === "auth/unauthorized-domain") {
         setError(
           "Domain not authorized. Please ensure your domain is added under Firebase Console > Authentication > Settings > Authorized Domains."
+        );
+      } else if (err.code === "auth/operation-not-allowed") {
+        setError(
+          "SMS is not enabled for this region (+91 India). In Firebase Console, go to Authentication > Settings > SMS region policy and allow India (+91), or add your number under Phone numbers for testing."
         );
       } else {
         setError(err.message || "Failed to send verification code. Please try again.");

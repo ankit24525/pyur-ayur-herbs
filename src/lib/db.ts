@@ -59,10 +59,12 @@ async function getMongoClient(): Promise<MongoClient> {
 let dbMemoryCache: { data: DBData; timestamp: number } | null = null;
 const CACHE_TTL_MS = 6000; // 6s in-memory cache for ultra-fast response (< 0.01ms)
 
+import { products as defaultProducts } from "./store";
+
 // Ensure all DB data model fields exist with robust fallbacks
 function sanitizeDBData(data: any): DBData {
   if (!data || typeof data !== "object") data = {};
-  if (!Array.isArray(data.products)) data.products = [];
+  if (!Array.isArray(data.products) || data.products.length === 0) data.products = defaultProducts;
   if (!Array.isArray(data.orders)) data.orders = [];
   if (!Array.isArray(data.coupons)) data.coupons = [];
   if (!Array.isArray(data.leads)) data.leads = [];

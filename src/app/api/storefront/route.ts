@@ -9,7 +9,7 @@ export async function GET() {
     const db = await readDB();
 
     const responseData = {
-      products: Array.isArray(db.products) ? db.products : [],
+      products: Array.isArray(db.products) && db.products.length > 0 ? db.products : products,
       categories: Array.isArray(db.categories) && db.categories.length > 0 ? db.categories : concerns,
       content: db.content || { announcement: {}, heroSlides: [], consultationBanner: {} },
       reviews: db.reviews || [],

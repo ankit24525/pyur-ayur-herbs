@@ -3,7 +3,14 @@ import { readDB, writeDB } from "@/lib/db";
 
 export async function GET() {
   const db = await readDB();
-  return NextResponse.json({ products: db.products });
+  return NextResponse.json(
+    { products: db.products },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    }
+  );
 }
 
 export async function POST(request: Request) {

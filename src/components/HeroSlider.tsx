@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, ArrowRight } from "lucide-react";
 import { heroSlides as defaultSlides } from "@/lib/store";
 
 const getSlideBackgroundStyle = (bgColor?: string, isFullWidth?: boolean): React.CSSProperties => {
@@ -66,13 +66,11 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
     const diffX = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 40; // minimum 40px swipe
+    const minSwipeDistance = 35; // minimum 35px swipe
 
     if (diffX > minSwipeDistance) {
-      // Swiped Left -> Next Slide
       nextSlide();
     } else if (diffX < -minSwipeDistance) {
-      // Swiped Right -> Previous Slide
       prevSlide();
     }
 
@@ -108,67 +106,122 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
                   onError={(e) => {
                     e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
                   }}
-                  className="w-full h-auto max-h-[220px] sm:max-h-[340px] md:max-h-[420px] lg:max-h-[500px] object-cover sm:object-contain bg-[#17231b]"
+                  className="w-full h-auto max-h-[200px] sm:max-h-[320px] md:max-h-[420px] lg:max-h-[480px] object-cover sm:object-contain bg-[#17231b]"
                 />
               </a>
             ) : (
-              <div className="relative mx-auto flex max-w-[1440px] flex-col-reverse gap-4 px-4 py-8 sm:py-10 sm:px-6 md:flex-row md:items-center md:justify-between md:py-14 lg:px-12 lg:py-16">
-                {/* Content Box */}
-                <div className="z-10 flex flex-col items-center text-center md:max-w-xl md:items-start md:text-left">
-                  {slide.badge && (
-                    <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#80a03c] px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md sm:text-xs">
-                      <Sparkles className="size-3" /> {slide.badge}
-                    </span>
-                  )}
-
-                  <h1 className="text-lg font-black leading-tight tracking-tight sm:text-2xl md:text-3xl lg:text-5xl text-white">
-                    {slide.title}
-                  </h1>
-
-                  {slide.subtitle && (
-                    <p className="mt-1.5 text-[10px] font-bold tracking-widest text-[#f2c94c] uppercase sm:text-xs lg:text-sm lg:mt-3">
-                      {slide.subtitle}
-                    </p>
-                  )}
-
-                  {slide.offer && (
-                    <div className="mt-2.5 rounded-lg bg-white/10 px-3 py-1.5 text-[10px] font-semibold backdrop-blur-md border border-white/20 sm:text-xs lg:mt-4 lg:px-4 lg:py-2">
-                      🎁 {slide.offer}
+              <div className="relative mx-auto max-w-[1440px] px-3 py-4 sm:px-6 sm:py-8 md:py-12 lg:px-12 lg:py-16">
+                {/* 📱 MOBILE VIEW (md:hidden) — Compact, Sleek, Uncropped Image & Content */}
+                <div className="flex flex-col items-center gap-3 text-center md:hidden">
+                  {/* Uncropped Mobile Product Image Container */}
+                  {slide.image && (
+                    <div className="relative w-full max-w-[280px] sm:max-w-xs shrink-0">
+                      <div className="relative flex h-[160px] sm:h-[190px] w-full items-center justify-center rounded-2xl bg-white/10 p-2 shadow-inner border border-white/15 backdrop-blur-xs overflow-hidden">
+                        <img
+                          src={slide.image}
+                          alt={slide.title || "Banner"}
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
+                          }}
+                          className="h-full w-full object-contain rounded-xl drop-shadow-md"
+                        />
+                      </div>
                     </div>
                   )}
 
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 md:justify-start lg:mt-6 lg:gap-4">
-                    <a
-                      href={slide.href || "#shop"}
-                      className="inline-flex items-center justify-center rounded-xl bg-[#80a03c] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-[#6c8930] hover:shadow-xl sm:text-xs lg:px-6 lg:py-3.5 lg:text-sm"
-                    >
-                      {slide.ctaText || "SHOP NOW"}
-                    </a>
-                    <a
-                      href="#concerns"
-                      className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-white/10 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white transition hover:bg-white/20 sm:text-xs lg:px-6 lg:py-3.5 lg:text-sm"
-                    >
-                      SELECT CONCERN
-                    </a>
+                  {/* Compact Mobile Text Content */}
+                  <div className="flex flex-col items-center px-2 max-w-sm">
+                    {slide.badge && (
+                      <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-[#80a03c] px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm">
+                        <Sparkles className="size-2.5" /> {slide.badge}
+                      </span>
+                    )}
+
+                    <h1 className="text-base font-black leading-tight tracking-tight sm:text-xl text-white">
+                      {slide.title}
+                    </h1>
+
+                    {slide.subtitle && (
+                      <p className="mt-1 text-[10px] font-bold tracking-wider text-[#f2c94c] uppercase line-clamp-1">
+                        {slide.subtitle}
+                      </p>
+                    )}
+
+                    {slide.offer && (
+                      <div className="mt-1.5 rounded-md bg-white/10 px-2.5 py-1 text-[10px] font-semibold border border-white/15">
+                        🎁 {slide.offer}
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-center gap-2 w-full">
+                      <a
+                        href={slide.href || "#shop"}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#80a03c] px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-white shadow-md active:scale-95 transition"
+                      >
+                        <span>{slide.ctaText || "SHOP NOW"}</span>
+                        <ArrowRight className="size-3.5" />
+                      </a>
+                    </div>
                   </div>
                 </div>
 
-                {/* Banner Image Box (Visible on both Mobile & Desktop) */}
-                {slide.image && (
-                  <div className="relative w-full max-w-sm sm:max-w-md md:max-w-md lg:max-w-lg shrink-0 mx-auto md:mx-0">
-                    <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-2xl bg-black/20 aspect-[16/10] sm:aspect-[4/3]">
-                      <img
-                        src={slide.image}
-                        alt={slide.title || "Banner"}
-                        onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
-                        }}
-                        className="size-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+                {/* 💻 DESKTOP & TABLET VIEW (hidden md:flex) — Rich Side-by-Side Showcase */}
+                <div className="hidden md:flex md:flex-row md:items-center md:justify-between md:gap-8">
+                  <div className="z-10 flex flex-col items-start text-left max-w-xl">
+                    {slide.badge && (
+                      <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#80a03c] px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
+                        <Sparkles className="size-3.5" /> {slide.badge}
+                      </span>
+                    )}
+
+                    <h1 className="text-3xl lg:text-5xl font-black leading-tight tracking-tight text-white">
+                      {slide.title}
+                    </h1>
+
+                    {slide.subtitle && (
+                      <p className="mt-2 text-xs lg:text-sm font-bold tracking-widest text-[#f2c94c] uppercase">
+                        {slide.subtitle}
+                      </p>
+                    )}
+
+                    {slide.offer && (
+                      <div className="mt-4 rounded-lg bg-white/10 px-4 py-2 text-xs font-semibold backdrop-blur-md border border-white/20">
+                        🎁 {slide.offer}
+                      </div>
+                    )}
+
+                    <div className="mt-6 flex items-center gap-4">
+                      <a
+                        href={slide.href || "#shop"}
+                        className="inline-flex items-center justify-center rounded-xl bg-[#80a03c] px-6 py-3.5 text-sm font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-[#6c8930] hover:shadow-xl active:scale-95"
+                      >
+                        {slide.ctaText || "SHOP NOW"}
+                      </a>
+                      <a
+                        href="#concerns"
+                        className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-white/10 px-6 py-3.5 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-white/20"
+                      >
+                        SELECT CONCERN
+                      </a>
                     </div>
                   </div>
-                )}
+
+                  {slide.image && (
+                    <div className="relative w-full max-w-md lg:max-w-lg shrink-0">
+                      <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-2xl bg-black/20 aspect-[4/3]">
+                        <img
+                          src={slide.image}
+                          alt={slide.title || "Banner"}
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
+                          }}
+                          className="size-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -180,28 +233,28 @@ export default function HeroSlider({ slides }: { slides?: any[] }) {
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white backdrop-blur-xs transition hover:bg-black/70 sm:left-4"
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white backdrop-blur-xs transition hover:bg-black/60 sm:left-4 sm:p-2 z-10"
             aria-label="Previous Slide"
           >
-            <ChevronLeft className="size-5 sm:size-6" />
+            <ChevronLeft className="size-4 sm:size-6" />
           </button>
 
           <button
             onClick={nextSlide}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-2 text-white backdrop-blur-xs transition hover:bg-black/70 sm:right-4"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white backdrop-blur-xs transition hover:bg-black/60 sm:right-4 sm:p-2 z-10"
             aria-label="Next Slide"
           >
-            <ChevronRight className="size-5 sm:size-6" />
+            <ChevronRight className="size-4 sm:size-6" />
           </button>
 
           {/* Dots Indicator */}
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 z-10">
+          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5 z-10">
             {activeSlides.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentSlide(idx)}
-                className={`h-2 rounded-full transition-all ${
-                  currentSlide === idx ? "w-6 bg-[#80a03c]" : "w-2 bg-white/50"
+                className={`h-1.5 rounded-full transition-all ${
+                  currentSlide === idx ? "w-5 bg-[#80a03c]" : "w-1.5 bg-white/50"
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />

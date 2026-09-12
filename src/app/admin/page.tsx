@@ -6806,6 +6806,8 @@ export default function AdminDashboard() {
                                       <span className="block text-[10px] font-bold text-gray-500 mb-1.5">Popular Ayurvedic & Brand Swatches:</span>
                                       <div className="flex flex-wrap gap-1.5">
                                         {[
+                                          { name: "Rich Madhunashi Maroon", hex: "#4a0404" },
+                                          { name: "Deep Crimson Ruby", hex: "#660b0b" },
                                           { name: "Deep Forest", hex: "#1d3b24" },
                                           { name: "Vaidya Emerald", hex: "#14532d" },
                                           { name: "Pine Teal", hex: "#064e3b" },

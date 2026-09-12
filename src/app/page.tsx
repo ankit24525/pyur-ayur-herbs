@@ -8,6 +8,7 @@ import HeroSlider from "@/components/HeroSlider";
 import ConcernFilter from "@/components/ConcernFilter";
 import ProductRail from "@/components/ProductRail";
 import TrustSection from "@/components/TrustSection";
+import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
 import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import SiteFooter from "@/components/SiteFooter";
@@ -356,6 +357,9 @@ export default function Home() {
       </div>
 
 
+
+      {/* 1-on-1 Free Doctor Consultation Banner */}
+      <DoctorConsultationBanner data={cmsData.consultationBanner} />
 
       {/* Why Pure Ayur Herbs Trust Section */}
       <TrustSection />

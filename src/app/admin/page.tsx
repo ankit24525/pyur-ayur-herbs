@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { concerns } from "@/lib/store";
+import { concerns, heroSlides as defaultHeroSlides } from "@/lib/store";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -1991,7 +1991,7 @@ export default function AdminDashboard() {
   const handleSaveSlide = (e: React.FormEvent) => {
     e.preventDefault();
     const content = dbData.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
-    const currentSlides = content.heroSlides || [];
+    const currentSlides = (content.heroSlides && content.heroSlides.length > 0) ? content.heroSlides : defaultHeroSlides;
     let updatedSlides;
 
     if (editingSlide === "new") {
@@ -2058,7 +2058,7 @@ export default function AdminDashboard() {
   const handleDeleteSlide = (slideId: number) => {
     if (confirm("Are you sure you want to delete this slide?")) {
       const content = dbData.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
-      const currentSlides = content.heroSlides || [];
+      const currentSlides = (content.heroSlides && content.heroSlides.length > 0) ? content.heroSlides : defaultHeroSlides;
       const updatedSlides = currentSlides.filter((s: any) => s.id !== slideId);
       const updatedContent = { ...content, heroSlides: updatedSlides };
       setDbData((prev: any) => ({ ...prev, content: updatedContent }));
@@ -6956,7 +6956,7 @@ export default function AdminDashboard() {
                     );
                   }
 
-                  const activeSlides = content.heroSlides || [];
+                  const activeSlides = (content.heroSlides && content.heroSlides.length > 0) ? content.heroSlides : defaultHeroSlides;
                   const announcement = content.announcement || { visible: true, text: "", code: "", btnText: "", link: "" };
                   const cb = content.consultationBanner || { title: "", subtitle: "", ctaText: "", badge: "", doctorName: "", doctorTitle: "", doctorImage: "", doctorsOnlineText: "", availableSlotText: "" };
 

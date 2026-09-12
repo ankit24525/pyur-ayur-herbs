@@ -7313,23 +7313,79 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div>
-                              <label className="block font-bold mb-1">Doctor Image URL</label>
+                              <label className="block font-bold mb-1">Doctor Photo</label>
                               <input
-                                type="text"
-                                value={cb.doctorImage}
-                                onChange={(e) => {
-                                  const updated = {
-                                    ...content,
-                                    consultationBanner: { ...cb, doctorImage: e.target.value }
-                                  };
-                                  setDbData({ ...dbData, content: updated });
+                                type="file"
+                                accept="image/*"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    try {
+                                      const compressed = await compressImageFile(file, 600, 600, 0.85);
+                                      const updated = {
+                                        ...content,
+                                        consultationBanner: { ...cb, doctorImage: compressed }
+                                      };
+                                      setDbData({ ...dbData, content: updated });
+                                      void handleSaveCMSContent(updated);
+                                    } catch {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        const updated = {
+                                          ...content,
+                                          consultationBanner: { ...cb, doctorImage: reader.result as string }
+                                        };
+                                        setDbData({ ...dbData, content: updated });
+                                        void handleSaveCMSContent(updated);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }
                                 }}
-                                onBlur={() => void handleSaveCMSContent(dbData.content)}
-                                className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                                className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-[#ddddd9] p-1.5 rounded-xl bg-white"
                               />
-                              {cb.doctorImage && (
-                                <img src={cb.doctorImage} className="mt-2 size-12 rounded-full object-cover border" />
-                              )}
+                              <div className="mt-2 flex gap-4 items-center">
+                                <div className="flex-1">
+                                  <label className="block font-bold text-[10px] text-gray-600 mb-0.5">Or Paste Image URL</label>
+                                  <input
+                                    type="text"
+                                    value={cb.doctorImage}
+                                    onChange={(e) => {
+                                      const updated = {
+                                        ...content,
+                                        consultationBanner: { ...cb, doctorImage: e.target.value }
+                                      };
+                                      setDbData({ ...dbData, content: updated });
+                                    }}
+                                    onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                    placeholder="https://example.com/doctor.jpg"
+                                    className="w-full rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white text-[11px]"
+                                  />
+                                </div>
+                                {cb.doctorImage && (
+                                  <div className="shrink-0 flex flex-col items-center">
+                                    <span className="block font-bold text-[10px] text-gray-600 mb-0.5">Preview:</span>
+                                    <div className="relative group">
+                                      <img src={cb.doctorImage} alt="Doctor preview" className="size-14 rounded-full object-cover border-2 border-[#244f31] shadow-sm" />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updated = {
+                                            ...content,
+                                            consultationBanner: { ...cb, doctorImage: "" }
+                                          };
+                                          setDbData({ ...dbData, content: updated });
+                                          void handleSaveCMSContent(updated);
+                                        }}
+                                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full size-5 flex items-center justify-center text-xs font-bold hover:bg-red-600 shadow"
+                                        title="Remove Photo"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>

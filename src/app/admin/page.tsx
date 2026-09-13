@@ -328,6 +328,7 @@ export default function AdminDashboard() {
   };
 
   const [loading, setLoading] = useState(true);
+  const [showSrPassword, setShowSrPassword] = useState(false);
 
   // Dynamic Database State loaded from process database
   const [dbData, setDbData] = useState<any>({
@@ -8778,16 +8779,26 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <label className="block font-bold mb-1">Shiprocket Account Password</label>
-                          <input
-                            type="password"
-                            value={sr.password || ""}
-                            onChange={(e) => {
-                              const updated = { ...sr, password: e.target.value };
-                              setDbData({ ...dbData, settings: { ...dbData.settings, shiprocket: updated } });
-                            }}
-                            placeholder="••••••••••••"
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showSrPassword ? "text" : "password"}
+                              value={sr.password || ""}
+                              onChange={(e) => {
+                                const updated = { ...sr, password: e.target.value };
+                                setDbData({ ...dbData, settings: { ...dbData.settings, shiprocket: updated } });
+                              }}
+                              placeholder="••••••••••••"
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 pr-10 outline-none focus:border-[#244f31]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowSrPassword(!showSrPassword)}
+                              className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 focus:outline-none"
+                              title={showSrPassword ? "Hide password" : "Show password"}
+                            >
+                              {showSrPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
 

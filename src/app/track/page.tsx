@@ -129,9 +129,8 @@ function TrackOrderContent() {
     }
   };
 
-  // Determine timeline progress steps based on status, pre-filled with mockup data matching layout details
-  const getTrackingSteps = (status: string, orderDateStr: string, trackingId?: string) => {
-    // Generate dates based on order date or fallback to current/yesterday
+  // Determine timeline progress steps based on live status & real Shiprocket scans
+  const getTrackingSteps = (status: string, orderDateStr: string, trackingId?: string, liveTrackingData?: any, shiprocketStatus?: string) => {
     const baseDate = orderDateStr ? new Date(orderDateStr) : new Date();
     
     const formatDate = (date: Date, offsetDays = 0) => {
@@ -147,7 +146,6 @@ function TrackOrderContent() {
       const monthName = months[d.getMonth()] || "Month";
       const yearName = isNaN(d.getFullYear()) ? "YY" : d.getFullYear().toString().slice(-2);
       
-      // Determine suffix e.g. 19th, 20th, 21st
       let suffix = "th";
       if (dayVal === 1 || dayVal === 21 || dayVal === 31) suffix = "st";
       else if (dayVal === 2 || dayVal === 22) suffix = "nd";
@@ -156,34 +154,36 @@ function TrackOrderContent() {
       return `${dayName}, ${dayVal}${suffix} ${monthName} '${yearName}`;
     };
 
+    const courierInfo = liveTrackingData?.tracking_data?.shipment_track?.[0];
+    const courierName = courierInfo?.courier_name || (shiprocketStatus === "Pushed" ? "Shiprocket Assigned Courier" : "");
+    const awbCode = courierInfo?.awb_code || trackingId || "";
+
     const steps = [
       {
         label: "Order Confirmed",
         date: formatDate(baseDate, 0),
         events: [
-          { title: "Your Order has been placed.", time: `${formatDate(baseDate, 0)} - 3:16am` },
-          { title: "Seller has processed your order.", time: `${formatDate(baseDate, 0)} - 10:00am` },
-          { title: "Your item has been picked up by delivery partner.", time: `${formatDate(baseDate, 1)} - 2:36am` }
+          { title: "Your order has been placed successfully.", time: `${formatDate(baseDate, 0)}` },
+          { title: shiprocketStatus === "Pushed" ? "Order pushed & registered in Shiprocket System." : "Seller has processed your order.", time: `${formatDate(baseDate, 0)}` },
         ],
         done: false,
         active: false
       },
       {
-        label: "Shipped",
+        label: "Shipped / In Transit",
         date: formatDate(baseDate, 1),
         events: [
-          { title: `Ekart Logistics - ${trackingId || "FMPC5112339950"}`, time: "" },
-          { title: "Your item has been shipped.", time: `${formatDate(baseDate, 1)} - 2:43am` },
-          { title: "Your item has been received in the hub nearest to you", time: "" }
+          { title: courierName ? `${courierName}${awbCode ? " - AWB: " + awbCode : ""}` : "Item processed for dispatch.", time: "" },
+          { title: courierInfo?.current_status ? `Shipment Status: ${courierInfo.current_status}` : "Awaiting pickup & courier hub scan.", time: "" },
         ],
         done: false,
         active: false
       },
       {
         label: "Out For Delivery",
-        date: formatDate(baseDate, 4),
+        date: formatDate(baseDate, 3),
         events: [
-          { title: "Your item is out for delivery", time: `${formatDate(baseDate, 4)} - 10:29am` }
+          { title: "Your item will be out for delivery once arrived at nearest local hub.", time: "" }
         ],
         done: false,
         active: false
@@ -192,35 +192,38 @@ function TrackOrderContent() {
         label: "Delivered",
         date: formatDate(baseDate, 4),
         events: [
-          { title: "Your item has been delivered", time: `${formatDate(baseDate, 4)} - 1:26pm` }
+          { title: "Your package is delivered to the customer.", time: "" }
         ],
         done: false,
         active: false
       }
     ];
 
-    const currentStatus = status || "Pending OTP";
+    const currentStatus = (status || "").toLowerCase();
 
-    if (currentStatus === "Pending OTP") {
+    if (currentStatus === "pending otp" || currentStatus === "pending payment") {
       steps[0].active = true;
-    } else if (currentStatus === "Processing" || currentStatus === "Verified") {
+    } else if (currentStatus === "processing" || currentStatus === "verified" || shiprocketStatus === "Pushed") {
       steps[0].done = true;
       steps[1].active = true;
-    } else if (currentStatus === "Shipped") {
+    } else if (currentStatus === "shipped" || currentStatus === "in transit") {
       steps[0].done = true;
       steps[1].done = true;
       steps[2].active = true;
-    } else if (currentStatus === "Delivered") {
+    } else if (currentStatus === "delivered") {
       steps[0].done = true;
       steps[1].done = true;
       steps[2].done = true;
       steps[3].done = true;
+    } else {
+      steps[0].done = true;
+      steps[1].active = true;
     }
 
     return steps;
   };
 
-  const steps = order ? getTrackingSteps(order.status, order.date, order.trackingId) : [];
+  const steps = order ? getTrackingSteps(order.status, order.date, order.trackingId, order.liveTracking, order.shiprocketStatus) : [];
   const activeIndex = steps.findIndex((s) => s.active);
   const lastDoneIndex = steps.reduce((acc, s, idx) => (s.done ? idx : acc), -1);
   const currentProgressIdx = activeIndex !== -1 ? activeIndex : lastDoneIndex;
@@ -370,6 +373,17 @@ function TrackOrderContent() {
                         )}
                         {order.liveTracking?.tracking_data?.shipment_track?.[0]?.awb_code && (
                           <div className="text-[#244f31] font-bold">AWB Code: {order.liveTracking.tracking_data.shipment_track[0].awb_code}</div>
+                        )}
+                        {order.shiprocketShipmentId && (
+                          <a
+                            href={`https://shiprocket.co/tracking/${order.shiprocketShipmentId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#244f31] hover:bg-[#1c3e26] text-white text-[10px] font-bold shadow-xs transition"
+                          >
+                            <span>Open Official Shiprocket Tracking Page</span>
+                            <ExternalLink className="size-3" />
+                          </a>
                         )}
                       </div>
                     </div>

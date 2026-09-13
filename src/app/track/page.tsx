@@ -158,7 +158,10 @@ function TrackOrderContent() {
     };
 
     const courierInfo = liveTrackingData?.tracking_data?.shipment_track?.[0];
-    const courierName = courierInfo?.courier_name || (shiprocketStatus === "Pushed" ? "Shiprocket Courier Partner" : "");
+    const rawCourier = courierInfo?.courier_name;
+    const realCourierName = rawCourier && rawCourier !== "0" && rawCourier !== "null" && rawCourier !== "Shiprocket Courier Partner"
+      ? rawCourier
+      : "";
     const awbCode = courierInfo?.awb_code || trackingId || "";
 
     const rawActivities = liveTrackingData?.tracking_data?.shipment_track_activities ||
@@ -174,25 +177,29 @@ function TrackOrderContent() {
 
     const orderPlacedEvents = [
       { title: "Your order has been placed on website.", time: formatDate(baseDate) },
-      { title: shiprocketStatus === "Pushed" ? "Order registered & pushed to Shiprocket Direct API." : "Seller has processed your order.", time: formatDate(baseDate) },
+      { title: "Order confirmed by seller.", time: formatDate(baseDate) },
     ];
 
-    const shippedEvents = realScans.length > 0
-      ? realScans
-      : [
-          {
-            title: courierName
-              ? `Assigned Courier: ${courierName}${awbCode ? " (AWB: " + awbCode + ")" : ""}`
-              : "Order queued for courier pickup.",
-            time: "",
-          },
-          {
-            title: courierInfo?.current_status
-              ? `Shiprocket Status: ${courierInfo.current_status}`
-              : "Awaiting physical parcel pickup at seller warehouse.",
-            time: "",
-          },
-        ];
+    const courierPartnerText = realCourierName
+      ? `Delivery Partner Assigned: ${realCourierName}${awbCode ? " (AWB: " + awbCode + ")" : ""}`
+      : "Delivery Partner: Yet to be assigned";
+
+    const shippedEvents = [
+      {
+        title: courierPartnerText,
+        time: courierInfo?.pickup_date || "",
+      },
+      ...(realScans.length > 0
+        ? realScans
+        : [
+            {
+              title: courierInfo?.current_status
+                ? `Package Status: ${courierInfo.current_status}`
+                : "Awaiting physical parcel pickup at seller warehouse.",
+              time: "",
+            },
+          ]),
+    ];
 
     const steps = [
       {
@@ -229,22 +236,39 @@ function TrackOrderContent() {
       },
     ];
 
-    const currentStatus = (status || "").toLowerCase();
+    const internalStatus = (status || "").toLowerCase();
+    const srCurrentStatus = (courierInfo?.current_status || "").toUpperCase();
 
-    if (currentStatus === "pending otp" || currentStatus === "pending payment") {
+    if (internalStatus === "pending otp" || internalStatus === "pending payment") {
       steps[0].active = true;
-    } else if (currentStatus === "processing" || currentStatus === "verified" || shiprocketStatus === "Pushed") {
-      steps[0].done = true;
-      steps[1].active = true;
-    } else if (currentStatus === "shipped" || currentStatus === "in transit") {
-      steps[0].done = true;
-      steps[1].done = true;
-      steps[2].active = true;
-    } else if (currentStatus === "delivered") {
+    } else if (srCurrentStatus.includes("DELIVERED") || internalStatus === "delivered") {
       steps[0].done = true;
       steps[1].done = true;
       steps[2].done = true;
       steps[3].done = true;
+    } else if (srCurrentStatus.includes("OUT FOR DELIVERY")) {
+      steps[0].done = true;
+      steps[1].done = true;
+      steps[2].done = true;
+      steps[3].active = true;
+    } else if (
+      srCurrentStatus.includes("IN TRANSIT") ||
+      srCurrentStatus.includes("SHIPPED") ||
+      srCurrentStatus.includes("PICKED UP") ||
+      internalStatus === "shipped" ||
+      internalStatus === "in transit"
+    ) {
+      steps[0].done = true;
+      steps[1].done = true;
+      steps[2].active = true;
+    } else if (
+      internalStatus === "processing" ||
+      internalStatus === "verified" ||
+      shiprocketStatus === "Pushed" ||
+      srCurrentStatus.length > 0
+    ) {
+      steps[0].done = true;
+      steps[1].active = true;
     } else {
       steps[0].done = true;
       steps[1].active = true;
@@ -393,10 +417,10 @@ function TrackOrderContent() {
                     <div className="inline-flex flex-col gap-1 self-start rounded-xl bg-[#eef5df] p-3 text-xs font-bold text-[#244f31] border border-[#80a03c]/30 shadow-xs">
                       <div className="flex items-center gap-1.5 font-black">
                         <Truck className="size-4 text-[#80a03c]" />
-                        <span>Shiprocket Express Logistics</span>
+                        <span>Express Logistics Partner</span>
                       </div>
                       <div className="text-[11px] text-gray-700 space-y-0.5 font-mono font-medium">
-                        {order.shiprocketOrderId && <div>Shiprocket Order: #{order.shiprocketOrderId}</div>}
+                        {order.shiprocketOrderId && <div>Order Ref: #{order.shiprocketOrderId}</div>}
                         {order.shiprocketShipmentId && <div>Shipment ID: #{order.shiprocketShipmentId}</div>}
                         {order.liveTracking?.tracking_data?.shipment_track?.[0]?.courier_name && (
                           <div className="text-[#244f31] font-bold">Courier: {order.liveTracking.tracking_data.shipment_track[0].courier_name}</div>
@@ -411,7 +435,7 @@ function TrackOrderContent() {
                             rel="noopener noreferrer"
                             className="mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#244f31] hover:bg-[#1c3e26] text-white text-[10px] font-bold shadow-xs transition"
                           >
-                            <span>Open Official Shiprocket Tracking Page</span>
+                            <span>Open Live Courier Tracking Page</span>
                             <ExternalLink className="size-3" />
                           </a>
                         )}

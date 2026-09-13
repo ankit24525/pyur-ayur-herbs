@@ -43,6 +43,22 @@ export async function getShiprocketToken(email?: string, password?: string): Pro
   }
 }
 
+export async function getShiprocketPickupLocations(token: string): Promise<string[]> {
+  try {
+    const res = await fetch("https://apiv2.shiprocket.in/v1/external/settings/company/pickup", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (res.ok && data?.data?.shipping_address) {
+      return data.data.shipping_address.map((addr: any) => addr.pickup_location || addr.address_nickname).filter(Boolean);
+    }
+  } catch (err) {
+    console.error("[Shiprocket Fetch Pickup Locations Error]:", err);
+  }
+  return [];
+}
+
 export interface ShiprocketOrderItem {
   name: string;
   sku: string;
@@ -83,25 +99,41 @@ export async function createShiprocketOrder(
   token: string
 ) {
   try {
-    const res = await fetch("https://apiv2.shiprocket.in/v1/external/orders/create/adhoc", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        ...payload,
-        billing_country: payload.billing_country || "India",
-        shipping_is_billing: true,
-        length: payload.length || 10,
-        breadth: payload.breadth || 10,
-        height: payload.height || 10,
-        weight: payload.weight || 0.5,
-      }),
-    });
+    const makeRequest = async (locationName: string) => {
+      const res = await fetch("https://apiv2.shiprocket.in/v1/external/orders/create/adhoc", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...payload,
+          pickup_location: locationName,
+          billing_country: payload.billing_country || "India",
+          shipping_is_billing: true,
+          length: payload.length || 10,
+          breadth: payload.breadth || 10,
+          height: payload.height || 10,
+          weight: payload.weight || 0.5,
+        }),
+      });
+      const data = await res.json();
+      return { ok: res.ok && data?.order_id, data, status: res.status };
+    };
 
-    const data = await res.json();
-    return { success: res.ok && data?.order_id, data, statusCode: res.status };
+    // First attempt with given pickup_location
+    let result = await makeRequest(payload.pickup_location);
+
+    // If failed due to pickup location mismatch, automatically fetch live pickup locations and retry
+    if (!result.ok) {
+      const availableLocations = await getShiprocketPickupLocations(token);
+      if (availableLocations.length > 0 && availableLocations[0] !== payload.pickup_location) {
+        console.log(`[Shiprocket Retrying with fetched location]: ${availableLocations[0]}`);
+        result = await makeRequest(availableLocations[0]);
+      }
+    }
+
+    return { success: result.ok, data: result.data, statusCode: result.status };
   } catch (error: any) {
     console.error("[Shiprocket Order Creation Error]:", error);
     return { success: false, error: error?.message || "Network Error" };

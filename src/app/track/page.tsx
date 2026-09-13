@@ -139,18 +139,15 @@ function TrackOrderContent() {
   const getTrackingSteps = (status: string, orderDateStr: string, trackingId?: string, liveTrackingData?: any, shiprocketStatus?: string) => {
     const baseDate = orderDateStr ? new Date(orderDateStr) : new Date();
     
-    const formatDate = (date: Date, offsetDays = 0) => {
+    const formatDate = (date: Date) => {
       if (!date || isNaN(date.getTime())) return "";
-      const d = new Date(date);
-      d.setDate(d.getDate() + offsetDays);
-      if (isNaN(d.getTime())) return "";
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       
-      const dayName = days[d.getDay()] || "Day";
-      const dayVal = d.getDate();
-      const monthName = months[d.getMonth()] || "Month";
-      const yearName = isNaN(d.getFullYear()) ? "YY" : d.getFullYear().toString().slice(-2);
+      const dayName = days[date.getDay()] || "Day";
+      const dayVal = date.getDate();
+      const monthName = months[date.getMonth()] || "Month";
+      const yearName = isNaN(date.getFullYear()) ? "YY" : date.getFullYear().toString().slice(-2);
       
       let suffix = "th";
       if (dayVal === 1 || dayVal === 21 || dayVal === 31) suffix = "st";
@@ -176,8 +173,8 @@ function TrackOrderContent() {
       : [];
 
     const orderPlacedEvents = [
-      { title: "Your order has been placed on website.", time: `${formatDate(baseDate, 0)}` },
-      { title: shiprocketStatus === "Pushed" ? "Order registered & pushed to Shiprocket Direct System." : "Seller has processed your order.", time: `${formatDate(baseDate, 0)}` },
+      { title: "Your order has been placed on website.", time: formatDate(baseDate) },
+      { title: shiprocketStatus === "Pushed" ? "Order registered & pushed to Shiprocket Direct API." : "Seller has processed your order.", time: formatDate(baseDate) },
     ];
 
     const shippedEvents = realScans.length > 0
@@ -185,13 +182,13 @@ function TrackOrderContent() {
       : [
           {
             title: courierName
-              ? `${courierName}${awbCode ? " - AWB: " + awbCode : ""}`
+              ? `Assigned Courier: ${courierName}${awbCode ? " (AWB: " + awbCode + ")" : ""}`
               : "Order queued for courier pickup.",
             time: "",
           },
           {
             title: courierInfo?.current_status
-              ? `Shiprocket Live Status: ${courierInfo.current_status}`
+              ? `Shiprocket Status: ${courierInfo.current_status}`
               : "Awaiting physical parcel pickup at seller warehouse.",
             time: "",
           },
@@ -200,32 +197,32 @@ function TrackOrderContent() {
     const steps = [
       {
         label: "Order Confirmed",
-        date: formatDate(baseDate, 0),
+        date: formatDate(baseDate),
         events: orderPlacedEvents,
         done: false,
         active: false,
       },
       {
         label: "Shipped / In Transit",
-        date: formatDate(baseDate, 1),
+        date: courierInfo?.pickup_date || (realScans.length > 0 ? realScans[0].time : ""),
         events: shippedEvents,
         done: false,
         active: false,
       },
       {
         label: "Out For Delivery",
-        date: formatDate(baseDate, 3),
+        date: "",
         events: [
-          { title: "Your item will be out for delivery once arrived at destination hub.", time: "" },
+          { title: "Your item will be out for delivery once it reaches the destination hub.", time: "" },
         ],
         done: false,
         active: false,
       },
       {
         label: "Delivered",
-        date: formatDate(baseDate, 4),
+        date: courierInfo?.delivered_date || "",
         events: [
-          { title: "Your package is delivered to the customer.", time: "" },
+          { title: "Your package will be delivered to the recipient address.", time: "" },
         ],
         done: false,
         active: false,

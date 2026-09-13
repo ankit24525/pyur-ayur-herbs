@@ -65,6 +65,9 @@ export async function POST(request: Request) {
     const cleanState = (order.state || "Uttar Pradesh").trim();
     const cleanEmail = (order.email || "orders@purreayurherbs.com").trim();
     const cleanCustomerName = (order.customer || order.name || "Customer").trim();
+    const nameParts = cleanCustomerName.split(" ");
+    const firstName = nameParts[0] || "Customer";
+    const lastName = nameParts.slice(1).join(" ") || "Customer";
 
     const rawItemName = (order.items || "Ayurvedic Remedy").replace(/ x\d+/gi, "").trim();
     const cleanItemName = rawItemName.length > 0 ? rawItemName : "Ayurvedic Remedy";
@@ -85,7 +88,8 @@ export async function POST(request: Request) {
         order_id: order.id,
         order_date: nowStr,
         pickup_location: srConfig.pickupLocation || "PURE AYUR HERBS",
-        billing_customer_name: cleanCustomerName,
+        billing_customer_name: firstName,
+        billing_last_name: lastName,
         billing_address: cleanAddress,
         billing_city: cleanCity,
         billing_pincode: finalPincode,

@@ -75,11 +75,16 @@ export async function POST(request: Request) {
           const mins = String(dateObj.getMinutes()).padStart(2, "0");
           const nowStr = `${year}-${month}-${day} ${hours}:${mins}`;
 
+          const nameParts = (name || "Customer").trim().split(" ");
+          const firstName = nameParts[0] || "Customer";
+          const lastName = nameParts.slice(1).join(" ") || "Customer";
+
           const srRes = await createShiprocketOrder({
             order_id: orderId,
             order_date: nowStr,
             pickup_location: srConfig.pickupLocation || "PURE AYUR HERBS",
-            billing_customer_name: name,
+            billing_customer_name: firstName,
+            billing_last_name: lastName,
             billing_address: address,
             billing_city: city,
             billing_pincode: pincode,

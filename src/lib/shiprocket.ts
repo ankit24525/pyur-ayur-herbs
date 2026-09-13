@@ -112,6 +112,8 @@ export async function createShiprocketOrder(
         },
         body: JSON.stringify({
           ...payload,
+          billing_customer_name: payload.billing_customer_name || "Customer",
+          billing_last_name: payload.billing_last_name || "Customer",
           pickup_location: locationName,
           billing_country: payload.billing_country || "India",
           shipping_is_billing: true,

@@ -50,38 +50,50 @@ export async function POST(request: Request) {
     const mins = String(dateObj.getMinutes()).padStart(2, "0");
     const nowStr = `${year}-${month}-${day} ${hours}:${mins}`;
 
+    const cleanPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
+    const finalPhone = cleanPhone.length === 10 ? cleanPhone : "9876543210";
+
+    const cleanPincode = (order.pincode || "").replace(/\D/g, "").slice(0, 6);
+    const finalPincode = cleanPincode.length === 6 ? cleanPincode : "201301";
+
+    let cleanAddress = (order.address || "").trim();
+    if (cleanAddress.length < 10) {
+      cleanAddress = "12 Botanical Enclave, Sector 62";
+    }
+
+    const cleanCity = (order.city || "Noida").trim();
+    const cleanState = (order.state || "Uttar Pradesh").trim();
+    const cleanEmail = (order.email || "orders@purreayurherbs.com").trim();
+    const cleanCustomerName = (order.customer || order.name || "Customer").trim();
+
+    const rawItemName = (order.items || "Ayurvedic Remedy").replace(/ x\d+/gi, "").trim();
+    const cleanItemName = rawItemName.length > 0 ? rawItemName : "Ayurvedic Remedy";
+
     const orderItems = [
       {
-        name: order.items || "Ayurvedic Product",
+        name: cleanItemName,
         sku: `SKU-${order.id}`,
         units: 1,
-        selling_price: order.total || 999,
+        selling_price: Math.max(Number(order.total) || 1, 1),
         discount: 0,
         tax: 0,
       },
     ];
-
-    const cleanPhone = (order.phone || "").replace(/\D/g, "").slice(-10) || "9876543210";
-    const cleanPincode = (order.pincode || "").replace(/\D/g, "").slice(0, 6) || "110001";
-    const cleanAddress = (order.address || "Main Street Address").trim();
-    const cleanCity = (order.city || "Noida").trim();
-    const cleanState = (order.state || "Uttar Pradesh").trim();
-    const cleanEmail = (order.email || "orders@purreayurherbs.com").trim();
 
     const srRes = await createShiprocketOrder(
       {
         order_id: order.id,
         order_date: nowStr,
         pickup_location: srConfig.pickupLocation || "Primary",
-        billing_customer_name: order.customer || order.name || "Customer",
+        billing_customer_name: cleanCustomerName,
         billing_address: cleanAddress,
         billing_city: cleanCity,
-        billing_pincode: cleanPincode,
+        billing_pincode: finalPincode,
         billing_state: cleanState,
         billing_email: cleanEmail,
-        billing_phone: cleanPhone,
+        billing_phone: finalPhone,
         payment_method: order.method === "Prepaid" ? "Prepaid" : "COD",
-        sub_total: order.total || 999,
+        sub_total: Math.max(Number(order.total) || 1, 1),
         order_items: orderItems,
       },
       token
@@ -104,7 +116,7 @@ export async function POST(request: Request) {
       });
     } else {
       return NextResponse.json(
-        { success: false, error: srRes.data?.message || srRes.error || "Shiprocket API rejected the order." },
+        { success: false, error: srRes.errorMessage || srRes.data?.message || srRes.error || "Shiprocket API rejected the order." },
         { status: 400 }
       );
     }

@@ -50,8 +50,11 @@ export async function getShiprocketPickupLocations(token: string): Promise<strin
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
-    if (res.ok && data?.data?.shipping_address) {
-      return data.data.shipping_address.map((addr: any) => addr.pickup_location || addr.address_nickname).filter(Boolean);
+    const addresses = data?.data?.shipping_address || data?.shipping_address || [];
+    if (Array.isArray(addresses)) {
+      return addresses
+        .map((addr: any) => addr.pickup_location || addr.address_nickname || addr.name)
+        .filter(Boolean);
     }
   } catch (err) {
     console.error("[Shiprocket Fetch Pickup Locations Error]:", err);
@@ -118,13 +121,13 @@ export async function createShiprocketOrder(
         }),
       });
       const data = await res.json();
-      return { ok: res.ok && data?.order_id, data, status: res.status };
+      return { ok: res.ok && Boolean(data?.order_id), data, status: res.status };
     };
 
     // First attempt with given pickup_location
     let result = await makeRequest(payload.pickup_location);
 
-    // If failed due to pickup location mismatch, automatically fetch live pickup locations and retry
+    // If failed, automatically fetch live pickup locations and retry with available location
     if (!result.ok) {
       const availableLocations = await getShiprocketPickupLocations(token);
       if (availableLocations.length > 0 && availableLocations[0] !== payload.pickup_location) {
@@ -133,7 +136,30 @@ export async function createShiprocketOrder(
       }
     }
 
-    return { success: result.ok, data: result.data, statusCode: result.status };
+    // Format detailed error message if rejection occurred
+    let formattedErrorMessage = result.data?.message || "";
+    if (result.data?.errors && typeof result.data.errors === "object") {
+      const fieldErrors = Object.entries(result.data.errors)
+        .map(([key, val]) => (Array.isArray(val) ? `${key}: ${val.join(", ")}` : `${key}: ${val}`))
+        .join(" | ");
+      if (fieldErrors) {
+        formattedErrorMessage = `${result.data?.message ? result.data.message + " - " : ""}${fieldErrors}`;
+      }
+    }
+
+    if (!result.ok && (formattedErrorMessage.toLowerCase().includes("pickup") || formattedErrorMessage.toLowerCase().includes("invalid data"))) {
+      const availableLocations = await getShiprocketPickupLocations(token);
+      if (availableLocations.length === 0) {
+        formattedErrorMessage = "No Pickup Address found in your Shiprocket Account. Please add a Pickup Address in your Shiprocket Dashboard under Settings -> Pickup Addresses.";
+      }
+    }
+
+    return {
+      success: Boolean(result.ok),
+      data: result.data,
+      statusCode: result.status,
+      errorMessage: formattedErrorMessage || "Shiprocket API rejected order creation.",
+    };
   } catch (error: any) {
     console.error("[Shiprocket Order Creation Error]:", error);
     return { success: false, error: error?.message || "Network Error" };

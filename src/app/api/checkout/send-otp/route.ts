@@ -27,8 +27,8 @@ export async function POST(request: Request) {
     db.orderOtps.push({ email, otp, expiresAt });
     await writeDB(db);
 
-    // Send OTP via email using Resend
-    const sent = await sendOrderOTPEmail(email, otp);
+    // Send OTP via email using unified email service (Resend + SMTP fallback)
+    const sent = await sendOTPEmail(email, otp);
 
     if (!sent) {
       // Fallback: return the OTP in the response for local testing if SMTP is not configured

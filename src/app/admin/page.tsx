@@ -8783,7 +8783,7 @@ export default function AdminDashboard() {
                 )}
 
                 {subTab === "shipping" && (() => {
-                  const sr = dbData.settings?.shiprocket || { enabled: true, email: "", password: "", pickupLocation: "Primary" };
+                  const sr = dbData.settings?.shiprocket || { enabled: true, email: "", password: "", pickupLocation: "PURE AYUR HERBS" };
                   return (
                     <div className="text-xs space-y-5 border border-[#ddddd9] p-5 rounded-2xl bg-white shadow-xs">
                       <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
@@ -8848,12 +8848,12 @@ export default function AdminDashboard() {
                         <label className="block font-bold mb-1">Pickup Location Name (in Shiprocket Panel)</label>
                         <input
                           type="text"
-                          value={sr.pickupLocation || "Primary"}
+                          value={sr.pickupLocation || "PURE AYUR HERBS"}
                           onChange={(e) => {
                             const updated = { ...sr, pickupLocation: e.target.value };
                             setDbData({ ...dbData, settings: { ...dbData.settings, shiprocket: updated } });
                           }}
-                          placeholder="e.g. Primary, Warehouse1, Noida"
+                          placeholder="e.g. PURE AYUR HERBS, Primary, Warehouse1"
                           className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
                         />
                         <span className="text-[10px] text-gray-500 mt-1 block">Must match your Pickup Address Nickname configured in your Shiprocket Settings → Pickup Addresses.</span>

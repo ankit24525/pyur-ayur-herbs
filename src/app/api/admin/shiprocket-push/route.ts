@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       {
         order_id: order.id,
         order_date: nowStr,
-        pickup_location: srConfig.pickupLocation || "Primary",
+        pickup_location: srConfig.pickupLocation || "PURE AYUR HERBS",
         billing_customer_name: cleanCustomerName,
         billing_address: cleanAddress,
         billing_city: cleanCity,

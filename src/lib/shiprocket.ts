@@ -50,16 +50,17 @@ export async function getShiprocketPickupLocations(token: string): Promise<strin
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
-    const addresses = data?.data?.shipping_address || data?.shipping_address || [];
+    const addresses = data?.data?.shipping_address || data?.shipping_address || (Array.isArray(data?.data) ? data.data : []);
     if (Array.isArray(addresses)) {
-      return addresses
-        .map((addr: any) => addr.pickup_location || addr.address_nickname || addr.name)
+      const locations = addresses
+        .map((addr: any) => addr.pickup_location || addr.address_nickname || addr.name || addr.pickup_location_name)
         .filter(Boolean);
+      if (locations.length > 0) return locations;
     }
   } catch (err) {
     console.error("[Shiprocket Fetch Pickup Locations Error]:", err);
   }
-  return [];
+  return ["PURE AYUR HERBS", "Primary"];
 }
 
 export interface ShiprocketOrderItem {
@@ -124,15 +125,24 @@ export async function createShiprocketOrder(
       return { ok: res.ok && Boolean(data?.order_id), data, status: res.status };
     };
 
-    // First attempt with given pickup_location
-    let result = await makeRequest(payload.pickup_location);
+    // First attempt with given pickup_location (or "PURE AYUR HERBS" if default/Primary)
+    const initialLocation = (!payload.pickup_location || payload.pickup_location === "Primary")
+      ? "PURE AYUR HERBS"
+      : payload.pickup_location;
 
-    // If failed, automatically fetch live pickup locations and retry with available location
+    let result = await makeRequest(initialLocation);
+
+    // If failed, automatically fetch live pickup locations and retry
     if (!result.ok) {
-      const availableLocations = await getShiprocketPickupLocations(token);
-      if (availableLocations.length > 0 && availableLocations[0] !== payload.pickup_location) {
-        console.log(`[Shiprocket Retrying with fetched location]: ${availableLocations[0]}`);
-        result = await makeRequest(availableLocations[0]);
+      const candidateLocations = ["PURE AYUR HERBS", "Primary", ...(await getShiprocketPickupLocations(token))];
+      const uniqueLocations = Array.from(new Set(candidateLocations));
+
+      for (const loc of uniqueLocations) {
+        if (loc !== initialLocation) {
+          console.log(`[Shiprocket Retrying order creation with location]: ${loc}`);
+          result = await makeRequest(loc);
+          if (result.ok) break;
+        }
       }
     }
 

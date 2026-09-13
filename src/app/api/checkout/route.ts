@@ -78,7 +78,7 @@ export async function POST(request: Request) {
           const srRes = await createShiprocketOrder({
             order_id: orderId,
             order_date: nowStr,
-            pickup_location: srConfig.pickupLocation || "Primary",
+            pickup_location: srConfig.pickupLocation || "PURE AYUR HERBS",
             billing_customer_name: name,
             billing_address: address,
             billing_city: city,

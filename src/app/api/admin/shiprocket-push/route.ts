@@ -61,18 +61,25 @@ export async function POST(request: Request) {
       },
     ];
 
+    const cleanPhone = (order.phone || "").replace(/\D/g, "").slice(-10) || "9876543210";
+    const cleanPincode = (order.pincode || "").replace(/\D/g, "").slice(0, 6) || "110001";
+    const cleanAddress = (order.address || "Main Street Address").trim();
+    const cleanCity = (order.city || "Noida").trim();
+    const cleanState = (order.state || "Uttar Pradesh").trim();
+    const cleanEmail = (order.email || "orders@purreayurherbs.com").trim();
+
     const srRes = await createShiprocketOrder(
       {
         order_id: order.id,
         order_date: nowStr,
         pickup_location: srConfig.pickupLocation || "Primary",
         billing_customer_name: order.customer || order.name || "Customer",
-        billing_address: order.address || "Main Address",
-        billing_city: order.city || "City",
-        billing_pincode: order.pincode || "110001",
-        billing_state: order.state || "State",
-        billing_email: order.email || "customer@purreayurherbs.com",
-        billing_phone: order.phone || "9876543210",
+        billing_address: cleanAddress,
+        billing_city: cleanCity,
+        billing_pincode: cleanPincode,
+        billing_state: cleanState,
+        billing_email: cleanEmail,
+        billing_phone: cleanPhone,
         payment_method: order.method === "Prepaid" ? "Prepaid" : "COD",
         sub_total: order.total || 999,
         order_items: orderItems,

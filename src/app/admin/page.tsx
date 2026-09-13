@@ -738,6 +738,7 @@ export default function AdminDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [orderPaymentFilter, setOrderPaymentFilter] = useState("All");
+  const [pushingSrOrderId, setPushingSrOrderId] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -4245,13 +4246,54 @@ export default function AdminDashboard() {
                               </td>
                               <td className="p-3 text-right font-bold text-[#244f31]">₹{o.total}</td>
                               <td className="p-3 text-center">
-                                <div className="flex items-center justify-center gap-2">
+                                <div className="flex items-center justify-center gap-2 flex-wrap">
                                   <button
                                     type="button"
                                     onClick={() => setSelectedOrder(o)}
                                     className="text-[#244f31] font-bold hover:underline"
                                   >
                                     View
+                                  </button>
+                                  <span className="text-gray-300">|</span>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      setPushingSrOrderId(o.id);
+                                      try {
+                                        const res = await fetch("/api/admin/shiprocket-push", {
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ orderId: o.id }),
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                          showToast(`🟢 ${data.message}`);
+                                          setDbData((prev: any) => ({
+                                            ...prev,
+                                            orders: (prev.orders || []).map((ord: any) =>
+                                              ord.id === o.id
+                                                ? { ...ord, shiprocketOrderId: data.shiprocketOrderId, shiprocketShipmentId: data.shipmentId, shiprocketStatus: "Pushed" }
+                                                : ord
+                                            ),
+                                          }));
+                                        } else {
+                                          showToast(`🔴 Shiprocket Error: ${data.error}`);
+                                        }
+                                      } catch {
+                                        showToast("🔴 Network Error pushing order to Shiprocket.");
+                                      } finally {
+                                        setPushingSrOrderId(null);
+                                      }
+                                    }}
+                                    disabled={pushingSrOrderId === o.id}
+                                    className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                      o.shiprocketStatus === "Pushed"
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                        : "bg-[#244f31] text-white border-[#244f31] hover:bg-[#1c3e26]"
+                                    }`}
+                                    title={o.shiprocketStatus === "Pushed" ? `SR Order ID: ${o.shiprocketOrderId || 'Pushed'}` : "Push Order to Shiprocket"}
+                                  >
+                                    {pushingSrOrderId === o.id ? "Pushing..." : o.shiprocketStatus === "Pushed" ? "📦 Pushed" : "🚀 Push SR"}
                                   </button>
                                   <span className="text-gray-300">|</span>
                                   <button
@@ -8833,7 +8875,8 @@ export default function AdminDashboard() {
                               });
                               const data = await res.json();
                               if (data.success) {
-                                showToast("🟢 Connected successfully to Shiprocket Direct API!");
+                                showToast("🟢 Connected & saved successfully to Shiprocket Direct API!");
+                                await handleSaveSettings("shiprocket", sr);
                               } else {
                                 showToast(`🔴 Connection Failed: ${data.error || "Invalid Credentials"}`);
                               }
@@ -9056,6 +9099,68 @@ export default function AdminDashboard() {
                       <span className="text-[#244f31] font-black text-sm">₹{selectedOrder.total}</span>
                     </div>
                   </div>
+                </div>
+
+                {/* Shiprocket Logistics Integration */}
+                <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-[#f8faf1]/60">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-[#244f31] uppercase tracking-wider text-[10px]">Shiprocket Shipping Status</h4>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${selectedOrder.shiprocketStatus === "Pushed" ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-amber-100 text-amber-800 border border-amber-300"}`}>
+                      {selectedOrder.shiprocketStatus === "Pushed" ? "🟢 Pushed to Shiprocket" : "⚪ Not Pushed Yet"}
+                    </span>
+                  </div>
+
+                  {selectedOrder.shiprocketOrderId && (
+                    <div className="text-[11px] text-gray-700 bg-white p-2.5 rounded-lg border border-[#ddddd9] space-y-1 font-mono">
+                      <div>Shiprocket Order ID: <span className="font-bold text-[#17231b]">{selectedOrder.shiprocketOrderId}</span></div>
+                      {selectedOrder.shiprocketShipmentId && (
+                        <div>Shipment ID: <span className="font-bold text-[#17231b]">{selectedOrder.shiprocketShipmentId}</span></div>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setPushingSrOrderId(selectedOrder.id);
+                      try {
+                        const res = await fetch("/api/admin/shiprocket-push", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ orderId: selectedOrder.id }),
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          showToast(`🟢 ${data.message}`);
+                          const updatedOrder = {
+                            ...selectedOrder,
+                            shiprocketOrderId: data.shiprocketOrderId,
+                            shiprocketShipmentId: data.shipmentId,
+                            shiprocketStatus: "Pushed",
+                          };
+                          setSelectedOrder(updatedOrder);
+                          setDbData((prev: any) => ({
+                            ...prev,
+                            orders: (prev.orders || []).map((o: any) => (o.id === selectedOrder.id ? updatedOrder : o)),
+                          }));
+                        } else {
+                          showToast(`🔴 Shiprocket Error: ${data.error}`);
+                        }
+                      } catch {
+                        showToast("🔴 Network Error pushing order to Shiprocket.");
+                      } finally {
+                        setPushingSrOrderId(null);
+                      }
+                    }}
+                    disabled={pushingSrOrderId === selectedOrder.id}
+                    className="w-full py-2.5 bg-[#244f31] hover:bg-[#1c3e26] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    {pushingSrOrderId === selectedOrder.id
+                      ? "Pushing to Shiprocket API..."
+                      : selectedOrder.shiprocketStatus === "Pushed"
+                      ? "🔄 Re-Push Order to Shiprocket"
+                      : "🚀 Push Order to Shiprocket"}
+                  </button>
                 </div>
 
                 {/* Danger actions */}

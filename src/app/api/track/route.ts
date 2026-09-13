@@ -16,10 +16,10 @@ export async function GET(request: Request) {
     const db = await readDB();
     const allOrders = db.orders || [];
 
-    // Find order matching ID (case-insensitive, strip spaces)
-    const normalizedSearchId = orderId.trim().toLowerCase();
+    // Find order matching ID (case-insensitive, strip prefixes like "Order ID:")
+    const cleanOrderId = orderId.replace(/^order\s*id\s*:\s*/i, "").replace(/^order\s*:\s*/i, "").trim().toLowerCase();
     const order = allOrders.find(
-      (o) => o.id.trim().toLowerCase() === normalizedSearchId
+      (o) => o.id.trim().toLowerCase() === cleanOrderId
     );
 
     if (!order) {

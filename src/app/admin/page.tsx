@@ -8739,13 +8739,115 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {subTab === "shipping" && (
-                  <div className="text-xs space-y-3">
-                    <span className="block font-bold">Active Courier Gateway APIs</span>
-                    <div className="border p-2.5 rounded font-semibold text-emerald-600">Shiprocket Direct API connected</div>
-                    <div className="border p-2.5 rounded font-semibold text-emerald-600">Delhivery API connected</div>
-                  </div>
-                )}
+                {subTab === "shipping" && (() => {
+                  const sr = dbData.settings?.shiprocket || { enabled: true, email: "", password: "", pickupLocation: "Primary" };
+                  return (
+                    <div className="text-xs space-y-5 border border-[#ddddd9] p-5 rounded-2xl bg-white shadow-xs">
+                      <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                        <div>
+                          <span className="block font-black text-sm text-[#17231b]">Shiprocket Direct API Integration</span>
+                          <span className="text-[10px] text-[#666666]">Automatically create shipments & orders in your Shiprocket account upon website checkout</span>
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={sr.enabled ?? true}
+                            onChange={(e) => {
+                              const updated = { ...sr, enabled: e.target.checked };
+                              setDbData({ ...dbData, settings: { ...dbData.settings, shiprocket: updated } });
+                            }}
+                            className="rounded border-[#ddddd9] text-[#244f31] focus:ring-[#244f31]"
+                          />
+                          <span className="font-bold">Auto-Push Orders Active</span>
+                        </label>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block font-bold mb-1">Shiprocket Registered Email</label>
+                          <input
+                            type="email"
+                            value={sr.email || ""}
+                            onChange={(e) => {
+                              const updated = { ...sr, email: e.target.value };
+                              setDbData({ ...dbData, settings: { ...dbData.settings, shiprocket: updated } });
+                            }}
+                            placeholder="e.g. shiprocket@pureayurherbs.com"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold mb-1">Shiprocket Account Password</label>
+                          <input
+                            type="password"
+                            value={sr.password || ""}
+                            onChange={(e) => {
+                              const updated = { ...sr, password: e.target.value };
+                              setDbData({ ...dbData, settings: { ...dbData.settings, shiprocket: updated } });
+                            }}
+                            placeholder="••••••••••••"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold mb-1">Pickup Location Name (in Shiprocket Panel)</label>
+                        <input
+                          type="text"
+                          value={sr.pickupLocation || "Primary"}
+                          onChange={(e) => {
+                            const updated = { ...sr, pickupLocation: e.target.value };
+                            setDbData({ ...dbData, settings: { ...dbData.settings, shiprocket: updated } });
+                          }}
+                          placeholder="e.g. Primary, Warehouse1, Noida"
+                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                        />
+                        <span className="text-[10px] text-gray-500 mt-1 block">Must match your Pickup Address Nickname configured in your Shiprocket Settings → Pickup Addresses.</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 border-t border-[#ddddd9] pt-4">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!sr.email || !sr.password) {
+                              showToast("⚠️ Please enter Shiprocket Email and Password first.");
+                              return;
+                            }
+                            try {
+                              const res = await fetch("/api/admin/shiprocket-test", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: sr.email, password: sr.password }),
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                showToast("🟢 Connected successfully to Shiprocket Direct API!");
+                              } else {
+                                showToast(`🔴 Connection Failed: ${data.error || "Invalid Credentials"}`);
+                              }
+                            } catch {
+                              showToast("🔴 Network Error testing Shiprocket Connection.");
+                            }
+                          }}
+                          className="px-4 py-2 border border-[#244f31] text-[#244f31] hover:bg-[#244f31]/10 rounded-xl font-bold transition"
+                        >
+                          ⚡ Test Connection
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await handleSaveSettings("shiprocket", sr);
+                          }}
+                          className="px-5 py-2 bg-[#244f31] hover:bg-[#1c3e26] text-white rounded-xl font-bold shadow transition"
+                        >
+                          Save Shiprocket Settings
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {subTab === "tax" && (
                   <div className="text-xs space-y-3">

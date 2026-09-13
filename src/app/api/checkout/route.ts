@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
+import { getShiprocketToken, createShiprocketOrder } from "@/lib/shiprocket";
 
 export async function POST(request: Request) {
   try {
@@ -43,6 +44,67 @@ export async function POST(request: Request) {
 
     db.orders.push(newOrder);
     await writeDB(db);
+
+    // Automated Shiprocket Direct API Order Push
+    try {
+      const srConfig = db.settings?.shiprocket || {};
+      const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;
+      const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD;
+      const srEnabled = srConfig.enabled ?? Boolean(srEmail && srPassword);
+
+      if (srEnabled && srEmail && srPassword) {
+        const token = await getShiprocketToken(srEmail, srPassword);
+        if (token) {
+          const orderItems = items.map((i: any) => {
+            const prod = db.products.find((p) => p.id === i.productId);
+            return {
+              name: prod ? prod.name : "Ayurvedic Remedy",
+              sku: prod ? (prod.sku || `SKU-${i.productId}`) : `SKU-${i.productId}`,
+              units: i.quantity || 1,
+              selling_price: prod ? prod.price : Math.round(total / items.length),
+              discount: 0,
+              tax: 0,
+            };
+          });
+
+          const dateObj = new Date();
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+          const day = String(dateObj.getDate()).padStart(2, "0");
+          const hours = String(dateObj.getHours()).padStart(2, "0");
+          const mins = String(dateObj.getMinutes()).padStart(2, "0");
+          const nowStr = `${year}-${month}-${day} ${hours}:${mins}`;
+
+          const srRes = await createShiprocketOrder({
+            order_id: orderId,
+            order_date: nowStr,
+            pickup_location: srConfig.pickupLocation || "Primary",
+            billing_customer_name: name,
+            billing_address: address,
+            billing_city: city,
+            billing_pincode: pincode,
+            billing_state: state,
+            billing_email: email || "customer@pureayurherbs.com",
+            billing_phone: phone,
+            payment_method: paymentMethod === "prepaid" ? "Prepaid" : "COD",
+            sub_total: subtotal,
+            order_items: orderItems,
+          }, token);
+
+          if (srRes.success && srRes.data) {
+            (newOrder as any).shiprocketOrderId = srRes.data.order_id;
+            (newOrder as any).shiprocketShipmentId = srRes.data.shipment_id;
+            (newOrder as any).shiprocketStatus = "Pushed";
+            await writeDB(db);
+            console.log(`[Shiprocket Push Success]: Order ${orderId} synced (SR ID: ${srRes.data.order_id}, Shipment: ${srRes.data.shipment_id})`);
+          } else {
+            console.error("[Shiprocket Push Failed]:", srRes);
+          }
+        }
+      }
+    } catch (srErr) {
+      console.error("[Shiprocket Auto-Push Exception]:", srErr);
+    }
 
     // Simulated Server-Side Meta Conversions API (CAPI) trigger
     try {

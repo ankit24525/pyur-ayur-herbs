@@ -17,14 +17,25 @@ export async function GET(request: Request) {
     const db = await readDB();
     const allOrders = db.orders || [];
 
-    // Find order matching ID (case-insensitive, strip prefixes like "Order ID:")
-    const cleanOrderId = orderId.replace(/^order\s*id\s*:\s*/i, "").replace(/^order\s*:\s*/i, "").trim().toLowerCase();
-    const order = allOrders.find(
-      (o) => o.id.trim().toLowerCase() === cleanOrderId
-    );
+    // Find order matching ID, numeric digits, Shiprocket Order ID, or Shipment ID
+    const cleanQuery = orderId.replace(/^order\s*id\s*:\s*/i, "").replace(/^order\s*:\s*/i, "").trim().toLowerCase();
+    const numericQuery = cleanQuery.replace(/\D/g, "");
+
+    const order = allOrders.find((o: any) => {
+      if (!o || !o.id) return false;
+      const orderIdLower = o.id.trim().toLowerCase();
+      const orderNumeric = o.id.replace(/\D/g, "");
+      
+      const isExactIdMatch = orderIdLower === cleanQuery;
+      const isNumericMatch = numericQuery.length >= 4 && (orderNumeric === numericQuery || orderIdLower.includes(cleanQuery));
+      const isSrOrderMatch = o.shiprocketOrderId && String(o.shiprocketOrderId).trim().toLowerCase() === cleanQuery;
+      const isSrShipmentMatch = o.shiprocketShipmentId && String(o.shiprocketShipmentId).trim().toLowerCase() === cleanQuery;
+
+      return isExactIdMatch || isNumericMatch || isSrOrderMatch || isSrShipmentMatch;
+    });
 
     if (!order) {
-      return NextResponse.json({ success: false, error: "Order not found." }, { status: 404 });
+      return NextResponse.json({ success: false, error: "Order not found. Please check your Order ID (e.g. PYR-ORD-909337)." }, { status: 404 });
     }
 
     // Check authorization:

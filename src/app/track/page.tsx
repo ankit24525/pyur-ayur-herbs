@@ -155,48 +155,75 @@ function TrackOrderContent() {
     };
 
     const courierInfo = liveTrackingData?.tracking_data?.shipment_track?.[0];
-    const courierName = courierInfo?.courier_name || (shiprocketStatus === "Pushed" ? "Shiprocket Assigned Courier" : "");
+    const courierName = courierInfo?.courier_name || (shiprocketStatus === "Pushed" ? "Shiprocket Courier Partner" : "");
     const awbCode = courierInfo?.awb_code || trackingId || "";
+
+    const rawActivities = liveTrackingData?.tracking_data?.shipment_track_activities ||
+                          liveTrackingData?.tracking_data?.scans ||
+                          liveTrackingData?.scans || [];
+
+    const realScans = Array.isArray(rawActivities) && rawActivities.length > 0
+      ? rawActivities.map((act: any) => ({
+          title: [act.activity || act.status || act.sr_status_label, act.location ? `(${act.location})` : ""].filter(Boolean).join(" "),
+          time: act.date || act.time || act.timestamp || "",
+        }))
+      : [];
+
+    const orderPlacedEvents = [
+      { title: "Your order has been placed on website.", time: `${formatDate(baseDate, 0)}` },
+      { title: shiprocketStatus === "Pushed" ? "Order registered & pushed to Shiprocket Direct System." : "Seller has processed your order.", time: `${formatDate(baseDate, 0)}` },
+    ];
+
+    const shippedEvents = realScans.length > 0
+      ? realScans
+      : [
+          {
+            title: courierName
+              ? `${courierName}${awbCode ? " - AWB: " + awbCode : ""}`
+              : "Order queued for courier pickup.",
+            time: "",
+          },
+          {
+            title: courierInfo?.current_status
+              ? `Shiprocket Live Status: ${courierInfo.current_status}`
+              : "Awaiting physical parcel pickup at seller warehouse.",
+            time: "",
+          },
+        ];
 
     const steps = [
       {
         label: "Order Confirmed",
         date: formatDate(baseDate, 0),
-        events: [
-          { title: "Your order has been placed successfully.", time: `${formatDate(baseDate, 0)}` },
-          { title: shiprocketStatus === "Pushed" ? "Order pushed & registered in Shiprocket System." : "Seller has processed your order.", time: `${formatDate(baseDate, 0)}` },
-        ],
+        events: orderPlacedEvents,
         done: false,
-        active: false
+        active: false,
       },
       {
         label: "Shipped / In Transit",
         date: formatDate(baseDate, 1),
-        events: [
-          { title: courierName ? `${courierName}${awbCode ? " - AWB: " + awbCode : ""}` : "Item processed for dispatch.", time: "" },
-          { title: courierInfo?.current_status ? `Shipment Status: ${courierInfo.current_status}` : "Awaiting pickup & courier hub scan.", time: "" },
-        ],
+        events: shippedEvents,
         done: false,
-        active: false
+        active: false,
       },
       {
         label: "Out For Delivery",
         date: formatDate(baseDate, 3),
         events: [
-          { title: "Your item will be out for delivery once arrived at nearest local hub.", time: "" }
+          { title: "Your item will be out for delivery once arrived at destination hub.", time: "" },
         ],
         done: false,
-        active: false
+        active: false,
       },
       {
         label: "Delivered",
         date: formatDate(baseDate, 4),
         events: [
-          { title: "Your package is delivered to the customer.", time: "" }
+          { title: "Your package is delivered to the customer.", time: "" },
         ],
         done: false,
-        active: false
-      }
+        active: false,
+      },
     ];
 
     const currentStatus = (status || "").toLowerCase();

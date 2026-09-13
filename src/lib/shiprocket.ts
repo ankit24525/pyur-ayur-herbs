@@ -180,12 +180,17 @@ export async function createShiprocketOrder(
 
 export async function getShiprocketTracking(shipmentId: string | number, token: string) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+
     const res = await fetch(`https://apiv2.shiprocket.in/v1/external/courier/track/shipment/${shipmentId}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
     const data = await res.json();
     return { success: res.ok, data };
   } catch (error: any) {

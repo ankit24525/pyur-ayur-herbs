@@ -65,13 +65,19 @@ function TrackOrderContent() {
     setError(null);
     try {
       const res = await fetch(`/api/track?orderId=${encodeURIComponent(id.trim())}&contact=${encodeURIComponent(contactVal || "")}`, { cache: "no-store" });
-      const data = await res.json();
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { success: false, error: "Temporary server error loading order. Please try again in a moment." };
+      }
       if (res.ok && data.success) {
         setOrder(data.order);
         setAuthorized(data.authorized);
       } else {
         setOrder(null);
-        setError(data.error || "Failed to load tracking details.");
+        setError(data.error || "Order not found. Please verify your Order ID.");
       }
     } catch (e) {
       console.error(e);

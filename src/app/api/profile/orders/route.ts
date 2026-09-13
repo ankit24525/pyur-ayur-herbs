@@ -4,25 +4,38 @@ import { readDB } from "@/lib/db";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const email = searchParams.get("email") || "";
-    const phone = searchParams.get("phone") || "";
+    const email = (searchParams.get("email") || "").trim().toLowerCase();
+    const phone = (searchParams.get("phone") || "").replace(/\D/g, "");
+    const name = (searchParams.get("name") || "").trim().toLowerCase();
 
-    if (!email && !phone) {
-      return NextResponse.json({ success: false, error: "Email or phone number is required." }, { status: 400 });
+    if (!email && !phone && !name) {
+      return NextResponse.json({ success: false, error: "Email, phone number, or customer name is required." }, { status: 400 });
     }
 
     const db = await readDB();
     const allOrders = db.orders || [];
 
-    // Filter orders matching the email or phone number
+    // Filter orders matching email, phone number, or customer name
     const userOrders = allOrders.filter((order) => {
-      const matchEmail = email && order.email && order.email.toLowerCase().trim() === email.toLowerCase().trim();
-      
-      const normalizedPhone = phone.trim().replace(/\s+/g, "");
-      const orderPhone = (order.phone || "").trim().replace(/\s+/g, "");
-      const matchPhone = phone && orderPhone && (orderPhone === normalizedPhone || orderPhone.includes(normalizedPhone) || normalizedPhone.includes(orderPhone));
-      
-      return matchEmail || matchPhone;
+      const orderEmail = (order.email || "").trim().toLowerCase();
+      const matchEmail = email && orderEmail && (orderEmail === email || orderEmail.includes(email));
+
+      const cleanUserPhone = phone.slice(-10);
+      const cleanOrderPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
+      const matchPhone = cleanUserPhone.length >= 5 && cleanOrderPhone.length >= 5 && (
+        cleanUserPhone === cleanOrderPhone ||
+        cleanOrderPhone.includes(cleanUserPhone) ||
+        cleanUserPhone.includes(cleanOrderPhone)
+      );
+
+      const orderCustomer = (order.customer || order.name || "").trim().toLowerCase();
+      const matchName = name && name.length >= 3 && orderCustomer && (
+        orderCustomer === name ||
+        orderCustomer.includes(name) ||
+        name.includes(orderCustomer)
+      );
+
+      return Boolean(matchEmail || matchPhone || matchName);
     });
 
     // Sort orders by date/id descending (newest first)

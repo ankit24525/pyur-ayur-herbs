@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB } from "@/lib/db";
+import { getShiprocketToken, getShiprocketTracking } from "@/lib/shiprocket";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,34 @@ export async function GET(request: Request) {
     const isPhoneMatch = !!contact && cleanContact.length >= 4 && (userPhone === cleanContact || userPhone.includes(cleanContact) || cleanContact.includes(userPhone));
     const isAuthorized = isEmailMatch || isPhoneMatch;
 
+    // Check live Shiprocket shipment status if pushed
+    let liveTracking = null;
+    if (order.shiprocketShipmentId) {
+      try {
+        const srConfig = db.settings?.shiprocket || {};
+        const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;
+        const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD;
+        if (srEmail && srPassword) {
+          const token = await getShiprocketToken(srEmail, srPassword);
+          if (token) {
+            const trackRes = await getShiprocketTracking(order.shiprocketShipmentId, token);
+            if (trackRes.success) {
+              liveTracking = trackRes.data;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("[Track Route Shiprocket Fetch Error]:", err);
+      }
+    }
+
+    const orderWithTracking = {
+      ...order,
+      liveTracking,
+    };
+
     if (isAuthorized) {
-      return NextResponse.json({ success: true, authorized: true, order });
+      return NextResponse.json({ success: true, authorized: true, order: orderWithTracking });
     }
 
     // Mask sensitive information for customer privacy:
@@ -57,6 +84,7 @@ export async function GET(request: Request) {
 
     const maskedOrder = {
       ...order,
+      liveTracking,
       email: maskEmail(order.email),
       phone: order.phone ? order.phone.replace(/.(?=.{4})/g, "*") : "",
       customerName: maskString(order.customerName || order.name || "", 2),

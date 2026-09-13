@@ -356,10 +356,22 @@ function TrackOrderContent() {
                     )}
                   </div>
                   
-                  {order.status === "Shipped" && (
-                    <div className="inline-flex items-center gap-2 self-start rounded-lg bg-[#eef5df] px-3.5 py-2 text-xs font-bold text-[#244f31]">
-                      <Truck className="size-4 text-[#80a03c]" />
-                      <span>Tracking ID: {order.trackingId || "PRY-TRACK-1048"}</span>
+                  {(order.shiprocketShipmentId || order.shiprocketStatus === "Pushed" || order.status === "Shipped") && (
+                    <div className="inline-flex flex-col gap-1 self-start rounded-xl bg-[#eef5df] p-3 text-xs font-bold text-[#244f31] border border-[#80a03c]/30 shadow-xs">
+                      <div className="flex items-center gap-1.5 font-black">
+                        <Truck className="size-4 text-[#80a03c]" />
+                        <span>Shiprocket Express Logistics</span>
+                      </div>
+                      <div className="text-[11px] text-gray-700 space-y-0.5 font-mono font-medium">
+                        {order.shiprocketOrderId && <div>Shiprocket Order: #{order.shiprocketOrderId}</div>}
+                        {order.shiprocketShipmentId && <div>Shipment ID: #{order.shiprocketShipmentId}</div>}
+                        {order.liveTracking?.tracking_data?.shipment_track?.[0]?.courier_name && (
+                          <div className="text-[#244f31] font-bold">Courier: {order.liveTracking.tracking_data.shipment_track[0].courier_name}</div>
+                        )}
+                        {order.liveTracking?.tracking_data?.shipment_track?.[0]?.awb_code && (
+                          <div className="text-[#244f31] font-bold">AWB Code: {order.liveTracking.tracking_data.shipment_track[0].awb_code}</div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

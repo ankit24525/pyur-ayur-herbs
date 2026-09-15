@@ -1820,6 +1820,54 @@ export default function AdminDashboard() {
     }
   };
 
+  // WhatsApp Official Cloud API Reply Modal State & Handler
+  const [replyModalLead, setReplyModalLead] = useState<any>(null);
+  const [replyMessageText, setReplyMessageText] = useState("");
+  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [replyStatusMsg, setReplyStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleSendOfficialReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyModalLead || !replyMessageText.trim()) return;
+    setIsSendingReply(true);
+    setReplyStatusMsg(null);
+    try {
+      const res = await fetch("/api/admin/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: replyModalLead.phone,
+          message: replyMessageText.trim(),
+          leadId: replyModalLead.id,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setReplyStatusMsg({ type: "success", text: "Sent successfully from +91 72478 24101!" });
+        setReplyMessageText("");
+        setDbData((prev: any) => ({
+          ...prev,
+          leads: (prev.leads || []).map((l: any) =>
+            l.id === replyModalLead.id ? { ...l, status: "Responded" } : l
+          ),
+        }));
+        setTimeout(() => {
+          setReplyModalLead(null);
+          setReplyStatusMsg(null);
+        }, 1500);
+      } else {
+        setReplyStatusMsg({
+          type: "error",
+          text: data.error || "Failed to send message via Meta Cloud API.",
+        });
+      }
+    } catch (err: any) {
+      setReplyStatusMsg({ type: "error", text: err.message || "Failed to send message." });
+    } finally {
+      setIsSendingReply(false);
+    }
+  };
+
   const handleSaveSettings = async (section: string, value: any) => {
     const updatedSettings = {
       ...dbData.settings,
@@ -8222,15 +8270,29 @@ export default function AdminDashboard() {
                               </td>
                               <td className="p-3 text-center">
                                 <div className="flex items-center justify-center gap-2">
+                                  {cleanPhone && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setReplyModalLead(ld);
+                                        setReplyMessageText("");
+                                        setReplyStatusMsg(null);
+                                      }}
+                                      className="inline-flex items-center gap-1 bg-[#17231b] hover:bg-[#2c4233] text-white text-[10px] font-bold px-2.5 py-1 rounded-md transition shadow-xs cursor-pointer"
+                                      title="Reply from official verified business number (+91 72478 24101)"
+                                    >
+                                      ✉️ Official Reply
+                                    </button>
+                                  )}
                                   {waUrl && (
                                     <a
                                       href={waUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-md transition shadow-xs"
-                                      title="Open chat in WhatsApp Web / Mobile app"
+                                      title="Open chat in WhatsApp Web from your personal device"
                                     >
-                                      💬 Chat on WA
+                                      💬 Chat (WA Web)
                                     </a>
                                   )}
                                   <button
@@ -8248,6 +8310,85 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Official WhatsApp Cloud API Reply Modal */}
+                {replyModalLead && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ddddd9]">
+                      <div className="flex items-center justify-between pb-3 border-b border-[#ddddd9] mb-4">
+                        <div>
+                          <h4 className="font-bold text-sm text-[#17231b] flex items-center gap-1.5">
+                            <span>✉️</span> Official WhatsApp Reply
+                          </h4>
+                          <p className="text-[11px] text-[#666]">
+                            From: <strong className="text-emerald-700">+91 72478 24101</strong> (Pure Ayur Herbs)
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => { setReplyModalLead(null); setReplyStatusMsg(null); }}
+                          className="text-gray-400 hover:text-gray-600 p-1"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="bg-[#f8faf1] p-3 rounded-xl border border-[#ddddd9] mb-4 text-xs">
+                        <div className="flex justify-between font-semibold text-[#17231b]">
+                          <span>To: {replyModalLead.name || "Customer"}</span>
+                          <span className="font-mono text-[#666]">{replyModalLead.phone}</span>
+                        </div>
+                        <p className="text-[#555] mt-1 italic line-clamp-2">
+                          "{replyModalLead.message || replyModalLead.concern || "Inquiry"}"
+                        </p>
+                      </div>
+
+                      <form onSubmit={handleSendOfficialReply} className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-bold text-[#17231b] mb-1">
+                            Your Message:
+                          </label>
+                          <textarea
+                            required
+                            rows={4}
+                            value={replyMessageText}
+                            onChange={(e) => setReplyMessageText(e.target.value)}
+                            placeholder="Type your response to the customer..."
+                            className="w-full text-xs p-3 rounded-xl border border-[#ddddd9] focus:outline-none focus:border-[#17231b]"
+                          />
+                        </div>
+
+                        {replyStatusMsg && (
+                          <div
+                            className={`p-2.5 rounded-lg text-xs font-semibold ${
+                              replyStatusMsg.type === "success"
+                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                : "bg-rose-50 text-rose-800 border border-rose-200"
+                            }`}
+                          >
+                            {replyStatusMsg.text}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-end gap-2 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => { setReplyModalLead(null); setReplyStatusMsg(null); }}
+                            className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSendingReply || !replyMessageText.trim()}
+                            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                          >
+                            {isSendingReply ? "Sending..." : "Send via WhatsApp"}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

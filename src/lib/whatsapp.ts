@@ -5,11 +5,14 @@
 
 export async function sendWhatsAppTextMessage(to: string, text: string) {
   try {
-    const token = process.env.WHATSAPP_ACCESS_TOKEN;
-    const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const token =
+      process.env.WHATSAPP_ACCESS_TOKEN ||
+      "EAAYQ1WWZCjosBSZAyG6hGLLrF9b0c5RMPMeYv9g6xUVaCCf0zhFnfwR1pYrVmFx5oFU0FABvRWQYnAEa4hcpECjd9ZBHNCfhNEHUnYGz9uz3R5q1EZCBD9ZBKZBKkfZCgvqzEiy1WleH9fNSEKGVjbr8nFjPqitURMQvdZArUcDjTx0nfSNVB43pUqvOS1KkfKVNYwZDZD";
+    const phoneId =
+      process.env.WHATSAPP_PHONE_NUMBER_ID || "1363740400150399";
 
-    if (!token || !phoneId || token === "your_permanent_access_token_here") {
-      console.warn("[WhatsApp API] Missing WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID in environment variables.");
+    if (!token || !phoneId) {
+      console.warn("[WhatsApp API] Missing WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID.");
       return { success: false, error: "WhatsApp API credentials not configured." };
     }
 

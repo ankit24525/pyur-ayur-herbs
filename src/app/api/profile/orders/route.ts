@@ -7,20 +7,48 @@ export async function GET(request: Request) {
     const email = (searchParams.get("email") || "").trim().toLowerCase();
     const phone = (searchParams.get("phone") || "").replace(/\D/g, "");
     const name = (searchParams.get("name") || "").trim().toLowerCase();
+    const orderIdQuery = (searchParams.get("orderId") || "").trim().toLowerCase();
 
-    if (!email && !phone && !name) {
-      return NextResponse.json({ success: false, error: "Email, phone number, or customer name is required." }, { status: 400 });
+    if (!email && !phone && !name && !orderIdQuery) {
+      return NextResponse.json({ success: false, error: "Email, phone number, customer name, or Order ID is required." }, { status: 400 });
     }
 
     const db = await readDB();
     const allOrders = db.orders || [];
 
-    // Filter orders matching email, phone number, or customer name
+    // Filter orders matching email, phone number, customer name, or order ID
     const userOrders = allOrders.filter((order) => {
-      const orderEmail = (order.email || "").trim().toLowerCase();
-      const matchEmail = email && orderEmail && (orderEmail === email || orderEmail.includes(email));
+      if (!order) return false;
 
-      const cleanUserPhone = phone.slice(-10);
+      // 1. Order ID match
+      if (orderIdQuery) {
+        const cleanOrderQuery = orderIdQuery.replace(/\D/g, "");
+        const idLower = String(order.id || "").trim().toLowerCase();
+        const idNumeric = idLower.replace(/\D/g, "");
+        const srOrder = String(order.shiprocketOrderId || "").trim().toLowerCase();
+        const srShipment = String(order.shiprocketShipmentId || "").trim().toLowerCase();
+
+        if (
+          idLower === orderIdQuery ||
+          idLower.includes(orderIdQuery) ||
+          (cleanOrderQuery.length >= 4 && (idNumeric === cleanOrderQuery || idNumeric.includes(cleanOrderQuery))) ||
+          srOrder === orderIdQuery ||
+          srShipment === orderIdQuery
+        ) {
+          return true;
+        }
+      }
+
+      // 2. Email match
+      const orderEmail = (order.email || "").trim().toLowerCase();
+      const matchEmail = email && orderEmail && (
+        orderEmail === email ||
+        orderEmail.includes(email) ||
+        email.includes(orderEmail)
+      );
+
+      // 3. Phone number match
+      const cleanUserPhone = phone.replace(/\D/g, "").slice(-10);
       const cleanOrderPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
       const matchPhone = cleanUserPhone.length >= 5 && cleanOrderPhone.length >= 5 && (
         cleanUserPhone === cleanOrderPhone ||
@@ -28,11 +56,16 @@ export async function GET(request: Request) {
         cleanUserPhone.includes(cleanOrderPhone)
       );
 
-      const orderCustomer = (order.customer || order.name || "").trim().toLowerCase();
+      // 4. Customer Name match (full name or first name)
+      const orderCustomer = (order.customer || order.customerName || order.name || "").trim().toLowerCase();
+      const userFirstName = name.split(" ")[0];
+      const orderFirstName = orderCustomer.split(" ")[0];
+
       const matchName = name && name.length >= 3 && orderCustomer && (
         orderCustomer === name ||
         orderCustomer.includes(name) ||
-        name.includes(orderCustomer)
+        name.includes(orderCustomer) ||
+        (userFirstName.length >= 3 && userFirstName === orderFirstName)
       );
 
       return Boolean(matchEmail || matchPhone || matchName);

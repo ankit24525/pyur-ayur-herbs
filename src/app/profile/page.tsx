@@ -56,6 +56,35 @@ function ProfileDashboard() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
+  const [orderSearchQuery, setOrderSearchQuery] = useState("");
+  const [orderSearchLoading, setOrderSearchLoading] = useState(false);
+  const [orderSearchError, setOrderSearchError] = useState<string | null>(null);
+
+  const handleOrderSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orderSearchQuery.trim()) return;
+    setOrderSearchLoading(true);
+    setOrderSearchError(null);
+    try {
+      const res = await fetch(`/api/profile/orders?orderId=${encodeURIComponent(orderSearchQuery.trim())}&phone=${encodeURIComponent(orderSearchQuery.trim())}`);
+      const data = await res.json();
+      if (data.success && data.orders && data.orders.length > 0) {
+        setOrders((prev) => {
+          const existingIds = new Set(prev.map((o) => o.id));
+          const newOrders = data.orders.filter((o: any) => !existingIds.has(o.id));
+          return [...newOrders, ...prev];
+        });
+        setOrderSearchQuery("");
+      } else {
+        setOrderSearchError("No order found matching this Order ID or Phone number.");
+      }
+    } catch {
+      setOrderSearchError("Error searching orders. Please try again.");
+    } finally {
+      setOrderSearchLoading(false);
+    }
+  };
+
   // Address State
   const [addresses, setAddresses] = useState<any[]>([]);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
@@ -532,20 +561,53 @@ function ProfileDashboard() {
             {/* Orders Tab */}
             {activeTab === "orders" && (
               <div>
-                <h2 className="text-lg font-bold text-[#244f31] mb-4">My Orders</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-[#f0f0eb]">
+                  <div>
+                    <h2 className="text-lg font-bold text-[#244f31]">My Orders</h2>
+                    <p className="text-xs text-[#666666]">View your recent order history and track deliveries.</p>
+                  </div>
+
+                  {/* Order Search / Claim Form */}
+                  <form onSubmit={handleOrderSearch} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={orderSearchQuery}
+                      onChange={(e) => setOrderSearchQuery(e.target.value)}
+                      placeholder="Find Order ID or Phone"
+                      className="rounded-xl border border-[#ddddd9] px-3 py-1.5 text-xs outline-none focus:border-[#244f31] w-48"
+                    />
+                    <button
+                      type="submit"
+                      disabled={orderSearchLoading}
+                      className="rounded-xl bg-[#244f31] text-white font-bold text-xs px-3 py-1.5 hover:bg-[#1d3b24] disabled:opacity-50 transition"
+                    >
+                      {orderSearchLoading ? "Searching..." : "Find Order"}
+                    </button>
+                  </form>
+                </div>
+
+                {orderSearchError && (
+                  <p className="text-xs text-rose-600 font-bold mb-4 bg-rose-50 border border-rose-200 p-3 rounded-xl">
+                    {orderSearchError}
+                  </p>
+                )}
+
                 {loadingOrders ? (
                   <div className="flex py-8 justify-center">
                     <div className="h-6 w-6 animate-spin rounded-full border-3 border-[#244f31] border-t-transparent" />
                   </div>
                 ) : orders.length === 0 ? (
-                  <div className="text-center py-12 flex flex-col items-center gap-3">
-                    <ShoppingBag className="size-12 text-[#ddddd9]" />
-                    <p className="text-sm font-medium text-[#666666]">You haven't placed any orders yet.</p>
+                  <div className="text-center py-10 flex flex-col items-center gap-3 bg-neutral-50 rounded-2xl border border-dashed border-[#ddddd9] p-6">
+                    <ShoppingBag className="size-10 text-[#244f31]/40" />
+                    <h3 className="text-sm font-bold text-[#17231b]">No orders found for this profile</h3>
+                    <p className="text-xs text-[#666666] max-w-md">
+                      If you placed an order as a guest or with a different phone number, enter your <strong>Order ID (e.g. PYR-ORD-909337)</strong> or mobile number above to link it to your profile.
+                    </p>
                     <Link
                       href="/#shop"
-                      className="rounded-lg bg-[#244f31] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#80a03c]"
+                      className="mt-2 rounded-xl bg-[#244f31] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#80a03c] shadow-xs"
                     >
-                      Start Shopping
+                      Explore Ayurvedic Remedies
                     </Link>
                   </div>
                 ) : (

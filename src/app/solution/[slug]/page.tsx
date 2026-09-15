@@ -337,7 +337,7 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
                 Explore All Available Remedies
               </Link>
               <a
-                href={`https://wa.me/919876543210?text=${encodeURIComponent(`नमस्ते! मुझे ${details.title} के आयुर्वेदिक इलाज के बारे में जानकारी चाहिए।`)}`}
+                href={`https://wa.me/917247824101?text=${encodeURIComponent(`नमस्ते! मुझे ${details.title} के आयुर्वेदिक इलाज के बारे में जानकारी चाहिए।`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto rounded-xl border border-[#25D366] bg-[#25D366]/10 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-[#128C7E] transition hover:bg-[#25D366]/20 flex items-center justify-center gap-1.5"

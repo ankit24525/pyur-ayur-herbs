@@ -27,7 +27,7 @@ export async function GET() {
           linkedin: ""
         },
         supportEmail: db.settings?.supportEmail || "support@pureayurherbs.com",
-        whatsappNumber: db.settings?.whatsappNumber || "919876543210",
+        whatsappNumber: db.settings?.whatsappNumber || "917247824101",
         whatsappMessage: db.settings?.whatsappMessage || "Namaste!",
         freeThreshold: db.settings?.shipping?.freeThreshold || 999,
         prepaidDiscount: db.settings?.prepaidDiscount ?? 5,

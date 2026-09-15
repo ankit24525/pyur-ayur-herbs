@@ -32,32 +32,35 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    console.log("[WhatsApp Webhook POST Received]:", JSON.stringify(body));
 
-    if (body.object === "whatsapp_business_account") {
-      const entry = body.entry?.[0];
-      const change = entry?.changes?.[0];
-      const value = change?.value;
-      const message = value?.messages?.[0];
-      const contact = value?.contacts?.[0];
+    // Support both Meta production wrapped payload and Meta test tool payload
+    const entry = body.entry?.[0];
+    const change = entry?.changes?.[0];
+    const value = change?.value || body.value;
+    const message = value?.messages?.[0];
+    const contact = value?.contacts?.[0];
 
-      if (message) {
-        const from = message.from; // Customer's WhatsApp number (e.g. 919876543210)
-        const messageId = message.id;
-        const type = message.type;
-        const profileName = contact?.profile?.name || "Customer";
+    if (message) {
+      const from = message.from || "919999999999";
+      const messageId = message.id || `msg-${Date.now()}`;
+      const type = message.type || "text";
+      const profileName = contact?.profile?.name || "WhatsApp Customer";
 
-        let textBody = "";
-        if (type === "text") {
-          textBody = message.text?.body || "";
-        } else if (type === "interactive") {
-          textBody = message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || "";
-        }
+      let textBody = "";
+      if (type === "text") {
+        textBody = message.text?.body || "";
+      } else if (type === "interactive") {
+        textBody = message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || "";
+      } else {
+        textBody = "Customer sent an attachment or interactive response";
+      }
 
-        console.log(`[WhatsApp Webhook Incoming] From: ${profileName} (${from}) | Message: "${textBody}"`);
+      console.log(`[WhatsApp Webhook Incoming] From: ${profileName} (${from}) | Message: "${textBody}"`);
 
-        // 1. Save incoming message to db.leads so admin can view customer chats in /admin
-        try {
-          const db = await readDB();
+      // 1. Save incoming message to db.leads so admin can view customer chats in /admin
+      try {
+        const db = await readDB();
           db.leads = db.leads || [];
           
           // Avoid duplicate entry for same messageId
@@ -91,7 +94,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ success: false, error: "Invalid webhook payload structure." }, { status: 400 });
+    // Acknowledge receipt of other WhatsApp events (statuses, delivery receipts, etc.)
+    return NextResponse.json({ success: true, message: "Webhook event acknowledged." });
   } catch (error) {
     console.error("[WhatsApp Webhook POST Error]:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

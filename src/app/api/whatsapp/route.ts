@@ -61,34 +61,33 @@ export async function POST(request: Request) {
       // 1. Save incoming message to db.leads so admin can view customer chats in /admin
       try {
         const db = await readDB();
-          db.leads = db.leads || [];
-          
-          // Avoid duplicate entry for same messageId
-          const exists = db.leads.some((l: any) => l.waMessageId === messageId);
-          if (!exists) {
-            db.leads.unshift({
-              id: `WA-${Date.now()}`,
-              waMessageId: messageId,
-              name: profileName,
-              phone: from,
-              source: "WhatsApp Business Chat",
-              message: textBody || "Sent media/interactive query",
-              status: "New",
-              date: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
-            });
-            await writeDB(db);
-          }
-        } catch (dbErr) {
-          console.error("[WhatsApp Webhook DB Save Error]:", dbErr);
-        }
+        db.leads = db.leads || [];
 
-        // 2. Send instant automated WhatsApp reply back to customer
-        try {
-          const autoReplyText = `Namaste ${profileName}! 🙏 Welcome to Pure Ayur Herbs.\n\nThank you for messaging us. Our Ayurvedic Support Desk has received your inquiry: "${textBody}".\n\nOur certified Vaidya will connect with you shortly. You can also track your orders live at https://purreayurherbs.com/track`;
-          await sendWhatsAppTextMessage(from, autoReplyText);
-        } catch (replyErr) {
-          console.error("[WhatsApp Webhook Auto-Reply Error]:", replyErr);
+        // Avoid duplicate entry for same messageId
+        const exists = db.leads.some((l: any) => l.waMessageId === messageId);
+        if (!exists) {
+          db.leads.unshift({
+            id: `WA-${Date.now()}`,
+            waMessageId: messageId,
+            name: profileName,
+            phone: from,
+            source: "WhatsApp Business Chat",
+            message: textBody || "Sent media/interactive query",
+            status: "New",
+            date: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+          });
+          await writeDB(db);
         }
+      } catch (dbErr) {
+        console.error("[WhatsApp Webhook DB Save Error]:", dbErr);
+      }
+
+      // 2. Send instant automated WhatsApp reply back to customer
+      try {
+        const autoReplyText = `Namaste ${profileName}! 🙏 Welcome to Pure Ayur Herbs.\n\nThank you for messaging us. Our Ayurvedic Support Desk has received your inquiry: "${textBody}".\n\nOur certified Vaidya will connect with you shortly. You can also track your orders live at https://purreayurherbs.com/track`;
+        await sendWhatsAppTextMessage(from, autoReplyText);
+      } catch (replyErr) {
+        console.error("[WhatsApp Webhook Auto-Reply Error]:", replyErr);
       }
 
       return NextResponse.json({ success: true });

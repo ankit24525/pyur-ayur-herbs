@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { readDB, writeDB } from "@/lib/db";
+import { sendWhatsAppTextMessage } from "@/lib/whatsapp";
 
 // Webhook Verification (GET)
-// Meta triggers this to verify that your webhook server is active and using the correct verify token.
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -9,7 +10,6 @@ export async function GET(request: Request) {
     const token = searchParams.get("hub.verify_token");
     const challenge = searchParams.get("hub.challenge");
 
-    // Retrieve verify token from environment or use fallback
     const localVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN || "pyur_ayur_verify_token_2026";
 
     if (mode === "subscribe" && token === localVerifyToken) {
@@ -29,12 +29,10 @@ export async function GET(request: Request) {
 }
 
 // Webhook Message Reception (POST)
-// Meta triggers this when a user sends a message to your WhatsApp Business number.
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Verify it is a WhatsApp Business Account message notification
     if (body.object === "whatsapp_business_account") {
       const entry = body.entry?.[0];
       const change = entry?.changes?.[0];
@@ -43,7 +41,7 @@ export async function POST(request: Request) {
       const contact = value?.contacts?.[0];
 
       if (message) {
-        const from = message.from; // User's WhatsApp number (country code + number)
+        const from = message.from; // Customer's WhatsApp number (e.g. 919876543210)
         const messageId = message.id;
         const type = message.type;
         const profileName = contact?.profile?.name || "Customer";
@@ -55,13 +53,39 @@ export async function POST(request: Request) {
           textBody = message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || "";
         }
 
-        console.log(`[WhatsApp Webhook Incoming] From: ${profileName} (${from}) | Type: ${type} | Message: "${textBody}" | ID: ${messageId}`);
+        console.log(`[WhatsApp Webhook Incoming] From: ${profileName} (${from}) | Message: "${textBody}"`);
 
-        // Custom Chatbot Logic / CRM trigger hooks can be executed here:
-        // const replyMessage = await handleBotResponse(textBody, from);
-        // if (replyMessage) {
-        //   await sendWhatsAppMessage(from, replyMessage);
-        // }
+        // 1. Save incoming message to db.leads so admin can view customer chats in /admin
+        try {
+          const db = await readDB();
+          db.leads = db.leads || [];
+          
+          // Avoid duplicate entry for same messageId
+          const exists = db.leads.some((l: any) => l.waMessageId === messageId);
+          if (!exists) {
+            db.leads.unshift({
+              id: `WA-${Date.now()}`,
+              waMessageId: messageId,
+              name: profileName,
+              phone: from,
+              source: "WhatsApp Business Chat",
+              message: textBody || "Sent media/interactive query",
+              status: "New",
+              date: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+            });
+            await writeDB(db);
+          }
+        } catch (dbErr) {
+          console.error("[WhatsApp Webhook DB Save Error]:", dbErr);
+        }
+
+        // 2. Send instant automated WhatsApp reply back to customer
+        try {
+          const autoReplyText = `Namaste ${profileName}! 🙏 Welcome to Pure Ayur Herbs.\n\nThank you for messaging us. Our Ayurvedic Support Desk has received your inquiry: "${textBody}".\n\nOur certified Vaidya will connect with you shortly. You can also track your orders live at https://purreayurherbs.com/track`;
+          await sendWhatsAppTextMessage(from, autoReplyText);
+        } catch (replyErr) {
+          console.error("[WhatsApp Webhook Auto-Reply Error]:", replyErr);
+        }
       }
 
       return NextResponse.json({ success: true });

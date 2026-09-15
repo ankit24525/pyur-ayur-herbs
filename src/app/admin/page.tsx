@@ -8152,14 +8152,22 @@ export default function AdminDashboard() {
             {/* 12. Support Panel */}
             {activeMenu === "support" && (
               <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b] mb-4">🎧 Help Desk Queries & Leads</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b] flex items-center gap-2">
+                    <span>🎧</span> Help Desk Queries & WhatsApp Leads
+                  </h3>
+                  <span className="text-[11px] font-semibold text-[#666] bg-[#f8faf1] px-3 py-1 rounded-full border border-[#ddddd9]">
+                    Total Leads: {dbData.leads?.length || 0}
+                  </span>
+                </div>
                 <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-[#f8faf1] border-b border-[#ddddd9]">
-                        <th className="p-3 font-bold">Patient</th>
-                        <th className="p-3 font-bold">Type</th>
-                        <th className="p-3 font-bold">Details description</th>
+                        <th className="p-3 font-bold">Customer / Phone</th>
+                        <th className="p-3 font-bold">Source / Type</th>
+                        <th className="p-3 font-bold">Message / Concern</th>
+                        <th className="p-3 font-bold">Received At</th>
                         <th className="p-3 font-bold text-center">Status</th>
                         <th className="p-3 font-bold text-center">Actions</th>
                       </tr>
@@ -8167,49 +8175,75 @@ export default function AdminDashboard() {
                     <tbody className="divide-y divide-[#ddddd9]">
                       {!dbData.leads || dbData.leads.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="p-8 text-center text-[#666] font-semibold italic bg-white">
-                            No queries or consult leads found.
+                          <td colSpan={6} className="p-8 text-center text-[#666] font-semibold italic bg-white">
+                            No WhatsApp messages or help desk inquiries found yet.
                           </td>
                         </tr>
                       ) : (
-                        dbData.leads.map((ld: any) => (
-                          <tr key={ld.id} className="hover:bg-[#f8faf1]/20 transition-colors">
-                            <td className="p-3 font-bold">
-                              <span className="block">{ld.name}</span>
-                              <span className="block text-[10px] text-[#666666]">{ld.phone}</span>
-                            </td>
-                            <td className="p-3 font-semibold">{ld.type}</td>
-                            <td className="p-3 text-[#666666]">{ld.concern} • {ld.detail}</td>
-                            <td className="p-3 text-center">
-                              <select
-                                value={ld.status || "New"}
-                                onChange={(e) => handleUpdateLeadStatus(ld.id, e.target.value)}
-                                className={`px-2.5 py-1 rounded text-[10px] font-bold outline-none border transition ${
-                                  ld.status === "Resolved"
-                                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                                    : ld.status === "Responded"
-                                    ? "bg-blue-100 text-blue-800 border-blue-200"
-                                    : ld.status === "Pending"
-                                    ? "bg-amber-100 text-amber-800 border-amber-200"
-                                    : "bg-gray-100 text-gray-800 border-gray-200"
-                                }`}
-                              >
-                                <option value="New">New</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Responded">Responded</option>
-                                <option value="Resolved">Resolved</option>
-                              </select>
-                            </td>
-                            <td className="p-3 text-center">
-                              <button
-                                onClick={() => handleDeleteLead(ld.id)}
-                                className="text-rose-600 hover:text-rose-800 text-[10px] font-bold transition hover:underline"
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                        dbData.leads.map((ld: any) => {
+                          const cleanPhone = ld.phone ? String(ld.phone).replace(/\D/g, "") : "";
+                          const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : "";
+                          return (
+                            <tr key={ld.id} className="hover:bg-[#f8faf1]/20 transition-colors">
+                              <td className="p-3 font-bold">
+                                <span className="block text-[#17231b]">{ld.name || "Customer"}</span>
+                                <span className="block text-[10px] text-[#666666] font-mono">{ld.phone || "N/A"}</span>
+                              </td>
+                              <td className="p-3 font-semibold text-[#17231b]">
+                                <span className="inline-block px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                  {ld.source || ld.type || "WhatsApp Chat"}
+                                </span>
+                              </td>
+                              <td className="p-3 text-[#333] max-w-xs truncate">
+                                {ld.message || ld.detail || ld.concern || "No message detail"}
+                              </td>
+                              <td className="p-3 text-[10px] text-[#666]">
+                                {ld.date || "Recent"}
+                              </td>
+                              <td className="p-3 text-center">
+                                <select
+                                  value={ld.status || "New"}
+                                  onChange={(e) => handleUpdateLeadStatus(ld.id, e.target.value)}
+                                  className={`px-2.5 py-1 rounded text-[10px] font-bold outline-none border transition ${
+                                    ld.status === "Resolved"
+                                      ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                      : ld.status === "Responded"
+                                      ? "bg-blue-100 text-blue-800 border-blue-200"
+                                      : ld.status === "Pending"
+                                      ? "bg-amber-100 text-amber-800 border-amber-200"
+                                      : "bg-gray-100 text-gray-800 border-gray-200"
+                                  }`}
+                                >
+                                  <option value="New">New</option>
+                                  <option value="Pending">Pending</option>
+                                  <option value="Responded">Responded</option>
+                                  <option value="Resolved">Resolved</option>
+                                </select>
+                              </td>
+                              <td className="p-3 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  {waUrl && (
+                                    <a
+                                      href={waUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-md transition shadow-xs"
+                                      title="Open chat in WhatsApp Web / Mobile app"
+                                    >
+                                      💬 Chat on WA
+                                    </a>
+                                  )}
+                                  <button
+                                    onClick={() => handleDeleteLead(ld.id)}
+                                    className="text-rose-600 hover:text-rose-800 text-[10px] font-bold transition hover:underline"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>

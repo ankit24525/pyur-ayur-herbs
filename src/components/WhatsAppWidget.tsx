@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 export default function WhatsAppWidget() {
-  const [whatsappNumber, setWhatsappNumber] = useState("919876543210");
+  const [whatsappNumber, setWhatsappNumber] = useState("917247824101");
   const [whatsappMessage, setWhatsappMessage] = useState("नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);

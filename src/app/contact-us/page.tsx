@@ -13,7 +13,7 @@ export default function ContactUsPage() {
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [settings, setSettings] = useState<any>({
     supportEmail: "support@pureayurherbs.com",
-    whatsappNumber: "919876543210",
+    whatsappNumber: "917247824101",
   });
 
   useEffect(() => {
@@ -131,12 +131,12 @@ export default function ContactUsPage() {
                   <h4 className="text-xs font-bold text-[#17231b]">Call & WhatsApp</h4>
                   <a
                     href={`https://api.whatsapp.com/send?phone=${(() => {
-                      let num = (settings.whatsappNumber || "919876543210").replace(/\D/g, "");
+                      let num = (settings.whatsappNumber || "917247824101").replace(/\D/g, "");
                       return num.length === 10 ? "91" + num : num;
                     })()}`}
                     className="text-xs text-[#666666] hover:underline"
                   >
-                    +{settings.whatsappNumber || "919876543210"} (Business Desk)
+                    +{settings.whatsappNumber || "917247824101"} (Business Desk)
                   </a>
                 </div>
               </div>

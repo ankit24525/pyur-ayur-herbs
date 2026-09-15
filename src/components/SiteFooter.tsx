@@ -10,7 +10,7 @@ export default function SiteFooter() {
   const [settings, setSettings] = useState<any>({
     storeName: "Pure Ayur Herbs",
     supportEmail: "info@pureayurherbs.com",
-    whatsappNumber: "919876543210",
+    whatsappNumber: "917247824101",
     companyLegalName: "Pure Ayur Herbs Private Limited",
     registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
     gstin: "09AAPCP8765A1Z5",
@@ -60,10 +60,10 @@ export default function SiteFooter() {
   const companyName = footerData?.companyLegalName || settings?.companyLegalName || "Pure Ayur Herbs Private Limited";
   const registeredAddress = footerData?.registeredAddress || settings?.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301";
   const gstin = footerData?.gstin || settings?.gstin || "09AAPCP8765A1Z5";
-  const whatsappNum = footerData?.supportWhatsapp || settings?.whatsappNumber || "919876543210";
+  const whatsappNum = footerData?.supportWhatsapp || settings?.whatsappNumber || "917247824101";
   const supportEmail = footerData?.supportEmail || settings?.supportEmail || "info@pureayurherbs.com";
 
-  let cleanNumber = (whatsappNum || "919876543210").replace(/\D/g, "");
+  let cleanNumber = (whatsappNum || "917247824101").replace(/\D/g, "");
   if (cleanNumber.length === 10) {
     cleanNumber = "91" + cleanNumber;
   }

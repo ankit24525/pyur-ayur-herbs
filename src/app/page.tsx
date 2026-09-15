@@ -312,7 +312,7 @@ export default function Home() {
                     Explore All Available Remedies
                   </button>
                   <a
-                    href={`https://wa.me/919876543210?text=${encodeURIComponent(`नमस्ते! मुझे ${selectedConcern} के आयुर्वेदिक इलाज के बारे में जानकारी चाहिए।`)}`}
+                    href={`https://wa.me/917247824101?text=${encodeURIComponent(`नमस्ते! मुझे ${selectedConcern} के आयुर्वेदिक इलाज के बारे में जानकारी चाहिए।`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full sm:w-auto rounded-xl border border-[#25D366] bg-[#25D366]/10 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-[#128C7E] transition hover:bg-[#25D366]/20 flex items-center justify-center gap-1.5"

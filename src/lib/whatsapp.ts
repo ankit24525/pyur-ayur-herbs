@@ -5,11 +5,20 @@
 
 export async function sendWhatsAppTextMessage(to: string, text: string) {
   try {
-    const token =
-      process.env.WHATSAPP_ACCESS_TOKEN ||
+    const defaultPermanentToken =
       "EAAYQ1WWZCjosBSZAyG6hGLLrF9b0c5RMPMeYv9g6xUVaCCf0zhFnfwR1pYrVmFx5oFU0FABvRWQYnAEa4hcpECjd9ZBHNCfhNEHUnYGz9uz3R5q1EZCBD9ZBKZBKkfZCgvqzEiy1WleH9fNSEKGVjbr8nFjPqitURMQvdZArUcDjTx0nfSNVB43pUqvOS1KkfKVNYwZDZD";
+    const defaultPhoneId = "1363740400150399";
+
+    // Discard old expired tokens or sandbox test phone ID if present in Vercel environment
+    const envToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
+    const token =
+      envToken && !envToken.startsWith("EAAYQ1WWZCjosBSR") && envToken.length > 50
+        ? envToken
+        : defaultPermanentToken;
+
+    const envPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
     const phoneId =
-      process.env.WHATSAPP_PHONE_NUMBER_ID || "1363740400150399";
+      envPhoneId && envPhoneId !== "1339746809219792" ? envPhoneId : defaultPhoneId;
 
     if (!token || !phoneId) {
       console.warn("[WhatsApp API] Missing WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID.");

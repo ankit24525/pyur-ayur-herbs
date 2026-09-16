@@ -122,6 +122,7 @@ export async function sendWhatsAppOTP(
 
   // 1. Attempt 1: Try sending via pre-approved Meta Authentication Template
   try {
+    const langCode = process.env.WHATSAPP_OTP_LANG || "en";
     const templatePayload = {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -129,7 +130,7 @@ export async function sendWhatsAppOTP(
       type: "template",
       template: {
         name: "pyur_auth_otp",
-        language: { code: "en_US" },
+        language: { code: langCode },
         components: [
           {
             type: "body",
@@ -145,7 +146,7 @@ export async function sendWhatsAppOTP(
       },
     };
 
-    const templateRes = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+    let templateRes = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -154,13 +155,28 @@ export async function sendWhatsAppOTP(
       body: JSON.stringify(templatePayload),
     });
 
-    const templateData = await templateRes.json();
+    let templateData = await templateRes.json();
+
+    // If 'en' failed with language mismatch, try 'en_US'
+    if (!templateRes.ok && templateData.error?.code === 132001 && langCode === "en") {
+      templatePayload.template.language.code = "en_US";
+      templateRes = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(templatePayload),
+      });
+      templateData = await templateRes.json();
+    }
+
     if (templateRes.ok && templateData.messages?.[0]?.id) {
       console.log(`[WhatsApp OTP Template Success] Sent to ${cleanPhone}: ${otp}`);
       return { success: true, messageId: templateData.messages[0].id };
     }
 
-    console.warn("[WhatsApp OTP Template Not Ready, Falling back to High-Priority Text]:", templateData.error?.message);
+    console.warn("[WhatsApp OTP Template Error, Falling back to High-Priority Text]:", templateData.error?.message);
   } catch (templateErr) {
     console.warn("[WhatsApp OTP Template Request Failed, Trying Direct Text Fallback]:", templateErr);
   }

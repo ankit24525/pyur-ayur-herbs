@@ -14,6 +14,7 @@ import {
   X,
   CreditCard,
   Building,
+  MessageSquare,
 } from "lucide-react";
 import { products, Product } from "@/lib/store";
 import { trackMetaEvent } from "@/components/MetaPixel";
@@ -310,17 +311,18 @@ function CheckoutForm() {
     if (formData.paymentMethod === "prepaid") {
       void processPrepaidPhonePeOrder();
     } else if (formData.paymentMethod === "cod" && settings.codOtpEnabled) {
-      if (!userEmail) {
-        alert("No email address found. Please log in again to place your order.");
+    const phoneToVerify = formData.phone;
+      if (!phoneToVerify && !userEmail) {
+        alert("Please enter a valid mobile number or email to verify your COD order.");
         return;
       }
-      // Send OTP to user's registered email
+      // Send OTP to user's WhatsApp phone number (with email backup)
       setOtpSending(true);
       try {
         const res = await fetch("/api/checkout/send-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: userEmail }),
+          body: JSON.stringify({ phone: phoneToVerify, email: userEmail }),
         });
         const data = await res.json();
         if (data.success) {
@@ -343,9 +345,10 @@ function CheckoutForm() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setOtpError("");
+    const phoneToVerify = formData.phone;
 
-    if (otpInput.length !== 4) {
-      setOtpError("Please enter the 4-digit code sent to your email.");
+    if (otpInput.length < 4 || otpInput.length > 6) {
+      setOtpError("Please enter the verification code.");
       return;
     }
 
@@ -354,7 +357,7 @@ function CheckoutForm() {
       const response = await fetch("/api/checkout/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmail, otp: otpInput }),
+        body: JSON.stringify({ phone: phoneToVerify, email: userEmail, otp: otpInput }),
       });
       const resData = await response.json();
       if (resData.success && resData.verified) {
@@ -369,6 +372,29 @@ function CheckoutForm() {
       setOtpError("Connection error. Please try again.");
     } finally {
       setOtpVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    const phoneToVerify = formData.phone;
+    setOtpSending(true);
+    setOtpError("");
+    try {
+      const res = await fetch("/api/checkout/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phoneToVerify, email: userEmail }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("A fresh 6-digit OTP has been sent to your WhatsApp.");
+      } else {
+        setOtpError(data.error || "Failed to resend code.");
+      }
+    } catch {
+      setOtpError("Network error. Could not resend code.");
+    } finally {
+      setOtpSending(false);
     }
   };
 
@@ -750,7 +776,7 @@ function CheckoutForm() {
         </div>
       </div>
 
-      {/* Gokwik/Otpless-style SMS OTP Dialog Modal */}
+      {/* WhatsApp COD Verification Dialog Modal */}
       {otpModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setOtpModalOpen(false)} />
@@ -761,32 +787,52 @@ function CheckoutForm() {
             >
               <X className="size-5" />
             </button>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="size-5 text-[#80a03c]" />
-              <h3 className="text-base font-bold text-[#17231b]">COD Verification Code</h3>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366]/15 text-[#25D366]">
+                <MessageSquare className="size-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[#17231b]">WhatsApp Verification</h3>
+                <span className="text-[10px] font-bold text-[#25D366] uppercase tracking-wider">Instant Delivery</span>
+              </div>
             </div>
-            <p className="mt-1 text-xs text-[#666666]">
-              We have sent a 4-digit verification code to your email <b>{userEmail}</b>. Enter it below to complete your order.
+            <p className="mt-2 text-xs text-[#666666] leading-relaxed">
+              We have sent a 6-digit verification code to{" "}
+              <b className="text-[#17231b]">
+                {formData.phone ? `+91 ${formData.phone}` : userEmail}
+              </b>{" "}
+              via WhatsApp to confirm your Cash on Delivery order.
             </p>
-            {otpError && <p className="mt-2 text-xs text-red-500 font-bold text-center">{otpError}</p>}
+            {otpError && <p className="mt-2 text-xs text-red-500 font-bold text-center bg-red-50 p-2 rounded-lg">{otpError}</p>}
             <form onSubmit={handleVerifyOtp} className="mt-4 space-y-4">
               <input
                 type="text"
-                maxLength={4}
+                maxLength={6}
                 required
                 value={otpInput}
                 onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
-                placeholder="Enter 4-digit OTP"
-                className="w-full text-center tracking-widest text-lg font-bold rounded-lg border border-[#ddddd9] px-3 py-2 outline-none focus:border-[#244f31]"
+                placeholder="Enter 6-digit OTP"
+                className="w-full text-center tracking-[0.3em] text-xl font-black rounded-xl border-2 border-[#ddddd9] px-3 py-3 outline-none focus:border-[#25D366] transition"
+                autoFocus
               />
               <button
                 type="submit"
-                disabled={otpVerifying}
-                className="w-full rounded-xl bg-[#244f31] py-3 text-xs font-black tracking-widest text-white shadow hover:bg-[#1d3b24]"
+                disabled={otpVerifying || otpInput.length < 6}
+                className="w-full rounded-xl bg-[#25D366] py-3 text-xs font-black tracking-widest text-white shadow-md hover:bg-[#20ba5a] transition disabled:opacity-50"
               >
                 {otpVerifying ? "VERIFYING..." : "VERIFY & CONFIRM COD"}
               </button>
             </form>
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                disabled={otpSending}
+                onClick={handleResendOtp}
+                className="text-[11px] font-semibold text-[#666666] hover:text-[#244f31] underline"
+              >
+                {otpSending ? "Sending new code..." : "Didn't receive code? Resend on WhatsApp"}
+              </button>
+            </div>
           </div>
         </div>
       )}

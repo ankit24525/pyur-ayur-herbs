@@ -1,47 +1,72 @@
 import { NextResponse } from "next/server";
+import { verifyOTP } from "@/lib/whatsapp-otp";
 import { readDB, writeDB } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
-    const { email, otp } = await request.json();
+    const { phone, email, otp } = await request.json();
 
-    if (!email || !otp) {
-      return NextResponse.json({ success: false, error: "Email and OTP are required." }, { status: 400 });
+    if (!otp) {
+      return NextResponse.json(
+        { success: false, error: "Verification code is required." },
+        { status: 400 }
+      );
     }
 
-    const db = await readDB();
-    const orderOtps = db.orderOtps || [];
+    const cleanPhone = phone ? phone.replace(/\D/g, "").slice(-10) : "";
+    const cleanEmail = email && email.includes("@") ? email.trim() : "";
 
-    const record = orderOtps.find((o: any) => o.email === email);
-
-    if (!record) {
-      return NextResponse.json({ success: false, error: "No verification code was found for this email. Please request a new code." }, { status: 400 });
+    if (!cleanPhone && !cleanEmail) {
+      return NextResponse.json(
+        { success: false, error: "Mobile number or email is required." },
+        { status: 400 }
+      );
     }
 
-    // Check expiry
-    if (Date.now() > record.expiresAt) {
-      // Remove expired OTP
-      db.orderOtps = orderOtps.filter((o: any) => o.email !== email);
-      await writeDB(db);
-      return NextResponse.json({ success: false, error: "Your verification code has expired. Please request a new one." }, { status: 400 });
+    // 1. Try verifying via WhatsApp OTP (phone)
+    if (cleanPhone) {
+      const waVerify = await verifyOTP(cleanPhone, String(otp).trim(), "cod");
+      if (waVerify.valid) {
+        return NextResponse.json({
+          success: true,
+          verified: true,
+          message: "Order mobile number verified successfully via WhatsApp.",
+        });
+      }
     }
 
-    // Check if OTP matches
-    if (record.otp !== String(otp)) {
-      return NextResponse.json({ success: false, error: "Incorrect verification code. Please try again." }, { status: 400 });
+    // 2. Try verifying via email OTP (email)
+    if (cleanEmail) {
+      const emailVerify = await verifyOTP(cleanEmail, String(otp).trim(), "cod");
+      if (emailVerify.valid) {
+        return NextResponse.json({
+          success: true,
+          verified: true,
+          message: "Order verified successfully.",
+        });
+      }
+
+      // Legacy fallback check in db.orderOtps
+      const db = await readDB();
+      const legacyOtps = db.orderOtps || [];
+      const record = legacyOtps.find((o: any) => o.email === cleanEmail);
+      if (record && Date.now() <= record.expiresAt && record.otp === String(otp).trim()) {
+        db.orderOtps = legacyOtps.filter((o: any) => o.email !== cleanEmail);
+        await writeDB(db);
+        return NextResponse.json({
+          success: true,
+          verified: true,
+          message: "Order verified successfully.",
+        });
+      }
     }
 
-    // OTP is valid — remove it so it can't be reused
-    db.orderOtps = orderOtps.filter((o: any) => o.email !== email);
-    await writeDB(db);
-
-    return NextResponse.json({
-      success: true,
-      verified: true,
-      message: "Email verified successfully.",
-    });
-  } catch (error) {
-    console.error("[Checkout Verify OTP] Error:", error);
+    return NextResponse.json(
+      { success: false, error: "Incorrect or expired verification code. Please try again." },
+      { status: 400 }
+    );
+  } catch (error: any) {
+    console.error("[Checkout Verify OTP Error]:", error);
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }

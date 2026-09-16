@@ -16,13 +16,8 @@ import {
   Smartphone,
   ShieldCheck,
   CheckCircle2,
+  MessageSquare,
 } from "lucide-react";
-import { auth } from "@/lib/firebase";
-import {
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  ConfirmationResult,
-} from "firebase/auth";
 
 const isPasswordStrong = (password: string) => {
   if (password.length < 8)
@@ -46,19 +41,19 @@ function LoginFormContent() {
   // Login Mode: "phone" (default for mobile commerce) or "email"
   const [authMode, setAuthMode] = useState<"phone" | "email">("phone");
 
-  // Phone OTP States
+  // WhatsApp Phone OTP States
   const [phone, setPhone] = useState("");
   const [phoneName, setPhoneName] = useState("");
   const [phoneOtp, setPhoneOtp] = useState("");
   const [phoneOtpSent, setPhoneOtpSent] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
-  // Email/Password States
+  // Email/Password & Password Reset States
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [emailOtpInput, setEmailOtpInput] = useState("");
+  const [forgotIdentifier, setForgotIdentifier] = useState("");
+  const [forgotOtpSent, setForgotOtpSent] = useState(false);
+  const [forgotOtpInput, setForgotOtpInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -80,46 +75,9 @@ function LoginFormContent() {
     }
   }, [phoneOtpSent, resendTimer]);
 
-  // Reset reCAPTCHA DOM and instance safely
-  const resetRecaptcha = () => {
-    if (typeof window === "undefined") return;
-    try {
-      if ((window as any).recaptchaVerifier) {
-        (window as any).recaptchaVerifier.clear();
-      }
-    } catch {}
-    (window as any).recaptchaVerifier = null;
-    const container = document.getElementById("recaptcha-container");
-    if (container) {
-      container.innerHTML = "";
-    }
-  };
-
-  // Setup Firebase invisible reCAPTCHA
-  const getRecaptchaVerifier = () => {
-    if (typeof window === "undefined") return null;
-    if ((window as any).recaptchaVerifier) {
-      return (window as any).recaptchaVerifier;
-    }
-    const container = document.getElementById("recaptcha-container");
-    if (container) {
-      container.innerHTML = "";
-    }
-    const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-      size: "invisible",
-      callback: () => {},
-      "expired-callback": () => {
-        setError("reCAPTCHA expired. Please try requesting OTP again.");
-        resetRecaptcha();
-      },
-    });
-    (window as any).recaptchaVerifier = verifier;
-    return verifier;
-  };
-
-  // --- Phone OTP Handlers ---
-  const handleSendPhoneOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // --- WhatsApp Phone OTP Handlers ---
+  const handleSendPhoneOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError("");
     setSuccessMsg("");
 
@@ -131,34 +89,25 @@ function LoginFormContent() {
 
     setLoading(true);
     try {
-      const appVerifier = getRecaptchaVerifier();
-      const formattedPhone = `+91${clean}`;
-      console.log(`[Firebase Phone Auth]: Requesting OTP for ${formattedPhone}`);
+      const res = await fetch("/api/auth/whatsapp/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: clean }),
+      });
 
-      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      setConfirmationResult(confirmation);
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || "Failed to send WhatsApp verification code.");
+        setLoading(false);
+        return;
+      }
+
       setPhoneOtpSent(true);
       setResendTimer(30);
-      setSuccessMsg(`6-digit verification code sent to ${formattedPhone}`);
+      setSuccessMsg(data.message || `WhatsApp verification code sent to +91 ${clean}!`);
     } catch (err: any) {
-      console.error("[Firebase Phone Auth Error]:", err);
-      resetRecaptcha();
-
-      if (err.code === "auth/invalid-phone-number") {
-        setError("Invalid phone number format. Please check and try again.");
-      } else if (err.code === "auth/too-many-requests") {
-        setError("Too many requests from this number. Please wait a few minutes.");
-      } else if (err.code === "auth/unauthorized-domain") {
-        setError(
-          "Domain not authorized. Please ensure your domain is added under Firebase Console > Authentication > Settings > Authorized Domains."
-        );
-      } else if (err.code === "auth/operation-not-allowed") {
-        setError(
-          "SMS is not enabled for this region (+91 India). In Firebase Console, go to Authentication > Settings > SMS region policy and allow India (+91), or add your number under Phone numbers for testing."
-        );
-      } else {
-        setError(err.message || "Failed to send verification code. Please try again.");
-      }
+      console.error("[WhatsApp Send OTP Error]:", err);
+      setError("Failed to deliver OTP. Please check your internet connection.");
     } finally {
       setLoading(false);
     }
@@ -169,8 +118,9 @@ function LoginFormContent() {
     setError("");
     setSuccessMsg("");
 
-    if (!confirmationResult) {
-      setError("Please request an OTP first.");
+    const clean = phone.replace(/\D/g, "").slice(-10);
+    if (clean.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number.");
       return;
     }
 
@@ -181,61 +131,53 @@ function LoginFormContent() {
 
     setLoading(true);
     try {
-      const userCredential = await confirmationResult.confirm(phoneOtp.trim());
-      const firebaseUser = userCredential.user;
-
-      // Sync user session with our backend database
-      const res = await fetch("/api/auth/phone", {
+      const res = await fetch("/api/auth/whatsapp/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: firebaseUser.phoneNumber || phone,
-          firebaseUid: firebaseUser.uid,
+          phone: clean,
+          otp: phoneOtp.trim(),
           name: phoneName.trim(),
         }),
       });
 
       const data = await res.json();
       if (!data.success) {
-        setError(data.error || "Failed to establish session.");
+        setError(data.error || "Verification failed. Please try again.");
         setLoading(false);
         return;
       }
 
       // Store in localStorage for instant profile synchronization
       try {
-        localStorage.setItem("pyur_user", JSON.stringify(data.user));
-        localStorage.setItem("pyur_last_activity", Date.now().toString());
-        window.dispatchEvent(new Event("pyur_auth_change"));
+        if (data.user) {
+          localStorage.setItem("pyur_user", JSON.stringify(data.user));
+          localStorage.setItem("pyur_last_activity", Date.now().toString());
+          window.dispatchEvent(new Event("pyur_auth_change"));
+        }
       } catch {}
 
-      setSuccessMsg("Signed in successfully! Redirecting...");
+      setSuccessMsg("Signed in successfully via WhatsApp! Redirecting...");
       setTimeout(() => {
         window.location.href = redirectUrl;
-      }, 500);
+      }, 400);
     } catch (err: any) {
-      console.error("[OTP Verification Error]:", err);
-      if (err.code === "auth/invalid-verification-code") {
-        setError("Incorrect OTP code. Please check the code and try again.");
-      } else if (err.code === "auth/code-expired") {
-        setError("The OTP code has expired. Please click Resend Code.");
-      } else {
-        setError(err.message || "Verification failed. Please try again.");
-      }
+      console.error("[WhatsApp OTP Verification Error]:", err);
+      setError("Verification failed. Please check your connection.");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Email / Password Handlers ---
-  const handleSendEmailOtp = async (e: React.MouseEvent) => {
+  // --- Password Reset Handlers (Supports Mobile & Email) ---
+  const handleSendForgotOtp = async (e: React.MouseEvent) => {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError("Please enter a valid email address.");
+    const target = forgotIdentifier.trim();
+    if (!target) {
+      setError("Please enter your registered mobile number or email.");
       return;
     }
 
@@ -244,7 +186,7 @@ function LoginFormContent() {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email }),
+        body: JSON.stringify({ identifier: target }),
       });
 
       const data = await res.json();
@@ -254,15 +196,69 @@ function LoginFormContent() {
         return;
       }
 
-      setSuccessMsg(data.message || "OTP Sent to your email!");
-      setEmailOtpSent(true);
-      setLoading(false);
+      setSuccessMsg(data.message || "Verification code sent!");
+      setForgotOtpSent(true);
     } catch {
       setError("Failed to connect to the server.");
+    } finally {
       setLoading(false);
     }
   };
 
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+
+    const target = forgotIdentifier.trim();
+    if (!target) {
+      setError("Please enter your registered mobile number or email.");
+      return;
+    }
+
+    const strength = isPasswordStrong(formData.password);
+    if (!strength.valid) {
+      setError(strength.error || "Password is not strong enough.");
+      return;
+    }
+
+    if (forgotOtpInput.trim().length < 4) {
+      setError("Please enter the verification code.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: target,
+          otp: forgotOtpInput.trim(),
+          newPassword: formData.password,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || "Failed to reset password.");
+        setLoading(false);
+        return;
+      }
+
+      setSuccessMsg("Password reset successfully! Please sign in with your new password.");
+      setIsForgotPassword(false);
+      setForgotOtpSent(false);
+      setForgotOtpInput("");
+      setFormData((prev) => ({ ...prev, password: "" }));
+    } catch {
+      setError("Failed to connect to the server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Email / Password Standard Login & Signup Handler ---
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -274,7 +270,7 @@ function LoginFormContent() {
       return;
     }
 
-    if (!isLogin && !isForgotPassword && formData.phone) {
+    if (!isLogin && formData.phone) {
       const phoneRegex = /^[0-9]{10}$/;
       if (!phoneRegex.test(formData.phone)) {
         setError("Please enter a valid 10-digit mobile number.");
@@ -282,7 +278,7 @@ function LoginFormContent() {
       }
     }
 
-    if (!isLogin || isForgotPassword) {
+    if (!isLogin) {
       const strength = isPasswordStrong(formData.password);
       if (!strength.valid) {
         setError(strength.error || "Password is not strong enough.");
@@ -293,32 +289,6 @@ function LoginFormContent() {
     setLoading(true);
 
     try {
-      if (isForgotPassword) {
-        const res = await fetch("/api/auth/reset-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: formData.email,
-            otp: emailOtpInput,
-            newPassword: formData.password,
-          }),
-        });
-
-        const data = await res.json();
-        if (!data.success) {
-          setError(data.error || "Failed to reset password.");
-          setLoading(false);
-          return;
-        }
-
-        setSuccessMsg("Password reset successfully! Please sign in with your new password.");
-        setIsForgotPassword(false);
-        setEmailOtpSent(false);
-        setEmailOtpInput("");
-        setFormData((prev) => ({ ...prev, password: "" }));
-        setLoading(false);
-        return;
-      }
 
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/signup";
       const res = await fetch(endpoint, {
@@ -354,9 +324,6 @@ function LoginFormContent() {
       <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#f8faf1] rounded-full -z-10 opacity-60" />
       <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#244f31]/5 rounded-full -z-10 opacity-60" />
 
-      {/* Hidden container for invisible reCAPTCHA */}
-      <div id="recaptcha-container" />
-
       {/* Brand Header */}
       <div className="text-center mb-6">
         <div className="inline-flex items-center justify-center p-1 rounded-full bg-white shadow-lg border border-[#244f31]/20 mb-3">
@@ -371,14 +338,14 @@ function LoginFormContent() {
         </div>
         <h2 className="text-xl font-black text-[#17231b]">
           {authMode === "phone"
-            ? "Sign in to Pure Ayur Herbs"
+            ? "Sign in with WhatsApp"
             : isLogin
             ? "Welcome Back to Pure Ayur"
             : "Begin Your Wellness Journey"}
         </h2>
         <p className="text-xs text-gray-500 mt-1">
           {authMode === "phone"
-            ? "Login or register instantly using your phone number"
+            ? "Fast 1-tap OTP sent directly to your WhatsApp"
             : isLogin
             ? "Sign in to manage orders, tracking, and Pure Coins"
             : "Register now to check out faster and earn wellness coins"}
@@ -407,15 +374,22 @@ function LoginFormContent() {
         </div>
       )}
 
-      {/* ================= MODE 1: PHONE OTP LOGIN ================= */}
+      {/* ================= MODE 1: WHATSAPP OTP LOGIN ================= */}
       {authMode === "phone" ? (
         <div>
           {!phoneOtpSent ? (
             /* Step 1: Phone Number Input */
             <form onSubmit={handleSendPhoneOtp} className="space-y-4 text-xs">
+              <div className="flex justify-center">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#25D366]/10 text-[#128C7E] font-bold text-[11px]">
+                  <MessageSquare className="size-3.5 text-[#25D366]" />
+                  <span>Official WhatsApp Verification</span>
+                </div>
+              </div>
+
               <div>
                 <label className="block font-bold text-[#666666] mb-1">
-                  Mobile Number *
+                  WhatsApp Mobile Number *
                 </label>
                 <div className="relative flex items-center">
                   <span className="absolute left-3 flex items-center text-gray-600 font-bold text-xs border-r pr-2 border-gray-200">
@@ -428,11 +402,11 @@ function LoginFormContent() {
                     placeholder="Enter 10-digit number"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                    className="w-full pl-20 pr-3 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white text-sm font-semibold tracking-wider transition"
+                    className="w-full pl-20 pr-3 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#25D366] bg-[#f8faf1]/20 focus:bg-white text-sm font-semibold tracking-wider transition"
                   />
                 </div>
                 <p className="text-[10px] text-gray-400 mt-1">
-                  We'll send a 6-digit verification code to this mobile number.
+                  We'll instantly send a 6-digit verification code to your WhatsApp.
                 </p>
               </div>
 
@@ -457,31 +431,35 @@ function LoginFormContent() {
               <button
                 type="submit"
                 disabled={loading || phone.replace(/\D/g, "").length !== 10}
-                className="w-full bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl py-3.5 transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-black uppercase tracking-wider rounded-xl py-3.5 transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
               >
                 {loading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
-                    <span>Sending OTP...</span>
+                    <span>Sending WhatsApp OTP...</span>
                   </>
                 ) : (
                   <>
-                    <Smartphone className="size-4" />
-                    <span>Get Verification OTP</span>
+                    <MessageSquare className="size-4" />
+                    <span>Get WhatsApp OTP</span>
                   </>
                 )}
               </button>
 
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 pt-1">
-                <ShieldCheck className="size-3.5 text-[#244f31]" />
-                <span>Protected by Google Firebase Security</span>
+                <ShieldCheck className="size-3.5 text-[#25D366]" />
+                <span>Instant delivery via Meta WhatsApp Business API</span>
               </div>
             </form>
           ) : (
             /* Step 2: 6-Digit OTP Verification */
             <form onSubmit={handleVerifyPhoneOtp} className="space-y-4 text-xs">
-              <div className="bg-[#f8faf1] p-3 rounded-xl border border-[#ddddd9] text-center">
-                <p className="text-xs text-gray-600">
+              <div className="bg-[#25D366]/10 p-3.5 rounded-xl border border-[#25D366]/30 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-[#128C7E] font-bold text-xs">
+                  <MessageSquare className="size-4 text-[#25D366]" />
+                  <span>WhatsApp Code Dispatched</span>
+                </div>
+                <p className="text-xs text-gray-700 mt-1">
                   Enter the 6-digit code sent to{" "}
                   <strong className="text-[#17231b]">+91 {phone}</strong>
                 </p>
@@ -493,7 +471,7 @@ function LoginFormContent() {
                     setError("");
                     setSuccessMsg("");
                   }}
-                  className="text-[#244f31] hover:underline font-bold text-[11px] mt-1"
+                  className="text-[#128C7E] hover:underline font-bold text-[11px] mt-1"
                 >
                   Change Number
                 </button>
@@ -501,7 +479,7 @@ function LoginFormContent() {
 
               <div>
                 <label className="block font-bold text-[#666666] mb-1 text-center">
-                  6-Digit OTP Code *
+                  6-Digit WhatsApp Code *
                 </label>
                 <input
                   type="text"
@@ -511,14 +489,14 @@ function LoginFormContent() {
                   placeholder="------"
                   value={phoneOtp}
                   onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ""))}
-                  className="w-full px-3 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white text-center font-mono font-black text-xl tracking-[0.4em] transition"
+                  className="w-full px-3 py-3 rounded-xl border-2 border-[#ddddd9] outline-none focus:border-[#25D366] bg-[#f8faf1]/20 focus:bg-white text-center font-mono font-black text-xl tracking-[0.4em] transition"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading || phoneOtp.length !== 6}
-                className="w-full bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl py-3.5 transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-black uppercase tracking-wider rounded-xl py-3.5 transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
               >
                 {loading ? (
                   <>
@@ -526,7 +504,7 @@ function LoginFormContent() {
                     <span>Verifying code...</span>
                   </>
                 ) : (
-                  <span>Verify OTP & Login</span>
+                  <span>Verify OTP & Sign In</span>
                 )}
               </button>
 
@@ -538,10 +516,10 @@ function LoginFormContent() {
                 ) : (
                   <button
                     type="button"
-                    onClick={handleSendPhoneOtp}
-                    className="text-[#244f31] hover:underline font-bold text-[11px]"
+                    onClick={() => handleSendPhoneOtp()}
+                    className="text-[#128C7E] hover:underline font-bold text-[11px]"
                   >
-                    Resend Verification OTP
+                    Resend OTP on WhatsApp
                   </button>
                 )}
               </div>
@@ -604,36 +582,41 @@ function LoginFormContent() {
 
           {isForgotPassword ? (
             /* Forgot Password Sub-flow */
-            <form onSubmit={handleEmailSubmit} className="space-y-4 text-xs">
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-[#666666] mb-1">Registered Email *</label>
+                <label className="block font-bold text-[#666666] mb-1">
+                  Registered Mobile Number or Email *
+                </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                    <Mail className="size-4" />
+                    <Smartphone className="size-4" />
                   </span>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    disabled={emailOtpSent}
-                    placeholder="e.g. ankit@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition disabled:opacity-60"
+                    disabled={forgotOtpSent}
+                    placeholder="e.g. 9876543210 or yourname@gmail.com"
+                    value={forgotIdentifier}
+                    onChange={(e) => setForgotIdentifier(e.target.value)}
+                    className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition disabled:opacity-60 text-xs font-semibold"
                   />
                 </div>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  Mobile numbers receive a WhatsApp OTP; email addresses receive an Email OTP.
+                </p>
               </div>
 
-              {!emailOtpSent ? (
+              {!forgotOtpSent ? (
                 <button
                   type="button"
-                  onClick={handleSendEmailOtp}
-                  disabled={loading}
+                  onClick={handleSendForgotOtp}
+                  disabled={loading || !forgotIdentifier.trim()}
                   className="w-full bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl py-3.5 transition shadow-md flex items-center justify-center gap-2 disabled:opacity-75"
                 >
                   {loading ? (
                     <>
                       <Loader2 className="size-4 animate-spin" />
-                      <span>Checking account...</span>
+                      <span>Sending OTP...</span>
                     </>
                   ) : (
                     <span>Send Verification Code</span>
@@ -642,16 +625,16 @@ function LoginFormContent() {
               ) : (
                 <>
                   <div>
-                    <label className="block font-bold text-[#666666] mb-1">
-                      6-Digit Email OTP *
+                    <label className="block font-bold text-[#666666] mb-1 text-center">
+                      6-Digit Verification Code *
                     </label>
                     <input
                       type="text"
                       required
                       maxLength={6}
                       placeholder="Enter 6-digit OTP code"
-                      value={emailOtpInput}
-                      onChange={(e) => setEmailOtpInput(e.target.value)}
+                      value={forgotOtpInput}
+                      onChange={(e) => setForgotOtpInput(e.target.value.replace(/\D/g, ""))}
                       className="w-full px-3 py-3 rounded-xl border border-[#ddddd9] outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white text-center font-mono font-bold tracking-widest text-sm"
                     />
                   </div>
@@ -684,8 +667,8 @@ function LoginFormContent() {
 
                   <button
                     type="submit"
-                    disabled={loading}
-                    className="w-full bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl py-3.5 transition shadow-md flex items-center justify-center gap-2"
+                    disabled={loading || forgotOtpInput.length < 4}
+                    className="w-full bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl py-3.5 transition shadow-md flex items-center justify-center gap-2 disabled:opacity-75"
                   >
                     {loading ? (
                       <>
@@ -704,8 +687,8 @@ function LoginFormContent() {
                   type="button"
                   onClick={() => {
                     setIsForgotPassword(false);
-                    setEmailOtpSent(false);
-                    setEmailOtpInput("");
+                    setForgotOtpSent(false);
+                    setForgotOtpInput("");
                     setError("");
                   }}
                   className="text-[#244f31] hover:underline font-bold text-xs"
@@ -761,6 +744,7 @@ function LoginFormContent() {
                       type="button"
                       onClick={() => {
                         setIsForgotPassword(true);
+                        setForgotIdentifier(formData.email || phone || "");
                         setError("");
                         setSuccessMsg("");
                         setFormData((prev) => ({ ...prev, password: "" }));

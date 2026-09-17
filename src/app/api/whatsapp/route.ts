@@ -28,6 +28,8 @@ export async function GET(request: Request) {
   }
 }
 
+import { generateChatbotReply } from "@/lib/chatbot-ai";
+
 // Webhook Message Reception (POST)
 export async function POST(request: Request) {
   try {
@@ -40,6 +42,14 @@ export async function POST(request: Request) {
     const value = change?.value || body.value;
     const message = value?.messages?.[0];
     const contact = value?.contacts?.[0];
+
+    // Log status delivery events if present
+    const statusUpdate = value?.statuses?.[0];
+    if (statusUpdate) {
+      console.log(
+        `[WhatsApp Delivery Status]: ID: ${statusUpdate.id} | Status: ${statusUpdate.status} | Recipient: ${statusUpdate.recipient_id}`
+      );
+    }
 
     if (message) {
       const from = message.from || "919999999999";
@@ -58,7 +68,14 @@ export async function POST(request: Request) {
 
       console.log(`[WhatsApp Webhook Incoming] From: ${profileName} (${from}) | Message: "${textBody}"`);
 
-      // 1. Save incoming message to db.leads so admin can view customer chats in /admin
+      // 1. Generate Intelligent AI Ayurvedic & Order Chatbot Reply
+      const botResponse = await generateChatbotReply({
+        from,
+        profileName,
+        messageText: textBody,
+      });
+
+      // 2. Save incoming message & bot response to db.leads so admin can monitor in /admin
       try {
         const db = await readDB();
         db.leads = db.leads || [];
@@ -73,7 +90,9 @@ export async function POST(request: Request) {
             phone: from,
             source: "WhatsApp Business Chat",
             message: textBody || "Sent media/interactive query",
-            status: "New",
+            botReply: botResponse.replyText,
+            intent: botResponse.intent,
+            status: botResponse.escalatedToHuman ? "Needs Attention" : "AI Resolved",
             date: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
           });
           await writeDB(db);
@@ -82,15 +101,15 @@ export async function POST(request: Request) {
         console.error("[WhatsApp Webhook DB Save Error]:", dbErr);
       }
 
-      // 2. Send instant automated WhatsApp reply back to customer
+      // 3. Send automated AI Ayurvedic response back to customer on WhatsApp
       try {
-        const autoReplyText = `Namaste ${profileName}! 🙏 Welcome to Pure Ayur Herbs.\n\nThank you for messaging us. Our Ayurvedic Support Desk has received your inquiry: "${textBody}".\n\nOur certified Vaidya will connect with you shortly. You can also track your orders live at https://purreayurherbs.com/track`;
-        await sendWhatsAppTextMessage(from, autoReplyText);
+        await sendWhatsAppTextMessage(from, botResponse.replyText);
+        console.log(`[WhatsApp Bot Replied] To: ${from} | Intent: ${botResponse.intent}`);
       } catch (replyErr) {
-        console.error("[WhatsApp Webhook Auto-Reply Error]:", replyErr);
+        console.error("[WhatsApp Webhook Reply Send Error]:", replyErr);
       }
 
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, intent: botResponse.intent });
     }
 
     // Acknowledge receipt of other WhatsApp events (statuses, delivery receipts, etc.)

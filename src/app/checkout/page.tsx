@@ -99,12 +99,41 @@ function CheckoutForm() {
       .finally(() => setLoadingProduct(false));
   }, [prodId]);
 
+  const [userEmail, setUserEmail] = useState("");
+
+  // Pillar 3: Debounced Abandoned Cart Auto-Capture when customer types valid phone
+  useEffect(() => {
+    const cleanPhone = (formData.phone || "").replace(/\D/g, "");
+    if (cleanPhone.length >= 10 && product) {
+      const timer = setTimeout(() => {
+        fetch("/api/cart/abandoned", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name || "Valued Customer",
+            phone: cleanPhone,
+            email: userEmail || "",
+            items: [
+              {
+                id: product.id,
+                name: product.name,
+                quantity: qty,
+                price: product.price,
+              },
+            ],
+            cartTotal: subtotal,
+          }),
+        }).catch(() => {});
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.phone, formData.name, userEmail, product, qty, subtotal]);
+
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [otpInput, setOtpInput] = useState("");
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
   const [otpError, setOtpError] = useState("");
-  const [userEmail, setUserEmail] = useState("");
   const [orderComplete, setOrderComplete] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);

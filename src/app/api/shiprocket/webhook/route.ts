@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
+import {
+  sendOrderShippedWhatsApp,
+  sendOrderOutForDeliveryWhatsApp,
+  sendOrderDeliveredWhatsApp,
+} from "@/lib/whatsapp-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -55,32 +60,25 @@ export async function POST(request: Request) {
       await writeDB(db);
       console.log(`[Shiprocket Webhook Updated]: Order ${order_id} -> Status: ${mappedStatus} (${current_status})`);
 
-      // Send WhatsApp Order Status Update if WhatsApp API configured
-      const whatsappToken = process.env.WHATSAPP_ACCESS_TOKEN;
-      const whatsappPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-      if (whatsappToken && whatsappPhoneId && order.phone) {
+      // Automated WhatsApp Order Lifecycle Updates (Pillar 3)
+      if (order.phone) {
         try {
-          let cleanedPhone = order.phone.replace(/\D/g, "");
-          if (cleanedPhone.length === 10) cleanedPhone = "91" + cleanedPhone;
-
-          const metaApiUrl = `https://graph.facebook.com/v19.0/${whatsappPhoneId}/messages`;
-          await fetch(metaApiUrl, {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${whatsappToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              messaging_product: "whatsapp",
-              to: cleanedPhone,
-              type: "template",
-              template: {
-                name: "hello_world",
-                language: { code: "en_US" },
-              },
-            }),
-          });
+          const updatedOrder = db.orders[orderIndex];
+          if (mappedStatus === "Shipped") {
+            await sendOrderShippedWhatsApp({
+              order: updatedOrder,
+              courierName: courier_name,
+              awb: awb,
+              etd: etd,
+            });
+            console.log(`[Shiprocket Webhook]: Sent Shipped WhatsApp notification for ${order_id}`);
+          } else if (mappedStatus === "Out for Delivery") {
+            await sendOrderOutForDeliveryWhatsApp(updatedOrder);
+            console.log(`[Shiprocket Webhook]: Sent Out for Delivery WhatsApp notification for ${order_id}`);
+          } else if (mappedStatus === "Delivered") {
+            await sendOrderDeliveredWhatsApp(updatedOrder);
+            console.log(`[Shiprocket Webhook]: Sent Delivered WhatsApp notification for ${order_id}`);
+          }
         } catch (wErr) {
           console.error("[Shiprocket Webhook WhatsApp Trigger Error]:", wErr);
         }

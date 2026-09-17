@@ -1868,6 +1868,35 @@ export default function AdminDashboard() {
     }
   };
 
+  const [sendingRecoveryId, setSendingRecoveryId] = useState<string | null>(null);
+
+  const handleSendAbandonedRecovery = async (cartId: string) => {
+    setSendingRecoveryId(cartId);
+    try {
+      const res = await fetch("/api/admin/abandoned-carts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cartId, discountCode: "AYUR5" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert("✅ Recovery WhatsApp message with 5% discount code (AYUR5) sent successfully!");
+        setDbData((prev: any) => ({
+          ...prev,
+          abandonedCarts: (prev.abandonedCarts || []).map((c: any) =>
+            c.id === cartId ? { ...c, status: "Notified", recoveryMessagesSent: (c.recoveryMessagesSent || 0) + 1 } : c
+          ),
+        }));
+      } else {
+        alert(`❌ Failed to send WhatsApp: ${data.error || "Unknown error"}`);
+      }
+    } catch (err: any) {
+      alert(`❌ Network error: ${err.message}`);
+    } finally {
+      setSendingRecoveryId(null);
+    }
+  };
+
   const handleSaveSettings = async (section: string, value: any) => {
     const updatedSettings = {
       ...dbData.settings,
@@ -5813,6 +5842,9 @@ export default function AdminDashboard() {
                 <div className="flex flex-wrap items-center gap-2 mb-5">
                   <button onClick={() => setSubTab("all")} className={subTabStyle("all")}>All Customers</button>
                   <button onClick={() => setSubTab("segments")} className={subTabStyle("segments")}>Customer Segments</button>
+                  <button onClick={() => setSubTab("abandoned")} className={subTabStyle("abandoned")}>
+                    🛒 Abandoned Carts ({((dbData.abandonedCarts || []).filter((c: any) => c.status !== "Converted")).length})
+                  </button>
                 </div>
 
                 {subTab === "all" && (
@@ -5887,6 +5919,130 @@ export default function AdminDashboard() {
                     <div className="border p-4 rounded-xl bg-[#f8faf1]">
                       <span className="block font-bold">Prepaid Loyals</span>
                       <span className="text-[10px] text-[#666666] mt-0.5 block">Users who always checkout via online cards/UPI.</span>
+                    </div>
+                  </div>
+                )}
+
+                {subTab === "abandoned" && (
+                  <div className="space-y-4">
+                    {/* Stats Header */}
+                    {(() => {
+                      const carts = dbData.abandonedCarts || [];
+                      const activeAbandoned = carts.filter((c: any) => c.status !== "Converted");
+                      const convertedCarts = carts.filter((c: any) => c.status === "Converted");
+                      const totalValue = activeAbandoned.reduce((sum: number, c: any) => sum + (Number(c.cartTotal) || 0), 0);
+                      const recoveredValue = convertedCarts.reduce((sum: number, c: any) => sum + (Number(c.cartTotal) || 0), 0);
+
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                          <div className="bg-[#f8faf1] border border-[#ddddd9] p-4 rounded-xl">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">Active Abandoned</span>
+                            <span className="text-xl font-black text-amber-600 block mt-1">{activeAbandoned.length} Carts</span>
+                          </div>
+                          <div className="bg-[#f8faf1] border border-[#ddddd9] p-4 rounded-xl">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">Potential Revenue</span>
+                            <span className="text-xl font-black text-[#17231b] block mt-1">₹{totalValue.toLocaleString("en-IN")}</span>
+                          </div>
+                          <div className="bg-[#f8faf1] border border-[#ddddd9] p-4 rounded-xl">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">Recovered Orders</span>
+                            <span className="text-xl font-black text-emerald-600 block mt-1">{convertedCarts.length} Orders</span>
+                          </div>
+                          <div className="bg-[#f8faf1] border border-[#ddddd9] p-4 rounded-xl">
+                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">Recovered Revenue</span>
+                            <span className="text-xl font-black text-emerald-700 block mt-1">₹{recoveredValue.toLocaleString("en-IN")}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Abandoned Carts Table */}
+                    <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
+                            <th className="p-3 font-bold">Customer</th>
+                            <th className="p-3 font-bold">Cart Items</th>
+                            <th className="p-3 font-bold">Cart Value</th>
+                            <th className="p-3 font-bold">Date / Status</th>
+                            <th className="p-3 font-bold text-right">Recovery Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#ddddd9]/60">
+                          {(!dbData.abandonedCarts || dbData.abandonedCarts.length === 0) ? (
+                            <tr>
+                              <td colSpan={5} className="p-8 text-center text-neutral-400">
+                                🛒 No abandoned carts recorded yet. When shoppers leave checkout, their carts will appear here automatically for 1-click WhatsApp recovery.
+                              </td>
+                            </tr>
+                          ) : (
+                            dbData.abandonedCarts.map((c: any) => {
+                              const isConverted = c.status === "Converted";
+                              const isNotified = c.status === "Notified" || (c.recoveryMessagesSent && c.recoveryMessagesSent > 0);
+                              return (
+                                <tr key={c.id} className="hover:bg-[#fcfdf9] transition-colors">
+                                  <td className="p-3">
+                                    <div className="font-bold text-[#17231b]">{c.name || "Customer"}</div>
+                                    <div className="text-[11px] text-neutral-500 font-mono mt-0.5">+91 {c.phone}</div>
+                                    {c.email && <div className="text-[10px] text-neutral-400">{c.email}</div>}
+                                  </td>
+                                  <td className="p-3 max-w-[220px]">
+                                    {Array.isArray(c.items) && c.items.length > 0 ? (
+                                      <div className="space-y-0.5">
+                                        {c.items.map((it: any, iIdx: number) => (
+                                          <div key={iIdx} className="text-neutral-700 truncate font-medium">
+                                            • {it.name} <span className="text-neutral-400 text-[10px]">(x{it.quantity})</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-neutral-400">Cart items</span>
+                                    )}
+                                  </td>
+                                  <td className="p-3 font-black text-[#17231b]">
+                                    ₹{Number(c.cartTotal || 0).toLocaleString("en-IN")}
+                                  </td>
+                                  <td className="p-3">
+                                    <div className="flex items-center gap-1.5">
+                                      {isConverted ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                          ✅ Converted
+                                        </span>
+                                      ) : isNotified ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                                          📩 Sent ({c.recoveryMessagesSent}x)
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                                          ⏳ Abandoned
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-neutral-400 mt-1">
+                                      {c.createdAt ? new Date(c.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                                    </div>
+                                  </td>
+                                  <td className="p-3 text-right">
+                                    {isConverted ? (
+                                      <span className="text-[11px] font-bold text-emerald-700">
+                                        Order {c.convertedOrderId || "Placed"}
+                                      </span>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleSendAbandonedRecovery(c.id)}
+                                        disabled={sendingRecoveryId === c.id}
+                                        className="bg-[#25D366] hover:bg-[#1ebd59] text-white px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                                      >
+                                        <span>💬</span>
+                                        {sendingRecoveryId === c.id ? "Sending..." : "Send WhatsApp (5% OFF)"}
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}

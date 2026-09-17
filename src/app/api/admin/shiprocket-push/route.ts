@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { getShiprocketToken, createShiprocketOrder } from "@/lib/shiprocket";
+import { sendOrderShippedWhatsApp } from "@/lib/whatsapp-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -106,11 +107,27 @@ export async function POST(request: Request) {
     if (srRes.success && srRes.data) {
       db.orders[orderIndex] = {
         ...order,
+        status: order.status === "Delivered" ? order.status : "Shipped",
         shiprocketOrderId: srRes.data.order_id,
         shiprocketShipmentId: srRes.data.shipment_id,
         shiprocketStatus: "Pushed",
+        awb: order.awb || `SR-${srRes.data.shipment_id}`,
       };
       await writeDB(db);
+
+      // Automated WhatsApp Shipment Alert (Pillar 3)
+      if (order.phone) {
+        try {
+          await sendOrderShippedWhatsApp({
+            order: db.orders[orderIndex],
+            courierName: "Shiprocket Express",
+            awb: `SR-SHP-${srRes.data.shipment_id}`,
+          });
+          console.log(`[Admin Shiprocket Push]: Sent Shipped WhatsApp notification for ${orderId}`);
+        } catch (waErr) {
+          console.warn("[Admin Shiprocket Push WhatsApp Warning]:", waErr);
+        }
+      }
 
       return NextResponse.json({
         success: true,

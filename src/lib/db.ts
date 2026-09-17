@@ -23,6 +23,7 @@ export interface DBData {
   categories?: any[];
   collections?: any[];
   orderOtps?: any[];
+  abandonedCarts?: any[];
   sessions?: { token: string; userId: string; expiresAt: number }[];
 }
 

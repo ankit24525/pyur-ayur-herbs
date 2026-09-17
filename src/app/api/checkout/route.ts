@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { getShiprocketToken, createShiprocketOrder } from "@/lib/shiprocket";
+import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 
 export async function POST(request: Request) {
   try {
@@ -131,55 +132,39 @@ export async function POST(request: Request) {
       console.error("[CAPI Server Trigger Failed]:", e);
     }
 
-    // WhatsApp Cloud API Order Notification Trigger
-    const whatsappToken = process.env.WHATSAPP_ACCESS_TOKEN;
-    const whatsappPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-    if (
-      whatsappToken &&
-      whatsappPhoneId &&
-      whatsappToken !== "your_permanent_access_token_here" &&
-      whatsappPhoneId !== "your_phone_number_id_here"
-    ) {
-      try {
-        let cleanedPhone = phone.replace(/\D/g, "");
-        if (cleanedPhone.length === 10) {
-          cleanedPhone = "91" + cleanedPhone;
-        }
-
-        const metaApiUrl = `https://graph.facebook.com/v19.0/${whatsappPhoneId}/messages`;
-
-        // Send template order confirmation notification (using standard hello_world template for testing)
-        const response = await fetch(metaApiUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${whatsappToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: cleanedPhone,
-            type: "template",
-            template: {
-              name: "hello_world",
-              language: {
-                code: "en_US"
-              }
+    // 1. Mark matching abandoned carts as Converted in database
+    try {
+      const db = await readDB();
+      if (Array.isArray(db.abandonedCarts)) {
+        const cleanPhone10 = (phone || "").replace(/\D/g, "").slice(-10);
+        let cartUpdated = false;
+        db.abandonedCarts.forEach((c: any) => {
+          const cPhone = (c.phone || "").replace(/\D/g, "").slice(-10);
+          if ((cPhone && cPhone === cleanPhone10) || (email && c.email === email)) {
+            if (c.status !== "Converted") {
+              c.status = "Converted";
+              c.convertedOrderId = orderId;
+              c.convertedAt = new Date().toISOString();
+              cartUpdated = true;
             }
-          }),
+          }
         });
-
-        const resJson = await response.json();
-        if (response.ok) {
-          console.log(`[WhatsApp API Success]: Confirmation sent to ${cleanedPhone} for order ${orderId}`, resJson);
-        } else {
-          console.error(`[WhatsApp API Error]: Meta rejected message dispatch for ${orderId}:`, resJson);
-        }
-      } catch (e) {
-        console.error(`[WhatsApp API Network Error]: Failed to dispatch message for ${orderId}:`, e);
+        if (cartUpdated) await writeDB(db);
       }
-    } else {
-      console.log(`[WhatsApp API Simulation]: Order ${orderId} placed. Set WHATSAPP_ACCESS_TOKEN & WHATSAPP_PHONE_NUMBER_ID in .env.local to send live WhatsApp notifications.`);
+    } catch (acErr) {
+      console.error("[Abandoned Cart Conversion Error]:", acErr);
+    }
+
+    // 2. Automated WhatsApp Order Confirmation Notification (Pillar 3)
+    try {
+      const waRes = await sendOrderConfirmationWhatsApp(newOrder);
+      if (waRes.success) {
+        console.log(`[WhatsApp Order Confirmation Dispatched]: Order ${orderId} sent to ${phone}`);
+      } else {
+        console.warn(`[WhatsApp Order Confirmation Warning]:`, waRes.error);
+      }
+    } catch (waErr) {
+      console.error("[WhatsApp Confirmation Exception]:", waErr);
     }
 
     return NextResponse.json({

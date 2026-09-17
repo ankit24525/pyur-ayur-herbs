@@ -14,6 +14,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import SiteFooter from "@/components/SiteFooter";
 import { StorefrontSkeleton, HeroSkeleton, ConcernFilterSkeleton, ProductRailSkeleton } from "@/components/SkeletonLoader";
 import { products, Product, concerns } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 import { X, Smartphone, User, CheckCircle2 } from "lucide-react";
 
 const getShortName = (name: string) => {
@@ -64,16 +65,15 @@ export default function Home() {
 
     // 2. Fetch live data from backend
     const loadStorefrontData = () => {
-      fetch("/api/storefront", { cache: "no-store" })
-        .then((res) => res.json())
+      getStorefrontData()
         .then((data) => {
-          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+          if (data && data.products && Array.isArray(data.products) && data.products.length > 0) {
             setCatalog(data.products);
           }
-          if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+          if (data && data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
             setCategories(data.categories);
           }
-          if (data.content) {
+          if (data && data.content) {
             setCmsData(data.content);
           }
           setIsDataLoaded(true);

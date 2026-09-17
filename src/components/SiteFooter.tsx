@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Phone, Mail, CreditCard, ShieldCheck, Wallet, Truck, Smartphone } from "lucide-react";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 export default function SiteFooter() {
   const [footerData, setFooterData] = useState<any>(null);
@@ -33,13 +34,12 @@ export default function SiteFooter() {
       } catch {}
     }
 
-    fetch("/api/storefront", { cache: "no-store" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.settings) {
+        if (data && data.settings) {
           setSettings((prev: any) => ({ ...prev, ...data.settings }));
         }
-        if (data.content?.footer) {
+        if (data && data.content?.footer) {
           setFooterData(data.content.footer);
         }
       })

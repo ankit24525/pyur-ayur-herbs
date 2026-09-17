@@ -19,6 +19,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { headerSearchSuggestions, menuLinks, products, Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 interface SiteHeaderProps {
   cart: { product: Product; quantity: number }[];
@@ -117,10 +118,9 @@ export default function SiteHeader({
       setCatalog(initialProducts);
       return;
     }
-    fetch("/api/storefront", { cache: "no-store" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.products && Array.isArray(data.products)) {
+        if (data && data.products && Array.isArray(data.products)) {
           setCatalog(data.products);
         }
       })

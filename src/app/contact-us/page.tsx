@@ -6,6 +6,7 @@ import { ArrowLeft, Mail, Phone, MapPin, CheckCircle } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { products, Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 export default function ContactUsPage() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", message: "" });
@@ -17,10 +18,9 @@ export default function ContactUsPage() {
   });
 
   useEffect(() => {
-    fetch("/api/admin/all", { cache: "no-store" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.settings) {
+        if (data && data.settings) {
           setSettings(data.settings);
         }
       })

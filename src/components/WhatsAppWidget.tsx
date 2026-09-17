@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 export default function WhatsAppWidget() {
   const [whatsappNumber, setWhatsappNumber] = useState("917247824101");
@@ -10,10 +11,9 @@ export default function WhatsAppWidget() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/storefront", { cache: "default" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.settings) {
+        if (data && data.settings) {
           if (data.settings.whatsappNumber) setWhatsappNumber(data.settings.whatsappNumber);
           if (data.settings.whatsappMessage) setWhatsappMessage(data.settings.whatsappMessage);
         }

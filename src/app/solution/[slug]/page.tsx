@@ -11,6 +11,7 @@ import { ProductCardSkeleton, StorefrontSkeleton } from "@/components/SkeletonLo
 import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
 import SiteFooter from "@/components/SiteFooter";
 import { concerns, products, Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 const concernDetailsMap: Record<
   string,
@@ -124,13 +125,12 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
     }
 
     const loadData = () => {
-      fetch("/api/storefront", { cache: "no-store" })
-        .then((res) => res.json())
+      getStorefrontData()
         .then((data) => {
-          if (data.products && Array.isArray(data.products)) {
+          if (data && data.products && Array.isArray(data.products)) {
             setCatalog(data.products);
           }
-          if (data.categories && Array.isArray(data.categories)) {
+          if (data && data.categories && Array.isArray(data.categories)) {
             setCategories(data.categories);
           }
           setIsDataLoaded(true);

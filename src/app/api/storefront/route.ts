@@ -4,8 +4,11 @@ import { products, concerns } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const forceFresh = searchParams.get("fresh") === "1";
+
     const db = await readDB();
 
     const responseData = {
@@ -14,6 +17,9 @@ export async function GET() {
       content: db.content || { announcement: {}, heroSlides: [], consultationBanner: {} },
       reviews: db.reviews || [],
       testimonials: db.testimonials || [],
+      blogs: Array.isArray(db.blogs)
+        ? db.blogs.filter((b: any) => b.status === "Published")
+        : [],
       settings: {
         storeName: db.settings?.storeName || "Pure Ayur Herbs Store",
         companyLegalName: db.settings?.companyLegalName || "Pure Ayur Herbs Private Limited",
@@ -35,12 +41,15 @@ export async function GET() {
       },
     };
 
+    // Edge CDN Caching: Cache at Vercel Edge for 2 minutes, revalidate in background up to 10 minutes
+    const cacheControlHeader = forceFresh
+      ? "no-store, no-cache, must-revalidate"
+      : "public, s-maxage=120, stale-while-revalidate=600";
+
     return NextResponse.json(responseData, {
       status: 200,
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0",
+        "Cache-Control": cacheControlHeader,
       },
     });
   } catch (error) {

@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, User, ShoppingBag, Play, Sparkles, Volume2 } from 
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 export default function BlogPostPage() {
   const params = useParams();
@@ -20,14 +21,13 @@ export default function BlogPostPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
-    // Fetch all database records
-    fetch("/api/admin/all", { cache: "no-store" })
-      .then((res) => res.json())
+    // Fetch storefront catalog and blogs
+    getStorefrontData()
       .then((data) => {
-        if (data.products) {
+        if (data && data.products) {
           setCatalog(data.products);
         }
-        if (data.blogs) {
+        if (data && data.blogs) {
           const match = data.blogs.find((b: any) => {
             const cleanId = b.id || b.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
             return cleanId === blogId;

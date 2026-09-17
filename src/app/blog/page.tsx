@@ -6,6 +6,7 @@ import { ArrowLeft, BookOpen, Calendar, User, Clock, ChevronRight } from "lucide
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 export default function BlogListingPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -14,10 +15,9 @@ export default function BlogListingPage() {
 
   useEffect(() => {
     // Load storefront layout and blogs
-    fetch("/api/admin/all", { cache: "no-store" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.blogs) {
+        if (data && data.blogs) {
           // Filter only published blogs
           const published = data.blogs.filter((b: any) => b.status === "Published");
           setBlogs(published);

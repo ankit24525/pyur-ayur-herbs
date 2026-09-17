@@ -11,6 +11,7 @@ import SiteFooter from "@/components/SiteFooter";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
 import { Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -49,10 +50,9 @@ function SearchContent() {
 
   // Load products from storefront API
   useEffect(() => {
-    fetch("/api/storefront", { cache: "no-store" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.products && Array.isArray(data.products)) {
+        if (data && data.products && Array.isArray(data.products)) {
           setCatalog(data.products);
         }
       })

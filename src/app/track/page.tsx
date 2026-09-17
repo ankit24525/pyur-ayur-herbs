@@ -21,6 +21,7 @@ import {
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { products, Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 function TrackOrderContent() {
   const searchParams = useSearchParams();
@@ -44,10 +45,9 @@ function TrackOrderContent() {
   const [whatsappNumber, setWhatsappNumber] = useState("917247824101");
 
   useEffect(() => {
-    fetch("/api/admin/all", { cache: "no-store" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.settings && data.settings.whatsappNumber) {
+        if (data && data.settings && data.settings.whatsappNumber) {
           setWhatsappNumber(data.settings.whatsappNumber);
         }
       })

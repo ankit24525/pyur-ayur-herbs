@@ -17,6 +17,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { products, Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 import { trackMetaEvent } from "@/components/MetaPixel";
 
 function CheckoutForm() {
@@ -86,10 +87,9 @@ function CheckoutForm() {
   });
 
   useEffect(() => {
-    fetch("/api/storefront", { cache: "no-store" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.products && data.products.length > 0) {
+        if (data && data.products && data.products.length > 0) {
           setCatalog(data.products);
           const found = data.products.find((p: any) => p.id === prodId || p.slug === prodId);
           if (found) setProduct(found);

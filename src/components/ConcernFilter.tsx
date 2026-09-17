@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { concerns as staticConcerns } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 interface ConcernFilterProps {
   selectedConcern: string | null;
@@ -26,10 +27,9 @@ export default function ConcernFilter({
       return;
     }
 
-    fetch("/api/storefront", { cache: "default" })
-      .then((res) => res.json())
+    getStorefrontData()
       .then((data) => {
-        if (data.categories && data.categories.length > 0) {
+        if (data && data.categories && data.categories.length > 0) {
           setCategories(data.categories);
         } else {
           setCategories(staticConcerns);

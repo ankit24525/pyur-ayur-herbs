@@ -12,12 +12,15 @@ const siteUrl = "https://www.purreayurherbs.com";
 export async function generateMetadata(): Promise<Metadata> {
   try {
     const db = await readDB();
-    const seo = db.seo || {
-      title: "Pure Ayur Herbs | Premium Botanicals & Wellness",
-      metaDesc: "Ayurvedic wellness storefront for Pure Ayur Herbs. Sourced from high-altitude Himalayas."
-    };
-    const title = (seo.title || "Pure Ayur Herbs | Premium Botanicals & Wellness").replace(/Pyur/gi, "Pure");
-    const description = (seo.metaDesc || "Ayurvedic wellness storefront for Pure Ayur Herbs. Sourced from high-altitude Himalayas.").replace(/Pyur/gi, "Pure");
+    const seo = db.seo || {};
+    let title = (seo.title || "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Formulations").replace(/Pyur/gi, "Pure");
+    if (title.includes("Premium Ayurvedic Remedies")) {
+      title = "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Formulations";
+    }
+    let description = (seo.metaDesc || "").replace(/Pyur/gi, "Pure");
+    if (!description || description.includes("Dia Free") || description.includes("organic skincare")) {
+      description = "Shop 100% AYUSH Certified Himalayan Shilajit Gold Resin, Sugar Care Balance Juice, Kesar Saffron Hair Growth Elixir, Ashwagandha KSM-66 & Digestive Juices. Fast Free Delivery across India.";
+    }
 
     return {
       metadataBase: new URL(siteUrl),

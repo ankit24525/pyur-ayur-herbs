@@ -105,9 +105,15 @@ function sanitizeDBData(data: any): DBData {
   } else {
     if (typeof data.seo.title === "string") {
       data.seo.title = data.seo.title.replace(/Pyur/gi, "Pure");
+      if (data.seo.title.includes("Premium Ayurvedic Remedies")) {
+        data.seo.title = "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Formulations";
+      }
     }
     if (typeof data.seo.metaDesc === "string") {
       data.seo.metaDesc = data.seo.metaDesc.replace(/Pyur/gi, "Pure");
+      if (data.seo.metaDesc.includes("Dia Free") || data.seo.metaDesc.includes("organic skincare")) {
+        data.seo.metaDesc = "Shop 100% AYUSH Certified Himalayan Shilajit Gold Resin, Sugar Care Balance Juice, Kesar Saffron Hair Growth Elixir, Ashwagandha KSM-66 & Digestive Juices. Fast Free Delivery across India.";
+      }
     }
   }
 
@@ -232,6 +238,14 @@ export async function readDB(): Promise<DBData> {
     // Safeguard: Never allow an empty products array from a fresh or stale DB to wipe out existing in-memory products
     if (sanitized.products.length === 0 && dbMemoryCache?.data?.products && dbMemoryCache.data.products.length > 0) {
       sanitized.products = dbMemoryCache.data.products;
+    }
+
+    // Auto-migrate old SEO descriptions in MongoDB
+    if (cleanData.seo?.metaDesc?.includes("Dia Free") || cleanData.seo?.title?.includes("Premium Ayurvedic Remedies")) {
+      void db.collection("store_data").updateOne(
+        { _id: "main" as any },
+        { $set: { "seo.metaDesc": sanitized.seo.metaDesc, "seo.title": sanitized.seo.title } }
+      ).catch(() => {});
     }
 
     dbMemoryCache = { data: sanitized, timestamp: Date.now() };

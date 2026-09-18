@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       items: cart.items,
       cartTotal: cart.cartTotal,
       discountCode: discountCode,
-      recoveryUrl: cart.recoveryUrl || "https://purreayurherbs.com/cart",
+      recoveryUrl: cart.recoveryUrl || "https://www.purreayurherbs.com/cart",
     });
 
     if (waRes.success) {

@@ -24,7 +24,7 @@ export const AYURVEDIC_CATALOG = [
     ingredients: "Pure Himalayan Shilajit (18,000+ ft Shodhana purified), 24K Gold Bhasma, Ashwagandha, Gokshura",
     dosage: "Take a pea-sized amount (250mg - 500mg) using the spoon provided. Dissolve in a cup of lukewarm milk or water. Consume once or twice daily, ideally on an empty stomach in the morning or 30 minutes before bedtime.",
     benefits: "Boosts physical strength, cellular ATP energy, testosterone, immunity, and mental focus naturally.",
-    link: "https://pureayurherbs.com/products/pure-himalayan-shilajit-gold-resin-50g",
+    link: "https://www.purreayurherbs.com/products/pure-himalayan-shilajit-gold-resin-50g",
   },
   {
     name: "Sugar Care Balance Ayurvedic Juice (1L)",
@@ -36,7 +36,7 @@ export const AYURVEDIC_CATALOG = [
     ingredients: "Karela (Bitter Gourd), Jamun Seed, Gurmar (Gymnema Sylvestre - 'Sugar Destroyer'), Vijaysar, Methi",
     dosage: "Mix 30ml of Sugar Care Juice in a glass of lukewarm water (100ml). Consume twice daily — 30 minutes before breakfast and 30 minutes before dinner.",
     benefits: "Supports natural insulin sensitivity, activates pancreas beta-cells, regulates fasting blood glucose levels, and curbs sweet cravings.",
-    link: "https://pureayurherbs.com/products/sugar-care-balance-ayurvedic-juice-1l",
+    link: "https://www.purreayurherbs.com/products/sugar-care-balance-ayurvedic-juice-1l",
   },
   {
     name: "Kesar Saffron Hair Growth Elixir Oil (200ml)",
@@ -48,7 +48,7 @@ export const AYURVEDIC_CATALOG = [
     ingredients: "Authentic Kashmiri Saffron (Kesar), Bhringraj, Amla, Cold-pressed Sesame Oil, Rosemary Extract",
     dosage: "Apply 5-10ml directly onto scalp using fingertips. Gently massage in circular motions for 5–10 minutes. Leave overnight or for at least 2 hours before washing with mild herbal shampoo. Use 3 times weekly.",
     benefits: "Stimulates dormant hair follicles, blocks DHT on scalp, stops excessive shedding, and promotes thick, voluminous hair growth.",
-    link: "https://pureayurherbs.com/products/kesar-saffron-hair-growth-elixir-oil-200ml",
+    link: "https://www.purreayurherbs.com/products/kesar-saffron-hair-growth-elixir-oil-200ml",
   },
   {
     name: "Ayurvedic Liver Detox & Cleanse Tonic (500ml)",
@@ -60,7 +60,7 @@ export const AYURVEDIC_CATALOG = [
     ingredients: "Bhumyamalaki, Punarnava, Kalmegh, Kutki, Kasani (Chicory)",
     dosage: "Take 15ml - 20ml diluted in half a glass of normal water twice daily, 30 minutes after meals.",
     benefits: "Flushes out accumulated hepatic toxins, reduces liver enzymes (SGOT/SGPT), improves bile secretion, and alleviates abdominal bloating.",
-    link: "https://pureayurherbs.com/products/ayurvedic-liver-detox-cleanse-tonic-500ml",
+    link: "https://www.purreayurherbs.com/products/ayurvedic-liver-detox-cleanse-tonic-500ml",
   },
   {
     name: "Ashwagandha KSM-66 Gold Capsules (60s)",
@@ -72,7 +72,7 @@ export const AYURVEDIC_CATALOG = [
     ingredients: "KSM-66 Standardized Ashwagandha Root Extract (500mg, highest concentration full-spectrum) + BioPerine Black Pepper",
     dosage: "Take 1 capsule twice daily with warm water or milk after breakfast and dinner.",
     benefits: "Clinically proven to reduce cortisol (stress hormone) by 27.9%, boost muscle recovery, improve endurance, and induce deep restful sleep.",
-    link: "https://pureayurherbs.com/products/ashwagandha-ksm-66-gold-capsules-60s",
+    link: "https://www.purreayurherbs.com/products/ashwagandha-ksm-66-gold-capsules-60s",
   },
   {
     name: "Organic Triphala Digestive Care Juice (1L)",
@@ -84,7 +84,7 @@ export const AYURVEDIC_CATALOG = [
     ingredients: "Cold-pressed Amla (Indian Gooseberry), Haritaki (Chebulic Myrobalan), Bibhitaki (Belliric Myrobalan)",
     dosage: "Mix 30ml with a glass of lukewarm water and drink at bedtime or early morning on empty stomach.",
     benefits: "Gently cleanses the colon, regulates regular morning bowel movements without cramps, relieves chronic constipation, and balances gut flora.",
-    link: "https://pureayurherbs.com/products/organic-triphala-digestive-care-juice-1l",
+    link: "https://www.purreayurherbs.com/products/organic-triphala-digestive-care-juice-1l",
   },
 ];
 
@@ -116,7 +116,7 @@ async function callGeminiAI(userQuery: string, customerName: string): Promise<st
   if (!apiKey) return null;
 
   try {
-    const systemPrompt = `You are "Dr. Ayur", the friendly, knowledgeable, certified Chief Ayurvedic Vaidya and Support Assistant for "Pure Ayur Herbs" (https://pureayurherbs.com).
+    const systemPrompt = `You are "Dr. Ayur", the friendly, knowledgeable, certified Chief Ayurvedic Vaidya and Support Assistant for "Pure Ayur Herbs" (https://www.purreayurherbs.com).
 Company background:
 - 100% Ministry of AYUSH Certified Ayurvedic wellness brand based in India.
 - Free shipping across India on prepaid & COD orders.
@@ -232,7 +232,7 @@ I couldn't locate an active order automatically for your number (+91 ${from.slic
 To help me find your package, please reply with your **Order ID** (e.g. *PYR-ORD-123456*) or the phone number used during checkout.
 
 You can also track anytime directly on our website:
-🔗 https://pureayurherbs.com/track
+🔗 https://www.purreayurherbs.com/track
 
 Need help from our shipping desk? Reply *Support*.`;
 
@@ -559,7 +559,7 @@ To help you quickly, please choose from below:
 4️⃣ Reply *Support* to **Talk with our Ayurvedic Doctor**
 
 You can also browse our 100% AYUSH Certified store:
-🌐 https://pureayurherbs.com`;
+🌐 https://www.purreayurherbs.com`;
 
   return {
     replyText: fallbackMsg,

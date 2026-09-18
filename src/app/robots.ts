@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin", "/api/admin", "/checkout"],
       },
     ],
-    sitemap: "https://pureayurherbs.com/sitemap.xml",
+    sitemap: "https://www.purreayurherbs.com/sitemap.xml",
   };
 }

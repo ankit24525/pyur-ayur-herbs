@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { readDB } from "@/lib/db";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://pureayurherbs.com";
+  const baseUrl = "https://www.purreayurherbs.com";
   const now = new Date();
 
   // Core static pages

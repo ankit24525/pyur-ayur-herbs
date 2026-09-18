@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       recoveryMessagesSent: existingIndex !== -1 ? db.abandonedCarts[existingIndex].recoveryMessagesSent || 0 : 0,
       createdAt: existingIndex !== -1 ? db.abandonedCarts[existingIndex].createdAt : now,
       lastActive: now,
-      recoveryUrl: `https://purreayurherbs.com/cart`,
+      recoveryUrl: `https://www.purreayurherbs.com/cart`,
     };
 
     if (existingIndex !== -1) {

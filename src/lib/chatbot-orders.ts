@@ -104,7 +104,7 @@ export async function formatOrderStatusMessage(order: any, customerName?: string
     } catch {}
   }
 
-  const trackingUrl = `https://pureayurherbs.com/track?orderId=${encodeURIComponent(orderId)}`;
+  const trackingUrl = `https://www.purreayurherbs.com/track?orderId=${encodeURIComponent(orderId)}`;
 
   let statusEmoji = "📦";
   if (status.toLowerCase().includes("delivered")) statusEmoji = "✅";

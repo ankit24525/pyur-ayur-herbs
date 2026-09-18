@@ -8,7 +8,7 @@ import { sendWhatsAppTextMessage } from "./whatsapp";
 const DEFAULT_TOKEN =
   "EAAYQ1WWZCjosBSZAyG6hGLLrF9b0c5RMPMeYv9g6xUVaCCf0zhFnfwR1pYrVmFx5oFU0FABvRWQYnAEa4hcpECjd9ZBHNCfhNEHUnYGz9uz3R5q1EZCBD9ZBKZBKkfZCgvqzEiy1WleH9fNSEKGVjbr8nFjPqitURMQvdZArUcDjTx0nfSNVB43pUqvOS1KkfKVNYwZDZD";
 const DEFAULT_PHONE_ID = "1363740400150399";
-const BASE_URL = "https://purreayurherbs.com";
+const BASE_URL = "https://www.purreayurherbs.com";
 
 function getCleanPhone(phone: string): string {
   let cleaned = (phone || "").replace(/\D/g, "");

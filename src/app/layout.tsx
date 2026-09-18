@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import { readDB } from "@/lib/db";
 import "./globals.css";
 
-const siteUrl = "https://pureayurherbs.com";
+const siteUrl = "https://www.purreayurherbs.com";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -79,11 +79,11 @@ const jsonLdSchema = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://pureayurherbs.com/#organization",
+      "@id": "https://www.purreayurherbs.com/#organization",
       "name": "Pure Ayur Herbs",
       "alternateName": "Pure Ayur Herbs Private Limited",
-      "url": "https://pureayurherbs.com",
-      "logo": "https://pureayurherbs.com/brand/pure-ayur-logo.svg",
+      "url": "https://www.purreayurherbs.com",
+      "logo": "https://www.purreayurherbs.com/brand/pure-ayur-logo.svg",
       "description": "Pure Ayur Herbs bridges ancient Ayurvedic wisdom with modern clinical research for purity you can taste & feel.",
       "contactPoint": {
         "@type": "ContactPoint",
@@ -93,11 +93,11 @@ const jsonLdSchema = {
     },
     {
       "@type": "WebSite",
-      "@id": "https://pureayurherbs.com/#website",
-      "url": "https://pureayurherbs.com",
+      "@id": "https://www.purreayurherbs.com/#website",
+      "url": "https://www.purreayurherbs.com",
       "name": "Pure Ayur Herbs",
       "publisher": {
-        "@id": "https://pureayurherbs.com/#organization",
+        "@id": "https://www.purreayurherbs.com/#organization",
       },
     },
   ],

@@ -51,6 +51,17 @@ export async function generateMetadata(): Promise<Metadata> {
         title,
         description,
       },
+      icons: {
+        icon: [
+          { url: "/favicon.ico", sizes: "32x32" },
+          { url: "/icon.png", type: "image/png", sizes: "192x192" },
+          { url: "/brand/pure-ayur-logo.png", type: "image/png", sizes: "530x530" },
+        ],
+        apple: [
+          { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+        ],
+        shortcut: "/favicon.ico",
+      },
     };
   } catch (e) {
     const fallbackTitle = "Pure Ayur Herbs | Premium Botanicals & Wellness";
@@ -70,6 +81,17 @@ export async function generateMetadata(): Promise<Metadata> {
         locale: "en_IN",
         type: "website",
       },
+      icons: {
+        icon: [
+          { url: "/favicon.ico", sizes: "32x32" },
+          { url: "/icon.png", type: "image/png", sizes: "192x192" },
+          { url: "/brand/pure-ayur-logo.png", type: "image/png", sizes: "530x530" },
+        ],
+        apple: [
+          { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+        ],
+        shortcut: "/favicon.ico",
+      },
     };
   }
 }
@@ -83,7 +105,7 @@ const jsonLdSchema = {
       "name": "Pure Ayur Herbs",
       "alternateName": "Pure Ayur Herbs Private Limited",
       "url": "https://www.purreayurherbs.com",
-      "logo": "https://www.purreayurherbs.com/brand/pure-ayur-logo.svg",
+      "logo": "https://www.purreayurherbs.com/brand/pure-ayur-logo.png",
       "description": "Pure Ayur Herbs bridges ancient Ayurvedic wisdom with modern clinical research for purity you can taste & feel.",
       "contactPoint": {
         "@type": "ContactPoint",
@@ -107,6 +129,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="h-full antialiased">
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="32x32" />
+        <link rel="icon" href="/icon.png" type="image/png" sizes="192x192" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" sizes="180x180" />
+        <link rel="shortcut icon" href="/favicon.ico" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}

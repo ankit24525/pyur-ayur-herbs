@@ -1,4 +1,13 @@
-import { findOrdersForCustomer, formatOrderStatusMessage, formatMultipleOrdersMessage } from "./chatbot-orders";
+import {
+  findOrdersForCustomer,
+  formatOrderStatusMessage,
+  formatMultipleOrdersMessage,
+  cancelCustomerOrder,
+  formatCancellationPrompt,
+  formatDoorstepRefusalMessage,
+  formatAlreadyCancelledMessage,
+  formatDeliveredCannotCancelMessage,
+} from "./chatbot-orders";
 import { readDB } from "./db";
 
 export interface ChatbotContext {
@@ -259,7 +268,7 @@ export async function generateChatbotReply(context: ChatbotContext): Promise<Cha
 
 I am your 24/7 Ayurvedic Wellness Assistant. How may I assist your health journey today?
 
-1️⃣ *Track My Order* — Real-time shipment status & tracking link
+1️⃣ *Track or Cancel Order* — Real-time shipment status, tracking & instant cancellation
 2️⃣ *Ayurvedic Remedy Finder* — Find the right herb for your health concern
 3️⃣ *Product Usage & Dosage* — How & when to consume Virja, Madhunashi, Fat Burner & Creams
 4️⃣ *Product Catalog & Prices* — View all available products & offers
@@ -268,6 +277,136 @@ I am your 24/7 Ayurvedic Wellness Assistant. How may I assist your health journe
 _💡 Simply reply with *1*, *2*, *3*, *4*, *5* or type any health concern in Hindi, English, or Hinglish!_`;
 
     return { replyText: greetingMsg, intent: "GREETING", escalatedToHuman: false };
+  }
+
+  // ==========================================
+  // 1.5. ORDER CANCELLATION INTENT (Amazon & Flipkart Policy)
+  // ==========================================
+  const isConfirmCancel = /confirm\s*(cancel|radd)|yes\s*cancel/i.test(query);
+  const isCancelRequest =
+    query.includes("cancel") ||
+    query.includes("radd") ||
+    query.includes("radh") ||
+    query.includes("stop order") ||
+    query.includes("dont want") ||
+    query.includes("nahi chahiye") ||
+    query.includes("order wapas") ||
+    query.includes("order band");
+
+  if (isConfirmCancel) {
+    const orderResult = await findOrdersForCustomer(rawQuery, from);
+    let targetOrder = orderResult.order;
+    if (!targetOrder && orderResult.multiple && orderResult.multiple.length > 0) {
+      targetOrder = orderResult.multiple[0];
+    }
+
+    if (!targetOrder) {
+      return {
+        replyText: `⚠️ *Order Cancellation Desk*
+
+I couldn't detect which order you want to cancel. Please reply with:
+👉 *CONFIRM CANCEL <Your Order ID>* (e.g. *CONFIRM CANCEL PYR-ORD-146050*)
+
+Or reply *Order* to see your active orders.`,
+        intent: "ORDER_CANCELLATION",
+        escalatedToHuman: false,
+      };
+    }
+
+    // Extract optional reason after the word cancel or order id
+    const reasonMatch = rawQuery
+      .replace(/confirm\s*(cancel|radd)/i, "")
+      .replace(new RegExp(targetOrder.id, "gi"), "")
+      .replace(/pyr-ord-\d+/i, "")
+      .trim();
+    const cancelReason = reasonMatch || "Customer confirmed cancellation on WhatsApp";
+
+    const cancelRes = await cancelCustomerOrder(targetOrder.id, from, cancelReason);
+    return {
+      replyText: cancelRes.message,
+      intent: "ORDER_CANCELLATION",
+      escalatedToHuman: false,
+    };
+  }
+
+  if (isCancelRequest) {
+    const orderResult = await findOrdersForCustomer(rawQuery, from);
+
+    if (!orderResult.found || (!orderResult.order && (!orderResult.multiple || orderResult.multiple.length === 0))) {
+      return {
+        replyText: `🚫 *Order Cancellation Desk*
+
+I couldn't locate an active order automatically for your phone (+91 ${from.slice(-10)}).
+
+To cancel an order, please reply with:
+👉 *CANCEL <Your Order ID>* (e.g. *CANCEL PYR-ORD-146050*)
+
+You can also cancel anytime directly on our website:
+🔗 https://www.purreayurherbs.com/track
+
+Need to speak with our support team? Reply *Support*!`,
+        intent: "ORDER_CANCELLATION",
+        escalatedToHuman: false,
+      };
+    }
+
+    if (orderResult.multiple && orderResult.multiple.length > 1) {
+      const list = orderResult.multiple
+        .slice(0, 4)
+        .map((o: any, idx: number) => {
+          return `${idx + 1}️⃣ *Order ${o.id}* (Status: ${o.status || "Processing"})
+• Items: ${o.items || "Ayurvedic Remedy"}
+• Total: ₹${Number(o.total || 0).toLocaleString("en-IN")}
+👉 Reply: *CONFIRM CANCEL ${o.id}*`;
+        })
+        .join("\n\n");
+
+      return {
+        replyText: `⚠️ *Multiple Orders Found*
+
+You have multiple orders registered. Which order would you like to cancel?
+
+${list}
+
+_To cancel any specific order above, copy and reply with the command shown below it!_`,
+        intent: "ORDER_CANCELLATION",
+        escalatedToHuman: false,
+      };
+    }
+
+    const order = orderResult.order || orderResult.multiple?.[0];
+    const status = String(order.status || "Processing").toLowerCase();
+
+    if (status === "cancelled" || status.includes("cancel")) {
+      return {
+        replyText: formatAlreadyCancelledMessage(order, profileName),
+        intent: "ORDER_CANCELLATION",
+        escalatedToHuman: false,
+      };
+    }
+
+    if (status.includes("delivered")) {
+      return {
+        replyText: formatDeliveredCannotCancelMessage(order, profileName),
+        intent: "ORDER_CANCELLATION",
+        escalatedToHuman: false,
+      };
+    }
+
+    if (status.includes("shipped") || status.includes("transit") || status.includes("out for delivery")) {
+      return {
+        replyText: formatDoorstepRefusalMessage(order, profileName),
+        intent: "ORDER_CANCELLATION",
+        escalatedToHuman: false,
+      };
+    }
+
+    // Pre-dispatch unshipped order -> Prompt confirmation
+    return {
+      replyText: formatCancellationPrompt(order, profileName),
+      intent: "ORDER_CANCELLATION",
+      escalatedToHuman: false,
+    };
   }
 
   // ==========================================

@@ -1,5 +1,5 @@
-import { readDB } from "./db";
-import { getShiprocketToken, getShiprocketTracking } from "./shiprocket";
+import { readDB, writeDB } from "./db";
+import { getShiprocketToken, cancelShiprocketOrder, getShiprocketTracking } from "./shiprocket";
 
 export interface OrderLookupResult {
   found: boolean;
@@ -170,5 +170,274 @@ ${orders.length > 5 ? `_...and ${orders.length - 5} older orders._\n` : ""}
 _💡 To get full courier & delivery details for any order, reply with its **Order ID** (e.g. *${displayOrders[0]?.id || "PYR-ORD-146050"}*) or click its direct tracking link above!_
 
 Need assistance or want to talk with our team? Reply *Support* anytime!`;
+}
+
+export interface CancelOrderResult {
+  success: boolean;
+  status: "CANCELLED" | "ALREADY_CANCELLED" | "DISPATCHED_DOORSTEP_REFUSAL" | "DELIVERED_NO_CANCEL" | "NOT_FOUND" | "UNAUTHORIZED" | "ERROR";
+  order?: any;
+  message: string;
+}
+
+/**
+ * Formats doorstep refusal guidance following Amazon & Flipkart policy
+ */
+export function formatDoorstepRefusalMessage(order: any, customerName?: string): string {
+  const name = customerName || order.customer || "Valued Customer";
+  const orderId = order.id || "PYR-ORD";
+  const status = order.status || "Shipped";
+  const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid";
+  const total = order.total ? `₹${Number(order.total).toLocaleString("en-IN")}` : "₹0";
+
+  const refundText = isPrepaid
+    ? `• *Prepaid Refund:* Once returned to our warehouse, full refund of *${total}* will be instantly returned to your original payment account (3–5 business days).`
+    : `• *COD Order:* Since this is Cash on Delivery, you don't need to pay anything (*₹0 fee*).`;
+
+  return `🚚 *Package Already Dispatched — Amazon & Flipkart Policy*
+
+Namaste ${name}! 🙏
+
+Your order *${orderId}* is already in transit (*${status}*) with our delivery partner and cannot be cancelled online.
+
+🛡️ *Doorstep Refusal Option (No charges):*
+When our courier executive arrives at your doorstep, you can simply inform them:
+👉 *"I do not want this parcel. Please mark it as 'Customer Refused' / Return to Origin (RTO)."*
+
+${refundText}
+
+🔗 *Live Tracking:*
+https://www.purreayurherbs.com/track?orderId=${encodeURIComponent(orderId)}
+
+If you have any questions or need doctor assistance, simply reply *Support*!`;
+}
+
+/**
+ * Formats message when an order is already cancelled
+ */
+export function formatAlreadyCancelledMessage(order: any, customerName?: string): string {
+  const name = customerName || order.customer || "Valued Customer";
+  const orderId = order.id || "PYR-ORD";
+  const total = order.total ? `₹${Number(order.total).toLocaleString("en-IN")}` : "₹0";
+  const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid";
+
+  const refundText = isPrepaid
+    ? `💳 *Refund:* ${order.refundStatus || `Full refund of ${total} initiated (3–5 business days).`}`
+    : `💵 *Billing:* Cash on Delivery (₹0 charged).`;
+
+  return `❌ *Order Already Cancelled*
+
+Namaste ${name}!
+Order *${orderId}* was already cancelled${order.cancellationDate ? ` on ${new Date(order.cancellationDate).toLocaleDateString("en-IN")}` : ""}.
+
+${refundText}
+${order.cancellationReason ? `📝 *Reason:* ${order.cancellationReason}\n` : ""}
+🌐 Visit Store: https://www.purreayurherbs.com
+Reply *Support* if you need any further help!`;
+}
+
+/**
+ * Formats message when an order is delivered and cannot be cancelled
+ */
+export function formatDeliveredCannotCancelMessage(order: any, customerName?: string): string {
+  const name = customerName || order.customer || "Valued Customer";
+  const orderId = order.id || "PYR-ORD";
+
+  return `✅ *Order Already Delivered*
+
+Namaste ${name}!
+Your order *${orderId}* has already been marked as *Delivered*. As per Ayurvedic safety & hygiene standards, delivered products cannot be cancelled online.
+
+If you received a damaged package or have any medical queries, reply *Support* or call +91 72478 24101 and our Vaidya team will assist you! 🙏`;
+}
+
+/**
+ * Formats order cancellation confirmation prompt (Step 1)
+ */
+export function formatCancellationPrompt(order: any, customerName?: string): string {
+  const name = customerName || order.customer || "Valued Customer";
+  const orderId = order.id || "PYR-ORD";
+  const total = order.total ? `₹${Number(order.total).toLocaleString("en-IN")}` : "₹0";
+  const paymentMethod = order.paymentMethod === "prepaid" || order.method === "Prepaid" ? "💳 Prepaid" : "💵 COD";
+  const items = order.items || "Ayurvedic Remedies";
+
+  return `⚠️ *Confirm Order Cancellation*
+
+Namaste ${name}! You requested to cancel your order:
+
+📦 *Order ID:* ${orderId}
+🌿 *Items:* ${items}
+💰 *Total:* ${total} (${paymentMethod})
+📊 *Status:* ${order.status || "Processing"} (Eligible for instant cancellation)
+
+Are you sure you want to cancel this order?
+To proceed, please reply:
+👉 *CONFIRM CANCEL ${orderId}*
+
+_(Or provide a reason, e.g. "CONFIRM CANCEL ${orderId} Ordered by mistake")_
+
+If you wish to keep your order, simply ignore this message. 🙏`;
+}
+
+/**
+ * Formats cancellation success message
+ */
+export function formatCancellationSuccessMessage(order: any, reason?: string, customerName?: string): string {
+  const name = customerName || order.customer || "Valued Customer";
+  const orderId = order.id || "PYR-ORD";
+  const total = order.total ? `₹${Number(order.total).toLocaleString("en-IN")}` : "₹0";
+  const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid";
+
+  const refundText = isPrepaid
+    ? `💳 *Refund Status:* Full refund of *${total}* has been initiated to your original payment method. It will reflect within *3–5 business days*.`
+    : `💵 *Billing:* Cash on Delivery (COD). *₹0 charge* applies.`;
+
+  return `🚫 *ORDER CANCELLED SUCCESSFULLY* 🚫
+
+Namaste ${name}! 🙏
+
+Your order *${orderId}* has been successfully cancelled.
+
+${refundText}
+${reason ? `📝 *Reason:* ${reason}\n` : ""}
+📦 *Dispatch Status:* Order has been stopped and will not be dispatched.
+
+We hope to serve you again soon with pure Ayurvedic health remedies.
+
+🌐 Pure Ayur Herbs: https://www.purreayurherbs.com
+💬 Questions? Reply directly here on WhatsApp anytime!`;
+}
+
+/**
+ * Cancels an order directly from WhatsApp Chatbot
+ */
+export async function cancelCustomerOrder(
+  orderIdOrQuery: string,
+  customerPhone?: string,
+  reason?: string
+): Promise<CancelOrderResult> {
+  try {
+    const db = await readDB();
+    const orders = db.orders || [];
+
+    const cleanQuery = (orderIdOrQuery || "").trim().toLowerCase();
+    const cleanPhone = (customerPhone || "").replace(/\D/g, "").slice(-10);
+
+    const orderIndex = orders.findIndex((o: any) => {
+      if (!o || !o.id) return false;
+      const oId = String(o.id).toLowerCase();
+      const oDigits = o.id.replace(/\D/g, "");
+      const queryDigits = cleanQuery.replace(/\D/g, "");
+
+      const isExactMatch = oId === cleanQuery || oId.includes(cleanQuery);
+      const isDigitsMatch = queryDigits.length >= 4 && (oDigits === queryDigits || oDigits.includes(queryDigits));
+      const isSrMatch =
+        (o.shiprocketOrderId && String(o.shiprocketOrderId).toLowerCase() === cleanQuery) ||
+        (o.shiprocketShipmentId && String(o.shiprocketShipmentId).toLowerCase() === cleanQuery);
+
+      return isExactMatch || isDigitsMatch || isSrMatch;
+    });
+
+    if (orderIndex === -1) {
+      return {
+        success: false,
+        status: "NOT_FOUND",
+        message: "We couldn't find an order matching that ID. Please check your Order ID (e.g. PYR-ORD-146050) or reply *Order* to view your active orders.",
+      };
+    }
+
+    const order = orders[orderIndex];
+
+    // Phone verification if provided
+    if (cleanPhone) {
+      const orderPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
+      if (orderPhone && orderPhone.length >= 6 && orderPhone !== cleanPhone) {
+        return {
+          success: false,
+          status: "UNAUTHORIZED",
+          order,
+          message: "The mobile number does not match this order's billing details. If you need help, please reply *Support*.",
+        };
+      }
+    }
+
+    const status = String(order.status || "Processing").toLowerCase();
+
+    // 1. Already Cancelled
+    if (status === "cancelled" || status.includes("cancel")) {
+      return {
+        success: false,
+        status: "ALREADY_CANCELLED",
+        order,
+        message: formatAlreadyCancelledMessage(order),
+      };
+    }
+
+    // 2. Already Delivered
+    if (status.includes("delivered")) {
+      return {
+        success: false,
+        status: "DELIVERED_NO_CANCEL",
+        order,
+        message: formatDeliveredCannotCancelMessage(order),
+      };
+    }
+
+    // 3. Shipped / In Transit / Out for Delivery (Amazon/Flipkart Doorstep Refusal)
+    const isDispatched = status.includes("shipped") || status.includes("transit") || status.includes("out for delivery");
+    if (isDispatched) {
+      return {
+        success: false,
+        status: "DISPATCHED_DOORSTEP_REFUSAL",
+        order,
+        message: formatDoorstepRefusalMessage(order),
+      };
+    }
+
+    // 4. Pre-dispatch Cancellation
+    if (order.shiprocketOrderId) {
+      try {
+        const srConfig = db.settings?.shiprocket || {};
+        const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;
+        const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD;
+        if (srEmail && srPassword) {
+          const token = await getShiprocketToken(srEmail, srPassword);
+          if (token) {
+            await cancelShiprocketOrder(order.shiprocketOrderId, token);
+          }
+        }
+      } catch (srErr) {
+        console.error("[Shiprocket Cancellation Error in Chatbot]:", srErr);
+      }
+    }
+
+    const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid";
+    const cancellationReasonText = reason || "Cancelled via WhatsApp Chatbot";
+
+    order.status = "Cancelled";
+    order.cancellationReason = cancellationReasonText;
+    order.cancellationDate = new Date().toISOString();
+    order.cancelledBy = "Customer (WhatsApp)";
+    order.refundStatus = isPrepaid
+      ? "Refund Initiated (3–5 business days)"
+      : "Not Applicable (Cash on Delivery - ₹0)";
+
+    db.orders[orderIndex] = order;
+    await writeDB(db);
+
+    const confirmationMsg = formatCancellationSuccessMessage(order, cancellationReasonText);
+    return {
+      success: true,
+      status: "CANCELLED",
+      order,
+      message: confirmationMsg,
+    };
+  } catch (error: any) {
+    console.error("[cancelCustomerOrder Error]:", error);
+    return {
+      success: false,
+      status: "ERROR",
+      message: "An unexpected error occurred while processing your cancellation. Please reply *Support* to talk with our team.",
+    };
+  }
 }
 

@@ -4307,7 +4307,13 @@ export default function AdminDashboard() {
                                 <select
                                   value={o.status}
                                   onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)}
-                                  className="rounded border border-[#ddddd9] p-1 text-[10px] outline-none font-bold bg-white cursor-pointer"
+                                  className={`rounded border p-1 text-[10px] outline-none font-bold cursor-pointer ${
+                                    o.status === "Cancelled"
+                                      ? "bg-rose-50 border-rose-300 text-rose-700"
+                                      : o.status === "Delivered"
+                                      ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                      : "border-[#ddddd9] bg-white"
+                                  }`}
                                 >
                                   <option value="Pending OTP">Pending OTP</option>
                                   <option value="Pending Payment">Pending Payment</option>
@@ -4320,6 +4326,11 @@ export default function AdminDashboard() {
                                   <option value="Returned">Returned</option>
                                   <option value="Refunded">Refunded</option>
                                 </select>
+                                {o.cancellationReason && (
+                                  <span className="block text-[9px] text-rose-600 font-semibold truncate max-w-[130px] mt-0.5" title={o.cancellationReason}>
+                                    🚫 {o.cancellationReason}
+                                  </span>
+                                )}
                               </td>
                               <td className="p-3 text-right font-bold text-[#244f31]">₹{o.total}</td>
                               <td className="p-3 text-center">
@@ -8991,6 +9002,41 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                 </div>
+
+                {/* Cancellation Details Card */}
+                {(selectedOrder.status === "Cancelled" || selectedOrder.cancellationReason) && (
+                  <div className="bg-rose-50 border border-rose-200 text-rose-900 p-3.5 rounded-xl space-y-2">
+                    <div className="flex items-center gap-1.5 font-bold text-rose-800 text-xs">
+                      <span>🚫 Cancellation Information</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                      <div>
+                        <span className="text-gray-500 font-semibold block">Reason:</span>
+                        <span className="font-bold text-gray-800">{selectedOrder.cancellationReason || "Customer requested cancellation"}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 font-semibold block">Cancelled By:</span>
+                        <span className="font-bold text-gray-800">{selectedOrder.cancelledBy || "Customer"}</span>
+                      </div>
+                      {selectedOrder.cancellationDate && (
+                        <div>
+                          <span className="text-gray-500 font-semibold block">Date:</span>
+                          <span className="font-bold text-gray-800">{new Date(selectedOrder.cancellationDate).toLocaleString("en-IN")}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-gray-500 font-semibold block">Refund Status:</span>
+                        <span className="font-bold text-[#244f31]">{selectedOrder.refundStatus || "N/A"}</span>
+                      </div>
+                    </div>
+                    {selectedOrder.cancellationComments && (
+                      <div className="text-[11px] pt-1 border-t border-rose-200">
+                        <span className="text-gray-500 font-semibold">Customer Comments:</span>{" "}
+                        <span className="italic text-gray-700">{selectedOrder.cancellationComments}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Customer Details */}
                 <div className="space-y-2 border border-[#ddddd9] p-4 rounded-xl">

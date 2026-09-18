@@ -259,3 +259,49 @@ _This discount code is valid for the next 24 hours._ Need any help? Just reply t
     return { success: false, error: error.message };
   }
 }
+
+/**
+ * 6. Order Cancellation Confirmation WhatsApp Notification
+ */
+export async function sendOrderCancellationWhatsApp(
+  order: any,
+  reason?: string
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const rawPhone = order.phone || order.customerPhone || "";
+    const cleanPhone = getCleanPhone(rawPhone);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return { success: false, error: "Invalid recipient phone number." };
+    }
+
+    const orderId = order.id || "PYR-ORD";
+    const name = order.name || order.customer || "Valued Customer";
+    const total = order.total ? `₹${Number(order.total).toLocaleString("en-IN")}` : "₹0";
+    const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid";
+
+    const refundText = isPrepaid
+      ? `💳 *Refund Status:* Full refund of *${total}* has been initiated to your original payment method (PhonePe/Bank). It will reflect in your account within *3–5 business days*.`
+      : `💵 *Billing:* This was a Cash on Delivery (COD) order. *No charges apply* (₹0).`;
+
+    const messageText = `🚫 *ORDER CANCELLED — PURE AYUR HERBS* 🚫
+
+Namaste ${name}! 🙏
+
+Your order *${orderId}* has been successfully cancelled as per your request.
+
+${refundText}
+${reason ? `📝 *Reason:* ${reason}\n` : ""}
+📦 *Shipment Status:* Dispatch stopped.
+
+We are sorry to see you go! If you ever need advice or herbal remedies for your health in the future, we're always here for you.
+
+🌐 Visit Store: https://www.purreayurherbs.com
+💬 Have questions? Reply directly to this WhatsApp chat!`;
+
+    return await sendWhatsAppTextMessage(cleanPhone, messageText);
+  } catch (error: any) {
+    console.error("[sendOrderCancellationWhatsApp Error]:", error);
+    return { success: false, error: error.message };
+  }
+}
+

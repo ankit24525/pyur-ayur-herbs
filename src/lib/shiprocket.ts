@@ -198,3 +198,29 @@ export async function getShiprocketTracking(shipmentId: string | number, token: 
     return { success: false, error: error?.message || "Network Error" };
   }
 }
+
+/**
+ * Cancels an order in Shiprocket courier system.
+ */
+export async function cancelShiprocketOrder(shiprocketOrderId: number | string, token: string) {
+  try {
+    const orderIdNum = Number(shiprocketOrderId);
+    const res = await fetch("https://apiv2.shiprocket.in/v1/external/orders/cancel", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        ids: isNaN(orderIdNum) ? [shiprocketOrderId] : [orderIdNum],
+      }),
+    });
+
+    const data = await res.json();
+    return { success: res.ok, data };
+  } catch (error: any) {
+    console.error("[Shiprocket Cancel Order Error]:", error);
+    return { success: false, error: error?.message || "Network Error" };
+  }
+}
+

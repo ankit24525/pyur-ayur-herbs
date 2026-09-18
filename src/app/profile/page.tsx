@@ -627,18 +627,37 @@ function ProfileDashboard() {
                           <div className="flex flex-col items-end gap-1.5 shrink-0">
                             <span className="text-sm font-black text-[#244f31]">₹{order.total}</span>
                             <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                              order.status === "Delivered" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                              order.status === "Delivered"
+                                ? "bg-green-100 text-green-700"
+                                : (order.status === "Cancelled" || String(order.status).toLowerCase().includes("cancel"))
+                                ? "bg-rose-100 text-rose-700"
+                                : "bg-orange-100 text-orange-700"
                             }`}>{order.status}</span>
                           </div>
                         </div>
+
+                        {order.cancellationReason && (
+                          <div className="text-[11px] bg-rose-50 text-rose-800 p-2 rounded-lg border border-rose-200">
+                            <strong>Cancelled:</strong> {order.cancellationReason}
+                            {order.refundStatus && <span className="block text-[10px] text-rose-700 mt-0.5">{order.refundStatus}</span>}
+                          </div>
+                        )}
                         
-                        <div className="flex gap-2.5 justify-end border-t border-[#f0f0eb] pt-3 mt-1">
+                        <div className="flex flex-wrap gap-2 justify-end border-t border-[#f0f0eb] pt-3 mt-1">
                           <Link
                             href={`/track?orderId=${encodeURIComponent(order.id)}&contact=${encodeURIComponent(user?.email || user?.phone || "")}`}
                             className="rounded-xl border border-[#244f31] text-[#244f31] font-bold text-[10px] sm:text-xs py-1.5 px-3 hover:bg-[#f8faf1] transition"
                           >
                             Track Package
                           </Link>
+                          {order.status !== "Cancelled" && order.status !== "Delivered" && !String(order.status).toLowerCase().includes("cancel") && (
+                            <Link
+                              href={`/track?orderId=${encodeURIComponent(order.id)}&contact=${encodeURIComponent(user?.email || user?.phone || "")}&action=cancel`}
+                              className="rounded-xl border border-rose-300 bg-rose-50 text-rose-700 font-bold text-[10px] sm:text-xs py-1.5 px-3 hover:bg-rose-100 transition"
+                            >
+                              Cancel Order
+                            </Link>
+                          )}
                           {order.status === "Delivered" && (
                             <Link
                               href="/#shop"

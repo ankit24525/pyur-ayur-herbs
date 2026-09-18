@@ -17,6 +17,7 @@ import {
   RefreshCw,
   User,
   ExternalLink,
+  X,
 } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -41,6 +42,15 @@ function TrackOrderContent() {
   const [authFormContact, setAuthFormContact] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // Order Cancellation States (Amazon & Flipkart System)
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [doorstepModalOpen, setDoorstepModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("Ordered by mistake");
+  const [cancelComments, setCancelComments] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
 
   const [whatsappNumber, setWhatsappNumber] = useState("917247824101");
 
@@ -132,6 +142,55 @@ function TrackOrderContent() {
       setAuthError("Connection error. Try again.");
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  // Watch for ?action=cancel in URL and auto-open appropriate modal
+  useEffect(() => {
+    if (searchParams.get("action") === "cancel" && order) {
+      const st = String(order.status || "").toLowerCase();
+      if (st.includes("shipped") || st.includes("transit") || st.includes("out for delivery")) {
+        setDoorstepModalOpen(true);
+      } else if (st !== "cancelled" && !st.includes("delivered")) {
+        setCancelModalOpen(true);
+      }
+    }
+  }, [searchParams, order]);
+
+  const handleCancelOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+    setCancelLoading(true);
+    setCancelError(null);
+    try {
+      const res = await fetch("/api/orders/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          contact: order.phone || order.email || contactInput || authFormContact,
+          reason: cancelReason,
+          comments: cancelComments,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOrder(data.order);
+        setCancelModalOpen(false);
+        setCancelSuccessMsg(data.message || "Your order has been cancelled successfully.");
+      } else {
+        if (data.eligibleForDoorstepRefusal) {
+          setCancelModalOpen(false);
+          setDoorstepModalOpen(true);
+        } else {
+          setCancelError(data.error || "Failed to cancel order. Please try again.");
+        }
+      }
+    } catch {
+      setCancelError("Network error while submitting cancellation. Please try again.");
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -389,6 +448,17 @@ function TrackOrderContent() {
 
               {/* Status Banner */}
               <div className="p-6">
+                {cancelSuccessMsg && (
+                  <div className="mb-5 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3">
+                    <CheckCircle2 className="size-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-xs font-bold text-emerald-800">Order Cancelled Successfully</h4>
+                      <p className="text-[11px] text-emerald-700 mt-0.5">{cancelSuccessMsg}</p>
+                      <p className="text-[10px] text-emerald-600/80 mt-1">A confirmation notification with refund instructions has also been sent to your WhatsApp.</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#f0f0eb] mb-6">
                   <div>
                     <h2 className="text-lg font-black text-[#17231b]">
@@ -412,42 +482,102 @@ function TrackOrderContent() {
                       </p>
                     )}
                   </div>
-                  
-                  {(order.shiprocketShipmentId || order.shiprocketStatus === "Pushed" || order.status === "Shipped") && (
-                    <div className="inline-flex flex-col gap-1 self-start rounded-xl bg-[#eef5df] p-3 text-xs font-bold text-[#244f31] border border-[#80a03c]/30 shadow-xs">
-                      <div className="flex items-center gap-1.5 font-black">
-                        <Truck className="size-4 text-[#80a03c]" />
-                        <span>Express Logistics Partner</span>
-                      </div>
-                      <div className="text-[11px] text-gray-700 space-y-0.5 font-mono font-medium">
-                        {order.shiprocketOrderId && <div>Order Ref: #{order.shiprocketOrderId}</div>}
-                        {order.shiprocketShipmentId && <div>Shipment ID: #{order.shiprocketShipmentId}</div>}
-                        {order.liveTracking?.tracking_data?.shipment_track?.[0]?.courier_name && (
-                          <div className="text-[#244f31] font-bold">Courier: {order.liveTracking.tracking_data.shipment_track[0].courier_name}</div>
-                        )}
-                        {order.liveTracking?.tracking_data?.shipment_track?.[0]?.awb_code && (
-                          <div className="text-[#244f31] font-bold">AWB Code: {order.liveTracking.tracking_data.shipment_track[0].awb_code}</div>
-                        )}
-                        {order.shiprocketShipmentId && (
-                          <a
-                            href={`https://shiprocket.co/tracking/${order.shiprocketShipmentId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#244f31] hover:bg-[#1c3e26] text-white text-[10px] font-bold shadow-xs transition"
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Cancellation / Doorstep Refusal Actions */}
+                    {(() => {
+                      const st = String(order.status || "Processing").toLowerCase();
+                      const isCancelled = st === "cancelled" || st.includes("cancel");
+                      const isDelivered = st.includes("delivered");
+                      const isDispatched =
+                        st.includes("shipped") ||
+                        st.includes("transit") ||
+                        st.includes("out for delivery") ||
+                        Boolean(
+                          order.liveTracking?.tracking_data?.shipment_track?.[0]?.current_status?.toUpperCase()?.includes("TRANSIT") ||
+                          order.liveTracking?.tracking_data?.shipment_track?.[0]?.current_status?.toUpperCase()?.includes("SHIPPED")
+                        );
+
+                      if (isCancelled || isDelivered) return null;
+
+                      if (isDispatched) {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => setDoorstepModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs transition shadow-xs cursor-pointer"
                           >
-                            <span>Open Live Courier Tracking Page</span>
-                            <ExternalLink className="size-3" />
-                          </a>
-                        )}
+                            <HelpCircle className="size-3.5 text-amber-600" />
+                            <span>Want to Cancel? (Doorstep Policy)</span>
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setCancelModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition shadow-xs cursor-pointer"
+                        >
+                          <AlertCircle className="size-3.5 text-rose-600" />
+                          <span>Cancel Order</span>
+                        </button>
+                      );
+                    })()}
+
+                    {(order.shiprocketShipmentId || order.shiprocketStatus === "Pushed" || order.status === "Shipped") && (
+                      <div className="inline-flex flex-col gap-1 self-start rounded-xl bg-[#eef5df] p-3 text-xs font-bold text-[#244f31] border border-[#80a03c]/30 shadow-xs">
+                        <div className="flex items-center gap-1.5 font-black">
+                          <Truck className="size-4 text-[#80a03c]" />
+                          <span>Express Logistics Partner</span>
+                        </div>
+                        <div className="text-[11px] text-gray-700 space-y-0.5 font-mono font-medium">
+                          {order.shiprocketOrderId && <div>Order Ref: #{order.shiprocketOrderId}</div>}
+                          {order.shiprocketShipmentId && <div>Shipment ID: #{order.shiprocketShipmentId}</div>}
+                          {order.liveTracking?.tracking_data?.shipment_track?.[0]?.courier_name && (
+                            <div className="text-[#244f31] font-bold">Courier: {order.liveTracking.tracking_data.shipment_track[0].courier_name}</div>
+                          )}
+                          {order.liveTracking?.tracking_data?.shipment_track?.[0]?.awb_code && (
+                            <div className="text-[#244f31] font-bold">AWB Code: {order.liveTracking.tracking_data.shipment_track[0].awb_code}</div>
+                          )}
+                          {order.shiprocketShipmentId && (
+                            <a
+                              href={`https://shiprocket.co/tracking/${order.shiprocketShipmentId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#244f31] hover:bg-[#1c3e26] text-white text-[10px] font-bold shadow-xs transition"
+                            >
+                              <span>Open Live Courier Tracking Page</span>
+                              <ExternalLink className="size-3" />
+                            </a>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Cancelled Banner */}
                 {order.status === "Cancelled" ? (
-                  <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-xl p-4 text-xs font-semibold">
-                    This order was cancelled. No shipment is scheduled. If you believe this is an error or need a refund, please contact support.
+                  <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-xl p-4 text-xs space-y-2">
+                    <div className="flex items-center gap-2 font-bold text-rose-800 text-sm">
+                      <AlertCircle className="size-4 text-rose-600 shrink-0" />
+                      <span>This order has been cancelled</span>
+                    </div>
+                    <div className="text-gray-700 text-[11px] space-y-1">
+                      {order.cancellationReason && (
+                        <div><span className="font-bold text-gray-800">Reason:</span> {order.cancellationReason}</div>
+                      )}
+                      {order.cancellationDate && (
+                        <div><span className="font-bold text-gray-800">Cancelled on:</span> {new Date(order.cancellationDate).toLocaleString("en-IN")}</div>
+                      )}
+                      <div>
+                        <span className="font-bold text-gray-800">Refund Status:</span>{" "}
+                        <span className="font-semibold text-[#244f31]">
+                          {order.refundStatus || ((order.paymentMethod === "prepaid" || order.method === "Prepaid") ? "Full refund initiated (3–5 business days)" : "Cash on Delivery (₹0 charged)")}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   /* Vertical Timeline matching the uploaded reference image */
@@ -723,6 +853,173 @@ function TrackOrderContent() {
           </div>
         )}
       </div>
+
+      {/* Cancellation Modal (Amazon & Flipkart System) */}
+      {cancelModalOpen && order && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ddddd9] relative animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => !cancelLoading && setCancelModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+            >
+              <X className="size-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="size-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-700 shrink-0">
+                <AlertCircle className="size-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-[#17231b]">Cancel Order</h3>
+                <p className="text-xs text-gray-500 font-medium">Order ID: {order.id}</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCancelOrder} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1.5">
+                  Reason for cancellation <span className="text-rose-600">*</span>
+                </label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full rounded-xl border border-[#ddddd9] p-2.5 text-xs font-semibold outline-none focus:border-[#244f31] bg-white cursor-pointer"
+                  required
+                >
+                  <option value="Ordered by mistake">Ordered by mistake</option>
+                  <option value="Found better price / discount elsewhere">Found better price / discount elsewhere</option>
+                  <option value="Incorrect delivery address or contact number">Incorrect delivery address or contact number</option>
+                  <option value="Delivery time is too long">Delivery time is too long</option>
+                  <option value="Purchased duplicate item">Purchased duplicate item</option>
+                  <option value="Changed my mind">Changed my mind</option>
+                  <option value="Other">Other reason</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-700 mb-1.5">
+                  Additional comments (Optional)
+                </label>
+                <textarea
+                  value={cancelComments}
+                  onChange={(e) => setCancelComments(e.target.value)}
+                  rows={2}
+                  placeholder="Tell us why you want to cancel..."
+                  className="w-full rounded-xl border border-[#ddddd9] p-2.5 text-xs outline-none focus:border-[#244f31]"
+                />
+              </div>
+
+              {/* Refund / Policy Breakdown */}
+              <div className="bg-[#f8faf1] border border-[#ddddd9] rounded-xl p-3.5 space-y-1.5 text-[11px]">
+                <span className="font-extrabold uppercase tracking-wider text-[#244f31] text-[10px] block">
+                  Refund & Policy Information
+                </span>
+                {(order.paymentMethod === "prepaid" || order.method === "Prepaid") ? (
+                  <div className="text-gray-700">
+                    💳 Full refund of <strong>₹{order.total}</strong> will be initiated to your original payment method (PhonePe/UPI/Card) within <strong>3–5 business days</strong>.
+                  </div>
+                ) : (
+                  <div className="text-gray-700">
+                    💵 This is a Cash on Delivery order. <strong>₹0 cancellation fee</strong> applies. You will not be charged.
+                  </div>
+                )}
+              </div>
+
+              {cancelError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold">
+                  {cancelError}
+                </div>
+              )}
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={cancelLoading}
+                  onClick={() => setCancelModalOpen(false)}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 font-bold text-gray-700 hover:bg-gray-50 transition text-xs cursor-pointer"
+                >
+                  Don&apos;t Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={cancelLoading}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  {cancelLoading ? (
+                    <>
+                      <RefreshCw className="size-3.5 animate-spin" />
+                      <span>Cancelling...</span>
+                    </>
+                  ) : (
+                    <span>Confirm Cancellation</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Doorstep Refusal Guidance Modal (Amazon & Flipkart System) */}
+      {doorstepModalOpen && order && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#ddddd9] relative animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setDoorstepModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+            >
+              <X className="size-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="size-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                <Truck className="size-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-[#17231b]">Package In Transit</h3>
+                <p className="text-xs text-gray-500 font-medium">How to cancel dispatched orders</p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-950 mb-3.5 space-y-1.5">
+              <p className="font-bold text-amber-900">
+                Why can&apos;t this order be cancelled online?
+              </p>
+              <p className="text-gray-700 leading-relaxed text-[11px]">
+                Your parcel <strong>#{order.id}</strong> has already departed our warehouse with our logistics partner. As per policy (identical to Amazon & Flipkart), dispatched shipments cannot be halted digitally mid-journey.
+              </p>
+            </div>
+
+            <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-3.5 text-xs text-emerald-950 mb-4 space-y-2">
+              <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
+                <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                <span>Doorstep Refusal Option (100% Free)</span>
+              </div>
+              <p className="text-gray-700 text-[11px] leading-relaxed">
+                When the delivery executive arrives at your doorstep, you can simply decline delivery:
+              </p>
+              <div className="bg-white border border-emerald-300 rounded-lg p-2.5 font-mono font-bold text-[#244f31] text-[11px]">
+                &quot;I do not want this order. Please mark it as Customer Refused / RTO.&quot;
+              </div>
+              <div className="text-gray-600 text-[10px] space-y-0.5 pt-1">
+                {(order.paymentMethod === "prepaid" || order.method === "Prepaid") ? (
+                  <p>• Once returned to our fulfillment center, full refund of <strong>₹{order.total}</strong> will be automatically credited back to your account.</p>
+                ) : (
+                  <p>• This was Cash on Delivery (COD). <strong>₹0 charge applies</strong> — you pay nothing.</p>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setDoorstepModalOpen(false)}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#244f31] text-white font-bold text-xs hover:bg-[#1d3b24] transition cursor-pointer shadow-xs"
+            >
+              Understood, Thank You
+            </button>
+          </div>
+        </div>
+      )}
 
       <SiteFooter />
     </main>

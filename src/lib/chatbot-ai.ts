@@ -355,6 +355,25 @@ _Which remedy would you like more details on? Just type its name!_`,
   // ==========================================
   // 5. HEALTH CONCERN & PRODUCT RECOMMENDATIONS
   // ==========================================
+  if (query === "2" || query === "consult" || query === "recommend" || query === "remedy") {
+    return {
+      replyText: `🌿 *Pure Ayur Herbs - Ayurvedic Remedy Finder*
+
+Namaste ${profileName || "Ji"}! Which health goal or concern would you like help with?
+
+1️⃣ *Energy & Stamina* — Himalayan Shilajit Gold Resin
+2️⃣ *Blood Sugar & Diabetes* — Sugar Care Balance Juice
+3️⃣ *Hair Fall & Thinning* — Kesar Saffron Hair Elixir
+4️⃣ *Fatty Liver & Detox* — Liver Detox Cleanse Tonic
+5️⃣ *Stress, Cortisol & Sleep* — Ashwagandha KSM-66 Capsules
+6️⃣ *Constipation & Gut Health* — Organic Triphala Digestive Care
+
+_💡 Reply with your concern (e.g. *Hair*, *Shilajit*, *Sugar*, *Sleep*) or describe your symptoms!_`,
+      intent: "CONSULTATION_MENU",
+      escalatedToHuman: false,
+    };
+  }
+
   // Check Stamina / Shilajit
   if (
     query.includes("stamina") ||

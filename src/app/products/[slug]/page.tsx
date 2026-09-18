@@ -1,4 +1,5 @@
 import { readDB } from "@/lib/db";
+import { products as defaultStoreProducts } from "@/lib/store";
 import { productDetails } from "@/lib/product-detail-data";
 import { ProductDetailView } from "@/components/ProductDetailView";
 import SiteHeader from "@/components/SiteHeader";
@@ -19,14 +20,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   } catch {}
   const normalizedSlug = rawSlug.toLowerCase();
   
-  const dbProduct = (db.products || []).find((p: any) => {
+  const allProducts = [...(db.products || []), ...defaultStoreProducts];
+  const dbProduct = allProducts.find((p: any) => {
     const pSlug = (p.slug || "").toLowerCase().trim();
     const pId = String(p.id || "").toLowerCase().trim();
+    const pName = (p.name || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
     return (
       pSlug === normalizedSlug ||
       pSlug === decodedSlug ||
       pId === normalizedSlug ||
-      pId === decodedSlug
+      pId === decodedSlug ||
+      pName === normalizedSlug ||
+      pName === decodedSlug
     );
   });
   
@@ -62,8 +67,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   } catch {}
   const normalizedSlug = rawSlug.toLowerCase();
 
-  // Find in live database products first
-  const dbProduct = (db.products || []).find((p: any) => {
+  // Find in live database products first, then fallback products
+  const allProducts = [...(db.products || []), ...defaultStoreProducts];
+  const dbProduct = allProducts.find((p: any) => {
     const pSlug = (p.slug || "").toLowerCase().trim();
     const pId = String(p.id || "").toLowerCase().trim();
     const pName = (p.name || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
@@ -137,14 +143,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   // Graceful Product Not Found Page
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b] flex flex-col justify-between">
-      <SiteHeader
-        cart={[]}
-        onUpdateQuantity={() => {}}
-        onRemoveItem={() => {}}
-        onOpenAppModal={() => {}}
-        onOpenLoginModal={() => {}}
-        onOpenConsultationModal={() => {}}
-      />
+      <SiteHeader />
 
       <section className="mx-auto max-w-lg px-4 py-20 text-center">
         <div className="rounded-3xl border border-[#ddddd9] bg-white p-8 shadow-sm">

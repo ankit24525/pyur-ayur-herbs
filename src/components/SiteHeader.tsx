@@ -22,22 +22,22 @@ import { headerSearchSuggestions, menuLinks, products, Product } from "@/lib/sto
 import { getStorefrontData } from "@/lib/storefront-client";
 
 interface SiteHeaderProps {
-  cart: { product: Product; quantity: number }[];
-  onUpdateQuantity: (id: string, delta: number) => void;
-  onRemoveItem: (id: string) => void;
-  onOpenAppModal: () => void;
-  onOpenLoginModal: () => void;
-  onOpenConsultationModal: () => void;
+  cart?: { product: Product; quantity: number }[];
+  onUpdateQuantity?: (id: string, delta: number) => void;
+  onRemoveItem?: (id: string) => void;
+  onOpenAppModal?: () => void;
+  onOpenLoginModal?: () => void;
+  onOpenConsultationModal?: () => void;
   products?: Product[];
 }
 
 export default function SiteHeader({
-  cart,
-  onUpdateQuantity,
-  onRemoveItem,
-  onOpenAppModal,
-  onOpenLoginModal,
-  onOpenConsultationModal,
+  cart = [],
+  onUpdateQuantity = () => {},
+  onRemoveItem = () => {},
+  onOpenAppModal = () => {},
+  onOpenLoginModal = () => {},
+  onOpenConsultationModal = () => {},
   products: initialProducts,
 }: SiteHeaderProps) {
   const [suggestionIdx, setSuggestionIdx] = useState(0);

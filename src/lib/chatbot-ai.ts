@@ -1,4 +1,4 @@
-import { findOrdersForCustomer, formatOrderStatusMessage } from "./chatbot-orders";
+import { findOrdersForCustomer, formatOrderStatusMessage, formatMultipleOrdersMessage } from "./chatbot-orders";
 
 export interface ChatbotContext {
   from: string; // e.g. "919258352773"
@@ -219,9 +219,15 @@ _💡 Simply reply with *1*, *2*, *3*, *4* or type any question in Hindi, Englis
   if (isTracking) {
     const orderResult = await findOrdersForCustomer(rawQuery, from);
 
-    if (orderResult.found && orderResult.order) {
-      const reply = await formatOrderStatusMessage(orderResult.order, profileName);
-      return { replyText: reply, intent: "ORDER_TRACKING", escalatedToHuman: false };
+    if (orderResult.found) {
+      if (orderResult.multiple && orderResult.multiple.length > 1) {
+        const reply = await formatMultipleOrdersMessage(orderResult.multiple, profileName);
+        return { replyText: reply, intent: "ORDER_TRACKING", escalatedToHuman: false };
+      }
+      if (orderResult.order) {
+        const reply = await formatOrderStatusMessage(orderResult.order, profileName);
+        return { replyText: reply, intent: "ORDER_TRACKING", escalatedToHuman: false };
+      }
     }
 
     // Order not immediately found

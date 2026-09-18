@@ -128,3 +128,47 @@ _Packed with Ayurvedic medical safety protocols. Standard priority delivery take
 
 Need to speak with a Vaidya or change address? Reply *Support* anytime!`;
 }
+
+/**
+ * Formats multiple orders for a customer into an organized WhatsApp list.
+ */
+export async function formatMultipleOrdersMessage(orders: any[], customerName?: string): Promise<string> {
+  const name = customerName || orders[0]?.customer || "Valued Customer";
+  const displayOrders = orders.slice(0, 5); // Show up to 5 latest orders
+
+  const list = displayOrders
+    .map((order: any, idx: number) => {
+      const orderId = order.id || `PYR-ORD-${idx + 1}`;
+      const status = order.status || "Processing";
+      const date = order.date || (order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-IN") : "Recent");
+      const total = order.total ? `₹${Number(order.total).toLocaleString("en-IN")}` : "";
+      const items = order.items || (Array.isArray(order.itemsList) ? order.itemsList.map((i: any) => i.name).join(", ") : "Ayurvedic Remedies");
+
+      let statusEmoji = "📦";
+      if (status.toLowerCase().includes("delivered")) statusEmoji = "✅";
+      else if (status.toLowerCase().includes("transit") || status.toLowerCase().includes("shipped")) statusEmoji = "🚚";
+      else if (status.toLowerCase().includes("cancel")) statusEmoji = "❌";
+
+      const trackingUrl = `https://www.purreayurherbs.com/track?orderId=${encodeURIComponent(orderId)}`;
+
+      return `${idx + 1}️⃣ *Order ${orderId}* ${idx === 0 ? "_(Latest)_" : ""}
+• *Status:* ${statusEmoji} ${status}
+• *Date:* ${date}${total ? ` | *Total:* ${total}` : ""}
+• *Items:* ${items}
+🔗 *Live Tracking:* ${trackingUrl}`;
+    })
+    .join("\n\n");
+
+  return `📦 *Pure Ayur Herbs - Your Orders*
+
+Namaste ${name}! We found *${orders.length} orders* registered with your mobile number:
+
+${list}
+
+${orders.length > 5 ? `_...and ${orders.length - 5} older orders._\n` : ""}
+═══════════════════════
+_💡 To get full courier & delivery details for any order, reply with its **Order ID** (e.g. *${displayOrders[0]?.id || "PYR-ORD-146050"}*) or click its direct tracking link above!_
+
+Need assistance or want to talk with our team? Reply *Support* anytime!`;
+}
+

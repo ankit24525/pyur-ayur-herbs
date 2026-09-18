@@ -160,12 +160,12 @@ function SearchContent() {
   }, [catalog, query, selectedConcern, sortBy]);
 
   const popularTags = [
-    "Shilajit",
-    "Sugar Care",
-    "Hair Growth Oil",
-    "Amla Juice",
-    "Liver Detox",
-    "Ashwagandha",
+    "Virja Powder",
+    "Madhunashi",
+    "Fat Burner",
+    "Virja Gold Majun",
+    "Perfect 36 Cream",
+    "Sugar Management",
   ];
 
   return (
@@ -193,7 +193,7 @@ function SearchContent() {
               {query ? `Search Results for "${query}"` : "Search Pure Ayur Herbs"}
             </h1>
             <p className="mt-2 text-xs font-medium text-[#666666] md:text-sm">
-              Explore 100% pure Himalayan Shilajit, herbal juices, oils, and classical formulations.
+              Explore 100% certified Ayurvedic formulations including Virja Powder, Madhunashi, Fat Burner, and Perfect 36 Cream.
             </p>
 
             {/* On-page Search Input */}

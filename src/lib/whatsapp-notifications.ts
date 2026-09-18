@@ -189,7 +189,7 @@ Namaste ${name}!
 Your order *${orderId}* has been safely delivered. We hope you love your 100% natural Ayurvedic formulations!
 
 🥄 *Need Dosage & Usage Instructions?*
-Reply with *"How to use"* or the product name (e.g. *"Shilajit dosage"*) right here in this chat for instant guidance!
+Reply with *"How to use"* or the product name (e.g. *"Virja dosage"* or *"Madhunashi dosage"*) right here in this chat for instant guidance!
 
 ⭐ *Loved our products?*
 Share your valuable feedback on our store:

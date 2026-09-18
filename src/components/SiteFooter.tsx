@@ -80,11 +80,11 @@ export default function SiteFooter() {
   const col1Links = (Array.isArray(footerData?.column1Links) && footerData.column1Links.length > 0)
     ? footerData.column1Links
     : [
-        { label: "Glowing Skin Juices", url: "/products/kapiva-glowing-skin-juice" },
-        { label: "Shilajit Resins", url: "/products/pure-himalayan-shilajit" },
-        { label: "My Account", url: "/profile?tab=orders" },
-        { label: "Faqs", url: "/contact-us" },
-        { label: "Innovation Fund", url: "/solution/daily-ayurveda" },
+        { label: "Virja Powder", url: "/products/virja-powder" },
+        { label: "Madhunashi Powder", url: "/products/madhunashi-powder" },
+        { label: "Fat Burner", url: "/products/fat-burner" },
+        { label: "Perfect 36 Cream", url: "/products/perfect-36-cream" },
+        { label: "Virja Gold Majun", url: "/products/virja-gold-majun" },
       ];
 
   const col2Title = footerData?.column2Title || "About Us";

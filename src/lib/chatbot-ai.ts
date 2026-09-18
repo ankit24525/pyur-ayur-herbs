@@ -1,4 +1,5 @@
 import { findOrdersForCustomer, formatOrderStatusMessage, formatMultipleOrdersMessage } from "./chatbot-orders";
+import { readDB } from "./db";
 
 export interface ChatbotContext {
   from: string; // e.g. "919258352773"
@@ -12,81 +13,133 @@ export interface ChatbotReply {
   escalatedToHuman: boolean;
 }
 
-// Full Ayurvedic Product Knowledge Base
-export const AYURVEDIC_CATALOG = [
+export interface CatalogItem {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  compareAt: number;
+  rating: string;
+  concern: string;
+  ingredients: string;
+  dosage: string;
+  benefits: string;
+  link: string;
+}
+
+// Live Pure Ayur Herbs Product Catalog (Synchronized with live storefront)
+export const AYURVEDIC_CATALOG: CatalogItem[] = [
   {
-    name: "Pure Himalayan Shilajit Gold Resin (50g)",
-    slug: "pure-himalayan-shilajit-gold-resin-50g",
-    price: 1499,
-    compareAt: 2499,
-    rating: "4.9 ⭐",
-    concern: "Stamina, Energy, Vitality, Strength & Libido",
-    ingredients: "Pure Himalayan Shilajit (18,000+ ft Shodhana purified), 24K Gold Bhasma, Ashwagandha, Gokshura",
-    dosage: "Take a pea-sized amount (250mg - 500mg) using the spoon provided. Dissolve in a cup of lukewarm milk or water. Consume once or twice daily, ideally on an empty stomach in the morning or 30 minutes before bedtime.",
-    benefits: "Boosts physical strength, cellular ATP energy, testosterone, immunity, and mental focus naturally.",
-    link: "https://www.purreayurherbs.com/products/pure-himalayan-shilajit-gold-resin-50g",
+    id: "prod_1788947560528",
+    name: "VIRJA POWDER",
+    slug: "virja-powder",
+    price: 1199,
+    compareAt: 1499,
+    rating: "5.0 ⭐",
+    concern: "Energy & Vitality / Men's Stamina, Power & Strength (पुरुषों की प्राकृतिक शक्ति और ऊर्जा)",
+    ingredients: "Pure Ayurvedic Rasayana Blend, Shuddha Shilajit, Ashwagandha, Safed Musli, Gokshura, Kaunch Beej, Vidarikand",
+    dosage: "Take 1 teaspoon (approx. 3g - 5g) twice daily with lukewarm milk or water, preferably in the morning after breakfast and 30 minutes before bedtime.",
+    benefits: "खास तौर पर पुरुषों की प्राकृतिक शक्ति, स्टैमिना, ऊर्जा और आंतरिक बल को बढ़ाने के लिए तैयार किया गया प्रीमियम आयुर्वेदिक फॉर्मूला। थकान और कमजोरी दूर कर शरीर को भीतर से मजबूत और सक्रिय बनाता है। (100% Ayurvedic, Safe & GMP Certified)",
+    link: "https://www.purreayurherbs.com/products/virja-powder",
   },
   {
-    name: "Sugar Care Balance Ayurvedic Juice (1L)",
-    slug: "sugar-care-balance-ayurvedic-juice-1l",
-    price: 599,
-    compareAt: 899,
-    rating: "4.8 ⭐",
-    concern: "Diabetes, High Blood Sugar, Sweet Cravings",
-    ingredients: "Karela (Bitter Gourd), Jamun Seed, Gurmar (Gymnema Sylvestre - 'Sugar Destroyer'), Vijaysar, Methi",
-    dosage: "Mix 30ml of Sugar Care Juice in a glass of lukewarm water (100ml). Consume twice daily — 30 minutes before breakfast and 30 minutes before dinner.",
-    benefits: "Supports natural insulin sensitivity, activates pancreas beta-cells, regulates fasting blood glucose levels, and curbs sweet cravings.",
-    link: "https://www.purreayurherbs.com/products/sugar-care-balance-ayurvedic-juice-1l",
+    id: "prod_1789129223995",
+    name: "VIRJA GOLD MAJUN",
+    slug: "virja-gold-majun",
+    price: 449,
+    compareAt: 499,
+    rating: "5.0 ⭐",
+    concern: "Energy & Vitality / Men's Power, Vigour & Daily Stamina (पुरुषों की वाइटैलिटी और पावर)",
+    ingredients: "Traditional Gold Bhasma blend, Kesar, Ashwagandha, Safed Musli, Akarkara, Jaiphal, Herbal Extracts",
+    dosage: "Take 5g to 10g (approx. 1 small spoon) with warm milk at night before bedtime, or as directed by an Ayurvedic physician.",
+    benefits: "पारंपरिक आयुर्वेदिक माजून फॉर्मूला जो पुरुषों की वाइटैलिटी और पावर को प्राकृतिक रूप से बढ़ाता है। अंदरूनी कमजोरी और रोजमर्रा की थकान को दूर करके आत्मविश्वास और परफॉरमेंस में सुधार करता है।",
+    link: "https://www.purreayurherbs.com/products/virja-gold-majun",
   },
   {
-    name: "Kesar Saffron Hair Growth Elixir Oil (200ml)",
-    slug: "kesar-saffron-hair-growth-elixir-oil-200ml",
-    price: 799,
-    compareAt: 1199,
-    rating: "4.9 ⭐",
-    concern: "Hair Fall, Thinning, Dandruff & Scalp Regrowth",
-    ingredients: "Authentic Kashmiri Saffron (Kesar), Bhringraj, Amla, Cold-pressed Sesame Oil, Rosemary Extract",
-    dosage: "Apply 5-10ml directly onto scalp using fingertips. Gently massage in circular motions for 5–10 minutes. Leave overnight or for at least 2 hours before washing with mild herbal shampoo. Use 3 times weekly.",
-    benefits: "Stimulates dormant hair follicles, blocks DHT on scalp, stops excessive shedding, and promotes thick, voluminous hair growth.",
-    link: "https://www.purreayurherbs.com/products/kesar-saffron-hair-growth-elixir-oil-200ml",
+    id: "prod_1788511819071",
+    name: "MADHUNASHI POWDER",
+    slug: "madhunashi-powder",
+    price: 1487,
+    compareAt: 2199,
+    rating: "5.0 ⭐",
+    concern: "Sugar Management / Blood Sugar Control & Glucose Balance (शुगर और डायबिटीज नियंत्रण)",
+    ingredients: "Gudmar (Gymnema Sylvestre - 'Sugar Destroyer'), Karela (Bitter Gourd), Jamun Seed, Vijaysar, Methi, Neem, Giloy",
+    dosage: "Take 1 teaspoon (approx. 3g - 5g) twice daily with lukewarm water, 30 minutes before breakfast and 30 minutes before dinner.",
+    benefits: "100% प्राकृतिक बॉटनिकल फॉर्मूला जो ब्लड शुगर को नियंत्रित करता है, इंसुलिन संवेदनशीलता व पैंक्रियाज के बीटा-सेल्स को सपोर्ट करता है, और मीठे की क्रेविंग्स कम करता है। (Net Wt: 200g, GMP Certified, Gluten-Free)",
+    link: "https://www.purreayurherbs.com/products/madhunashi-powder",
   },
   {
-    name: "Ayurvedic Liver Detox & Cleanse Tonic (500ml)",
-    slug: "ayurvedic-liver-detox-cleanse-tonic-500ml",
+    id: "prod_1788511912600",
+    name: "MADHUNASHI SYP",
+    slug: "madhunashi-syp",
+    price: 410,
+    compareAt: 499,
+    rating: "5.0 ⭐",
+    concern: "Sugar Management / Blood Sugar Support Tonic (शुगर सिरप)",
+    ingredients: "Karela, Jamun, Gudmar, Nimba, Giloy, Belpatra Herbal Extracts",
+    dosage: "Take 10ml - 15ml twice daily diluted in equal quantity of water, 30 minutes before meals.",
+    benefits: "प्राकृतिक ब्लड शुगर संतुलन के लिए विश्वसनीय आयुर्वेदिक सिरप। 100% शाकाहारी, जीएमपी प्रमाणित, और दैनिक शुगर व मेटाबॉलिज्म देखभाल के लिए पूर्णतः सुरक्षित।",
+    link: "https://www.purreayurherbs.com/products/madhunashi-syp",
+  },
+  {
+    id: "prod_1788511960374",
+    name: "FAT BURNER",
+    slug: "fat-burner",
     price: 499,
-    compareAt: 699,
-    rating: "4.7 ⭐",
-    concern: "Fatty Liver, Digestion, Sluggish Metabolism & Alcohol Detox",
-    ingredients: "Bhumyamalaki, Punarnava, Kalmegh, Kutki, Kasani (Chicory)",
-    dosage: "Take 15ml - 20ml diluted in half a glass of normal water twice daily, 30 minutes after meals.",
-    benefits: "Flushes out accumulated hepatic toxins, reduces liver enzymes (SGOT/SGPT), improves bile secretion, and alleviates abdominal bloating.",
-    link: "https://www.purreayurherbs.com/products/ayurvedic-liver-detox-cleanse-tonic-500ml",
-  },
-  {
-    name: "Ashwagandha KSM-66 Gold Capsules (60s)",
-    slug: "ashwagandha-ksm-66-gold-capsules-60s",
-    price: 699,
-    compareAt: 999,
-    rating: "4.9 ⭐",
-    concern: "Gym & Fitness, Muscle Strength, Stress, Cortisol & Deep Sleep",
-    ingredients: "KSM-66 Standardized Ashwagandha Root Extract (500mg, highest concentration full-spectrum) + BioPerine Black Pepper",
-    dosage: "Take 1 capsule twice daily with warm water or milk after breakfast and dinner.",
-    benefits: "Clinically proven to reduce cortisol (stress hormone) by 27.9%, boost muscle recovery, improve endurance, and induce deep restful sleep.",
-    link: "https://www.purreayurherbs.com/products/ashwagandha-ksm-66-gold-capsules-60s",
-  },
-  {
-    name: "Organic Triphala Digestive Care Juice (1L)",
-    slug: "organic-triphala-digestive-care-juice-1l",
-    price: 399,
     compareAt: 599,
-    rating: "4.8 ⭐",
-    concern: "Constipation (Kabz), Acidity, Gas, Gut Cleansing & Bloating",
-    ingredients: "Cold-pressed Amla (Indian Gooseberry), Haritaki (Chebulic Myrobalan), Bibhitaki (Belliric Myrobalan)",
-    dosage: "Mix 30ml with a glass of lukewarm water and drink at bedtime or early morning on empty stomach.",
-    benefits: "Gently cleanses the colon, regulates regular morning bowel movements without cramps, relieves chronic constipation, and balances gut flora.",
-    link: "https://www.purreayurherbs.com/products/organic-triphala-digestive-care-juice-1l",
+    rating: "5.0 ⭐",
+    concern: "Gym & Fitness / Weight Management, Metabolism & Detox (मोटापा व फैट बर्नर स्लिम टॉनिक)",
+    ingredients: "Wild Amla, Curry Leaves, Ginger, Garcinia Cambogia, Harad, Baheda",
+    dosage: "Mix 20ml - 30ml in a glass of lukewarm water. Consume twice daily — early morning on an empty stomach and in the evening.",
+    benefits: "मेटाबॉलिज्म को तेज कर प्राकृतिक वजन नियंत्रण (Fat Burn) में मदद करता है। शरीर से टॉक्सिन्स को बाहर निकालता है (Detox) और दिन भर एक्टिव व एनर्जेटिक बनाए रखता है। (500ml Tonic, 100% Ayurvedic, GMP Certified)",
+    link: "https://www.purreayurherbs.com/products/fat-burner",
+  },
+  {
+    id: "prod_1788512010828",
+    name: "PERFECT 36 CREAM",
+    slug: "perfect-36-cream",
+    price: 5,
+    compareAt: 799,
+    rating: "5.0 ⭐",
+    concern: "Women's Health / Body Toning, Firmness & Elasticity (महिलाओं के लिए हर्बल टोनिंग क्रीम)",
+    ingredients: "Shatavari, Ashwagandha, Gambhari, Jamun, Natural Herbal Botanicals",
+    dosage: "Take a small quantity on fingertips and massage gently in circular, upward motions for 5–10 minutes until fully absorbed. Apply twice daily (morning & night).",
+    benefits: "महिलाओं के लिए समय-परीक्षित आयुर्वेदिक जड़ी-बूटियों से निर्मित शुद्ध हर्बल टोनिंग क्रीम। त्वचा की कसावट (firmness) और इलास्टिसिटी को सपोर्ट करती है। (100ml, सुरक्षित, नो साइड इफेक्ट, For External Use Only)",
+    link: "https://www.purreayurherbs.com/products/perfect-36-cream",
   },
 ];
+
+/**
+ * Dynamically retrieves live catalog from Database with fallback to hardcoded catalog
+ */
+export async function getLiveCatalog(): Promise<CatalogItem[]> {
+  try {
+    const db = await readDB();
+    if (db && Array.isArray(db.products) && db.products.length > 0) {
+      return db.products.map((p: any) => {
+        const fallback = AYURVEDIC_CATALOG.find(
+          (c) => c.slug === p.slug || c.id === p.id || c.name.toLowerCase() === p.name.toLowerCase()
+        );
+        return {
+          id: p.id || fallback?.id || "prod_" + Date.now(),
+          name: p.name || fallback?.name || "Ayurvedic Formulation",
+          slug: p.slug || fallback?.slug || "store",
+          price: Number(p.price) || fallback?.price || 499,
+          compareAt: Number(p.compareAt) || fallback?.compareAt || Math.round(Number(p.price) * 1.3),
+          rating: p.rating ? `${p.rating} ⭐` : (fallback?.rating || "5.0 ⭐"),
+          concern: p.concern || fallback?.concern || "Ayurvedic Health & Wellness",
+          ingredients: Array.isArray(p.ingredients) ? p.ingredients.join(", ") : (p.ingredients || fallback?.ingredients || "100% Pure Herbal Extracts"),
+          dosage: fallback?.dosage || "Take as directed on packaging or by an Ayurvedic physician.",
+          benefits: p.description?.slice(0, 250) || fallback?.benefits || "100% Ministry of AYUSH Certified Ayurvedic remedy.",
+          link: `https://www.purreayurherbs.com/products/${p.slug || fallback?.slug || ""}`,
+        };
+      });
+    }
+  } catch (err) {
+    console.warn("[getLiveCatalog DB Error]:", err);
+  }
+  return AYURVEDIC_CATALOG;
+}
 
 /**
  * Dispatches async webhook to external n8n workflow if URL configured.
@@ -111,7 +164,10 @@ async function forwardToN8nIfConfigured(eventData: any) {
 /**
  * Calls Google Gemini REST API if GEMINI_API_KEY is available in environment.
  */
-async function callGeminiAI(userQuery: string, customerName: string): Promise<string | null> {
+/**
+ * Calls Google Gemini REST API if GEMINI_API_KEY is available in environment.
+ */
+async function callGeminiAI(userQuery: string, customerName: string, catalog: CatalogItem[]): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) return null;
 
@@ -124,7 +180,7 @@ Company background:
 - Cash on Delivery (COD) and PhonePe prepaid available.
 - 7-Day return policy for unsealed items.
 Our Product Catalog:
-${AYURVEDIC_CATALOG.map(
+${catalog.map(
   (p) => `- ${p.name} (₹${p.price}): For ${p.concern}. Ingredients: ${p.ingredients}. Dosage: ${p.dosage}. Link: ${p.link}`
 ).join("\n")}
 
@@ -180,6 +236,17 @@ export async function generateChatbotReply(context: ChatbotContext): Promise<Cha
     message: rawQuery,
   });
 
+  // Dynamically load live catalog
+  const catalog = await getLiveCatalog();
+
+  // Helper product accessors
+  const virjaPowder = catalog.find((c) => c.slug === "virja-powder") || AYURVEDIC_CATALOG[0];
+  const virjaMajun = catalog.find((c) => c.slug === "virja-gold-majun") || AYURVEDIC_CATALOG[1];
+  const madhunashiPowder = catalog.find((c) => c.slug === "madhunashi-powder") || AYURVEDIC_CATALOG[2];
+  const madhunashiSyp = catalog.find((c) => c.slug === "madhunashi-syp") || AYURVEDIC_CATALOG[3];
+  const fatBurner = catalog.find((c) => c.slug === "fat-burner") || AYURVEDIC_CATALOG[4];
+  const perfect36 = catalog.find((c) => c.slug === "perfect-36-cream") || AYURVEDIC_CATALOG[5];
+
   // ==========================================
   // 1. GREETINGS & MAIN MENU
   // ==========================================
@@ -187,17 +254,18 @@ export async function generateChatbotReply(context: ChatbotContext): Promise<Cha
     /^(hi|hello|hey|namaste|pranam|start|menu|help|options|kya hal|halo|hlo|shuru)\b/i.test(query) ||
     query.length === 0;
 
-  if (isGreeting && !query.includes("order") && !query.includes("track")) {
+  if (isGreeting && !query.includes("order") && !query.includes("track") && !query.includes("product") && !query.includes("catalog")) {
     const greetingMsg = `*Namaste ${profileName || "Ji"}! 🙏 Welcome to Pure Ayur Herbs.*
 
 I am your 24/7 Ayurvedic Wellness Assistant. How may I assist your health journey today?
 
 1️⃣ *Track My Order* — Real-time shipment status & tracking link
-2️⃣ *Ayurvedic Consultation* — Find the right herb for your health concern
-3️⃣ *Product Usage & Dosage* — How & when to consume Shilajit, juices & oils
-4️⃣ *Talk to Vaidya / Support* — Connect with our senior Ayurvedic specialist
+2️⃣ *Ayurvedic Remedy Finder* — Find the right herb for your health concern
+3️⃣ *Product Usage & Dosage* — How & when to consume Virja, Madhunashi, Fat Burner & Creams
+4️⃣ *Product Catalog & Prices* — View all available products & offers
+5️⃣ *Talk to Vaidya / Support* — Connect with our senior Ayurvedic specialist
 
-_💡 Simply reply with *1*, *2*, *3*, *4* or type any question in Hindi, English, or Hinglish!_`;
+_💡 Simply reply with *1*, *2*, *3*, *4*, *5* or type any health concern in Hindi, English, or Hinglish!_`;
 
     return { replyText: greetingMsg, intent: "GREETING", escalatedToHuman: false };
   }
@@ -249,7 +317,7 @@ Need help from our shipping desk? Reply *Support*.`;
   // 3. HUMAN HANDOFF & DOCTOR CONSULTATION
   // ==========================================
   const isHumanHandoff =
-    query === "4" ||
+    query === "5" ||
     query.includes("doctor") ||
     query.includes("vaidya") ||
     query.includes("human") ||
@@ -276,7 +344,66 @@ In the meantime, feel free to describe any specific symptoms or questions you ha
   }
 
   // ==========================================
-  // 4. DOSAGE & USAGE GUIDE INTENT
+  // 4. LIVE PRODUCT CATALOG INTENT
+  // ==========================================
+  const isCatalog =
+    query === "4" ||
+    query === "catalog" ||
+    query === "products" ||
+    query === "product" ||
+    query === "rate" ||
+    query === "price" ||
+    query === "prices" ||
+    query.includes("price list") ||
+    query.includes("rate list") ||
+    query.includes("kya kya") ||
+    query.includes("all products") ||
+    query.includes("store") ||
+    query.includes("dawa") ||
+    query.includes("dawai") ||
+    query.includes("list") ||
+    query.includes("items") ||
+    query.includes("product list");
+
+  if (isCatalog) {
+    const catalogMsg = `🌿 *Pure Ayur Herbs - Available Products & Price List* 🌿
+
+All formulations are 100% Ministry of AYUSH Certified:
+
+1️⃣ *${virjaPowder.name}* (₹${virjaPowder.price})
+👉 ${virjaPowder.concern.split("/")[0].trim()}
+🔗 ${virjaPowder.link}
+
+2️⃣ *${virjaMajun.name}* (₹${virjaMajun.price})
+👉 ${virjaMajun.concern.split("/")[0].trim()}
+🔗 ${virjaMajun.link}
+
+3️⃣ *${madhunashiPowder.name}* (₹${madhunashiPowder.price})
+👉 ${madhunashiPowder.concern.split("/")[0].trim()}
+🔗 ${madhunashiPowder.link}
+
+4️⃣ *${madhunashiSyp.name}* (₹${madhunashiSyp.price})
+👉 ${madhunashiSyp.concern.split("/")[0].trim()}
+🔗 ${madhunashiSyp.link}
+
+5️⃣ *${fatBurner.name}* (₹${fatBurner.price})
+👉 ${fatBurner.concern.split("/")[0].trim()}
+🔗 ${fatBurner.link}
+
+6️⃣ *${perfect36.name}* (₹${perfect36.price})
+👉 ${perfect36.concern.split("/")[0].trim()}
+🔗 ${perfect36.link}
+
+🚚 *Free Priority Shipping Across India | Cash on Delivery (COD) Available*
+🌐 Browse full store: https://www.purreayurherbs.com
+
+_💡 Reply with any product name (e.g. *Virja* or *Madhunashi*) for benefits and dosage!_`;
+
+    return { replyText: catalogMsg, intent: "CATALOG", escalatedToHuman: false };
+  }
+
+  // ==========================================
+  // 5. DOSAGE & USAGE GUIDE INTENT
   // ==========================================
   const isDosage =
     query === "3" ||
@@ -286,56 +413,90 @@ In the meantime, feel free to describe any specific symptoms or questions you ha
     query.includes("kaise lena") ||
     query.includes("kab pina") ||
     query.includes("kaise use") ||
-    query.includes("time") ||
-    query.includes("milk") ||
-    query.includes("dudh");
+    query.includes("dudh ke sath") ||
+    query.includes("paani ke sath");
 
   if (isDosage) {
-    // Check specific product mentioned
-    if (query.includes("shilajit")) {
-      const p = AYURVEDIC_CATALOG[0];
+    // Check specific product mentioned in dosage query
+    if (query.includes("virja") || query.includes("stamina") || query.includes("powder") || query.includes("majun")) {
       return {
-        replyText: `🌿 *How to Take ${p.name}*
+        replyText: `🌿 *How to Take Virja Formulations for Men's Stamina*
 
-🥄 *Dosage:* Pea-sized amount (250mg – 500mg) once or twice daily.
-🥛 *How to consume:* Dissolve completely in a cup of lukewarm milk or warm water.
-⏰ *Best time:* In the morning on an empty stomach for all-day energy, or 30 minutes before bedtime.
-⚠️ *Note:* Avoid mixing with cold water or carbonated drinks.
+⚡ *1. ${virjaPowder.name}:*
+🥄 *Dosage:* 1 teaspoon (approx. 3g – 5g).
+🥛 *How to take:* Mix in a cup of lukewarm milk or water.
+⏰ *Time:* Twice daily — morning after breakfast and 30 minutes before bedtime.
 
-🔗 Order Pure Himalayan Shilajit:
-${p.link}`,
+🍯 *2. ${virjaMajun.name}:*
+🥄 *Dosage:* 5g to 10g (approx. 1 small spoon).
+🥛 *How to take:* Consume directly followed by a glass of warm milk.
+⏰ *Time:* At night before sleep.
+
+🔗 Order Virja Powder:
+${virjaPowder.link}
+
+🔗 Order Virja Gold Majun:
+${virjaMajun.link}`,
         intent: "DOSAGE_GUIDE",
         escalatedToHuman: false,
       };
     }
 
-    if (query.includes("sugar") || query.includes("karela") || query.includes("jamun")) {
-      const p = AYURVEDIC_CATALOG[1];
+    if (query.includes("madhunashi") || query.includes("sugar") || query.includes("diabetes") || query.includes("karela")) {
       return {
-        replyText: `🌿 *How to Take ${p.name}*
+        replyText: `🩸 *How to Take Madhunashi for Blood Sugar Balance*
 
-🥄 *Dosage:* Mix 30ml of juice in 100ml lukewarm water.
-⏰ *Best time:* Twice daily — 30 minutes before breakfast & 30 minutes before dinner.
-🌱 *Diet Tip:* For best blood glucose control, drink consistently for 90 days alongside balanced meals.
+🌿 *1. ${madhunashiPowder.name}:*
+🥄 *Dosage:* 1 teaspoon (approx. 3g – 5g).
+💧 *How to take:* Mix in half a glass of lukewarm water.
+⏰ *Time:* Twice daily — 30 minutes before breakfast & 30 minutes before dinner.
 
-🔗 Order Sugar Care Balance Juice:
-${p.link}`,
+🍶 *2. ${madhunashiSyp.name}:*
+🥄 *Dosage:* 10ml to 15ml.
+💧 *How to take:* Dilute with equal quantity of water.
+⏰ *Time:* Twice daily — 30 minutes before meals.
+
+🌱 *Ayurvedic Tip:* Use regularly for 90 days alongside a balanced low-glycemic diet.
+
+🔗 Order Madhunashi Powder:
+${madhunashiPowder.link}
+
+🔗 Order Madhunashi Syrup:
+${madhunashiSyp.link}`,
         intent: "DOSAGE_GUIDE",
         escalatedToHuman: false,
       };
     }
 
-    if (query.includes("hair") || query.includes("oil") || query.includes("kesar")) {
-      const p = AYURVEDIC_CATALOG[2];
+    if (query.includes("fat") || query.includes("burner") || query.includes("slim") || query.includes("motapa") || query.includes("weight")) {
       return {
-        replyText: `🌿 *How to Apply ${p.name}*
+        replyText: `🔥 *How to Take ${fatBurner.name} (Slim Tonic)*
 
-💆 *Application:* Take 5-10ml oil on your palms and massage gently onto scalp using circular motions for 5–10 minutes.
-⏰ *Best time:* Apply at night before sleeping, leave overnight, and wash in the morning with a mild herbal shampoo.
-📅 *Frequency:* Use 2 to 3 times a week for visible regrowth and reduced hair fall within 4–6 weeks.
+🥄 *Dosage:* 20ml – 30ml tonic.
+💧 *How to take:* Mix thoroughly in a glass of warm water.
+⏰ *Best time:*
+1. Early morning on an empty stomach (30 mins before breakfast).
+2. In the evening (30 mins before dinner or post-workout).
+🌱 *Tip:* Stay hydrated and combine with light daily exercise for fastest fat loss results.
 
-🔗 Order Kesar Saffron Hair Elixir:
-${p.link}`,
+🔗 Order Fat Burner Tonic:
+${fatBurner.link}`,
+        intent: "DOSAGE_GUIDE",
+        escalatedToHuman: false,
+      };
+    }
+
+    if (query.includes("cream") || query.includes("perfect 36") || query.includes("perfect") || query.includes("toning")) {
+      return {
+        replyText: `🌸 *How to Apply ${perfect36.name}*
+
+💆 *Application:* Take sufficient cream on fingertips.
+🔄 *Method:* Massage gently in upward, circular motions for 5–10 minutes until completely absorbed into the skin.
+⏰ *Frequency:* Apply twice daily — morning after bath and at night before sleeping.
+⚠️ *Note:* 100% Ayurvedic, safe, no side effects. For external use only.
+
+🔗 Order Perfect 36 Cream:
+${perfect36.link}`,
         intent: "DOSAGE_GUIDE",
         escalatedToHuman: false,
       };
@@ -343,23 +504,23 @@ ${p.link}`,
 
     // General Dosage Menu
     return {
-      replyText: `📋 *Pure Ayur Herbs - Quick Dosage Guide*
+      replyText: `📋 *Pure Ayur Herbs - Quick Dosage & Usage Guide*
 
-1. *Shilajit Gold Resin:* Pea-sized (300mg) in warm milk every morning.
-2. *Sugar Care Juice:* 30ml in 100ml warm water 30 mins before meals.
-3. *Hair Growth Oil:* Massage scalp 3x weekly, leave overnight.
-4. *Liver Detox Tonic:* 20ml diluted in water twice daily after meals.
-5. *Ashwagandha KSM-66:* 1 capsule twice daily with milk after meals.
-6. *Triphala Juice:* 30ml with lukewarm water at bedtime.
+1. *Virja Powder:* 1 tsp (3-5g) twice daily in warm milk after meals.
+2. *Virja Gold Majun:* 5-10g with warm milk at night before bedtime.
+3. *Madhunashi Powder:* 1 tsp (3-5g) in warm water 30 mins before meals.
+4. *Madhunashi Syrup:* 10-15ml with water 30 mins before meals.
+5. *Fat Burner Tonic:* 20-30ml in warm water morning empty stomach & evening.
+6. *Perfect 36 Cream:* Massage gently upwards twice daily (morning & night).
 
-_Which remedy would you like more details on? Just type its name!_`,
+_Which remedy would you like more details on? Just reply with its name!_`,
       intent: "DOSAGE_GUIDE",
       escalatedToHuman: false,
     };
   }
 
   // ==========================================
-  // 5. HEALTH CONCERN & PRODUCT RECOMMENDATIONS
+  // 6. HEALTH CONCERN & PRODUCT RECOMMENDATIONS
   // ==========================================
   if (query === "2" || query === "consult" || query === "recommend" || query === "remedy") {
     return {
@@ -367,150 +528,116 @@ _Which remedy would you like more details on? Just type its name!_`,
 
 Namaste ${profileName || "Ji"}! Which health goal or concern would you like help with?
 
-1️⃣ *Energy & Stamina* — Himalayan Shilajit Gold Resin
-2️⃣ *Blood Sugar & Diabetes* — Sugar Care Balance Juice
-3️⃣ *Hair Fall & Thinning* — Kesar Saffron Hair Elixir
-4️⃣ *Fatty Liver & Detox* — Liver Detox Cleanse Tonic
-5️⃣ *Stress, Cortisol & Sleep* — Ashwagandha KSM-66 Capsules
-6️⃣ *Constipation & Gut Health* — Organic Triphala Digestive Care
+1️⃣ *Men's Vitality, Power & Stamina* — Virja Powder & Virja Gold Majun
+2️⃣ *Blood Sugar & Diabetes* — Madhunashi Powder & Madhunashi Syrup
+3️⃣ *Weight Loss & Metabolism* — Fat Burner Slim Tonic
+4️⃣ *Women's Health & Toning* — Perfect 36 Cream
 
-_💡 Reply with your concern (e.g. *Hair*, *Shilajit*, *Sugar*, *Sleep*) or describe your symptoms!_`,
+_💡 Reply with your concern (e.g. *Virja*, *Stamina*, *Sugar*, *Weight Loss*, *Toning*) or describe your symptoms!_`,
       intent: "CONSULTATION_MENU",
       escalatedToHuman: false,
     };
   }
 
-  // Check Stamina / Shilajit
+  // Check Stamina / Virja / Power / Weakness / Shilajit / Ashwagandha
   if (
+    query.includes("virja") ||
     query.includes("stamina") ||
     query.includes("energy") ||
-    query.includes("shilajit") ||
+    query.includes("power") ||
     query.includes("weakness") ||
     query.includes("vitality") ||
     query.includes("testosterone") ||
     query.includes("thakan") ||
-    query.includes("shakti")
+    query.includes("shakti") ||
+    query.includes("kamjori") ||
+    query.includes("kamzori") ||
+    query.includes("majun") ||
+    query.includes("shilajit") ||
+    query.includes("ashwagandha") ||
+    query.includes("resin")
   ) {
-    const p = AYURVEDIC_CATALOG[0];
     return {
-      replyText: `⚡ *Ayurvedic Recommendation for Energy & Vitality*
+      replyText: `⚡ *Ayurvedic Recommendation for Men's Power, Stamina & Vitality*
 
-*Product:* ${p.name}
-*Price:* ₹${p.price} ~₹${p.compareAt}~ (${p.rating})
-*Key Herbs:* ${p.ingredients}
+Pure Ayur Herbs offers two clinical-grade Ayurvedic formulations for men:
 
-✨ *Why it helps:*
-${p.benefits}
+🌿 *1. ${virjaPowder.name}*
+*Price:* ₹${virjaPowder.price} ~₹${virjaPowder.compareAt}~ (${virjaPowder.rating})
+*Key Herbs:* ${virjaPowder.ingredients}
+✨ *Why it helps:* ${virjaPowder.benefits}
+🥄 *Dosage:* ${virjaPowder.dosage}
+🛒 *Order Virja Powder:*
+${virjaPowder.link}
 
-🥄 *Dosage:* ${p.dosage}
+🍯 *2. ${virjaMajun.name}*
+*Price:* ₹${virjaMajun.price} ~₹${virjaMajun.compareAt}~ (${virjaMajun.rating})
+*Key Herbs:* ${virjaMajun.ingredients}
+✨ *Why it helps:* ${virjaMajun.benefits}
+🥄 *Dosage:* ${virjaMajun.dosage}
+🛒 *Order Virja Gold Majun:*
+${virjaMajun.link}
 
-🛒 *Order Online (Free Delivery + COD Available):*
-${p.link}`,
+🚚 *Free Shipping Across India + Cash on Delivery (COD) Available!*`,
       intent: "RECOMMENDATION",
       escalatedToHuman: false,
     };
   }
 
-  // Check Sugar / Diabetes
+  // Check Sugar / Diabetes / Madhunashi
   if (
+    query.includes("madhunashi") ||
     query.includes("sugar") ||
     query.includes("diabetes") ||
     query.includes("madhumeha") ||
     query.includes("glucose") ||
     query.includes("karela") ||
-    query.includes("jamun")
+    query.includes("jamun") ||
+    query.includes("gudmar")
   ) {
-    const p = AYURVEDIC_CATALOG[1];
     return {
-      replyText: `🩸 *Ayurvedic Recommendation for Healthy Blood Sugar*
+      replyText: `🩸 *Ayurvedic Recommendation for Healthy Blood Sugar Balance*
 
-*Product:* ${p.name}
-*Price:* ₹${p.price} ~₹${p.compareAt}~ (${p.rating})
-*Key Herbs:* ${p.ingredients}
+Pure Ayur Herbs offers time-tested formulations for natural diabetes & glucose control:
 
-✨ *Why it helps:*
-${p.benefits}
+🌿 *1. ${madhunashiPowder.name}*
+*Price:* ₹${madhunashiPowder.price} ~₹${madhunashiPowder.compareAt}~ (${madhunashiPowder.rating})
+*Key Herbs:* ${madhunashiPowder.ingredients}
+✨ *Why it helps:* ${madhunashiPowder.benefits}
+🥄 *Dosage:* ${madhunashiPowder.dosage}
+🛒 *Order Madhunashi Powder:*
+${madhunashiPowder.link}
 
-🥄 *Dosage:* ${p.dosage}
+🍶 *2. ${madhunashiSyp.name}*
+*Price:* ₹${madhunashiSyp.price} ~₹${madhunashiSyp.compareAt}~ (${madhunashiSyp.rating})
+*Key Herbs:* ${madhunashiSyp.ingredients}
+✨ *Why it helps:* ${madhunashiSyp.benefits}
+🥄 *Dosage:* ${madhunashiSyp.dosage}
+🛒 *Order Madhunashi Syrup:*
+${madhunashiSyp.link}
 
-🛒 *Order Online (Free Delivery + COD Available):*
-${p.link}`,
+🚚 *Free Priority Shipping Across India + Cash on Delivery (COD) Available!*`,
       intent: "RECOMMENDATION",
       escalatedToHuman: false,
     };
   }
 
-  // Check Hair Fall
+  // Check Weight Loss / Fat Burner / Slim / Gym
   if (
-    query.includes("hair") ||
-    query.includes("baal") ||
-    query.includes("dandruff") ||
-    query.includes("bald") ||
-    query.includes("jhadna") ||
-    query.includes("oil")
-  ) {
-    const p = AYURVEDIC_CATALOG[2];
-    return {
-      replyText: `💇 *Ayurvedic Recommendation for Hair Fall & Regrowth*
-
-*Product:* ${p.name}
-*Price:* ₹${p.price} ~₹${p.compareAt}~ (${p.rating})
-*Key Herbs:* ${p.ingredients}
-
-✨ *Why it helps:*
-${p.benefits}
-
-💆 *How to apply:* ${p.dosage}
-
-🛒 *Order Online (Free Delivery + COD Available):*
-${p.link}`,
-      intent: "RECOMMENDATION",
-      escalatedToHuman: false,
-    };
-  }
-
-  // Check Liver
-  if (
-    query.includes("liver") ||
-    query.includes("fatty") ||
-    query.includes("jaundice") ||
-    query.includes("piliya") ||
-    query.includes("detox") ||
-    query.includes("alcohol")
-  ) {
-    const p = AYURVEDIC_CATALOG[3];
-    return {
-      replyText: `🌿 *Ayurvedic Recommendation for Liver Health*
-
-*Product:* ${p.name}
-*Price:* ₹${p.price} ~₹${p.compareAt}~ (${p.rating})
-*Key Herbs:* ${p.ingredients}
-
-✨ *Why it helps:*
-${p.benefits}
-
-🥄 *Dosage:* ${p.dosage}
-
-🛒 *Order Online (Free Delivery + COD Available):*
-${p.link}`,
-      intent: "RECOMMENDATION",
-      escalatedToHuman: false,
-    };
-  }
-
-  // Check Fitness / Gym / Stress / Sleep
-  if (
+    query.includes("fat") ||
+    query.includes("burner") ||
+    query.includes("weight") ||
+    query.includes("slim") ||
+    query.includes("motapa") ||
+    query.includes("pet") ||
     query.includes("gym") ||
     query.includes("fitness") ||
-    query.includes("ashwagandha") ||
-    query.includes("stress") ||
-    query.includes("sleep") ||
-    query.includes("neend") ||
-    query.includes("tension")
+    query.includes("detox") ||
+    query.includes("metabolism")
   ) {
-    const p = AYURVEDIC_CATALOG[4];
+    const p = fatBurner;
     return {
-      replyText: `💪 *Ayurvedic Recommendation for Fitness & Stress Relief*
+      replyText: `🔥 *Ayurvedic Recommendation for Weight Management & Metabolism*
 
 *Product:* ${p.name}
 *Price:* ₹${p.price} ~₹${p.compareAt}~ (${p.rating})
@@ -519,7 +646,8 @@ ${p.link}`,
 ✨ *Why it helps:*
 ${p.benefits}
 
-💊 *Dosage:* ${p.dosage}
+🥄 *Dosage:*
+${p.dosage}
 
 🛒 *Order Online (Free Delivery + COD Available):*
 ${p.link}`,
@@ -528,19 +656,20 @@ ${p.link}`,
     };
   }
 
-  // Check Constipation / Digestion / Gas
+  // Check Women's Health / Toning / Perfect 36
   if (
-    query.includes("digestion") ||
-    query.includes("constipation") ||
-    query.includes("kabz") ||
-    query.includes("pet") ||
-    query.includes("gas") ||
-    query.includes("acidity") ||
-    query.includes("triphala")
+    query.includes("perfect") ||
+    query.includes("36") ||
+    query.includes("cream") ||
+    query.includes("toning") ||
+    query.includes("women") ||
+    query.includes("firmness") ||
+    query.includes("tightening") ||
+    query.includes("breast")
   ) {
-    const p = AYURVEDIC_CATALOG[5];
+    const p = perfect36;
     return {
-      replyText: `🌱 *Ayurvedic Recommendation for Digestion & Gut Health*
+      replyText: `🌸 *Ayurvedic Recommendation for Women's Body Toning*
 
 *Product:* ${p.name}
 *Price:* ₹${p.price} ~₹${p.compareAt}~ (${p.rating})
@@ -549,7 +678,8 @@ ${p.link}`,
 ✨ *Why it helps:*
 ${p.benefits}
 
-🥄 *Dosage:* ${p.dosage}
+💆 *How to apply:*
+${p.dosage}
 
 🛒 *Order Online (Free Delivery + COD Available):*
 ${p.link}`,
@@ -559,9 +689,9 @@ ${p.link}`,
   }
 
   // ==========================================
-  // 6. COMPLEX / FREE-FORM QUERY: GEMINI AI
+  // 7. COMPLEX / FREE-FORM QUERY: GEMINI AI
   // ==========================================
-  const geminiResponse = await callGeminiAI(rawQuery, profileName);
+  const geminiResponse = await callGeminiAI(rawQuery, profileName, catalog);
   if (geminiResponse) {
     return {
       replyText: geminiResponse,
@@ -571,7 +701,7 @@ ${p.link}`,
   }
 
   // ==========================================
-  // 7. DEFAULT HELPFUL FALLBACK
+  // 8. DEFAULT HELPFUL FALLBACK
   // ==========================================
   const fallbackMsg = `Namaste ${profileName || "Ji"}! 🙏
 
@@ -579,9 +709,10 @@ Thank you for contacting Pure Ayur Herbs.
 
 To help you quickly, please choose from below:
 1️⃣ Reply *1* to **Track an existing Order**
-2️⃣ Reply *2* for **Product Recommendations** (Stamina, Diabetes, Hair, Liver, Digestion)
+2️⃣ Reply *2* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)
 3️⃣ Reply *3* for **Dosage & Usage Instructions**
-4️⃣ Reply *Support* to **Talk with our Ayurvedic Doctor**
+4️⃣ Reply *4* for **Full Product Catalog & Prices**
+5️⃣ Reply *5* or *Support* to **Talk with our Ayurvedic Doctor**
 
 You can also browse our 100% AYUSH Certified store:
 🌐 https://www.purreayurherbs.com`;

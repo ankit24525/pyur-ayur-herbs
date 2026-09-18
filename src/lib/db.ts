@@ -97,22 +97,22 @@ function sanitizeDBData(data: any): DBData {
 
   if (!data.seo || typeof data.seo !== "object") {
     data.seo = {
-      title: "Pure Ayur Herbs - 100% Certified Ayurvedic Formulations",
-      metaDesc: "Shop authentic Himalayan Shilajit Gold Resin, Sugar Care Balance juices, Kesar Saffron hair oil, and wellness supplements certified by Ayurvedic experts.",
+      title: "Pure Ayur Herbs | 100% Certified Ayurvedic Formulations - Virja, Madhunashi & Fat Burner",
+      metaDesc: "Shop authentic 100% AYUSH Certified Virja Powder & Gold Majun for Men's Stamina, Madhunashi Sugar Management, Fat Burner Tonic, and Perfect 36 Cream. Free Priority Delivery across India.",
       sitemapUrl: "",
       robotsTxt: "",
     };
   } else {
     if (typeof data.seo.title === "string") {
       data.seo.title = data.seo.title.replace(/Pyur/gi, "Pure");
-      if (data.seo.title.includes("Premium Ayurvedic Remedies")) {
-        data.seo.title = "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Formulations";
+      if (data.seo.title.includes("Premium Ayurvedic Remedies") || data.seo.title.includes("Himalayan Shilajit")) {
+        data.seo.title = "Pure Ayur Herbs | 100% Certified Ayurvedic Formulations - Virja, Madhunashi & Fat Burner";
       }
     }
     if (typeof data.seo.metaDesc === "string") {
       data.seo.metaDesc = data.seo.metaDesc.replace(/Pyur/gi, "Pure");
-      if (data.seo.metaDesc.includes("Dia Free") || data.seo.metaDesc.includes("organic skincare")) {
-        data.seo.metaDesc = "Shop 100% AYUSH Certified Himalayan Shilajit Gold Resin, Sugar Care Balance Juice, Kesar Saffron Hair Growth Elixir, Ashwagandha KSM-66 & Digestive Juices. Fast Free Delivery across India.";
+      if (data.seo.metaDesc.includes("Dia Free") || data.seo.metaDesc.includes("organic skincare") || data.seo.metaDesc.includes("Shilajit Gold Resin")) {
+        data.seo.metaDesc = "Shop authentic 100% AYUSH Certified Virja Powder & Gold Majun for Men's Stamina, Madhunashi Sugar Management, Fat Burner Tonic, and Perfect 36 Cream. Free Priority Delivery across India.";
       }
     }
   }

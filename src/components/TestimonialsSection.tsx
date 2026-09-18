@@ -9,31 +9,31 @@ export default function TestimonialsSection() {
       id: 1,
       name: "Rajesh K., Mumbai",
       verified: true,
-      product: "Sugar Care Balance Juice (1L)",
+      product: "Madhunashi Powder (200g)",
       rating: 5,
       comment:
-        "Switched to this juice as part of my morning routine and felt noticeably more energetic within weeks. Tastes great too!",
+        "Switched to Madhunashi as part of my morning routine and noticed healthy sugar balance within weeks. 100% natural herbs!",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
     },
     {
       id: 2,
-      name: "Priya Sharma, Bangalore",
+      name: "Arjun Sharma, Jaipur",
       verified: true,
-      product: "Pure Himalayan Shilajit",
+      product: "Virja Powder",
       rating: 5,
       comment:
-        "Remarkable difference in my daily stamina and afternoon energy levels. 100% authentic resin with lab testing certificate.",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+        "Remarkable difference in my daily stamina and afternoon energy levels. 100% authentic Ayurvedic formulation that truly works.",
+      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
     },
     {
       id: 3,
-      name: "Dr. Vikram Joshi, Delhi",
+      name: "Meera Sen, Delhi",
       verified: true,
-      product: "Artho Sure Juice",
+      product: "Fat Burner Slim Tonic (500ml)",
       rating: 5,
       comment:
-        "Recommended this to my elderly mother for knee stiffness. Her joint flexibility improved significantly in 3 weeks.",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
+        "Recommended by my Ayurvedic doctor. Supported my metabolism, detox, and digestion significantly within 3 weeks.",
+      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
     },
   ];
 

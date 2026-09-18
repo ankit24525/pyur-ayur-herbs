@@ -39,29 +39,29 @@ export default function AyurvedicQuizModal({
       question: "What is your primary health & wellness goal?",
       options: [
         "Regulate Blood Sugar Levels",
-        "Boost Energy, Stamina & Muscle Fitness",
-        "Glowing Skin & Hair Nutrition",
-        "Flush Toxins & Improve Liver/Gut Care",
+        "Boost Men's Energy, Stamina & Strength",
+        "Natural Weight Management & Fat Burn",
+        "Women's Health, Body Toning & Firmness",
       ],
     },
     {
       id: "energy",
       question: "How do you feel by late afternoon (3-4 PM)?",
       options: [
-        "Drained, low energy & fatigue",
-        "Sluggish & bloated after meals",
-        "Stressed & trouble winding down at night",
-        "Generally fine, looking for general wellness",
+        "Drained, low stamina & physical fatigue",
+        "Sluggish & slow metabolism after meals",
+        "Stressed & trouble staying active",
+        "Generally fine, looking for daily peak vitality",
       ],
     },
     {
       id: "digestion",
-      question: "How would you describe your daily digestion?",
+      question: "How would you describe your daily health focus?",
       options: [
-        "Frequent acidity & sluggish metabolism",
-        "Regular, but suffer from joint stiffness",
-        "Occasional sugar cravings after meals",
-        "Healthy & active",
+        "Metabolism speed & burning belly fat",
+        "Occasional sugar spikes after meals",
+        "Building core stamina and endurance",
+        "Toning & natural body care",
       ],
     },
   ];
@@ -76,11 +76,13 @@ export default function AyurvedicQuizModal({
       // Calculate Recommendations
       let match = catalog.slice(0, 2);
       if (nextAnswers.goal?.includes("Sugar")) {
-        match = catalog.filter((p) => p.slug.includes("sugar-care") || p.concern === "Sugar Management");
-      } else if (nextAnswers.goal?.includes("Energy")) {
-        match = catalog.filter((p) => p.slug.includes("shilajit") || p.concern === "Energy & Vitality");
-      } else if (nextAnswers.goal?.includes("Skin") || nextAnswers.goal?.includes("Hair")) {
-        match = catalog.filter((p) => p.slug.includes("kesar") || p.concern === "Skin & Hair");
+        match = catalog.filter((p) => p.slug.includes("madhunashi") || p.concern === "Sugar Management");
+      } else if (nextAnswers.goal?.includes("Energy") || nextAnswers.goal?.includes("Stamina") || nextAnswers.goal?.includes("Men")) {
+        match = catalog.filter((p) => p.slug.includes("virja") || p.concern.includes("Energy"));
+      } else if (nextAnswers.goal?.includes("Weight") || nextAnswers.goal?.includes("Fat")) {
+        match = catalog.filter((p) => p.slug.includes("fat-burner") || p.concern.includes("Gym"));
+      } else if (nextAnswers.goal?.includes("Women") || nextAnswers.goal?.includes("Toning")) {
+        match = catalog.filter((p) => p.slug.includes("perfect-36") || p.concern.includes("Women"));
       }
       setRecommended(match.length > 0 ? match : catalog.slice(0, 2));
       setStep(4);

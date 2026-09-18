@@ -506,7 +506,7 @@ export default function SiteHeader({
                       No matching products found for "{searchQuery}"
                     </p>
                     <p className="text-[11px] text-[#999999] mt-1">
-                      Try searching for Shilajit, Sugar Care, Amla, or Ashwagandha.
+                      Try searching for Virja, Madhunashi, Fat Burner, or Perfect 36.
                     </p>
                   </div>
                 )}
@@ -790,7 +790,7 @@ export default function SiteHeader({
                       No matching products found for "{searchQuery}"
                     </p>
                     <p className="text-[11px] text-[#999999] mt-1">
-                      Try searching for Shilajit, Sugar Care, Amla, or Ashwagandha.
+                      Try searching for Virja, Madhunashi, Fat Burner, or Perfect 36.
                     </p>
                   </div>
                 )}

@@ -13,20 +13,20 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     const db = await readDB();
     const seo = db.seo || {};
-    let title = (seo.title || "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Formulations").replace(/Pyur/gi, "Pure");
-    if (title.includes("Premium Ayurvedic Remedies")) {
-      title = "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Formulations";
+    let title = (seo.title || "Pure Ayur Herbs | 100% Certified Ayurvedic Formulations - Virja, Madhunashi & Fat Burner").replace(/Pyur/gi, "Pure");
+    if (title.includes("Premium Ayurvedic Remedies") || title.includes("Himalayan Shilajit")) {
+      title = "Pure Ayur Herbs | 100% Certified Ayurvedic Formulations - Virja, Madhunashi & Fat Burner";
     }
     let description = (seo.metaDesc || "").replace(/Pyur/gi, "Pure");
-    if (!description || description.includes("Dia Free") || description.includes("organic skincare")) {
-      description = "Shop 100% AYUSH Certified Himalayan Shilajit Gold Resin, Sugar Care Balance Juice, Kesar Saffron Hair Growth Elixir, Ashwagandha KSM-66 & Digestive Juices. Fast Free Delivery across India.";
+    if (!description || description.includes("Dia Free") || description.includes("organic skincare") || description.includes("Shilajit Gold Resin")) {
+      description = "Shop authentic 100% AYUSH Certified Virja Powder & Gold Majun for Men's Stamina, Madhunashi Sugar Management, Fat Burner Tonic, and Perfect 36 Cream. Free Priority Delivery across India.";
     }
 
     return {
       metadataBase: new URL(siteUrl),
       title,
       description,
-      keywords: ["Pure Ayur Herbs", "Ayurveda", "Ayurvedic herbs", "Shilajit", "Himalayan Herbs", "Holistic Wellness", "Organic Supplements"],
+      keywords: ["Pure Ayur Herbs", "Virja Powder", "Virja Gold Majun", "Madhunashi Powder", "Madhunashi Syrup", "Fat Burner", "Perfect 36 Cream", "Ayurveda", "Ayurvedic herbs", "Sugar Management", "Men's Stamina", "Weight Management"],
       robots: {
         index: true,
         follow: true,
@@ -74,8 +74,8 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     };
   } catch (e) {
-    const fallbackTitle = "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Wellness";
-    const fallbackDesc = "Shop 100% AYUSH Certified Himalayan Shilajit Gold Resin, Sugar Care Balance Juice, Kesar Saffron Hair Growth Elixir, Ashwagandha KSM-66 & Digestive Juices. Fast Free Delivery across India.";
+    const fallbackTitle = "Pure Ayur Herbs | 100% Certified Ayurvedic Formulations - Virja, Madhunashi & Fat Burner";
+    const fallbackDesc = "Shop authentic 100% AYUSH Certified Virja Powder & Gold Majun for Men's Stamina, Madhunashi Sugar Management, Fat Burner Tonic, and Perfect 36 Cream. Free Priority Delivery across India.";
     return {
       metadataBase: new URL(siteUrl),
       title: fallbackTitle,

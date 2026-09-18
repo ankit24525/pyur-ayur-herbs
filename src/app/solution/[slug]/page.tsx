@@ -29,7 +29,7 @@ const concernDetailsMap: Record<
     subtitle: "NATURAL STAMINA, STRENGTH & MUSCLE RECOVERY RITUALS",
     bg: "from-[#2d6b3f] via-[#1d4629] to-[#0f2416]",
     description:
-      "Engineered with pure Himalayan Shilajit, Ashwagandha, and Nirgundi joint care juices to boost peak workout endurance and muscle recovery.",
+      "Formulated with Ayurvedic Fat Burner tonic, metabolism stimulants, and revitalizing botanicals to boost workout endurance and natural weight management.",
   },
   energy: {
     title: "Energy & Vitality Botanicals",

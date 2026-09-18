@@ -69,6 +69,9 @@ export async function generateMetadata(): Promise<Metadata> {
         ],
         shortcut: "/favicon.ico",
       },
+      verification: {
+        google: "tPj_yir64TOdcN3TJ0GdrlpMrugdan2CxJ1fZw5CqEY",
+      },
     };
   } catch (e) {
     const fallbackTitle = "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Wellness";
@@ -102,6 +105,9 @@ export async function generateMetadata(): Promise<Metadata> {
           { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
         ],
         shortcut: "/favicon.ico",
+      },
+      verification: {
+        google: "tPj_yir64TOdcN3TJ0GdrlpMrugdan2CxJ1fZw5CqEY",
       },
     };
   }
@@ -148,6 +154,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="icon" type="image/svg+xml" href="/brand/pure-ayur-logo.svg" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
         <link rel="shortcut icon" href="/favicon.ico" />
+        <meta name="google-site-verification" content="tPj_yir64TOdcN3TJ0GdrlpMrugdan2CxJ1fZw5CqEY" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}

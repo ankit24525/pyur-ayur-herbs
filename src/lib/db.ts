@@ -97,8 +97,8 @@ function sanitizeDBData(data: any): DBData {
 
   if (!data.seo || typeof data.seo !== "object") {
     data.seo = {
-      title: "Pure Ayur Herbs - Original Ayurvedic Formulations",
-      metaDesc: "Shop authentic gold-grade Shilajit, juices, and wellness supplements certified by Ayurvedic experts.",
+      title: "Pure Ayur Herbs - 100% Certified Ayurvedic Formulations",
+      metaDesc: "Shop authentic Himalayan Shilajit Gold Resin, Sugar Care Balance juices, Kesar Saffron hair oil, and wellness supplements certified by Ayurvedic experts.",
       sitemapUrl: "",
       robotsTxt: "",
     };

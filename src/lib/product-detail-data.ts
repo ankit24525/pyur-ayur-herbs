@@ -62,7 +62,7 @@ export function slugifyProductName(name: string) {
   return name
     .toLowerCase()
     .replace(/rs\.?|₹|[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "dia-free-juice";
+    .replace(/^-+|-+$/g, "") || "sugar-care-balance-ayurvedic-juice-1l";
 }
 
 export function getProductBySlug(slug: string): ProductDetail {

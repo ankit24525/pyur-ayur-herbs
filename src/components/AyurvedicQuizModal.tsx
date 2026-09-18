@@ -76,11 +76,11 @@ export default function AyurvedicQuizModal({
       // Calculate Recommendations
       let match = catalog.slice(0, 2);
       if (nextAnswers.goal?.includes("Sugar")) {
-        match = catalog.filter((p) => p.slug.includes("dia-free") || p.concern === "Sugar Management");
+        match = catalog.filter((p) => p.slug.includes("sugar-care") || p.concern === "Sugar Management");
       } else if (nextAnswers.goal?.includes("Energy")) {
         match = catalog.filter((p) => p.slug.includes("shilajit") || p.concern === "Energy & Vitality");
-      } else if (nextAnswers.goal?.includes("Skin")) {
-        match = catalog.filter((p) => p.slug.includes("kumkumadi") || p.concern === "Skin & Hair");
+      } else if (nextAnswers.goal?.includes("Skin") || nextAnswers.goal?.includes("Hair")) {
+        match = catalog.filter((p) => p.slug.includes("kesar") || p.concern === "Skin & Hair");
       }
       setRecommended(match.length > 0 ? match : catalog.slice(0, 2));
       setStep(4);

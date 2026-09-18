@@ -9,7 +9,7 @@ export default function TestimonialsSection() {
       id: 1,
       name: "Rajesh K., Mumbai",
       verified: true,
-      product: "Dia Free Juice (1L)",
+      product: "Sugar Care Balance Juice (1L)",
       rating: 5,
       comment:
         "Switched to this juice as part of my morning routine and felt noticeably more energetic within weeks. Tastes great too!",

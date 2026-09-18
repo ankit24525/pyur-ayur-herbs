@@ -53,9 +53,13 @@ export async function generateMetadata(): Promise<Metadata> {
       },
       icons: {
         icon: [
-          { url: "/favicon.ico", sizes: "32x32" },
-          { url: "/icon.png", type: "image/png", sizes: "192x192" },
-          { url: "/brand/pure-ayur-logo.png", type: "image/png", sizes: "530x530" },
+          { url: "/favicon.ico", sizes: "48x48" },
+          { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+          { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+          { url: "/favicon-144x144.png", sizes: "144x144", type: "image/png" },
+          { url: "/icon.png", sizes: "192x192", type: "image/png" },
+          { url: "/brand/pure-ayur-logo.png", sizes: "530x530", type: "image/png" },
+          { url: "/brand/pure-ayur-logo.svg", type: "image/svg+xml" },
         ],
         apple: [
           { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
@@ -64,8 +68,8 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     };
   } catch (e) {
-    const fallbackTitle = "Pure Ayur Herbs | Premium Botanicals & Wellness";
-    const fallbackDesc = "Ayurvedic wellness storefront for Pure Ayur Herbs. Sourced from high-altitude Himalayas.";
+    const fallbackTitle = "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Wellness";
+    const fallbackDesc = "Shop 100% AYUSH Certified Himalayan Shilajit Gold Resin, Sugar Care Balance Juice, Kesar Saffron Hair Growth Elixir, Ashwagandha KSM-66 & Digestive Juices. Fast Free Delivery across India.";
     return {
       metadataBase: new URL(siteUrl),
       title: fallbackTitle,
@@ -83,9 +87,13 @@ export async function generateMetadata(): Promise<Metadata> {
       },
       icons: {
         icon: [
-          { url: "/favicon.ico", sizes: "32x32" },
-          { url: "/icon.png", type: "image/png", sizes: "192x192" },
-          { url: "/brand/pure-ayur-logo.png", type: "image/png", sizes: "530x530" },
+          { url: "/favicon.ico", sizes: "48x48" },
+          { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+          { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+          { url: "/favicon-144x144.png", sizes: "144x144", type: "image/png" },
+          { url: "/icon.png", sizes: "192x192", type: "image/png" },
+          { url: "/brand/pure-ayur-logo.png", sizes: "530x530", type: "image/png" },
+          { url: "/brand/pure-ayur-logo.svg", type: "image/svg+xml" },
         ],
         apple: [
           { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
@@ -129,9 +137,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="h-full antialiased">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="32x32" />
-        <link rel="icon" href="/icon.png" type="image/png" sizes="192x192" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" sizes="180x180" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+        <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+        <link rel="icon" type="image/png" sizes="144x144" href="/favicon-144x144.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon.png" />
+        <link rel="icon" type="image/svg+xml" href="/brand/pure-ayur-logo.svg" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <script
           type="application/ld+json"

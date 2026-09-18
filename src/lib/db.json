@@ -212,7 +212,7 @@
   "reviews": [
     {
       "id": "REV-101",
-      "product": "Dia Free Juice - Ayurvedic Sugar Management (1L)",
+      "product": "Sugar Care Balance Ayurvedic Juice (1L)",
       "customer": "Sanjay V.",
       "rating": 5,
       "comment": "Fasting sugar levels dropped cleanly. Excellent taste.",
@@ -247,8 +247,8 @@
       "answer": "Yes, but consult with an Ayurvedic physician first for correct dosage ratios."
     },
     {
-      "question": "How to consume Dia Free Juice?",
-      "answer": "Mix 30ml juice in a glass of warm water and consume empty stomach in the morning."
+      "question": "How to consume Sugar Care Balance Juice?",
+      "answer": "Mix 30ml of Sugar Care Juice in 100ml lukewarm water twice daily — 30 minutes before breakfast & dinner."
     }
   ],
   "testimonials": [
@@ -301,8 +301,8 @@
     ]
   },
   "seo": {
-    "title": "Pure Ayur Herbs | Premium Ayurvedic Remedies",
-    "metaDesc": "Shop certified Himalayan Shilajit, Dia Free sugar management juices, and organic skincare remedies.",
+    "title": "Pure Ayur Herbs | 100% Certified Himalayan Shilajit & Ayurvedic Formulations",
+    "metaDesc": "Shop 100% AYUSH Certified Himalayan Shilajit Gold Resin, Sugar Care Balance Juice, Kesar Saffron Hair Growth Elixir, Ashwagandha KSM-66 & Digestive Juices. Fast Free Delivery across India.",
     "sitemapUrl": "https://www.purreayurherbs.com/sitemap.xml",
     "robotsTxt": "User-agent: *\nAllow: /"
   },

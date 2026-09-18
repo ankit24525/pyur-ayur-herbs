@@ -15,6 +15,8 @@ import {
   CreditCard,
   Building,
   MessageSquare,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
@@ -79,12 +81,18 @@ function CheckoutForm() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    altPhone: "",
+    companyName: "",
     address: "",
+    landmark: "",
     pincode: "",
     city: "",
     state: "",
+    country: "India",
     paymentMethod: "prepaid", // prepaid or cod
   });
+
+  const [maskPhone, setMaskPhone] = useState(false);
 
   useEffect(() => {
     getStorefrontData()
@@ -524,58 +532,115 @@ function CheckoutForm() {
     <div className="grid gap-8 lg:grid-cols-12">
       {/* Left Form Panel */}
       <form onSubmit={handleCheckoutSubmit} className="space-y-6 lg:col-span-7">
-        {/* Address Card */}
+        {/* Customer Details Card (Matching Shiprocket / Screenshot Design) */}
         <div className="rounded-2xl border border-[#ddddd9] bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b] flex items-center gap-2">
-            <Building className="size-4 text-[#80a03c]" />
-            <span>Delivery Shipping Address</span>
+          <h3 className="text-base sm:text-lg font-black text-[#17231b] mb-5">
+            Customer Details
           </h3>
 
-          <div className="mt-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+            {/* Row 1: Full Name */}
             <div>
-              <label className="block text-xs font-bold text-[#17231b]">Recipient Full Name</label>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">Full Name</label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="First & Last Name"
-                className="mt-1 w-full rounded-lg border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                placeholder="Full Name"
+                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs text-[#17231b] outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] bg-white transition"
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-bold text-[#17231b]">Mobile Number</label>
+            {/* Row 1: Mobile Number */}
+            <div>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">Mobile Number</label>
+              <div className="flex rounded-xl border border-[#ddddd9] bg-white overflow-hidden focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31] transition">
+                <span className="bg-[#f1f5f9] text-[#64748b] text-xs font-bold px-3 py-2.5 flex items-center border-r border-[#e2e8f0] select-none shrink-0">
+                  +91
+                </span>
                 <input
-                  type="tel"
+                  type={maskPhone ? "password" : "tel"}
                   required
                   pattern="[0-9]{10}"
                   maxLength={10}
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "") })}
-                  placeholder="10-digit phone number"
-                  className="mt-1 w-full rounded-lg border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                  placeholder="xxxxxxxxxx"
+                  className="flex-1 px-3.5 py-2.5 text-xs outline-none bg-transparent text-[#17231b] min-w-0"
                 />
+                <button
+                  type="button"
+                  onClick={() => setMaskPhone(!maskPhone)}
+                  className="px-3 text-gray-400 hover:text-gray-600 transition flex items-center shrink-0 cursor-pointer"
+                  title={maskPhone ? "Show mobile number" : "Mask mobile number"}
+                >
+                  {maskPhone ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#17231b]">Pincode (6-digit)</label>
+            {/* Row 2: Email (Optional) */}
+            <div>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">
+                Email <span className="text-gray-400 font-normal text-[11px]">(Optional)</span>
+              </label>
+              <input
+                type="email"
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                placeholder="Enter email address"
+                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs text-[#17231b] outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] bg-white transition"
+              />
+            </div>
+
+            {/* Row 2: Alternate Contact Number (Optional) */}
+            <div>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">
+                Alternate Contact Number <span className="text-gray-400 font-normal text-[11px]">(Optional)</span>
+              </label>
+              <div className="flex rounded-xl border border-[#ddddd9] bg-white overflow-hidden focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31] transition">
+                <span className="bg-[#f1f5f9] text-[#64748b] text-xs font-bold px-3 py-2.5 flex items-center border-r border-[#e2e8f0] select-none shrink-0">
+                  +91
+                </span>
                 <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  value={formData.pincode}
-                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value.replace(/\D/g, "") })}
-                  placeholder="6-digit Area PIN"
-                  className="mt-1 w-full rounded-lg border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                  type="tel"
+                  maxLength={10}
+                  value={formData.altPhone}
+                  onChange={(e) => setFormData({ ...formData, altPhone: e.target.value.replace(/\D/g, "") })}
+                  placeholder="Enter alternate contact no."
+                  className="flex-1 px-3.5 py-2.5 text-xs outline-none bg-transparent text-[#17231b] min-w-0"
                 />
               </div>
             </div>
 
+            {/* Row 3: Company Name (Optional) */}
             <div>
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-[#17231b]">Complete House Address & Street</label>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">
+                Company Name <span className="text-gray-400 font-normal text-[11px]">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.companyName}
+                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                placeholder="Enter company name"
+                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs text-[#17231b] outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] bg-white transition"
+              />
+            </div>
+            <div className="hidden sm:block"></div>
+
+            {/* Row 4: Complete Address */}
+            <div className="sm:col-span-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-bold text-[#17231b]">
+                  <span>Complete Address</span>
+                  <span className="relative group">
+                    <HelpCircle className="size-3.5 text-gray-400 hover:text-gray-600 cursor-pointer" />
+                    <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover:block w-64 p-2 bg-[#17231b] text-white text-[10px] rounded-lg shadow-lg z-20 font-medium">
+                      Please enter Flat/House No, Building Name, Street & Colony/Area for fast & accurate delivery.
+                    </span>
+                  </span>
+                </label>
                 <button
                   type="button"
                   onClick={handleDetectLocation}
@@ -594,8 +659,8 @@ function CheckoutForm() {
                 required
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="House No, Building, Street, Area name"
-                className="mt-1 w-full rounded-lg border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                placeholder="House / Flat No., Building, Street, Area"
+                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs text-[#17231b] outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] bg-white transition"
               />
               {locationError && (
                 <p className="mt-1 text-[10px] text-red-500 font-bold flex items-center gap-1 animate-pulse">
@@ -605,30 +670,71 @@ function CheckoutForm() {
               )}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-bold text-[#17231b]">City</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  placeholder="City"
-                  className="mt-1 w-full rounded-lg border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
-                />
-              </div>
+            {/* Row 5: Landmark (Optional) */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">
+                Landmark <span className="text-gray-400 font-normal text-[11px]">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.landmark}
+                onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
+                placeholder="Enter landmark (e.g. Near Temple, Behind Bank)"
+                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs text-[#17231b] outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] bg-white transition"
+              />
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-[#17231b]">State</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.state}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  placeholder="State"
-                  className="mt-1 w-full rounded-lg border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
-                />
-              </div>
+            {/* Row 6: Pincode & City */}
+            <div>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">Pincode</label>
+              <input
+                type="text"
+                required
+                maxLength={6}
+                value={formData.pincode}
+                onChange={(e) => setFormData({ ...formData, pincode: e.target.value.replace(/\D/g, "") })}
+                placeholder="6-digit Pincode (e.g. 247662)"
+                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs text-[#17231b] outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] bg-white transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">City</label>
+              <input
+                type="text"
+                required
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                placeholder="City"
+                className={`w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] transition ${
+                  formData.city ? "bg-[#f8fafc] text-gray-800 font-medium" : "bg-white text-[#17231b]"
+                }`}
+              />
+            </div>
+
+            {/* Row 7: Country & State */}
+            <div>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">Country</label>
+              <input
+                type="text"
+                readOnly
+                value="India"
+                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs bg-[#f8fafc] text-gray-800 font-medium cursor-default outline-none select-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#17231b] mb-1.5">State</label>
+              <input
+                type="text"
+                required
+                value={formData.state}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                placeholder="State"
+                className={`w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] transition ${
+                  formData.state ? "bg-[#f8fafc] text-gray-800 font-medium" : "bg-white text-[#17231b]"
+                }`}
+              />
             </div>
           </div>
         </div>

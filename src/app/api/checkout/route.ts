@@ -6,7 +6,7 @@ import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, phone, address, pincode, city, state, paymentMethod, items, subtotal, email } = body;
+    const { name, phone, address, pincode, city, state, paymentMethod, items, subtotal, email, altPhone, companyName, landmark } = body;
 
     // Server-side validation
     if (!name || !phone || !address || !pincode || pincode.length !== 6 || !city || !state || !items || items.length === 0) {
@@ -24,15 +24,35 @@ export async function POST(request: Request) {
 
     const orderId = `PYR-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    const fullAddress = [
+      address,
+      landmark ? `Landmark: ${landmark}` : "",
+      companyName ? `Company: ${companyName}` : "",
+    ].filter(Boolean).join(", ");
+
     const newOrder = {
       id: orderId,
       customer: name,
       email: email || "",
       phone: phone,
-      address: address || "",
+      altPhone: altPhone || "",
+      companyName: companyName || "",
+      landmark: landmark || "",
+      address: fullAddress || address || "",
+      rawAddress: address || "",
       pincode: pincode || "",
       city: city || "",
       state: state || "",
+      country: "India",
+      shippingAddress: {
+        street: address || "",
+        landmark: landmark || "",
+        companyName: companyName || "",
+        city: city || "",
+        state: state || "",
+        pincode: pincode || "",
+        country: "India",
+      },
       total,
       method: paymentMethod === "prepaid" ? "Prepaid" : "COD",
       status: paymentMethod === "cod" ? "Verified" : "Processing",

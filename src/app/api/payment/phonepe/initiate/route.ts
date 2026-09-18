@@ -17,6 +17,9 @@ export async function POST(request: Request) {
       items,
       subtotal,
       email,
+      altPhone,
+      companyName,
+      landmark,
       couponDiscount: incomingCouponDiscount,
     } = body;
 
@@ -56,15 +59,35 @@ export async function POST(request: Request) {
 
     const orderId = `PYR-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    const fullAddress = [
+      address,
+      landmark ? `Landmark: ${landmark}` : "",
+      companyName ? `Company: ${companyName}` : "",
+    ].filter(Boolean).join(", ");
+
     const newOrder = {
       id: orderId,
       customer: name,
       email: email || "",
       phone: phone,
-      address: address || "",
+      altPhone: altPhone || "",
+      companyName: companyName || "",
+      landmark: landmark || "",
+      address: fullAddress || address || "",
+      rawAddress: address || "",
       pincode: pincode || "",
       city: city || "",
       state: state || "",
+      country: "India",
+      shippingAddress: {
+        street: address || "",
+        landmark: landmark || "",
+        companyName: companyName || "",
+        city: city || "",
+        state: state || "",
+        pincode: pincode || "",
+        country: "India",
+      },
       total,
       method: "PhonePe",
       status: "Pending Payment",

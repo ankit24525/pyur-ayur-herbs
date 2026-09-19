@@ -1,3 +1,17 @@
+export type ProductVariant = {
+  id: string;
+  name: string;
+  type?: string;
+  value?: string;
+  price: number;
+  mrp?: number;
+  compareAt?: number;
+  discount?: string;
+  badge?: string;
+  image?: string;
+  inStock?: boolean;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -16,6 +30,7 @@ export type Product = {
   showCoins?: boolean;
   deliveryDays: string;
   inStock: boolean;
+  variants?: ProductVariant[];
 };
 
 export type Concern = {

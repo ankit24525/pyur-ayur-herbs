@@ -49,6 +49,295 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+function ProductVariantsEditor({
+  hasVariants,
+  onToggleVariants,
+  variants,
+  onUpdateVariants,
+  basePrice,
+}: {
+  hasVariants: boolean;
+  onToggleVariants: (enabled: boolean) => void;
+  variants: any[];
+  onUpdateVariants: (variants: any[]) => void;
+  basePrice: number | string;
+}) {
+  const currentBasePrice = parseFloat(String(basePrice)) || 999;
+
+  const addVariant = (item: { type: string; value: string; name: string; priceMultiplier?: number; badge?: string }) => {
+    const calcPrice = item.priceMultiplier ? Math.round(currentBasePrice * item.priceMultiplier) : currentBasePrice;
+    const calcMrp = Math.round(calcPrice * 1.25);
+    const newVar = {
+      id: `var_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      type: item.type,
+      value: item.value,
+      name: item.name,
+      price: calcPrice,
+      mrp: calcMrp,
+      compareAt: calcMrp,
+      badge: item.badge || "",
+      inStock: true,
+    };
+    onUpdateVariants([...variants, newVar]);
+  };
+
+  const updateVariantField = (idx: number, field: string, val: any) => {
+    const updated = variants.map((v, i) => (i === idx ? { ...v, [field]: val } : v));
+    onUpdateVariants(updated);
+  };
+
+  const removeVariant = (idx: number) => {
+    onUpdateVariants(variants.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-4 space-y-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#ddddd9] pb-3">
+        <div>
+          <span className="block text-xs font-bold text-[#17231b] flex items-center gap-1.5">
+            <span>📦 Multiple Options & Dynamic Pricing (Weight, Color, Size)</span>
+          </span>
+          <span className="text-[10px] text-[#666666]">
+            Add options like Amazon & Flipkart (e.g. 250g, 500g, 1kg, Red, Green) with separate prices.
+          </span>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hasVariants}
+            onChange={(e) => {
+              const enabled = e.target.checked;
+              onToggleVariants(enabled);
+              if (enabled && variants.length === 0) {
+                // Initialize with two standard weight variants as a smart default
+                onUpdateVariants([
+                  {
+                    id: `var_${Date.now()}_1`,
+                    type: "Weight",
+                    value: "250g",
+                    name: "250g Standard Pack",
+                    price: currentBasePrice,
+                    mrp: Math.round(currentBasePrice * 1.25),
+                    compareAt: Math.round(currentBasePrice * 1.25),
+                    badge: "POPULAR",
+                    inStock: true,
+                  },
+                  {
+                    id: `var_${Date.now()}_2`,
+                    type: "Weight",
+                    value: "500g",
+                    name: "500g Economy Pack",
+                    price: Math.round(currentBasePrice * 1.8),
+                    mrp: Math.round(currentBasePrice * 1.8 * 1.25),
+                    compareAt: Math.round(currentBasePrice * 1.8 * 1.25),
+                    badge: "BEST VALUE",
+                    inStock: true,
+                  },
+                ]);
+              }
+            }}
+            className="sr-only peer"
+          />
+          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#244f31]"></div>
+          <span className="ml-2 text-xs font-bold text-[#17231b]">
+            {hasVariants ? "Variants Enabled" : "Variants Disabled"}
+          </span>
+        </label>
+      </div>
+
+      {hasVariants && (
+        <div className="space-y-3 pt-1">
+          {/* Quick Preset Presets */}
+          <div>
+            <span className="block text-[11px] font-bold text-gray-700 mb-1.5">⚡ 1-Click Presets:</span>
+            <div className="flex flex-wrap gap-1.5 text-[10px]">
+              <span className="font-bold text-gray-500 self-center mr-1">Weight:</span>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Weight", value: "100g", name: "100g Trial Pack", priceMultiplier: 0.5 })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 100g
+              </button>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Weight", value: "250g", name: "250g Pack", priceMultiplier: 1 })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 250g
+              </button>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Weight", value: "500g", name: "500g Family Pack", priceMultiplier: 1.8, badge: "BEST VALUE" })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 500g (Best Value)
+              </button>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Weight", value: "1kg", name: "1kg Mega Saver", priceMultiplier: 3.2, badge: "MEGA SAVER" })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 1kg
+              </button>
+
+              <span className="font-bold text-gray-500 self-center mx-1">Capsules:</span>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Pack Size", value: "30 Capsules", name: "30 Capsules (15 Days)", priceMultiplier: 0.6 })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 30 Caps
+              </button>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Pack Size", value: "60 Capsules", name: "60 Capsules (1 Month)", priceMultiplier: 1, badge: "POPULAR" })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 60 Caps
+              </button>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Pack Size", value: "120 Capsules", name: "120 Capsules (2 Months)", priceMultiplier: 1.8, badge: "BEST VALUE" })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 120 Caps
+              </button>
+
+              <span className="font-bold text-gray-500 self-center mx-1">Liquid:</span>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Volume", value: "200ml", name: "200ml Bottle", priceMultiplier: 0.8 })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 200ml
+              </button>
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Volume", value: "500ml", name: "500ml Bottle", priceMultiplier: 1.6, badge: "POPULAR" })}
+                className="px-2 py-1 rounded-lg bg-white border border-[#ddddd9] font-bold text-[#244f31] hover:bg-[#eef5df] transition cursor-pointer"
+              >
+                + 500ml
+              </button>
+
+              <button
+                type="button"
+                onClick={() => addVariant({ type: "Color", value: "Standard", name: "Color / Option", priceMultiplier: 1 })}
+                className="px-2.5 py-1 rounded-lg bg-[#244f31] text-white font-bold hover:bg-[#1a3823] transition ml-auto cursor-pointer"
+              >
+                ➕ Add Option / Color
+              </button>
+            </div>
+          </div>
+
+          {/* Variants Table / List */}
+          {variants.length === 0 ? (
+            <div className="p-4 rounded-xl border border-dashed border-[#ddddd9] text-center text-xs text-gray-500 bg-white">
+              No variants added yet. Click one of the preset buttons above or Add Option.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-[#ddddd9] bg-white text-xs">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[11px] text-[#17231b]">
+                    <th className="p-2.5 font-bold">Type</th>
+                    <th className="p-2.5 font-bold">Option Value (e.g. 500g / Red)</th>
+                    <th className="p-2.5 font-bold">Display Title (Buyer Sees)</th>
+                    <th className="p-2.5 font-bold">Selling Price (₹) *</th>
+                    <th className="p-2.5 font-bold">MRP (₹)</th>
+                    <th className="p-2.5 font-bold">Badge / Tag</th>
+                    <th className="p-2.5 font-bold text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#ddddd9]">
+                  {variants.map((variant, idx) => (
+                    <tr key={variant.id || idx} className="hover:bg-neutral-50/50">
+                      <td className="p-2">
+                        <select
+                          value={variant.type || "Weight"}
+                          onChange={(e) => updateVariantField(idx, "type", e.target.value)}
+                          className="w-24 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none bg-white font-semibold cursor-pointer"
+                        >
+                          <option value="Weight">Weight</option>
+                          <option value="Color">Color</option>
+                          <option value="Pack Size">Pack Size</option>
+                          <option value="Volume">Volume</option>
+                          <option value="Flavor">Flavor</option>
+                          <option value="Custom">Custom</option>
+                        </select>
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. 500g"
+                          value={variant.value || ""}
+                          onChange={(e) => updateVariantField(idx, "value", e.target.value)}
+                          className="w-28 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-bold"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. 500g Economy Pack"
+                          value={variant.name || ""}
+                          onChange={(e) => updateVariantField(idx, "name", e.target.value)}
+                          className="w-40 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-medium"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          placeholder="1199"
+                          value={variant.price || ""}
+                          onChange={(e) => updateVariantField(idx, "price", e.target.value)}
+                          className="w-24 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-black text-[#244f31]"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="number"
+                          placeholder="1499"
+                          value={variant.mrp || variant.compareAt || ""}
+                          onChange={(e) => {
+                            updateVariantField(idx, "mrp", e.target.value);
+                            updateVariantField(idx, "compareAt", e.target.value);
+                          }}
+                          className="w-24 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none text-gray-500 font-medium"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. BEST VALUE"
+                          value={variant.badge || ""}
+                          onChange={(e) => updateVariantField(idx, "badge", e.target.value)}
+                          className="w-28 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-bold text-[#80a03c]"
+                        />
+                      </td>
+                      <td className="p-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => removeVariant(idx)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition cursor-pointer"
+                          title="Remove option"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState("dashboard"); // dashboard, orders, products, customers, discounts, marketing, content, reviews, shipping, analytics, seo, support, settings
   const [subTab, setSubTab] = useState("overview");
@@ -728,6 +1017,8 @@ export default function AdminDashboard() {
     images: [] as string[],
     coinsEarned: "",
     showCoins: true,
+    hasVariants: false,
+    variants: [] as any[],
   });
 
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -1196,13 +1487,34 @@ export default function AdminDashboard() {
     const coinsEarned = newProduct.coinsEarned !== "" ? (parseInt(String(newProduct.coinsEarned), 10) || 0) : defaultCoins;
     const showCoins = Boolean(newProduct.showCoins && coinsEarned > 0);
 
+    const variantsList = newProduct.hasVariants && Array.isArray(newProduct.variants)
+      ? newProduct.variants.map((v: any, idx: number) => {
+          const vPrice = parseFloat(v.price) || parsedPrice;
+          const vMrp = parseFloat(v.mrp || v.compareAt) || Math.round(vPrice * 1.25);
+          return {
+            id: v.id || `var_${uniqueId}_${idx + 1}`,
+            type: v.type || "Weight",
+            value: v.value || v.name || "",
+            name: v.name || `${v.value || "Standard"} Pack`,
+            price: vPrice,
+            mrp: vMrp,
+            compareAt: vMrp,
+            badge: v.badge || "",
+            inStock: v.inStock !== false,
+          };
+        })
+      : [];
+
+    const finalPrice = variantsList.length > 0 && parsedPrice === 0 ? variantsList[0].price : parsedPrice;
+    const finalCompareAt = variantsList.length > 0 && !newProduct.compareAt ? variantsList[0].compareAt : (parseFloat(newProduct.compareAt) || finalPrice * 1.2);
+
     const prod = {
       id: uniqueId,
       name: newProduct.name.trim(),
       slug: cleanSlug,
       concern: newProduct.concern || "Sugar Management",
-      price: parsedPrice,
-      compareAt: parseFloat(newProduct.compareAt) || parsedPrice * 1.2,
+      price: finalPrice,
+      compareAt: finalCompareAt,
       rating: 5.0,
       reviews: 0,
       badge: newProduct.badge || "NEW",
@@ -1217,6 +1529,7 @@ export default function AdminDashboard() {
       sku: "PAH-" + newProduct.name.toUpperCase().replace(/[^A-Z0-9]+/g, "-") + "-" + Math.floor(100 + Math.random() * 900),
       stockQty: 50,
       lowStockThreshold: 10,
+      variants: variantsList,
     };
 
     const updated = [...(dbData.products || []), prod];
@@ -1234,6 +1547,8 @@ export default function AdminDashboard() {
       images: [],
       coinsEarned: "",
       showCoins: true,
+      hasVariants: false,
+      variants: [],
     });
     setSubTab("all");
     showToast("🎉 New product added to catalog successfully!");
@@ -1345,19 +1660,40 @@ export default function AdminDashboard() {
       ? (parseInt(String(editingProduct.coinsEarned), 10) || 0)
       : defaultCoins;
     const showCoins = Boolean(editingProduct.showCoins && parsedCoins > 0);
+    const variantsList = editingProduct.hasVariants && Array.isArray(editingProduct.variants)
+      ? editingProduct.variants.map((v: any, idx: number) => {
+          const vPrice = parseFloat(v.price) || parsedPrice;
+          const vMrp = parseFloat(v.mrp || v.compareAt) || Math.round(vPrice * 1.25);
+          return {
+            id: v.id || `var_${editingProduct.id}_${idx + 1}`,
+            type: v.type || "Weight",
+            value: v.value || v.name || "",
+            name: v.name || `${v.value || "Standard"} Pack`,
+            price: vPrice,
+            mrp: vMrp,
+            compareAt: vMrp,
+            badge: v.badge || "",
+            inStock: v.inStock !== false,
+          };
+        })
+      : [];
+
+    const finalPrice = variantsList.length > 0 && parsedPrice === 0 ? variantsList[0].price : parsedPrice;
+    const finalCompareAt = variantsList.length > 0 && !editingProduct.compareAt ? variantsList[0].compareAt : (parseFloat(editingProduct.compareAt) || finalPrice * 1.2);
 
     const updated = (dbData.products || []).map((p: any) =>
       p.id === editingProduct.id
         ? {
             ...editingProduct,
             slug: cleanSlug,
-            price: parsedPrice,
-            compareAt: parseFloat(editingProduct.compareAt) || parsedPrice * 1.2,
+            price: finalPrice,
+            compareAt: finalCompareAt,
             ingredients: typeof editingProduct.ingredients === "string" 
               ? editingProduct.ingredients.split(",").map((i: string) => i.trim()) 
               : editingProduct.ingredients,
             coinsEarned: parsedCoins,
             showCoins: showCoins,
+            variants: variantsList,
           }
         : p
     );
@@ -4505,6 +4841,11 @@ export default function AdminDashboard() {
                                     Coins Hidden
                                   </span>
                                 )}
+                                {prod.variants && prod.variants.length > 0 && (
+                                  <span className="text-[9px] bg-[#eef5df] text-[#244f31] font-bold px-1.5 py-0.5 rounded border border-[#80a03c]/30 inline-flex items-center gap-1">
+                                    📦 {prod.variants.length} Variants ({prod.variants.map((v: any) => v.value || v.name).slice(0, 2).join(", ")}{prod.variants.length > 2 ? "..." : ""})
+                                  </span>
+                                )}
                               </div>
                               <div className="mt-2.5 flex items-center gap-2">
                                 <button
@@ -4513,6 +4854,8 @@ export default function AdminDashboard() {
                                     ingredients: Array.isArray(prod.ingredients) ? prod.ingredients.join(", ") : (prod.ingredients || ""),
                                     showCoins: prod.showCoins !== false && (prod.coinsEarned === undefined || Number(prod.coinsEarned) > 0),
                                     coinsEarned: prod.coinsEarned !== undefined ? prod.coinsEarned : Math.round((parseFloat(prod.price) || 0) * 0.05),
+                                    hasVariants: Array.isArray(prod.variants) && prod.variants.length > 0,
+                                    variants: Array.isArray(prod.variants) ? [...prod.variants] : [],
                                   })}
                                   className="rounded border border-[#244f31] px-2.5 py-1 text-[10px] font-bold text-[#244f31] hover:bg-[#244f31] hover:text-white transition"
                                 >
@@ -4606,6 +4949,15 @@ export default function AdminDashboard() {
                             />
                           </div>
                         </div>
+
+                        {/* Product Variants & Options (Weight, Color, Size, etc.) */}
+                        <ProductVariantsEditor
+                          hasVariants={Boolean(editingProduct.hasVariants)}
+                          onToggleVariants={(enabled) => setEditingProduct({ ...editingProduct, hasVariants: enabled })}
+                          variants={editingProduct.variants || []}
+                          onUpdateVariants={(vars) => setEditingProduct({ ...editingProduct, variants: vars })}
+                          basePrice={editingProduct.price}
+                        />
 
                         {/* Pure Coins Configuration */}
                         <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-3.5 space-y-2.5">
@@ -4885,6 +5237,15 @@ export default function AdminDashboard() {
                         />
                       </div>
                     </div>
+
+                    {/* Product Variants & Options (Weight, Color, Size, etc.) */}
+                    <ProductVariantsEditor
+                      hasVariants={Boolean(newProduct.hasVariants)}
+                      onToggleVariants={(enabled) => setNewProduct({ ...newProduct, hasVariants: enabled })}
+                      variants={newProduct.variants || []}
+                      onUpdateVariants={(vars) => setNewProduct({ ...newProduct, variants: vars })}
+                      basePrice={newProduct.price}
+                    />
 
                     {/* Pure Coins Configuration */}
                     <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-3.5 space-y-2.5">

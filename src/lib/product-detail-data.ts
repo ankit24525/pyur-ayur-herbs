@@ -1,10 +1,15 @@
 export type ProductVariant = {
   id: string;
   name: string;
+  type?: string;
+  value?: string;
   price: number;
   mrp: number;
-  discount: string;
+  compareAt?: number;
+  discount?: string;
   badge?: string;
+  image?: string;
+  inStock?: boolean;
 };
 
 export type IngredientInfo = {

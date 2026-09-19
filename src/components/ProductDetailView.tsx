@@ -252,7 +252,12 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   };
 
   const handleBuyNow = () => {
-    window.location.href = `/checkout?productId=${product.id}&quantity=${quantity}`;
+    const hasCustomVariant = variants.length > 1;
+    const variantLabel = currentVariant.name || currentVariant.value || "";
+    const variantQuery = hasCustomVariant
+      ? `&variantId=${encodeURIComponent(currentVariant.id)}&price=${unitPrice}&variantName=${encodeURIComponent(variantLabel)}`
+      : "";
+    window.location.href = `/checkout?productId=${product.id}&quantity=${quantity}${variantQuery}`;
   };
 
   const currentVariant = selectedVariant || variants[0];
@@ -396,37 +401,76 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               </div>
             </div>
 
-            {/* Pack Size / Variant Selector */}
-            {variants.length > 1 && (
-              <div className="mt-5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#17231b]">
-                  Select Pack Size:
-                </label>
-                <div className="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                  {variants.map((variant) => (
-                    <button
-                      key={variant.id}
-                      onClick={() => setSelectedVariant(variant)}
-                      className={`flex items-center justify-between rounded-xl border p-3 text-left transition ${
-                        currentVariant.id === variant.id
-                          ? "border-[#244f31] bg-[#eef5df] ring-1 ring-[#244f31]"
-                          : "border-[#ddddd9] bg-white hover:border-[#80a03c]"
-                      }`}
-                    >
-                      <div>
-                        <span className="block text-xs font-bold text-[#17231b]">{variant.name}</span>
-                        {variant.badge && (
-                          <span className="mt-0.5 inline-block rounded bg-[#80a03c] px-1.5 py-0.2 text-[9px] font-extrabold text-white">
-                            {variant.badge}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs font-black text-[#244f31]">₹{variant.price}</span>
-                    </button>
-                  ))}
+            {/* Multi-Option / Weight / Color / Variant Selector (Amazon & Flipkart Style) */}
+            {variants.length > 1 && (() => {
+              const optionType = variants.find((v: any) => v.type)?.type || "Option / Pack Size";
+              return (
+                <div className="mt-5 border-t border-[#ddddd9] pt-4">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#17231b]">
+                      Select {optionType}: <span className="text-[#80a03c] font-black">{currentVariant.value || currentVariant.name}</span>
+                    </label>
+                    <span className="text-[11px] font-semibold text-gray-500">
+                      {variants.length} options available
+                    </span>
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    {variants.map((variant: any) => {
+                      const isSelected = currentVariant.id === variant.id;
+                      const varPrice = Number(variant.price) || 0;
+                      const varMrp = Number(variant.mrp || variant.compareAt) || Math.round(varPrice * 1.25);
+                      const varSavings = Math.max(0, varMrp - varPrice);
+
+                      return (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVariant(variant);
+                            if (variant.image) setSelectedImage(variant.image);
+                          }}
+                          className={`relative flex items-center justify-between rounded-xl border p-3 text-left transition cursor-pointer ${
+                            isSelected
+                              ? "border-[#244f31] bg-[#eef5df] ring-2 ring-[#244f31]/30 shadow-xs"
+                              : "border-[#ddddd9] bg-white hover:border-[#80a03c] hover:bg-neutral-50/50"
+                          }`}
+                        >
+                          <div className="min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="block text-xs font-black text-[#17231b] truncate">
+                                {variant.value || variant.name}
+                              </span>
+                              {isSelected && (
+                                <span className="size-2 rounded-full bg-[#244f31]" />
+                              )}
+                            </div>
+                            {variant.value && variant.name && variant.name !== variant.value && (
+                              <span className="block text-[10px] text-gray-500 truncate mt-0.5">
+                                {variant.name}
+                              </span>
+                            )}
+                            {variant.badge && (
+                              <span className="mt-1 inline-block rounded bg-[#80a03c] px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-2xs">
+                                {variant.badge}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-xs font-black text-[#244f31]">₹{varPrice}</div>
+                            {varMrp > varPrice && (
+                              <div className="text-[10px] text-gray-400 line-through">₹{varMrp}</div>
+                            )}
+                            {varSavings > 0 && (
+                              <div className="text-[9px] font-bold text-emerald-700">Save ₹{varSavings}</div>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Pincode Delivery Estimator */}
             <div className="mt-5 rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-3.5">
@@ -478,17 +522,24 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
 
               <button
                 onClick={() => {
+                  const hasCustomVariant = variants.length > 1;
+                  const variantLabel = currentVariant.name || currentVariant.value || "";
+                  const displayName = hasCustomVariant && variantLabel && !product.name.includes(variantLabel)
+                    ? `${product.name} (${variantLabel})`
+                    : product.name;
+                  const cartItemId = hasCustomVariant ? `${product.id}-${currentVariant.id}` : product.id;
+
                   handleAddToCart({
-                    id: product.id,
-                    name: product.name,
+                    id: cartItemId,
+                    name: displayName,
                     slug: product.slug,
                     concern: product.category,
                     price: unitPrice,
                     compareAt: unitMrp,
                     rating: Number(product.rating) || 5.0,
                     reviews: Number(product.reviews) || 0,
-                    badge: product.discount || "NEW",
-                    image: product.image,
+                    badge: currentVariant.badge || product.discount || "NEW",
+                    image: currentVariant.image || product.image,
                     ingredients: ingredients.map((i) => i.name),
                     description: product.description || "",
                     coinsEarned: product.showCoins !== false ? Number(product.coins || 0) : 0,

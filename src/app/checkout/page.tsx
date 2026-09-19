@@ -28,6 +28,9 @@ function CheckoutForm() {
   const router = useRouter();
   const prodId = searchParams.get("productId") || "1";
   const qty = parseInt(searchParams.get("quantity") || "1", 10);
+  const variantIdParam = searchParams.get("variantId");
+  const priceParam = searchParams.get("price");
+  const variantNameParam = searchParams.get("variantName");
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
@@ -129,12 +132,39 @@ function CheckoutForm() {
         if (data && data.products && data.products.length > 0) {
           setCatalog(data.products);
           const found = data.products.find((p: any) => p.id === prodId || p.slug === prodId);
-          if (found) setProduct(found);
+          if (found) {
+            if (variantIdParam && Array.isArray(found.variants)) {
+              const matchedVar = found.variants.find((v: any) => v.id === variantIdParam);
+              if (matchedVar) {
+                const varPrice = Number(matchedVar.price) || (priceParam ? parseFloat(priceParam) : found.price);
+                const varMrp = Number(matchedVar.mrp || matchedVar.compareAt) || Math.round(varPrice * 1.25);
+                const varName = matchedVar.name || matchedVar.value || variantNameParam || "";
+                setProduct({
+                  ...found,
+                  price: varPrice,
+                  compareAt: varMrp,
+                  name: varName && !found.name.includes(varName) ? `${found.name} (${varName})` : found.name,
+                });
+                return;
+              }
+            } else if (priceParam) {
+              const parsedP = parseFloat(priceParam);
+              if (!isNaN(parsedP) && parsedP > 0) {
+                setProduct({
+                  ...found,
+                  price: parsedP,
+                  name: variantNameParam && !found.name.includes(variantNameParam) ? `${found.name} (${variantNameParam})` : found.name,
+                });
+                return;
+              }
+            }
+            setProduct(found);
+          }
         }
       })
       .catch((e) => console.error("Error loading products:", e))
       .finally(() => setLoadingProduct(false));
-  }, [prodId]);
+  }, [prodId, variantIdParam, priceParam, variantNameParam]);
 
   const [userEmail, setUserEmail] = useState("");
 

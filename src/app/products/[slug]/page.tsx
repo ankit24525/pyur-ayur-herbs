@@ -91,6 +91,39 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     const badge = matchedProduct.badge || matchedProduct.discount || "NEW";
     const image = matchedProduct.image || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80";
 
+    // Merge reviews from db.reviews for this product
+    const productReviewsFromDb = (db.reviews || [])
+      .filter((r: any) => {
+        const matchesProduct =
+          (r.productId && String(r.productId) === String(matchedProduct.id)) ||
+          (r.productSlug && (r.productSlug === normalizedSlug || r.productSlug === decodedSlug)) ||
+          (r.productName && r.productName.toLowerCase() === (matchedProduct.name || "").toLowerCase()) ||
+          (r.product && r.product.toLowerCase() === (matchedProduct.name || "").toLowerCase());
+        const isApproved = r.status ? r.status.toLowerCase() === "approved" : true;
+        return matchesProduct && isApproved;
+      })
+      .map((r: any) => ({
+        id: r.id,
+        name: r.author || r.customerName || r.customer || r.name || "Verified Customer",
+        location: r.location || (r.verifiedBuyer ? "Verified Buyer" : "India"),
+        rating: Number(r.rating) || 5,
+        title: r.title || "Ayurvedic Remedy Experience",
+        comment: r.content || r.comment || "",
+        date: r.date || "Recently",
+        verifiedBuyer: r.verifiedBuyer === true || r.isVerified === true,
+        source: "customer"
+      }));
+
+    const allCustomerReviews = [
+      ...productReviewsFromDb,
+      ...(matchedProduct.customerReviews || [])
+    ];
+
+    const dynamicReviewsCount = allCustomerReviews.length > 0 ? allCustomerReviews.length : (Number(matchedProduct.reviews) || 0);
+    const dynamicRating = allCustomerReviews.length > 0
+      ? Number((allCustomerReviews.reduce((sum: number, rev: any) => sum + (Number(rev.rating) || 5), 0) / allCustomerReviews.length).toFixed(1))
+      : (Number(matchedProduct.rating) || 5.0);
+
     const detailProduct = {
       id: String(matchedProduct.id || "1"),
       slug: matchedProduct.slug || normalizedSlug,
@@ -99,8 +132,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       concernSlug: (matchedProduct.concern || matchedProduct.category || "ayurvedic-remedies").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       image,
       gallery: matchedProduct.images && matchedProduct.images.length > 0 ? [image, ...matchedProduct.images] : (matchedProduct.gallery || [image]),
-      rating: Number(matchedProduct.rating) || 5.0,
-      reviews: Number(matchedProduct.reviews) || 0,
+      rating: dynamicRating,
+      reviews: dynamicReviewsCount,
       price,
       mrp,
       discount: badge,
@@ -133,7 +166,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       dosageSteps: matchedProduct.dosageSteps || [
         { step: 1, title: "Usage", description: "Consume daily as directed by your Ayurvedic physician.", icon: "🥛" }
       ],
-      customerReviews: matchedProduct.customerReviews || [],
+      customerReviews: allCustomerReviews,
       faqs: matchedProduct.faqs || []
     };
 

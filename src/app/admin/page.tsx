@@ -2162,6 +2162,12 @@ export default function AdminDashboard() {
     await saveKey("reviews", updated);
   };
 
+  const handleDeleteReview = async (idx: number) => {
+    if (!confirm("Are you sure you want to delete this customer review?")) return;
+    const updated = dbData.reviews.filter((_: any, i: number) => i !== idx);
+    await saveKey("reviews", updated);
+  };
+
   const totalRevenue = dbData.orders
     .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
     .reduce((acc: number, o: any) => acc + o.total, 0);
@@ -8181,38 +8187,85 @@ export default function AdminDashboard() {
             {/* 8. Reviews Panel */}
             {activeMenu === "reviews" && (
               <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b] mb-4">⭐ Customer Reviews Moderation Queue</h3>
-                <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b]">⭐ Customer Reviews Moderation Queue</h3>
+                    <p className="text-xs text-[#666666] mt-0.5">Reviews submitted by customers across all herbal products. Verified buyers are automatically validated against orders.</p>
+                  </div>
+                  <span className="text-xs font-bold text-[#244f31] bg-[#eef5df] px-3 py-1 rounded-full self-start sm:self-auto">
+                    {dbData.reviews?.length || 0} Total Reviews
+                  </span>
+                </div>
+                <div className="border border-[#ddddd9] rounded-xl overflow-x-auto text-xs">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-[#f8faf1] border-b border-[#ddddd9]">
                         <th className="p-3 font-bold">Product</th>
-                        <th className="p-3 font-bold">Buyer</th>
+                        <th className="p-3 font-bold">Customer & Verification</th>
                         <th className="p-3 font-bold">Rating</th>
-                        <th className="p-3 font-bold">Comment</th>
+                        <th className="p-3 font-bold">Review Content</th>
                         <th className="p-3 font-bold text-center">Status</th>
                         <th className="p-3 font-bold text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#ddddd9]">
-                      {dbData.reviews.map((r: any, idx: number) => (
-                        <tr key={r.id}>
-                          <td className="p-3 font-bold">{r.product}</td>
-                          <td className="p-3 font-bold">{r.customer}</td>
-                          <td className="p-3 text-yellow-600 font-bold">{r.rating}★</td>
-                          <td className="p-3 text-[#666666]">{r.comment}</td>
-                          <td className="p-3 text-center">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.status === "Approved" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{r.status}</span>
-                          </td>
-                          <td className="p-3 text-center">
-                            {r.status === "Pending" ? (
-                              <button onClick={() => handleReviewStatus(idx, "Approved")} className="bg-[#244f31] text-white px-2 py-1 rounded text-[10px] font-bold">Approve</button>
-                            ) : (
-                              <button onClick={() => handleReviewStatus(idx, "Pending")} className="border text-[#666666] px-2 py-1 rounded text-[10px]">Reject</button>
-                            )}
+                      {(!dbData.reviews || dbData.reviews.length === 0) ? (
+                        <tr>
+                          <td colSpan={6} className="p-8 text-center text-gray-500 font-medium">
+                            No reviews submitted yet. When customers rate products, their reviews will appear here.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        dbData.reviews.map((r: any, idx: number) => {
+                          const isApproved = (r.status || "").toLowerCase() === "approved";
+                          return (
+                            <tr key={r.id || idx} className="hover:bg-neutral-50/50 transition">
+                              <td className="p-3 font-bold text-[#17231b] max-w-[180px] truncate">
+                                {r.product || r.productName || "Ayurvedic Product"}
+                              </td>
+                              <td className="p-3 font-bold">
+                                <div className="text-[#17231b]">{r.customer || r.customerName || r.author || "Customer"}</div>
+                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                                  {r.verifiedBuyer ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+                                      🛡️ Verified Buyer {r.orderId ? `(#${String(r.orderId).slice(-6)})` : ""}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">
+                                      Guest Customer
+                                    </span>
+                                  )}
+                                  {r.location && <span className="text-[10px] text-gray-400 font-normal">({r.location})</span>}
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                <div className="text-yellow-600 font-bold flex items-center gap-0.5">
+                                  <span>{r.rating}</span>
+                                  <span>★</span>
+                                </div>
+                              </td>
+                              <td className="p-3 max-w-[280px]">
+                                {r.title && <div className="font-bold text-[#17231b] text-xs leading-snug">{r.title}</div>}
+                                <div className="text-[#666666] text-xs line-clamp-2 mt-0.5">{r.comment || r.content}</div>
+                                <div className="text-[10px] text-gray-400 mt-1">{r.date || "Recently"}</div>
+                              </td>
+                              <td className="p-3 text-center whitespace-nowrap">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isApproved ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                                  {isApproved ? "Approved" : "Pending"}
+                                </span>
+                              </td>
+                              <td className="p-3 text-center whitespace-nowrap space-x-1.5">
+                                {!isApproved ? (
+                                  <button onClick={() => handleReviewStatus(idx, "Approved")} className="bg-[#244f31] text-white px-2.5 py-1 rounded text-[10px] font-bold hover:bg-[#1d3b24] transition">Approve</button>
+                                ) : (
+                                  <button onClick={() => handleReviewStatus(idx, "Pending")} className="border border-gray-300 text-[#666666] px-2 py-1 rounded text-[10px] hover:bg-gray-100 transition">Unapprove</button>
+                                )}
+                                <button onClick={() => handleDeleteReview(idx)} className="text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2 py-1 rounded text-[10px] font-bold border border-rose-200 transition">Delete</button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>

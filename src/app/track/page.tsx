@@ -24,6 +24,23 @@ import SiteFooter from "@/components/SiteFooter";
 import { products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
 
+const parseOrderItems = (itemsStr: any) => {
+  if (!itemsStr) return [];
+  if (Array.isArray(itemsStr)) return itemsStr;
+  if (typeof itemsStr !== "string") return [];
+  const parts = itemsStr.split(", ");
+  return parts.map((part) => {
+    const lastXIndex = part.lastIndexOf(" x");
+    if (lastXIndex === -1) {
+      return { name: part.trim(), quantity: 1 };
+    }
+    const name = part.slice(0, lastXIndex).trim();
+    const qtyStr = part.slice(lastXIndex + 2).trim();
+    const quantity = parseInt(qtyStr, 10) || 1;
+    return { name, quantity };
+  });
+};
+
 function TrackOrderContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -498,7 +515,24 @@ function TrackOrderContent() {
                           order.liveTracking?.tracking_data?.shipment_track?.[0]?.current_status?.toUpperCase()?.includes("SHIPPED")
                         );
 
-                      if (isCancelled || isDelivered) return null;
+                      if (isCancelled) return null;
+
+                      if (isDelivered) {
+                        const parsedItems = parseOrderItems(order.items);
+                        const firstItemName = parsedItems[0]?.name || "";
+                        const matched = products.find((p) => p.name.toLowerCase().trim() === firstItemName.toLowerCase().trim());
+                        const targetSlug = matched?.slug || (products[0]?.slug || "ayurvedic-remedies");
+                        const rateUrl = `/products/${targetSlug}?rate=true&orderId=${encodeURIComponent(order.id)}&customerName=${encodeURIComponent(order.customerName || order.customer || '')}&phone=${encodeURIComponent(order.customerPhone || order.phone || '')}#reviews`;
+
+                        return (
+                          <Link
+                            href={rateUrl}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition shadow-xs cursor-pointer"
+                          >
+                            <span>⭐ Rate & Review Remedies</span>
+                          </Link>
+                        );
+                      }
 
                       if (isDispatched) {
                         return (
@@ -800,6 +834,16 @@ function TrackOrderContent() {
                                     </span>
                                   )}
                                 </div>
+                                {String(order.status || "").toLowerCase().includes("delivered") && (
+                                  <div className="mt-2.5">
+                                    <Link
+                                      href={`/products/${matchedProduct?.slug || products[0]?.slug || "ayurvedic-remedies"}?rate=true&orderId=${encodeURIComponent(order.id)}&customerName=${encodeURIComponent(order.customerName || order.customer || "")}&phone=${encodeURIComponent(order.customerPhone || order.phone || "")}#reviews`}
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#244f31] hover:text-white bg-[#eef5df] hover:bg-[#244f31] px-2.5 py-1 rounded-lg border border-[#80a03c]/40 transition"
+                                    >
+                                      <span>⭐ Rate & Review this Remedy</span>
+                                    </Link>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );

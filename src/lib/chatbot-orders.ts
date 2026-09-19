@@ -441,6 +441,7 @@ export async function cancelCustomerOrder(
     const cancellationReasonText = reason || "Cancelled via WhatsApp Chatbot";
 
     order.status = "Cancelled";
+    order.shiprocketStatus = "Cancelled";
     order.cancellationReason = cancellationReasonText;
     order.cancellationDate = new Date().toISOString();
     order.cancelledBy = "Customer (WhatsApp)";

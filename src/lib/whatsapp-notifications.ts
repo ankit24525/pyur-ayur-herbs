@@ -52,6 +52,7 @@ export async function sendOrderConfirmationWhatsApp(order: any): Promise<{ succe
     const state = order.state || "";
     const destination = [city, state].filter(Boolean).join(", ") || "India";
     const trackingLink = `${BASE_URL}/track?orderId=${encodeURIComponent(orderId)}`;
+    const cancelLink = `${BASE_URL}/track?orderId=${encodeURIComponent(orderId)}&action=cancel`;
 
     const messageText = `🌿 *ORDER CONFIRMED — PURE AYUR HERBS* 🌿
 
@@ -68,6 +69,13 @@ ${itemsSummary}
 
 🚚 *Live Tracking Link:*
 ${trackingLink}
+
+❌ *Cancel Order Option:*
+If you ordered by mistake or wish to cancel:
+👉 *Reply to this chat:* CANCEL ${orderId}
+🔗 *Or Cancel Online (1-Click):*
+${cancelLink}
+_(1-click instant cancellation available before parcel dispatch)_
 
 _Standard priority shipping takes 2–4 business days across India._
 
@@ -118,6 +126,9 @@ Great news — your Pure Ayur Herbs remedies have been packed and dispatched wit
 
 🔗 *Track Shipment Live:*
 ${trackingLink}
+
+🛡️ *Want to Cancel? (Doorstep Refusal Option)*
+Since your parcel is already in transit with the courier, online cancellation is closed. Just like Amazon & Flipkart, you can simply refuse delivery at your doorstep when the courier executive arrives (₹0 COD fee / 100% full refund for prepaid).
 
 _Please ensure someone is available at your address to receive the package._
 

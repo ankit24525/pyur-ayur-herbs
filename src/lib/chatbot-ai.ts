@@ -282,7 +282,12 @@ _💡 Simply reply with *1*, *2*, *3*, *4*, *5* or type any health concern in Hi
   // ==========================================
   // 1.5. ORDER CANCELLATION INTENT (Amazon & Flipkart Policy)
   // ==========================================
-  const isConfirmCancel = /confirm\s*(cancel|radd)|yes\s*cancel/i.test(query);
+  // Direct cancellation command: e.g. "CANCEL PYR-ORD-146050", "CANCEL 146050", "CONFIRM CANCEL"
+  const hasExplicitCancelWithOrderId =
+    /(?:^|\s)(?:confirm\s+)?(?:cancel|radd|radh)\s+(?:order\s+)?([a-z0-9_-]*ord[a-z0-9_-]*|\d{4,9})/i.test(query) ||
+    /([a-z0-9_-]*ord[a-z0-9_-]*|\d{4,9})\s+(?:cancel|radd|radh)/i.test(query);
+
+  const isConfirmCancel = /confirm\s*(cancel|radd)|yes\s*cancel/i.test(query) || hasExplicitCancelWithOrderId;
   const isCancelRequest =
     query.includes("cancel") ||
     query.includes("radd") ||
@@ -305,7 +310,7 @@ _💡 Simply reply with *1*, *2*, *3*, *4*, *5* or type any health concern in Hi
         replyText: `⚠️ *Order Cancellation Desk*
 
 I couldn't detect which order you want to cancel. Please reply with:
-👉 *CONFIRM CANCEL <Your Order ID>* (e.g. *CONFIRM CANCEL PYR-ORD-146050*)
+👉 *CANCEL <Your Order ID>* (e.g. *CANCEL PYR-ORD-146050*)
 
 Or reply *Order* to see your active orders.`,
         intent: "ORDER_CANCELLATION",
@@ -315,11 +320,15 @@ Or reply *Order* to see your active orders.`,
 
     // Extract optional reason after the word cancel or order id
     const reasonMatch = rawQuery
-      .replace(/confirm\s*(cancel|radd)/i, "")
+      .replace(/confirm\s*(cancel|radd)/gi, "")
+      .replace(/cancel\s*order/gi, "")
+      .replace(/cancel/gi, "")
+      .replace(/radd/gi, "")
       .replace(new RegExp(targetOrder.id, "gi"), "")
-      .replace(/pyr-ord-\d+/i, "")
+      .replace(/pyr-ord-[\w-]+/gi, "")
+      .replace(/\b\d{4,9}\b/g, "")
       .trim();
-    const cancelReason = reasonMatch || "Customer confirmed cancellation on WhatsApp";
+    const cancelReason = reasonMatch || "Customer requested cancellation on WhatsApp";
 
     const cancelRes = await cancelCustomerOrder(targetOrder.id, from, cancelReason);
     return {

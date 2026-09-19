@@ -105,11 +105,32 @@ export async function formatOrderStatusMessage(order: any, customerName?: string
   }
 
   const trackingUrl = `https://www.purreayurherbs.com/track?orderId=${encodeURIComponent(orderId)}`;
+  const cancelUrl = `https://www.purreayurherbs.com/track?orderId=${encodeURIComponent(orderId)}&action=cancel`;
 
   let statusEmoji = "📦";
   if (status.toLowerCase().includes("delivered")) statusEmoji = "✅";
   else if (status.toLowerCase().includes("transit") || status.toLowerCase().includes("shipped")) statusEmoji = "🚚";
   else if (status.toLowerCase().includes("cancel")) statusEmoji = "❌";
+
+  const stLower = (status || "").toLowerCase();
+  const isCancelled = stLower === "cancelled" || stLower.includes("cancel");
+  const isDelivered = stLower.includes("delivered");
+  const isDispatched = stLower.includes("shipped") || stLower.includes("transit") || stLower.includes("out for delivery");
+  const isUnshipped = !isCancelled && !isDelivered && !isDispatched;
+
+  let cancelSection = "";
+  if (isCancelled) {
+    cancelSection = `\n\n❌ *Order Status:* This order is cancelled.${order.refundStatus ? ` (${order.refundStatus})` : ""}`;
+  } else if (isUnshipped) {
+    cancelSection = `\n\n❌ *Want to Cancel this Order?*
+👉 Reply: *CANCEL ${orderId}*
+🔗 Or Cancel Online (1-Click):
+${cancelUrl}
+_(Instant 1-click cancellation available before package dispatch)_`;
+  } else if (isDispatched) {
+    cancelSection = `\n\n🛡️ *Dispatched Parcel Policy:*
+Parcel is in transit with the courier. If you wish to cancel, you can simply refuse delivery at your doorstep when the delivery partner arrives (₹0 COD charge / Full Prepaid refund).`;
+  }
 
   return `*${statusEmoji} Order Details: ${orderId}*
 
@@ -122,7 +143,7 @@ Namaste ${name}! Here is the latest update on your Pure Ayur Herbs order:
 *Delivery Destination:* ${location}
 
 🔗 *Live Tracking Link:*
-${trackingUrl}
+${trackingUrl}${cancelSection}
 
 _Packed with Ayurvedic medical safety protocols. Standard priority delivery takes 2–4 business days._
 
@@ -150,12 +171,15 @@ export async function formatMultipleOrdersMessage(orders: any[], customerName?: 
       else if (status.toLowerCase().includes("cancel")) statusEmoji = "❌";
 
       const trackingUrl = `https://www.purreayurherbs.com/track?orderId=${encodeURIComponent(orderId)}`;
+      const stLower = (status || "").toLowerCase();
+      const isUnshipped = !stLower.includes("shipped") && !stLower.includes("transit") && !stLower.includes("delivered") && !stLower.includes("cancel");
+      const cancelOption = isUnshipped ? `\n• ❌ *Cancel:* Reply *CANCEL ${orderId}*` : "";
 
       return `${idx + 1}️⃣ *Order ${orderId}* ${idx === 0 ? "_(Latest)_" : ""}
 • *Status:* ${statusEmoji} ${status}
 • *Date:* ${date}${total ? ` | *Total:* ${total}` : ""}
 • *Items:* ${items}
-🔗 *Live Tracking:* ${trackingUrl}`;
+🔗 *Live Tracking:* ${trackingUrl}${cancelOption}`;
     })
     .join("\n\n");
 
@@ -167,7 +191,7 @@ ${list}
 
 ${orders.length > 5 ? `_...and ${orders.length - 5} older orders._\n` : ""}
 ═══════════════════════
-_💡 To get full courier & delivery details for any order, reply with its **Order ID** (e.g. *${displayOrders[0]?.id || "PYR-ORD-146050"}*) or click its direct tracking link above!_
+_💡 To track any order above, click its link. To cancel an unshipped order, reply *CANCEL <Order ID>* (e.g. *CANCEL ${displayOrders[0]?.id || "PYR-ORD-146050"}*)!_
 
 Need assistance or want to talk with our team? Reply *Support* anytime!`;
 }
@@ -272,6 +296,9 @@ Namaste ${name}! You requested to cancel your order:
 Are you sure you want to cancel this order?
 To proceed, please reply:
 👉 *CONFIRM CANCEL ${orderId}*
+
+🔗 *Or Cancel Online (1-Click):*
+https://www.purreayurherbs.com/track?orderId=${encodeURIComponent(orderId)}&action=cancel
 
 _(Or provide a reason, e.g. "CONFIRM CANCEL ${orderId} Ordered by mistake")_
 

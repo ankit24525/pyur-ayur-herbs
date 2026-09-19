@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { verifyPhonePePayment } from "@/lib/phonepe";
+import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +114,13 @@ async function handlePaymentCallback(request: Request, isGet: boolean) {
       orders[orderIdx].status = "Processing"; // Confirmed & paid
       db.orders = orders;
       await writeDB(db);
+
+      // Dispatch WhatsApp Order Confirmation
+      try {
+        await sendOrderConfirmationWhatsApp(orders[orderIdx]);
+      } catch (waErr) {
+        console.error("[PhonePe Callback WhatsApp Error]:", waErr);
+      }
 
       // Trigger Meta CAPI Purchase Event
       try {

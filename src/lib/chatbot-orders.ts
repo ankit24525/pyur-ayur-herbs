@@ -1,5 +1,6 @@
 import { readDB, writeDB } from "./db";
 import { getShiprocketToken, cancelShiprocketOrder, getShiprocketTracking } from "./shiprocket";
+import { checkCustomerFraudStatus } from "./fraud-prevention";
 
 export interface OrderLookupResult {
   found: boolean;
@@ -198,7 +199,7 @@ Need assistance or want to talk with our team? Reply *Support* anytime!`;
 
 export interface CancelOrderResult {
   success: boolean;
-  status: "CANCELLED" | "ALREADY_CANCELLED" | "DISPATCHED_DOORSTEP_REFUSAL" | "DELIVERED_NO_CANCEL" | "NOT_FOUND" | "UNAUTHORIZED" | "ERROR";
+  status: "CANCELLED" | "ALREADY_CANCELLED" | "DISPATCHED_DOORSTEP_REFUSAL" | "DELIVERED_NO_CANCEL" | "LIMIT_REACHED" | "NOT_FOUND" | "UNAUTHORIZED" | "ERROR";
   order?: any;
   message: string;
 }
@@ -417,6 +418,26 @@ export async function cancelCustomerOrder(
         status: "DISPATCHED_DOORSTEP_REFUSAL",
         order,
         message: formatDoorstepRefusalMessage(order),
+      };
+    }
+
+    // 3.5. Cancellation Limit & Anti-Spam Check (Amazon & Flipkart Policy)
+    const fraudStatus = await checkCustomerFraudStatus(order.phone || cleanPhone);
+    if (fraudStatus.isCancelBlocked) {
+      const name = order.customer || "Valued Customer";
+      return {
+        success: false,
+        status: "LIMIT_REACHED",
+        order,
+        message: `⚠️ *Cancellation Limit Reached*
+
+Namaste ${name}! 🙏
+
+You have reached the limit of automated order cancellations allowed for this mobile number in the last 30 days.
+
+To cancel this order, please speak with our support desk directly:
+📞 *Helpline:* +91 72478 24101
+💬 Or reply *Support* right here on WhatsApp!`,
       };
     }
 

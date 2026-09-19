@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Eye,
   EyeOff,
+  AlertCircle,
 } from "lucide-react";
 import { products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
@@ -93,6 +94,34 @@ function CheckoutForm() {
   });
 
   const [maskPhone, setMaskPhone] = useState(false);
+  const [codBlocked, setCodBlocked] = useState(false);
+  const [codBlockReason, setCodBlockReason] = useState("");
+
+  // Check COD eligibility based on customer cancellation history & admin fraud policy
+  useEffect(() => {
+    const cleanPhone = (formData.phone || "").replace(/\D/g, "").slice(-10);
+    if (cleanPhone.length === 10) {
+      fetch(`/api/checkout/eligibility?phone=${cleanPhone}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success && data.isCodBlocked) {
+            setCodBlocked(true);
+            setCodBlockReason(
+              data.codBlockReason ||
+                "Cash on Delivery is unavailable for this mobile number due to previous order cancellations."
+            );
+            setFormData((prev) => ({ ...prev, paymentMethod: "prepaid" }));
+          } else {
+            setCodBlocked(false);
+            setCodBlockReason("");
+          }
+        })
+        .catch((e) => console.error("Error checking COD eligibility:", e));
+    } else {
+      setCodBlocked(false);
+      setCodBlockReason("");
+    }
+  }, [formData.phone]);
 
   useEffect(() => {
     getStorefrontData()
@@ -752,6 +781,19 @@ function CheckoutForm() {
             <span>🎉 Pay Online & get 5% EXTRA Discount (Save ₹{Math.round(subtotal * 0.05)})</span>
           </div>
 
+          {/* COD Blocked Banner (Amazon & Flipkart Policy) */}
+          {codBlocked && (
+            <div className="mt-3 rounded-xl bg-amber-50 border border-amber-300 p-3 text-xs text-amber-900 flex items-start gap-2.5">
+              <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block text-[#17231b]">Cash on Delivery Unavailable</span>
+                <span className="text-[11px] text-amber-800 leading-tight block mt-0.5">
+                  {codBlockReason} Please complete your purchase using secure Online Payment (UPI / Cards / PhonePe).
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="mt-5 space-y-3">
             <button
               type="button"
@@ -779,9 +821,14 @@ function CheckoutForm() {
 
             <button
               type="button"
-              onClick={() => setFormData({ ...formData, paymentMethod: "cod" })}
+              disabled={codBlocked}
+              onClick={() => {
+                if (!codBlocked) setFormData({ ...formData, paymentMethod: "cod" });
+              }}
               className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition ${
-                formData.paymentMethod === "cod"
+                codBlocked
+                  ? "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
+                  : formData.paymentMethod === "cod"
                   ? "border-[#244f31] bg-[#eef5df] ring-1 ring-[#244f31]"
                   : "border-[#ddddd9] bg-white hover:border-[#80a03c]"
               }`}
@@ -789,13 +836,25 @@ function CheckoutForm() {
               <div className="flex items-center gap-3">
                 <input
                   type="radio"
+                  disabled={codBlocked}
                   readOnly
-                  checked={formData.paymentMethod === "cod"}
+                  checked={formData.paymentMethod === "cod" && !codBlocked}
                   className="accent-[#244f31]"
                 />
                 <div>
-                  <span className="block text-xs font-bold text-[#17231b]">Cash on Delivery (COD)</span>
-                  <span className="text-[10px] text-[#666666]">Verify mobile number via SMS OTP</span>
+                  <div className="flex items-center gap-2">
+                    <span className="block text-xs font-bold text-[#17231b]">Cash on Delivery (COD)</span>
+                    {codBlocked && (
+                      <span className="rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-extrabold text-red-700 uppercase">
+                        Unavailable
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-[#666666]">
+                    {codBlocked
+                      ? "Disabled due to previous cancellations"
+                      : "Verify mobile number via SMS OTP"}
+                  </span>
                 </div>
               </div>
               <span className="text-xs font-semibold text-[#666666]">COD</span>

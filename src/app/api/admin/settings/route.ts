@@ -22,6 +22,9 @@ export async function POST(request: Request) {
       codOtpEnabled: typeof body.codOtpEnabled === "boolean" ? body.codOtpEnabled : db.settings.codOtpEnabled,
       prepaidDiscount: typeof body.prepaidDiscount === "number" ? body.prepaidDiscount : db.settings.prepaidDiscount,
       taxRate: typeof body.taxRate === "number" ? body.taxRate : db.settings.taxRate,
+      codAbuseThreshold: typeof body.codAbuseThreshold === "number" ? body.codAbuseThreshold : (db.settings.codAbuseThreshold ?? 2),
+      maxMonthlyCancellations: typeof body.maxMonthlyCancellations === "number" ? body.maxMonthlyCancellations : (db.settings.maxMonthlyCancellations ?? 3),
+      blockedCodPhones: Array.isArray(body.blockedCodPhones) ? body.blockedCodPhones : (db.settings.blockedCodPhones || []),
     };
 
     const success = await writeDB(db);

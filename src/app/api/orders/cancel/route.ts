@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { getShiprocketToken, cancelShiprocketOrder } from "@/lib/shiprocket";
 import { sendOrderCancellationWhatsApp } from "@/lib/whatsapp-notifications";
+import { checkCustomerFraudStatus } from "@/lib/fraud-prevention";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,19 @@ export async function POST(request: Request) {
         eligibleForDoorstepRefusal: true,
         isDispatched: true,
         error: "Your parcel is already dispatched with our courier partner and cannot be cancelled online. Like Amazon and Flipkart, you can simply refuse delivery at your doorstep when the courier executive arrives. The package will be returned to us safely with ₹0 charge or a full refund for prepaid orders.",
+        order,
+      }, { status: 400 });
+    }
+
+    // 3.5. Cancellation Abuse & Limit Check (Amazon & Flipkart Policy)
+    const fraudStatus = await checkCustomerFraudStatus(order.phone);
+    if (fraudStatus.isCancelBlocked) {
+      return NextResponse.json({
+        success: false,
+        limitReached: true,
+        error: fraudStatus.cancelBlockReason
+          ? `${fraudStatus.cancelBlockReason} To cancel this order, please contact our customer care desk at +91 72478 24101.`
+          : "You have reached the maximum automated cancellation limit for this mobile number. Please contact our support team at +91 72478 24101 to cancel.",
         order,
       }, { status: 400 });
     }

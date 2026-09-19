@@ -775,6 +775,7 @@ export default function AdminDashboard() {
   const [campaignSpend, setCampaignSpend] = useState("");
 
   const [flashSaleTimer, setFlashSaleTimer] = useState("12:00:00");
+  const [newBlockedPhone, setNewBlockedPhone] = useState("");
   const [campaignRevenue, setCampaignRevenue] = useState("");
   const [campaignStatus, setCampaignStatus] = useState("Running");
   const [newBanner, setNewBanner] = useState({ name: "", link: "", image: "", status: "Active" });
@@ -6257,6 +6258,7 @@ export default function AdminDashboard() {
                 )}
 
                  {subTab === "offers" && (
+                  <>
                   <div className="text-xs border border-[#ddddd9] p-5 rounded-2xl space-y-4 max-w-xl bg-white shadow-xs">
                     <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Configure Cart Offers</h4>
                     
@@ -6347,6 +6349,129 @@ export default function AdminDashboard() {
                       Save Offers & Delivery Settings
                     </button>
                   </div>
+
+                  {/* Fraud & RTO Anti-Abuse Protection Card (Amazon & Flipkart Policy) */}
+                  <div className="text-xs border border-[#ddddd9] p-5 rounded-2xl space-y-4 max-w-xl bg-white shadow-xs">
+                    <div className="border-b border-[#ddddd9] pb-3">
+                      <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider flex items-center gap-2">
+                        <span>🛡️ Anti-Abuse & Fraud Protection</span>
+                        <span className="bg-[#eef5df] text-[#244f31] font-bold text-[10px] px-2 py-0.5 rounded-full">Amazon & Flipkart Policy</span>
+                      </h4>
+                      <p className="text-[11px] text-[#666666] mt-0.5">Automatically protect your business from serial cancellers, fake COD orders, and RTO courier losses.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* COD Abuse Threshold */}
+                      <div>
+                        <label className="block font-bold text-[#17231b] mb-1">COD Cancellation Threshold (Auto-Block COD)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          placeholder="2"
+                          value={dbData.settings.codAbuseThreshold ?? 2}
+                          onChange={(e) => setDbData({
+                            ...dbData,
+                            settings: { ...dbData.settings, codAbuseThreshold: parseInt(e.target.value) || 2 }
+                          })}
+                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold"
+                        />
+                        <p className="mt-1 text-[10px] text-gray-400">If a phone number has this many cancelled COD orders, Cash on Delivery is automatically blocked at checkout, switching them to Prepaid-only.</p>
+                      </div>
+
+                      {/* Monthly Cancellation Limit */}
+                      <div>
+                        <label className="block font-bold text-[#17231b] mb-1">Max Monthly Cancellations (Spammer Guard)</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          placeholder="3"
+                          value={dbData.settings.maxMonthlyCancellations ?? 3}
+                          onChange={(e) => setDbData({
+                            ...dbData,
+                            settings: { ...dbData.settings, maxMonthlyCancellations: parseInt(e.target.value) || 3 }
+                          })}
+                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold"
+                        />
+                        <p className="mt-1 text-[10px] text-gray-400">Limits automated 1-click cancellations per customer to prevent repeated order-and-cancel loops.</p>
+                      </div>
+
+                      {/* Manually Blocked Phone Numbers */}
+                      <div>
+                        <label className="block font-bold text-[#17231b] mb-1">Manually Blocked COD Mobile Numbers</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Enter 10-digit mobile number"
+                            value={newBlockedPhone}
+                            onChange={(e) => setNewBlockedPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                            className="flex-1 rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-mono text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const clean = newBlockedPhone.trim();
+                              if (clean.length === 10) {
+                                const current = Array.isArray(dbData.settings.blockedCodPhones) ? dbData.settings.blockedCodPhones : [];
+                                if (!current.includes(clean)) {
+                                  setDbData({
+                                    ...dbData,
+                                    settings: { ...dbData.settings, blockedCodPhones: [...current, clean] }
+                                  });
+                                  setNewBlockedPhone("");
+                                }
+                              } else {
+                                alert("Please enter a valid 10-digit mobile number.");
+                              }
+                            }}
+                            className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 transition"
+                          >
+                            Block COD
+                          </button>
+                        </div>
+
+                        {Array.isArray(dbData.settings.blockedCodPhones) && dbData.settings.blockedCodPhones.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {dbData.settings.blockedCodPhones.map((ph: string) => (
+                              <span key={ph} className="inline-flex items-center gap-1.5 bg-red-50 border border-red-200 text-red-800 text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg">
+                                +91 {ph}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDbData({
+                                      ...dbData,
+                                      settings: {
+                                        ...dbData.settings,
+                                        blockedCodPhones: dbData.settings.blockedCodPhones.filter((p: string) => p !== ph)
+                                      }
+                                    });
+                                  }}
+                                  className="text-red-500 hover:text-red-800 ml-1 cursor-pointer font-bold"
+                                  title="Unblock COD"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <p className="mt-1 text-[10px] text-gray-400">These numbers will be strictly forced to pay Prepaid online.</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={async () => {
+                        await handleSaveSettings("codAbuseThreshold", dbData.settings.codAbuseThreshold ?? 2);
+                        await handleSaveSettings("maxMonthlyCancellations", dbData.settings.maxMonthlyCancellations ?? 3);
+                        await handleSaveSettings("blockedCodPhones", dbData.settings.blockedCodPhones || []);
+                      }}
+                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2 mt-4"
+                    >
+                      Save Anti-Abuse & Fraud Settings
+                    </button>
+                  </div>
+                  </>
                 )}
 
                 {subTab === "flash-sales" && (

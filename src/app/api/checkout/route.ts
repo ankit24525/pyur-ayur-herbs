@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { getShiprocketToken, createShiprocketOrder } from "@/lib/shiprocket";
 import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
+import { checkCustomerFraudStatus } from "@/lib/fraud-prevention";
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +15,22 @@ export async function POST(request: Request) {
         { success: false, error: "Validation failed. All address fields, 6-digit Pincode and items are required." },
         { status: 400 }
       );
+    }
+
+    // COD Abuse & Fraud Prevention Check (Amazon & Flipkart Policy)
+    if (paymentMethod === "cod") {
+      const fraudStatus = await checkCustomerFraudStatus(phone);
+      if (fraudStatus.isCodBlocked) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              fraudStatus.codBlockReason ||
+              "Cash on Delivery is unavailable for this mobile number due to previous order cancellations. Please complete your purchase using Online Payment (UPI / PhonePe / Cards).",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const db = await readDB();

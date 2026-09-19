@@ -263,18 +263,19 @@ export async function generateChatbotReply(context: ChatbotContext): Promise<Cha
     /^(hi|hello|hey|namaste|pranam|start|menu|help|options|kya hal|halo|hlo|shuru)\b/i.test(query) ||
     query.length === 0;
 
-  if (isGreeting && !query.includes("order") && !query.includes("track") && !query.includes("product") && !query.includes("catalog")) {
+  if (isGreeting && !query.includes("order") && !query.includes("track") && !query.includes("product") && !query.includes("catalog") && !query.includes("cancel")) {
     const greetingMsg = `*Namaste ${profileName || "Ji"}! 🙏 Welcome to Pure Ayur Herbs.*
 
 I am your 24/7 Ayurvedic Wellness Assistant. How may I assist your health journey today?
 
-1️⃣ *Track or Cancel Order* — Real-time shipment status, tracking & instant cancellation
-2️⃣ *Ayurvedic Remedy Finder* — Find the right herb for your health concern
-3️⃣ *Product Usage & Dosage* — How & when to consume Virja, Madhunashi, Fat Burner & Creams
-4️⃣ *Product Catalog & Prices* — View all available products & offers
-5️⃣ *Talk to Vaidya / Support* — Connect with our senior Ayurvedic specialist
+1️⃣ Reply *1* to *Track an existing Order*
+2️⃣ Reply *2* to *Cancel an Order* (Instant 1-Click Cancel)
+3️⃣ Reply *3* for *Remedy Recommendations* (Virja, Madhunashi, Fat Burner, Perfect 36)
+4️⃣ Reply *4* for *Dosage & Usage Instructions*
+5️⃣ Reply *5* for *Full Product Catalog & Prices*
+6️⃣ Reply *6* or *Support* to *Talk with our Ayurvedic Doctor*
 
-_💡 Simply reply with *1*, *2*, *3*, *4*, *5* or type any health concern in Hindi, English, or Hinglish!_`;
+_💡 Simply reply with *1*, *2*, *3*, *4*, *5*, *6* or type any health concern in Hindi, English, or Hinglish!_`;
 
     return { replyText: greetingMsg, intent: "GREETING", escalatedToHuman: false };
   }
@@ -289,6 +290,7 @@ _💡 Simply reply with *1*, *2*, *3*, *4*, *5* or type any health concern in Hi
 
   const isConfirmCancel = /confirm\s*(cancel|radd)|yes\s*cancel/i.test(query) || hasExplicitCancelWithOrderId;
   const isCancelRequest =
+    query === "2" ||
     query.includes("cancel") ||
     query.includes("radd") ||
     query.includes("radh") ||
@@ -366,7 +368,7 @@ Need to speak with our support team? Reply *Support*!`,
           return `${idx + 1}️⃣ *Order ${o.id}* (Status: ${o.status || "Processing"})
 • Items: ${o.items || "Ayurvedic Remedy"}
 • Total: ₹${Number(o.total || 0).toLocaleString("en-IN")}
-👉 Reply: *CONFIRM CANCEL ${o.id}*`;
+👉 Reply: *CANCEL ${o.id}*`;
         })
         .join("\n\n");
 
@@ -465,7 +467,7 @@ Need help from our shipping desk? Reply *Support*.`;
   // 3. HUMAN HANDOFF & DOCTOR CONSULTATION
   // ==========================================
   const isHumanHandoff =
-    query === "5" ||
+    query === "6" ||
     query.includes("doctor") ||
     query.includes("vaidya") ||
     query.includes("human") ||
@@ -495,7 +497,7 @@ In the meantime, feel free to describe any specific symptoms or questions you ha
   // 4. LIVE PRODUCT CATALOG INTENT
   // ==========================================
   const isCatalog =
-    query === "4" ||
+    query === "5" ||
     query === "catalog" ||
     query === "products" ||
     query === "product" ||
@@ -554,7 +556,7 @@ _💡 Reply with any product name (e.g. *Virja* or *Madhunashi*) for benefits an
   // 5. DOSAGE & USAGE GUIDE INTENT
   // ==========================================
   const isDosage =
-    query === "3" ||
+    query === "4" ||
     query.includes("dosage") ||
     query.includes("how to use") ||
     query.includes("kaise khana") ||
@@ -670,7 +672,7 @@ _Which remedy would you like more details on? Just reply with its name!_`,
   // ==========================================
   // 6. HEALTH CONCERN & PRODUCT RECOMMENDATIONS
   // ==========================================
-  if (query === "2" || query === "consult" || query === "recommend" || query === "remedy") {
+  if (query === "3" || query === "consult" || query === "recommend" || query === "remedy") {
     return {
       replyText: `🌿 *Pure Ayur Herbs - Ayurvedic Remedy Finder*
 
@@ -857,10 +859,11 @@ Thank you for contacting Pure Ayur Herbs.
 
 To help you quickly, please choose from below:
 1️⃣ Reply *1* to **Track an existing Order**
-2️⃣ Reply *2* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)
-3️⃣ Reply *3* for **Dosage & Usage Instructions**
-4️⃣ Reply *4* for **Full Product Catalog & Prices**
-5️⃣ Reply *5* or *Support* to **Talk with our Ayurvedic Doctor**
+2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)
+3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)
+4️⃣ Reply *4* for **Dosage & Usage Instructions**
+5️⃣ Reply *5* for **Full Product Catalog & Prices**
+6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**
 
 You can also browse our 100% AYUSH Certified store:
 🌐 https://www.purreayurherbs.com`;

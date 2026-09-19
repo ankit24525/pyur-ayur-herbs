@@ -21,12 +21,12 @@ export async function POST(request: Request) {
 
     // 1. Primary Channel: Send to WhatsApp if phone number provided
     if (cleanPhone && cleanPhone.length === 10) {
-      await saveOTP(cleanPhone, otp, "cod", 10);
+      await saveOTP(cleanPhone, otp, "checkout", 10);
       if (cleanEmail) {
-        await saveOTP(cleanEmail, otp, "cod", 10);
+        await saveOTP(cleanEmail, otp, "checkout", 10);
       }
 
-      const waResult = await sendWhatsAppOTP(cleanPhone, otp, "cod");
+      const waResult = await sendWhatsAppOTP(cleanPhone, otp, "checkout");
 
       // Also fire email in parallel if email is provided
       if (cleanEmail) {

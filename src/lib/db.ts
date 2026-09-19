@@ -25,6 +25,8 @@ export interface DBData {
   orderOtps?: any[];
   abandonedCarts?: any[];
   sessions?: { token: string; userId: string; expiresAt: number }[];
+  otps?: any[];
+  verifiedPhones?: { phone: string; verifiedAt: number; expiresAt: number }[];
 }
 
 declare global {

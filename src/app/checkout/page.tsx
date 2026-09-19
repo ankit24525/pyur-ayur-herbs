@@ -421,10 +421,10 @@ function CheckoutForm() {
     setGuestOtpLoading(true);
     setGuestOtpError("");
     try {
-      const res = await fetch("/api/auth/whatsapp/send-otp", {
+      const res = await fetch("/api/checkout/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: clean }),
+        body: JSON.stringify({ phone: clean, email: userEmail }),
       });
       const data = await res.json();
       if (data.success) {
@@ -449,25 +449,21 @@ function CheckoutForm() {
     setGuestOtpLoading(true);
     setGuestOtpError("");
     try {
-      const res = await fetch("/api/auth/whatsapp/verify-otp", {
+      const res = await fetch("/api/checkout/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: clean,
           otp: guestOtpInput.trim(),
-          name: formData.name,
+          email: userEmail,
         }),
       });
       const data = await res.json();
-      if (data.success && data.user) {
+      if (data.success && data.verified) {
         setIsPhoneVerified(true);
         setGuestOtpDrawerOpen(false);
         setGuestOtpInput("");
-        try {
-          localStorage.setItem("pyur_user", JSON.stringify(data.user));
-          window.dispatchEvent(new Event("pyur_auth_change"));
-        } catch {}
-        await checkAuthStatus();
+        setGuestOtpError("");
       } else {
         setGuestOtpError(data.error || "Incorrect verification code.");
       }
@@ -674,21 +670,35 @@ function CheckoutForm() {
       return;
     }
 
-    if (formData.paymentMethod === "prepaid") {
-      void processPrepaidPhonePeOrder();
-    } else if (formData.paymentMethod === "cod" && settings.codOtpEnabled) {
-    const phoneToVerify = formData.phone;
-      if (!phoneToVerify && !userEmail) {
-        alert("Please enter a valid mobile number or email to verify your COD order.");
-        return;
-      }
-      // Send OTP to user's WhatsApp phone number (with email backup)
+    const cleanPhone = formData.phone.replace(/\D/g, "").slice(-10);
+    if (cleanPhone.length !== 10) {
+      alert("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      alert("Please enter your full name.");
+      return;
+    }
+
+    if (!formData.address.trim() || !formData.city.trim() || !formData.state.trim()) {
+      alert("Please complete your delivery address, city, and state.");
+      return;
+    }
+
+    // MANDATORY OTP VERIFICATION FOR GUEST BUYERS (Without login & signup)
+    // Also required if COD has settings.codOtpEnabled enabled
+    const isGuest = !currentUser;
+    const needsVerification = (isGuest && !isPhoneVerified) || (formData.paymentMethod === "cod" && settings.codOtpEnabled && !isPhoneVerified);
+
+    if (needsVerification) {
       setOtpSending(true);
+      setOtpError("");
       try {
         const res = await fetch("/api/checkout/send-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: phoneToVerify, email: userEmail }),
+          body: JSON.stringify({ phone: cleanPhone, email: userEmail }),
         });
         const data = await res.json();
         if (data.success) {
@@ -699,10 +709,15 @@ function CheckoutForm() {
           alert(data.error || "Failed to send verification code. Please try again.");
         }
       } catch {
-        alert("Failed to send verification code. Check your connection and try again.");
+        alert("Failed to send verification code. Check your internet connection and try again.");
       } finally {
         setOtpSending(false);
       }
+      return;
+    }
+
+    if (formData.paymentMethod === "prepaid") {
+      void processPrepaidPhonePeOrder();
     } else {
       void processOrder();
     }
@@ -711,10 +726,10 @@ function CheckoutForm() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setOtpError("");
-    const phoneToVerify = formData.phone;
+    const cleanPhone = formData.phone.replace(/\D/g, "").slice(-10);
 
-    if (otpInput.length < 4 || otpInput.length > 6) {
-      setOtpError("Please enter the verification code.");
+    if (otpInput.trim().length !== 6) {
+      setOtpError("Please enter the 6-digit verification code.");
       return;
     }
 
@@ -723,14 +738,21 @@ function CheckoutForm() {
       const response = await fetch("/api/checkout/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phoneToVerify, email: userEmail, otp: otpInput }),
+        body: JSON.stringify({ phone: cleanPhone, email: userEmail, otp: otpInput.trim() }),
       });
       const resData = await response.json();
       if (resData.success && resData.verified) {
+        setIsPhoneVerified(true);
         setOtpModalOpen(false);
         setOtpInput("");
         setOtpError("");
-        void processOrder();
+
+        // Auto-proceed with corresponding payment method flow
+        if (formData.paymentMethod === "prepaid") {
+          void processPrepaidPhonePeOrder();
+        } else {
+          void processOrder();
+        }
       } else {
         setOtpError(resData.error || "Incorrect verification code. Please try again.");
       }
@@ -742,14 +764,14 @@ function CheckoutForm() {
   };
 
   const handleResendOtp = async () => {
-    const phoneToVerify = formData.phone;
+    const cleanPhone = formData.phone.replace(/\D/g, "").slice(-10);
     setOtpSending(true);
     setOtpError("");
     try {
       const res = await fetch("/api/checkout/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: phoneToVerify, email: userEmail }),
+        body: JSON.stringify({ phone: cleanPhone, email: userEmail }),
       });
       const data = await res.json();
       if (data.success) {
@@ -1024,24 +1046,28 @@ function CheckoutForm() {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-bold text-[#17231b]">Mobile Number</label>
                 {isPhoneVerified ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                    <Check className="size-3" /> WhatsApp Verified
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                    <Check className="size-3" /> Phone Verified
                   </span>
                 ) : formData.phone.length === 10 ? (
                   <button
                     type="button"
                     onClick={handleSendGuestPhoneOtp}
                     disabled={guestOtpLoading}
-                    className="text-[10px] font-bold text-[#244f31] hover:text-[#80a03c] transition flex items-center gap-1"
+                    className="text-[10px] font-bold text-[#244f31] bg-[#eaf4ec] hover:bg-[#d8edd9] px-2.5 py-0.5 rounded-full transition flex items-center gap-1 border border-[#86efac]/60"
                   >
                     {guestOtpLoading ? (
                       <Loader2 className="size-3 animate-spin" />
                     ) : (
-                      <Sparkles className="size-3" />
+                      <Sparkles className="size-3 text-[#244f31]" />
                     )}
-                    <span>Verify via WhatsApp</span>
+                    <span>Verify via OTP</span>
                   </button>
-                ) : null}
+                ) : (
+                  <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                    OTP Required
+                  </span>
+                )}
               </div>
               <div className="flex rounded-xl border border-[#ddddd9] bg-white overflow-hidden focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31] transition">
                 <span className="bg-[#f1f5f9] text-[#64748b] text-xs font-bold px-3 py-2.5 flex items-center border-r border-[#e2e8f0] select-none shrink-0">
@@ -1484,7 +1510,7 @@ function CheckoutForm() {
         </div>
       </div>
 
-      {/* WhatsApp COD Verification Dialog Modal */}
+      {/* WhatsApp / SMS Order Verification Dialog Modal */}
       {otpModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setOtpModalOpen(false)} />
@@ -1500,16 +1526,18 @@ function CheckoutForm() {
                 <MessageSquare className="size-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#17231b]">WhatsApp Verification</h3>
-                <span className="text-[10px] font-bold text-[#25D366] uppercase tracking-wider">Instant Delivery</span>
+                <h3 className="text-base font-bold text-[#17231b]">
+                  {formData.paymentMethod === "prepaid" ? "Verify Mobile to Pay" : "Verify Mobile to Confirm"}
+                </h3>
+                <span className="text-[10px] font-bold text-[#25D366] uppercase tracking-wider">Instant Verification</span>
               </div>
             </div>
             <p className="mt-2 text-xs text-[#666666] leading-relaxed">
               We have sent a 6-digit verification code to{" "}
               <b className="text-[#17231b]">
-                {formData.phone ? `+91 ${formData.phone}` : userEmail}
+                {formData.phone ? `+91 ${formData.phone.replace(/\D/g, "").slice(-10)}` : userEmail}
               </b>{" "}
-              via WhatsApp to confirm your Cash on Delivery order.
+              via WhatsApp to verify your number and confirm your {formData.paymentMethod === "prepaid" ? "prepaid order" : "order"}.
             </p>
             {otpError && <p className="mt-2 text-xs text-red-500 font-bold text-center bg-red-50 p-2 rounded-lg">{otpError}</p>}
             <form onSubmit={handleVerifyOtp} className="mt-4 space-y-4">
@@ -1525,10 +1553,14 @@ function CheckoutForm() {
               />
               <button
                 type="submit"
-                disabled={otpVerifying || otpInput.length < 6}
+                disabled={otpVerifying || otpInput.trim().length !== 6}
                 className="w-full rounded-xl bg-[#25D366] py-3 text-xs font-black tracking-widest text-white shadow-md hover:bg-[#20ba5a] transition disabled:opacity-50"
               >
-                {otpVerifying ? "VERIFYING..." : "VERIFY & CONFIRM COD"}
+                {otpVerifying
+                  ? "VERIFYING..."
+                  : formData.paymentMethod === "prepaid"
+                  ? "VERIFY & PROCEED TO PAYMENT"
+                  : "VERIFY & CONFIRM ORDER"}
               </button>
             </form>
             <div className="mt-3 text-center">

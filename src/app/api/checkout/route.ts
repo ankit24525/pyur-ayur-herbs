@@ -3,6 +3,7 @@ import { readDB, writeDB } from "@/lib/db";
 import { pushOrderToShiprocket } from "@/lib/shiprocket";
 import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 import { checkCustomerFraudStatus } from "@/lib/fraud-prevention";
+import { extractSessionToken, resolveSession } from "@/lib/session";
 
 export async function POST(request: Request) {
   try {
@@ -15,6 +16,31 @@ export async function POST(request: Request) {
         { success: false, error: "Validation failed. All address fields, 6-digit Pincode and items are required." },
         { status: 400 }
       );
+    }
+
+    const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
+    const db = await readDB();
+
+    // Check authentication: if guest (no active session), phone MUST be verified via OTP
+    const cookieHeader = request.headers.get("cookie");
+    const sessionToken = extractSessionToken(cookieHeader);
+    const sessionUser = await resolveSession(sessionToken);
+
+    if (!sessionUser) {
+      const isVerified = (db.verifiedPhones || []).some(
+        (v: any) => v.phone === cleanPhone && Date.now() < (v.expiresAt || 0)
+      );
+
+      if (!isVerified) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Mobile number verification required. Please verify your phone number via OTP to place your order.",
+            requiresOtp: true,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // COD Abuse & Fraud Prevention Check (Amazon & Flipkart Policy)
@@ -32,8 +58,6 @@ export async function POST(request: Request) {
         );
       }
     }
-
-    const db = await readDB();
 
     const discount = paymentMethod === "prepaid" ? Math.round(subtotal * (db.settings.prepaidDiscount / 100)) : 0;
     const coinsDiscount = parseFloat(coinsRedeemed) || 0;

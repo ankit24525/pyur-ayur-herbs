@@ -45,7 +45,7 @@ export function formatPhoneNumber(phone: string): string {
 export async function saveOTP(
   identifier: string,
   otp: string,
-  purpose: "login" | "reset" | "cod",
+  purpose: "login" | "reset" | "cod" | "checkout",
   ttlMinutes = 10
 ): Promise<void> {
   const db = await readDB();
@@ -53,7 +53,7 @@ export async function saveOTP(
   const expiresAt = Date.now() + ttlMinutes * 60 * 1000;
 
   (db as any).otps = ((db as any).otps || []).filter(
-    (item: any) => !(item.identifier?.toLowerCase() === cleanId && item.purpose === purpose)
+    (item: any) => !(item.identifier?.toLowerCase() === cleanId && (item.purpose === purpose || (purpose === "checkout" && item.purpose === "cod") || (purpose === "cod" && item.purpose === "checkout")))
   );
 
   (db as any).otps.push({
@@ -73,7 +73,7 @@ export async function saveOTP(
 export async function verifyOTP(
   identifier: string,
   otp: string,
-  purpose: "login" | "reset" | "cod"
+  purpose: "login" | "reset" | "cod" | "checkout"
 ): Promise<{ valid: boolean; error?: string }> {
   const db = await readDB();
   const cleanId = identifier.trim().toLowerCase();
@@ -111,7 +111,7 @@ export async function verifyOTP(
 export async function sendWhatsAppOTP(
   phone: string,
   otp: string,
-  purpose: "login" | "reset" | "cod"
+  purpose: "login" | "reset" | "cod" | "checkout"
 ): Promise<{ success: boolean; error?: string; messageId?: string }> {
   const { token, phoneId } = getCredentials();
   const cleanPhone = formatPhoneNumber(phone);
@@ -188,8 +188,8 @@ export async function sendWhatsAppOTP(
       messageBody = `*${otp}* is your verification code for Pure Ayur Herbs. 🙏\n\nValid for 10 minutes. For your security, do not share this code with anyone.\n\n🌿 Pure Ayur Herbs - 100% Certified Ayurvedic Wellness`;
     } else if (purpose === "reset") {
       messageBody = `*${otp}* is your password reset code for Pure Ayur Herbs.\n\nValid for 10 minutes. If you did not request this, please ignore this message.`;
-    } else if (purpose === "cod") {
-      messageBody = `*${otp}* is your Cash on Delivery (COD) order verification code for Pure Ayur Herbs. 📦\n\nValid for 10 minutes. Please enter this code on the checkout screen to confirm your order.`;
+    } else {
+      messageBody = `*${otp}* is your order verification code for Pure Ayur Herbs. 📦\n\nValid for 10 minutes. Please enter this code on the checkout screen to confirm your order.\n\n🌿 Pure Ayur Herbs - 100% Certified Ayurvedic Wellness`;
     }
 
     const textPayload = {

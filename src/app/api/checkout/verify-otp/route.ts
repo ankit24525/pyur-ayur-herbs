@@ -25,11 +25,28 @@ export async function POST(request: Request) {
 
     // 1. Try verifying via WhatsApp OTP (phone)
     if (cleanPhone) {
-      const waVerify = await verifyOTP(cleanPhone, String(otp).trim(), "cod");
+      let waVerify = await verifyOTP(cleanPhone, String(otp).trim(), "checkout");
+      if (!waVerify.valid) {
+        waVerify = await verifyOTP(cleanPhone, String(otp).trim(), "cod");
+      }
+
       if (waVerify.valid) {
+        const db = await readDB();
+        const now = Date.now();
+        db.verifiedPhones = (db.verifiedPhones || []).filter(
+          (v: any) => v.phone !== cleanPhone && now < (v.expiresAt || 0)
+        );
+        db.verifiedPhones.push({
+          phone: cleanPhone,
+          verifiedAt: now,
+          expiresAt: now + 30 * 60 * 1000, // 30 mins
+        });
+        await writeDB(db);
+
         return NextResponse.json({
           success: true,
           verified: true,
+          phone: cleanPhone,
           message: "Order mobile number verified successfully via WhatsApp.",
         });
       }
@@ -37,11 +54,30 @@ export async function POST(request: Request) {
 
     // 2. Try verifying via email OTP (email)
     if (cleanEmail) {
-      const emailVerify = await verifyOTP(cleanEmail, String(otp).trim(), "cod");
+      let emailVerify = await verifyOTP(cleanEmail, String(otp).trim(), "checkout");
+      if (!emailVerify.valid) {
+        emailVerify = await verifyOTP(cleanEmail, String(otp).trim(), "cod");
+      }
+
       if (emailVerify.valid) {
+        const db = await readDB();
+        const now = Date.now();
+        if (cleanPhone) {
+          db.verifiedPhones = (db.verifiedPhones || []).filter(
+            (v: any) => v.phone !== cleanPhone && now < (v.expiresAt || 0)
+          );
+          db.verifiedPhones.push({
+            phone: cleanPhone,
+            verifiedAt: now,
+            expiresAt: now + 30 * 60 * 1000,
+          });
+          await writeDB(db);
+        }
+
         return NextResponse.json({
           success: true,
           verified: true,
+          phone: cleanPhone,
           message: "Order verified successfully.",
         });
       }
@@ -52,10 +88,22 @@ export async function POST(request: Request) {
       const record = legacyOtps.find((o: any) => o.email === cleanEmail);
       if (record && Date.now() <= record.expiresAt && record.otp === String(otp).trim()) {
         db.orderOtps = legacyOtps.filter((o: any) => o.email !== cleanEmail);
+        const now = Date.now();
+        if (cleanPhone) {
+          db.verifiedPhones = (db.verifiedPhones || []).filter(
+            (v: any) => v.phone !== cleanPhone && now < (v.expiresAt || 0)
+          );
+          db.verifiedPhones.push({
+            phone: cleanPhone,
+            verifiedAt: now,
+            expiresAt: now + 30 * 60 * 1000,
+          });
+        }
         await writeDB(db);
         return NextResponse.json({
           success: true,
           verified: true,
+          phone: cleanPhone,
           message: "Order verified successfully.",
         });
       }

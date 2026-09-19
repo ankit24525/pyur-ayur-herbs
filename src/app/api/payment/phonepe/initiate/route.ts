@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { initiatePhonePePayment } from "@/lib/phonepe";
+import { extractSessionToken, resolveSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,30 @@ export async function POST(request: Request) {
       );
     }
 
+    const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
     const db = await readDB();
+
+    // Check authentication: if guest (no active session), phone MUST be verified via OTP
+    const cookieHeader = request.headers.get("cookie");
+    const sessionToken = extractSessionToken(cookieHeader);
+    const sessionUser = await resolveSession(sessionToken);
+
+    if (!sessionUser) {
+      const isVerified = (db.verifiedPhones || []).some(
+        (v: any) => v.phone === cleanPhone && Date.now() < (v.expiresAt || 0)
+      );
+
+      if (!isVerified) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Mobile number verification required. Please verify your phone number via OTP before proceeding to payment.",
+            requiresOtp: true,
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Compute order price values
     const prepaidDiscountPercent = db.settings?.prepaidDiscount ?? 5;

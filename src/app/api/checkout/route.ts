@@ -7,7 +7,7 @@ import { checkCustomerFraudStatus } from "@/lib/fraud-prevention";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, phone, address, pincode, city, state, paymentMethod, items, subtotal, email, altPhone, companyName, landmark } = body;
+    const { name, phone, address, pincode, city, state, paymentMethod, items, subtotal, email, altPhone, companyName, landmark, coinsRedeemed } = body;
 
     // Server-side validation
     if (!name || !phone || !address || !pincode || pincode.length !== 6 || !city || !state || !items || items.length === 0) {
@@ -36,8 +36,9 @@ export async function POST(request: Request) {
     const db = await readDB();
 
     const discount = paymentMethod === "prepaid" ? Math.round(subtotal * (db.settings.prepaidDiscount / 100)) : 0;
+    const coinsDiscount = parseFloat(coinsRedeemed) || 0;
     const shipping = subtotal >= 999 ? 0 : 49;
-    const total = subtotal - discount + shipping;
+    const total = Math.max(0, subtotal - discount - coinsDiscount + shipping);
 
     const orderId = `PYR-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -70,6 +71,9 @@ export async function POST(request: Request) {
         pincode: pincode || "",
         country: "India",
       },
+      subtotal,
+      discount,
+      coinsRedeemed: coinsDiscount,
       total,
       method: paymentMethod === "prepaid" ? "Prepaid" : "COD",
       status: paymentMethod === "cod" ? "Verified" : "Processing",
@@ -79,6 +83,66 @@ export async function POST(request: Request) {
         return `${prod ? prod.name : "Remedy"} x${i.quantity}`;
       }).join(", ")}`,
     };
+
+    // Auto-create or link customer profile in db.users for guest orders
+    try {
+      const cleanCustomerPhone = (phone || "").replace(/\D/g, "").slice(-10);
+      if (cleanCustomerPhone.length === 10) {
+        const users = db.users || [];
+        const existingUser = users.find((u: any) => {
+          const uPhone = (u.phone || "").replace(/\D/g, "").slice(-10);
+          return uPhone === cleanCustomerPhone;
+        });
+
+        if (!existingUser) {
+          const newGuestUser = {
+            id: `USR-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+            name: name,
+            phone: cleanCustomerPhone,
+            email: email || `${cleanCustomerPhone}@pureayurherbs.com`,
+            savedAddresses: [
+              {
+                id: `ADR-${Date.now()}`,
+                name: name,
+                phone: cleanCustomerPhone,
+                street: address,
+                landmark: landmark || "",
+                city: city,
+                state: state,
+                pincode: pincode,
+                isDefault: true,
+              },
+            ],
+            role: "Customer",
+            createdAt: new Date().toISOString(),
+          };
+          db.users = [...users, newGuestUser];
+        } else {
+          // If address list doesn't have this address yet, save it
+          const existingAddresses = existingUser.savedAddresses || [];
+          const hasThisAddress = existingAddresses.some((a: any) => a.pincode === pincode && a.street === address);
+          if (!hasThisAddress) {
+            existingUser.savedAddresses = [
+              ...existingAddresses,
+              {
+                id: `ADR-${Date.now()}`,
+                name: name,
+                phone: cleanCustomerPhone,
+                street: address,
+                landmark: landmark || "",
+                city: city,
+                state: state,
+                pincode: pincode,
+                isDefault: existingAddresses.length === 0,
+              },
+            ];
+            db.users = users.map((u: any) => (u.id === existingUser.id ? existingUser : u));
+          }
+        }
+      }
+    } catch (userErr) {
+      console.error("[Checkout Guest User Auto-Creation Warning]:", userErr);
+    }
 
     db.orders.push(newOrder);
     await writeDB(db);

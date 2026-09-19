@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       companyName,
       landmark,
       couponDiscount: incomingCouponDiscount,
+      coinsRedeemed: incomingCoinsRedeemed,
     } = body;
 
     // Server-side validation
@@ -50,7 +51,8 @@ export async function POST(request: Request) {
     const prepaidDiscountPercent = db.settings?.prepaidDiscount ?? 5;
     const prepaidDiscount = Math.round((subtotal * prepaidDiscountPercent) / 100);
     const couponDiscount = Number(incomingCouponDiscount) || 0;
-    const totalDiscount = prepaidDiscount + couponDiscount;
+    const coinsDiscount = Number(incomingCoinsRedeemed) || 0;
+    const totalDiscount = prepaidDiscount + couponDiscount + coinsDiscount;
 
     const freeThreshold = db.settings?.shipping?.freeThreshold ?? 999;
     const baseRate = db.settings?.shipping?.baseRate ?? 49;
@@ -88,6 +90,10 @@ export async function POST(request: Request) {
         pincode: pincode || "",
         country: "India",
       },
+      subtotal,
+      discount: prepaidDiscount,
+      couponDiscount,
+      coinsRedeemed: coinsDiscount,
       total,
       method: "PhonePe",
       status: "Pending Payment",

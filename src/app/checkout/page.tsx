@@ -18,6 +18,14 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  User,
+  Coins,
+  MapPin,
+  Check,
+  Sparkles,
+  Loader2,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
@@ -33,20 +41,89 @@ function CheckoutForm() {
   const variantNameParam = searchParams.get("variantName");
   const variantImageParam = searchParams.get("variantImage");
 
-  useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.success) {
-          const currentUrl = window.location.pathname + window.location.search;
-          router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userCoins, setUserCoins] = useState<number>(0);
+  const [redeemCoins, setRedeemCoins] = useState(false);
+
+  // In-Checkout Sign-In Modal / Drawer State
+  const [inCheckoutLoginOpen, setInCheckoutLoginOpen] = useState(false);
+  const [inCheckoutLoginMode, setInCheckoutLoginMode] = useState<"whatsapp" | "email">("whatsapp");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginPhoneName, setLoginPhoneName] = useState("");
+  const [loginOtp, setLoginOtp] = useState("");
+  const [loginOtpSent, setLoginOtpSent] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [loginSuccessMsg, setLoginSuccessMsg] = useState("");
+
+  // Guest Phone Verification State
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [guestOtpDrawerOpen, setGuestOtpDrawerOpen] = useState(false);
+  const [guestOtpInput, setGuestOtpInput] = useState("");
+  const [guestOtpLoading, setGuestOtpLoading] = useState(false);
+  const [guestOtpError, setGuestOtpError] = useState("");
+
+  // Check authentication status without forced redirection
+  const checkAuthStatus = async () => {
+    try {
+      const res = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          setCurrentUser(data.user);
+          if (data.user.email) setUserEmail(data.user.email);
+          setFormData((prev) => ({
+            ...prev,
+            name: data.user.name || prev.name,
+            phone: data.user.phone || prev.phone,
+          }));
+          if (data.user.phone) {
+            setIsPhoneVerified(true);
+          }
+
+          // Auto-fill default address if form address is empty
+          if (Array.isArray(data.user.savedAddresses) && data.user.savedAddresses.length > 0) {
+            const defAddr = data.user.savedAddresses.find((a: any) => a.isDefault) || data.user.savedAddresses[0];
+            if (defAddr) {
+              setFormData((prev) => ({
+                ...prev,
+                name: defAddr.name || prev.name,
+                phone: defAddr.phone || prev.phone,
+                address: prev.address || defAddr.street,
+                landmark: prev.landmark || defAddr.landmark || "",
+                city: prev.city || defAddr.city,
+                state: prev.state || defAddr.state,
+                pincode: prev.pincode || defAddr.pincode,
+              }));
+            }
+          }
+
+          // Fetch user coins
+          const cleanPhone = (data.user.phone || "").replace(/\D/g, "").slice(-10);
+          fetch(`/api/profile/orders?phone=${cleanPhone}&email=${encodeURIComponent(data.user.email || "")}`)
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.success && typeof d.coinsBalance === "number") {
+                setUserCoins(d.coinsBalance);
+              }
+            })
+            .catch(() => {});
+        } else {
+          setCurrentUser(null);
         }
-      })
-      .catch(() => {
-        const currentUrl = window.location.pathname + window.location.search;
-        router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`);
-      });
-  }, [router]);
+      } else {
+        setCurrentUser(null);
+      }
+    } catch {
+      setCurrentUser(null);
+    }
+  };
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
 
   const successParam = searchParams.get("success");
   const orderIdParam = searchParams.get("orderId");
@@ -209,24 +286,211 @@ function CheckoutForm() {
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
 
-  // Load logged-in user info for auto-fill
-  useEffect(() => {
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.user) {
-          if (data.user.email) setUserEmail(data.user.email);
-          if (data.user.name || data.user.phone) {
-            setFormData((prev) => ({
-              ...prev,
-              name: data.user.name || prev.name,
-              phone: data.user.phone || prev.phone,
-            }));
-          }
-        }
-      })
-      .catch(() => {});
-  }, []);
+  // In-Checkout WhatsApp OTP send
+  const handleSendInCheckoutWhatsAppOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLoginError("");
+    setLoginSuccessMsg("");
+    const clean = loginPhone.replace(/\D/g, "").slice(-10);
+    if (clean.length !== 10) {
+      setLoginError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    setLoginLoading(true);
+    try {
+      const res = await fetch("/api/auth/whatsapp/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: clean }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLoginOtpSent(true);
+        setLoginSuccessMsg(`Verification code sent to WhatsApp on +91 ${clean}`);
+      } else {
+        setLoginError(data.error || "Failed to send WhatsApp OTP.");
+      }
+    } catch {
+      setLoginError("Connection failed. Please try again.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // In-Checkout WhatsApp OTP verify
+  const handleVerifyInCheckoutWhatsAppOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    const clean = loginPhone.replace(/\D/g, "").slice(-10);
+    if (clean.length !== 10) {
+      setLoginError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (loginOtp.trim().length !== 6) {
+      setLoginError("Please enter the 6-digit verification code.");
+      return;
+    }
+    setLoginLoading(true);
+    try {
+      const res = await fetch("/api/auth/whatsapp/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: clean,
+          otp: loginOtp.trim(),
+          name: loginPhoneName.trim() || formData.name,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        try {
+          localStorage.setItem("pyur_user", JSON.stringify(data.user));
+          window.dispatchEvent(new Event("pyur_auth_change"));
+        } catch {}
+        await checkAuthStatus();
+        setInCheckoutLoginOpen(false);
+        setLoginOtp("");
+        setLoginOtpSent(false);
+      } else {
+        setLoginError(data.error || "Incorrect verification code.");
+      }
+    } catch {
+      setLoginError("Verification failed. Please try again.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // In-Checkout Email & Password login
+  const handleInCheckoutEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    if (!loginEmail || !loginPassword) {
+      setLoginError("Please enter both email and password.");
+      return;
+    }
+    setLoginLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        try {
+          localStorage.setItem("pyur_user", JSON.stringify(data.user));
+          window.dispatchEvent(new Event("pyur_auth_change"));
+        } catch {}
+        await checkAuthStatus();
+        setInCheckoutLoginOpen(false);
+        setLoginEmail("");
+        setLoginPassword("");
+      } else {
+        setLoginError(data.error || "Invalid email or password.");
+      }
+    } catch {
+      setLoginError("Sign in failed. Please try again.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // In-Checkout Sign Out
+  const handleCheckoutSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      try {
+        localStorage.removeItem("pyur_user");
+        window.dispatchEvent(new Event("pyur_auth_change"));
+      } catch {}
+      setCurrentUser(null);
+      setUserCoins(0);
+      setRedeemCoins(false);
+      setIsPhoneVerified(false);
+    } catch {}
+  };
+
+  // Guest inline phone verification
+  const handleSendGuestPhoneOtp = async () => {
+    const clean = formData.phone.replace(/\D/g, "").slice(-10);
+    if (clean.length !== 10) {
+      alert("Please enter a valid 10-digit mobile number first.");
+      return;
+    }
+    setGuestOtpLoading(true);
+    setGuestOtpError("");
+    try {
+      const res = await fetch("/api/auth/whatsapp/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: clean }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGuestOtpDrawerOpen(true);
+      } else {
+        alert(data.error || "Failed to send WhatsApp verification code.");
+      }
+    } catch {
+      alert("Failed to send OTP. Please check your internet connection.");
+    } finally {
+      setGuestOtpLoading(false);
+    }
+  };
+
+  const handleVerifyGuestPhoneOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = formData.phone.replace(/\D/g, "").slice(-10);
+    if (guestOtpInput.trim().length !== 6) {
+      setGuestOtpError("Please enter the 6-digit code.");
+      return;
+    }
+    setGuestOtpLoading(true);
+    setGuestOtpError("");
+    try {
+      const res = await fetch("/api/auth/whatsapp/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: clean,
+          otp: guestOtpInput.trim(),
+          name: formData.name,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        setIsPhoneVerified(true);
+        setGuestOtpDrawerOpen(false);
+        setGuestOtpInput("");
+        try {
+          localStorage.setItem("pyur_user", JSON.stringify(data.user));
+          window.dispatchEvent(new Event("pyur_auth_change"));
+        } catch {}
+        await checkAuthStatus();
+      } else {
+        setGuestOtpError(data.error || "Incorrect verification code.");
+      }
+    } catch {
+      setGuestOtpError("Verification failed. Please try again.");
+    } finally {
+      setGuestOtpLoading(false);
+    }
+  };
+
+  // Select Saved Address
+  const selectSavedAddress = (addr: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: addr.name || prev.name,
+      phone: addr.phone || prev.phone,
+      address: addr.street || prev.address,
+      landmark: addr.landmark || prev.landmark,
+      city: addr.city || prev.city,
+      state: addr.state || prev.state,
+      pincode: addr.pincode || prev.pincode,
+    }));
+  };
 
   // Settings & Coupons state
   const [settings, setSettings] = useState<any>({
@@ -394,10 +658,13 @@ function CheckoutForm() {
     }
   }
 
+  const maxCoinsRedeemable = Math.min(userCoins, Math.floor(subtotal * 0.2));
+  const coinsDiscount = currentUser && redeemCoins ? maxCoinsRedeemable : 0;
+
   const freeThreshold = settings.shipping?.freeThreshold ?? 999;
   const baseRate = settings.shipping?.baseRate ?? 49;
   const shipping = subtotal >= freeThreshold ? 0 : baseRate;
-  const total = subtotal - prepaidDiscount - couponDiscount + shipping;
+  const total = Math.max(0, subtotal - prepaidDiscount - couponDiscount - coinsDiscount + shipping);
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -510,6 +777,7 @@ function CheckoutForm() {
           items: [{ productId: product.id, quantity: qty }],
           appliedCoupon: appliedCoupon?.code,
           couponDiscount,
+          coinsRedeemed: coinsDiscount,
         }),
       });
       const resData = await response.json();
@@ -536,6 +804,7 @@ function CheckoutForm() {
           email: userEmail,
           subtotal,
           items: [{ productId: product.id, quantity: qty }],
+          coinsRedeemed: coinsDiscount,
         }),
       });
       const resData = await response.json();
@@ -594,6 +863,142 @@ function CheckoutForm() {
     <div className="grid gap-8 lg:grid-cols-12">
       {/* Left Form Panel */}
       <form onSubmit={handleCheckoutSubmit} className="space-y-6 lg:col-span-7">
+        {/* User Account / Instant Guest Checkout Top Banner */}
+        {currentUser ? (
+          <div className="rounded-2xl border border-emerald-200 bg-[#eef5df] p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-[#244f31] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                <User className="size-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-[#17231b]">
+                    Logged in as <span className="text-[#244f31]">{currentUser.name || "Customer"}</span>
+                  </span>
+                  <span className="text-[10px] bg-[#244f31]/10 text-[#244f31] font-bold px-2 py-0.5 rounded-full">
+                    Account Active
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#666666]">
+                  {currentUser.phone ? `+91 ${currentUser.phone}` : ""} {currentUser.email ? `• ${currentUser.email}` : ""}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCheckoutSignOut}
+              className="text-xs text-red-600 hover:text-red-700 font-bold flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 bg-white hover:bg-red-50 transition shrink-0"
+            >
+              <LogOut className="size-3.5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-amber-200 bg-linear-to-r from-amber-50 to-orange-50 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-amber-500/15 text-amber-700 flex items-center justify-center font-bold text-base shrink-0">
+                ⚡
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-[#17231b]">
+                    Instant Guest Checkout
+                  </span>
+                  <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">
+                    No Sign-in Needed
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-900/80">
+                  Fill details below to place order immediately, or log in to use saved addresses & coins.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginError("");
+                setLoginSuccessMsg("");
+                setInCheckoutLoginOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#244f31] text-white text-xs font-black hover:bg-[#1d3b24] shadow-sm transition shrink-0"
+            >
+              <LogIn className="size-3.5" />
+              <span>Log In / Sign In</span>
+            </button>
+          </div>
+        )}
+
+        {/* Saved Addresses for Logged-in Customer */}
+        {currentUser && Array.isArray(currentUser.savedAddresses) && currentUser.savedAddresses.length > 0 && (
+          <div className="rounded-2xl border border-[#ddddd9] bg-white p-5 shadow-sm">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#17231b] flex items-center gap-1.5 mb-3">
+              <MapPin className="size-4 text-[#80a03c]" />
+              <span>Select From Saved Addresses</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {currentUser.savedAddresses.map((addr: any, idx: number) => {
+                const isSelected =
+                  formData.address === addr.street && formData.pincode === addr.pincode;
+                return (
+                  <div
+                    key={addr.id || idx}
+                    onClick={() => selectSavedAddress(addr)}
+                    className={`cursor-pointer rounded-xl border p-3 text-xs transition relative ${
+                      isSelected
+                        ? "border-[#244f31] bg-[#eef5df] ring-1 ring-[#244f31]"
+                        : "border-[#ddddd9] bg-white hover:border-[#80a03c]"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <span className="font-bold text-[#17231b]">{addr.name || currentUser.name}</span>
+                      {isSelected && (
+                        <span className="text-[10px] font-bold text-[#244f31] bg-white px-1.5 py-0.5 rounded border border-[#244f31]/30">
+                          Selected
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-[11px] text-[#666666] line-clamp-2">
+                      {addr.street}{addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.pincode}
+                    </p>
+                    <p className="mt-1 text-[10px] text-gray-500 font-medium">📞 +91 {addr.phone}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Pure Coins Redemption Toggle */}
+        {currentUser && userCoins > 0 && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 shadow-sm flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-amber-500/20 text-amber-600 flex items-center justify-center font-bold shrink-0">
+                <Coins className="size-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-[#17231b]">Pure Coins Available</span>
+                  <span className="text-xs font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                    🪙 {userCoins} Coins
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-900/80">
+                  Redeem up to ₹{maxCoinsRedeemable} (20% max discount, 1 Coin = ₹1)
+                </p>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none shrink-0 bg-white border border-amber-300 px-3 py-1.5 rounded-xl shadow-xs">
+              <input
+                type="checkbox"
+                checked={redeemCoins}
+                onChange={(e) => setRedeemCoins(e.target.checked)}
+                className="size-4 rounded border-amber-400 accent-[#244f31]"
+              />
+              <span className="text-xs font-bold text-[#17231b]">Apply Coins</span>
+            </label>
+          </div>
+        )}
+
         {/* Customer Details Card (Matching Shiprocket / Screenshot Design) */}
         <div className="rounded-2xl border border-[#ddddd9] bg-white p-6 shadow-sm">
           <h3 className="text-base sm:text-lg font-black text-[#17231b] mb-5">
@@ -616,7 +1021,28 @@ function CheckoutForm() {
 
             {/* Row 1: Mobile Number */}
             <div>
-              <label className="block text-xs font-bold text-[#17231b] mb-1.5">Mobile Number</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-[#17231b]">Mobile Number</label>
+                {isPhoneVerified ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    <Check className="size-3" /> WhatsApp Verified
+                  </span>
+                ) : formData.phone.length === 10 ? (
+                  <button
+                    type="button"
+                    onClick={handleSendGuestPhoneOtp}
+                    disabled={guestOtpLoading}
+                    className="text-[10px] font-bold text-[#244f31] hover:text-[#80a03c] transition flex items-center gap-1"
+                  >
+                    {guestOtpLoading ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="size-3" />
+                    )}
+                    <span>Verify via WhatsApp</span>
+                  </button>
+                ) : null}
+              </div>
               <div className="flex rounded-xl border border-[#ddddd9] bg-white overflow-hidden focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31] transition">
                 <span className="bg-[#f1f5f9] text-[#64748b] text-xs font-bold px-3 py-2.5 flex items-center border-r border-[#e2e8f0] select-none shrink-0">
                   +91
@@ -627,7 +1053,14 @@ function CheckoutForm() {
                   pattern="[0-9]{10}"
                   maxLength={10}
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "") })}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "");
+                    setFormData({ ...formData, phone: val });
+                    if (val !== formData.phone) {
+                      setIsPhoneVerified(false);
+                      setGuestOtpDrawerOpen(false);
+                    }
+                  }}
                   placeholder="xxxxxxxxxx"
                   className="flex-1 px-3.5 py-2.5 text-xs outline-none bg-transparent text-[#17231b] min-w-0"
                 />
@@ -640,6 +1073,46 @@ function CheckoutForm() {
                   {maskPhone ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+
+              {/* Inline Guest Phone OTP Drawer */}
+              {guestOtpDrawerOpen && !isPhoneVerified && (
+                <div className="mt-2.5 p-3 rounded-xl bg-[#f0fdf4] border border-[#86efac] animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold text-emerald-900 flex items-center gap-1">
+                      <MessageSquare className="size-3 text-emerald-600" />
+                      Enter 6-digit WhatsApp OTP
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setGuestOtpDrawerOpen(false)}
+                      className="text-gray-400 hover:text-gray-600 text-xs"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                  {guestOtpError && (
+                    <p className="text-[10px] text-red-600 font-bold mb-1.5">{guestOtpError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={guestOtpInput}
+                      onChange={(e) => setGuestOtpInput(e.target.value.replace(/\D/g, ""))}
+                      placeholder="6-digit OTP"
+                      className="flex-1 tracking-widest text-center font-black text-sm px-3 py-1.5 bg-white border border-[#86efac] rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyGuestPhoneOtp}
+                      disabled={guestOtpLoading || guestOtpInput.length !== 6}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition disabled:opacity-50 flex items-center gap-1"
+                    >
+                      {guestOtpLoading ? <Loader2 className="size-3 animate-spin" /> : "Verify"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Row 2: Email (Optional) */}
@@ -965,6 +1438,14 @@ function CheckoutForm() {
                 <span>-₹{couponDiscount}</span>
               </div>
             )}
+            {coinsDiscount > 0 && (
+              <div className="flex justify-between text-amber-600 font-bold">
+                <span className="flex items-center gap-1">
+                  <Coins className="size-3.5" /> Pure Coins Redeemed
+                </span>
+                <span>-₹{coinsDiscount}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>Shipping Fee</span>
               <span className="font-bold text-[#17231b]">
@@ -1060,6 +1541,211 @@ function CheckoutForm() {
                 {otpSending ? "Sending new code..." : "Didn't receive code? Resend on WhatsApp"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-Checkout Dual-Mode Login / Sign-In Modal */}
+      {inCheckoutLoginOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            onClick={() => setInCheckoutLoginOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <button
+              onClick={() => setInCheckoutLoginOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-1 text-[#666666] hover:bg-[#f8faf1] transition"
+            >
+              <X className="size-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="h-9 w-9 rounded-full bg-[#244f31]/10 text-[#244f31] flex items-center justify-center">
+                <LogIn className="size-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-[#17231b]">Sign In to Pure Ayur Herbs</h3>
+                <p className="text-[11px] text-[#666666]">Access saved addresses & redeem Pure Coins</p>
+              </div>
+            </div>
+
+            {/* Login Mode Tabs */}
+            <div className="mt-4 flex rounded-xl bg-gray-100 p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setInCheckoutLoginMode("whatsapp");
+                  setLoginError("");
+                }}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                  inCheckoutLoginMode === "whatsapp"
+                    ? "bg-white text-[#244f31] shadow-xs"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <MessageSquare className="size-3.5 text-[#25D366]" />
+                <span>WhatsApp OTP</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInCheckoutLoginMode("email");
+                  setLoginError("");
+                }}
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                  inCheckoutLoginMode === "email"
+                    ? "bg-white text-[#244f31] shadow-xs"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <span>Email & Password</span>
+              </button>
+            </div>
+
+            {loginError && (
+              <div className="mt-3 p-2.5 bg-red-50 border border-red-200 text-red-600 text-xs font-semibold rounded-xl flex items-center gap-2">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>{loginError}</span>
+              </div>
+            )}
+            {loginSuccessMsg && (
+              <div className="mt-3 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+                <Check className="size-4 shrink-0" />
+                <span>{loginSuccessMsg}</span>
+              </div>
+            )}
+
+            {inCheckoutLoginMode === "whatsapp" ? (
+              <form
+                onSubmit={loginOtpSent ? handleVerifyInCheckoutWhatsAppOtp : handleSendInCheckoutWhatsAppOtp}
+                className="mt-4 space-y-3"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-[#17231b] mb-1">Mobile Number</label>
+                  <div className="flex rounded-xl border border-[#ddddd9] bg-white overflow-hidden focus-within:border-[#244f31] transition">
+                    <span className="bg-[#f1f5f9] text-[#64748b] text-xs font-bold px-3 py-2 flex items-center border-r border-[#e2e8f0]">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      required
+                      disabled={loginOtpSent}
+                      value={loginPhone}
+                      onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, ""))}
+                      placeholder="10-digit mobile number"
+                      className="flex-1 px-3 py-2 text-xs outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {!loginOtpSent && (
+                  <div>
+                    <label className="block text-xs font-bold text-[#17231b] mb-1">
+                      Your Name <span className="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={loginPhoneName}
+                      onChange={(e) => setLoginPhoneName(e.target.value)}
+                      placeholder="Enter your name"
+                      className="w-full rounded-xl border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                    />
+                  </div>
+                )}
+
+                {loginOtpSent && (
+                  <div>
+                    <label className="block text-xs font-bold text-[#17231b] mb-1">Enter 6-digit WhatsApp Code</label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      required
+                      autoFocus
+                      value={loginOtp}
+                      onChange={(e) => setLoginOtp(e.target.value.replace(/\D/g, ""))}
+                      placeholder="XXXXXX"
+                      className="w-full tracking-[0.25em] text-center font-black text-lg rounded-xl border-2 border-emerald-400 px-3 py-2 outline-none focus:border-emerald-600"
+                    />
+                    <div className="mt-1 flex justify-between items-center">
+                      <button
+                        type="button"
+                        onClick={handleSendInCheckoutWhatsAppOtp}
+                        disabled={loginLoading}
+                        className="text-[11px] text-[#244f31] hover:underline font-semibold"
+                      >
+                        Resend Code
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLoginOtpSent(false)}
+                        className="text-[11px] text-gray-500 hover:underline"
+                      >
+                        Change Number
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full rounded-xl bg-[#244f31] py-3 text-xs font-black tracking-wider text-white hover:bg-[#1d3b24] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loginLoading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : loginOtpSent ? (
+                    "VERIFY & SIGN IN"
+                  ) : (
+                    "SEND WHATSAPP OTP"
+                  )}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleInCheckoutEmailLogin} className="mt-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#17231b] mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full rounded-xl border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#17231b] mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full rounded-xl border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full rounded-xl bg-[#244f31] py-3 text-xs font-black tracking-wider text-white hover:bg-[#1d3b24] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loginLoading ? <Loader2 className="size-4 animate-spin" /> : "SIGN IN"}
+                </button>
+              </form>
+            )}
+
+            <p className="mt-4 text-center text-[11px] text-gray-500">
+              Prefer to checkout quickly?{" "}
+              <button
+                type="button"
+                onClick={() => setInCheckoutLoginOpen(false)}
+                className="font-bold text-[#244f31] hover:underline"
+              >
+                Continue as Guest
+              </button>
+            </p>
           </div>
         </div>
       )}

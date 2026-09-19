@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
+import { cancelOrderOnShiprocket } from "@/lib/shiprocket";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -66,6 +67,16 @@ export async function POST(request: Request) {
       const idx = db.orders.findIndex((o) => o.id === body.orderId);
       if (idx !== -1) {
         db.orders[idx].status = body.newStatus;
+        if (body.newStatus === "Cancelled") {
+          db.orders[idx].cancellationReason = body.cancellationReason || "Cancelled by Admin";
+          db.orders[idx].cancelledBy = "Admin";
+          db.orders[idx].cancellationDate = new Date().toISOString();
+          try {
+            await cancelOrderOnShiprocket(db.orders[idx], db);
+          } catch (srErr) {
+            console.error("[Admin Update Order Shiprocket Cancel Error]:", srErr);
+          }
+        }
         const success = await writeDB(db);
         if (!success) {
           return NextResponse.json({ success: false, error: "Database write failed." }, { status: 500 });

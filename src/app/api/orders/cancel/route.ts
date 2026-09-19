@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
-import { getShiprocketToken, cancelShiprocketOrder } from "@/lib/shiprocket";
+import { cancelOrderOnShiprocket } from "@/lib/shiprocket";
 import { sendOrderCancellationWhatsApp } from "@/lib/whatsapp-notifications";
 import { checkCustomerFraudStatus } from "@/lib/fraud-prevention";
 
@@ -75,14 +75,14 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // 3. Shipped / In Transit / Out for Delivery (Amazon & Flipkart Doorstep Refusal Policy)
-    const isDispatched = currentStatus.includes("shipped") || currentStatus.includes("transit") || currentStatus.includes("out for delivery");
-    if (isDispatched) {
+    // 3. Out for delivery or in-transit with courier (Amazon & Flipkart Doorstep Refusal Policy)
+    const isAlreadyInTransit = currentStatus.includes("in transit") || currentStatus.includes("out for delivery");
+    if (isAlreadyInTransit) {
       return NextResponse.json({
         success: false,
         eligibleForDoorstepRefusal: true,
         isDispatched: true,
-        error: "Your parcel is already dispatched with our courier partner and cannot be cancelled online. Like Amazon and Flipkart, you can simply refuse delivery at your doorstep when the courier executive arrives. The package will be returned to us safely with ₹0 charge or a full refund for prepaid orders.",
+        error: "Your parcel is already in transit with our courier partner and cannot be cancelled online. Like Amazon and Flipkart, you can simply refuse delivery at your doorstep when the courier executive arrives. The package will be returned to us safely with ₹0 charge or a full refund for prepaid orders.",
         order,
       }, { status: 400 });
     }
@@ -100,28 +100,23 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // 4. Pre-dispatch Cancellation (Pending, Processing, Confirmed)
-    let shiprocketCancelStatus = null;
-    if (order.shiprocketOrderId) {
-      try {
-        const srConfig = db.settings?.shiprocket || {};
-        const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;
-        const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD;
-        if (srEmail && srPassword) {
-          const token = await getShiprocketToken(srEmail, srPassword);
-          if (token) {
-            shiprocketCancelStatus = await cancelShiprocketOrder(order.shiprocketOrderId, token);
-          }
-        }
-      } catch (srErr) {
-        console.error("[Cancel Route Shiprocket Error]:", srErr);
-      }
+    // 4. Cancel on Shiprocket
+    const srCancelResult = await cancelOrderOnShiprocket(order, db);
+    if (!srCancelResult.success && srCancelResult.alreadyDispatched) {
+      return NextResponse.json({
+        success: false,
+        eligibleForDoorstepRefusal: true,
+        isDispatched: true,
+        error: "Your parcel is already dispatched with our courier partner and cannot be cancelled online. Like Amazon and Flipkart, you can simply refuse delivery at your doorstep when the courier executive arrives. The package will be returned to us safely with ₹0 charge or a full refund for prepaid orders.",
+        order,
+      }, { status: 400 });
     }
 
-    const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid";
+    const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid" || order.method === "PhonePe";
     const cancellationReasonText = reason || "Customer requested cancellation";
 
     order.status = "Cancelled";
+    order.shiprocketStatus = "Cancelled";
     order.cancellationReason = cancellationReasonText;
     order.cancellationComments = comments || "";
     order.cancellationDate = new Date().toISOString();
@@ -145,7 +140,7 @@ export async function POST(request: Request) {
       success: true,
       message: "Your order has been cancelled successfully.",
       order,
-      shiprocketCancelled: shiprocketCancelStatus?.success ?? false,
+      shiprocketCancelled: srCancelResult.success,
     });
   } catch (error: any) {
     console.error("[Cancel Order API Error]:", error);

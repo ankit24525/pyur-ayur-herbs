@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
+import { cancelOrderOnShiprocket } from "@/lib/shiprocket";
 
 export async function GET() {
   const db = await readDB();
@@ -19,6 +20,18 @@ export async function POST(request: Request) {
 
     const prevStatus = db.orders[orderIndex].status;
     db.orders[orderIndex].status = newStatus;
+
+    if (newStatus === "Cancelled") {
+      db.orders[orderIndex].cancellationReason = "Cancelled by Admin";
+      db.orders[orderIndex].cancelledBy = "Admin";
+      db.orders[orderIndex].cancellationDate = new Date().toISOString();
+      try {
+        await cancelOrderOnShiprocket(db.orders[orderIndex], db);
+      } catch (srErr) {
+        console.error("[Admin Orders Route Shiprocket Cancel Error]:", srErr);
+      }
+    }
+
     await writeDB(db);
 
     // If status changed to Confirmed, send WhatsApp Order Confirmation to customer

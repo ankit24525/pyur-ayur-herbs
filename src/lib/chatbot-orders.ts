@@ -1,5 +1,5 @@
 import { readDB, writeDB } from "./db";
-import { getShiprocketToken, cancelShiprocketOrder, getShiprocketTracking } from "./shiprocket";
+import { getShiprocketToken, cancelShiprocketOrder, cancelOrderOnShiprocket, getShiprocketTracking } from "./shiprocket";
 import { checkCustomerFraudStatus } from "./fraud-prevention";
 
 export interface OrderLookupResult {
@@ -441,21 +441,11 @@ To cancel this order, please speak with our support desk directly:
       };
     }
 
-    // 4. Pre-dispatch Cancellation
-    if (order.shiprocketOrderId) {
-      try {
-        const srConfig = db.settings?.shiprocket || {};
-        const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;
-        const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD;
-        if (srEmail && srPassword) {
-          const token = await getShiprocketToken(srEmail, srPassword);
-          if (token) {
-            await cancelShiprocketOrder(order.shiprocketOrderId, token);
-          }
-        }
-      } catch (srErr) {
-        console.error("[Shiprocket Cancellation Error in Chatbot]:", srErr);
-      }
+    // 4. Pre-dispatch Cancellation via Shiprocket
+    try {
+      await cancelOrderOnShiprocket(order, db);
+    } catch (srErr) {
+      console.error("[Shiprocket Cancellation Error in Chatbot]:", srErr);
     }
 
     const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid";

@@ -47,6 +47,8 @@ import {
   Lock,
   AlertCircle,
   AlertTriangle,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
 
 function ProductVariantsEditor({
@@ -700,7 +702,6 @@ export default function AdminDashboard() {
   };
 
   const [loading, setLoading] = useState(true);
-  const [showSrPassword, setShowSrPassword] = useState(false);
 
   // Dynamic Database State loaded from process database
   const [dbData, setDbData] = useState<any>({
@@ -1113,6 +1114,9 @@ export default function AdminDashboard() {
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [orderPaymentFilter, setOrderPaymentFilter] = useState("All");
   const [pushingSrOrderId, setPushingSrOrderId] = useState<string | null>(null);
+  const [srTesting, setSrTesting] = useState(false);
+  const [srTestResult, setSrTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [showSrPassword, setShowSrPassword] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -4801,16 +4805,36 @@ export default function AdminDashboard() {
                                         setPushingSrOrderId(null);
                                       }
                                     }}
-                                    disabled={pushingSrOrderId === o.id}
-                                    className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
-                                      o.shiprocketStatus === "Pushed"
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                        : "bg-[#244f31] text-white border-[#244f31] hover:bg-[#1c3e26]"
-                                    }`}
-                                    title={o.shiprocketStatus === "Pushed" ? `SR Order ID: ${o.shiprocketOrderId || 'Pushed'}` : "Push Order to Shiprocket"}
-                                  >
-                                    {pushingSrOrderId === o.id ? "Pushing..." : o.shiprocketStatus === "Pushed" ? "📦 Pushed" : "🚀 Push SR"}
-                                  </button>
+                                     disabled={pushingSrOrderId === o.id || o.shiprocketStatus === "Cancelled"}
+                                     className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                       o.shiprocketStatus === "Cancelled"
+                                         ? "bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
+                                         : o.shiprocketStatus === "Failed"
+                                         ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
+                                         : o.shiprocketStatus === "Pushed"
+                                         ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                         : "bg-[#244f31] text-white border-[#244f31] hover:bg-[#1c3e26]"
+                                     }`}
+                                     title={
+                                       o.shiprocketStatus === "Cancelled"
+                                         ? "Shipment cancelled on Shiprocket"
+                                         : o.shiprocketStatus === "Failed"
+                                         ? `Shiprocket Error: ${o.shiprocketError || "Failed"} - Click to retry`
+                                         : o.shiprocketStatus === "Pushed"
+                                         ? `SR Order ID: ${o.shiprocketOrderId || "Pushed"}`
+                                         : "Push Order to Shiprocket"
+                                     }
+                                   >
+                                     {pushingSrOrderId === o.id
+                                       ? "Pushing..."
+                                       : o.shiprocketStatus === "Cancelled"
+                                       ? "❌ Cancelled"
+                                       : o.shiprocketStatus === "Failed"
+                                       ? "⚠️ Retry SR"
+                                       : o.shiprocketStatus === "Pushed"
+                                       ? "📦 Pushed"
+                                       : "🚀 Push SR"}
+                                   </button>
                                   <span className="text-gray-300">|</span>
                                   <button
                                     type="button"
@@ -8720,26 +8744,216 @@ export default function AdminDashboard() {
 
             {/* 9. Shipping Panel */}
             {activeMenu === "shipping" && (
-              <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b]">🚚 Courier & Shipping Rates</h3>
-                <div className="grid gap-4 sm:grid-cols-2 text-xs">
-                  <div className="border p-4 rounded-xl bg-[#f8faf1]">
-                    <label className="block font-bold">Free Delivery Threshold Amount (₹)</label>
-                    <input
-                      type="number"
-                      value={dbData.settings.shipping.freeThreshold}
-                      onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, freeThreshold: parseInt(e.target.value) })}
-                      className="mt-2 w-full rounded border p-2 outline-none focus:border-[#244f31]"
-                    />
+              <div className="space-y-6">
+                {/* 1. General Courier & Shipping Rates */}
+                <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b] flex items-center gap-2">
+                    <Truck className="size-4 text-[#80a03c]" />
+                    <span>Courier & Delivery Charges</span>
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2 text-xs">
+                    <div className="border p-4 rounded-xl bg-[#f8faf1]">
+                      <label className="block font-bold text-[#17231b]">Free Delivery Threshold Amount (₹)</label>
+                      <p className="text-[10px] text-[#666666] mt-0.5">Orders above this amount get Free Shipping</p>
+                      <input
+                        type="number"
+                        value={dbData.settings.shipping?.freeThreshold ?? 999}
+                        onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, freeThreshold: parseInt(e.target.value) || 0 })}
+                        className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
+                      />
+                    </div>
+                    <div className="border p-4 rounded-xl bg-[#f8faf1]">
+                      <label className="block font-bold text-[#17231b]">Base Shipping Courier Fee (₹)</label>
+                      <p className="text-[10px] text-[#666666] mt-0.5">Charged when cart is below free delivery threshold</p>
+                      <input
+                        type="number"
+                        value={dbData.settings.shipping?.baseRate ?? 49}
+                        onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, baseRate: parseInt(e.target.value) || 0 })}
+                        className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
+                      />
+                    </div>
                   </div>
-                  <div className="border p-4 rounded-xl bg-[#f8faf1]">
-                    <label className="block font-bold">Base Shipping Courier Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={dbData.settings.shipping.baseRate}
-                      onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, baseRate: parseInt(e.target.value) })}
-                      className="mt-2 w-full rounded border p-2 outline-none focus:border-[#244f31]"
-                    />
+                </div>
+
+                {/* 2. Automated Shiprocket Direct API Integration */}
+                <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#ddddd9]">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base font-black text-[#17231b]">🚀 Shiprocket Automated Logistics API</span>
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">
+                          Direct Auto-Sync
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#666666] mt-1">
+                        Automatically pushes customer orders (COD & Prepaid) to Shiprocket upon placement, and automatically voids/cancels shipments when customers cancel.
+                      </p>
+                    </div>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none shrink-0 bg-[#f8faf1] px-3.5 py-2 rounded-xl border border-[#ddddd9]">
+                      <input
+                        type="checkbox"
+                        checked={dbData.settings.shiprocket?.enabled ?? true}
+                        onChange={(e) => {
+                          const updatedSr = {
+                            ...(dbData.settings.shiprocket || {}),
+                            enabled: e.target.checked,
+                          };
+                          void handleSaveSettings("shiprocket", updatedSr);
+                        }}
+                        className="size-4 rounded accent-[#244f31]"
+                      />
+                      <span className="text-xs font-bold text-[#17231b]">Auto-Push Orders Active</span>
+                    </label>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2 text-xs">
+                    {/* Shiprocket Email */}
+                    <div>
+                      <label className="block font-bold text-[#17231b] mb-1.5">Shiprocket Account Email</label>
+                      <input
+                        type="email"
+                        placeholder="your-shiprocket-email@example.com"
+                        value={dbData.settings.shiprocket?.email || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setDbData((prev: any) => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              shiprocket: {
+                                ...(prev.settings?.shiprocket || {}),
+                                email: val,
+                              },
+                            },
+                          }));
+                        }}
+                        className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
+                      />
+                    </div>
+
+                    {/* Shiprocket Password */}
+                    <div>
+                      <label className="block font-bold text-[#17231b] mb-1.5">Shiprocket Account Password</label>
+                      <div className="flex rounded-xl border border-[#ddddd9] bg-white overflow-hidden focus-within:border-[#244f31]">
+                        <input
+                          type={showSrPassword ? "text" : "password"}
+                          placeholder="••••••••••••"
+                          value={dbData.settings.shiprocket?.password || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setDbData((prev: any) => ({
+                              ...prev,
+                              settings: {
+                                ...prev.settings,
+                                shiprocket: {
+                                  ...(prev.settings?.shiprocket || {}),
+                                  password: val,
+                                },
+                              },
+                            }));
+                          }}
+                          className="flex-1 p-2.5 outline-none text-xs bg-transparent"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSrPassword(!showSrPassword)}
+                          className="px-3 text-gray-400 hover:text-gray-600 cursor-pointer"
+                        >
+                          {showSrPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Default Pickup Location */}
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-[#17231b] mb-1.5">
+                        Default Pickup Location Name <span className="text-gray-400 font-normal">(as registered in your Shiprocket Dashboard)</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="PURE AYUR HERBS or Primary"
+                        value={dbData.settings.shiprocket?.pickupLocation || "PURE AYUR HERBS"}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setDbData((prev: any) => ({
+                            ...prev,
+                            settings: {
+                              ...prev.settings,
+                              shiprocket: {
+                                ...(prev.settings?.shiprocket || {}),
+                                pickupLocation: val,
+                              },
+                            },
+                          }));
+                        }}
+                        className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Feedback on connection test */}
+                  {srTestResult && (
+                    <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${srTestResult.success ? "bg-emerald-50 text-emerald-800 border border-emerald-300" : "bg-red-50 text-red-700 border border-red-300"}`}>
+                      {srTestResult.success ? <CheckCircle2 className="size-4 text-emerald-600 shrink-0" /> : <AlertCircle className="size-4 text-red-600 shrink-0" />}
+                      <span>{srTestResult.message}</span>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      disabled={srTesting}
+                      onClick={async () => {
+                        const email = dbData.settings.shiprocket?.email;
+                        const password = dbData.settings.shiprocket?.password;
+                        if (!email || !password) {
+                          setSrTestResult({ success: false, message: "Please enter both Shiprocket email and password to test." });
+                          return;
+                        }
+                        setSrTesting(true);
+                        setSrTestResult(null);
+                        try {
+                          const res = await fetch("/api/admin/shiprocket-test", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ email, password }),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setSrTestResult({ success: true, message: "🟢 Connected to Shiprocket API successfully! Bearer token acquired." });
+                          } else {
+                            setSrTestResult({ success: false, message: `🔴 ${data.error || "Authentication failed. Check credentials."}` });
+                          }
+                        } catch {
+                          setSrTestResult({ success: false, message: "🔴 Connection error. Check your internet connection." });
+                        } finally {
+                          setSrTesting(false);
+                        }
+                      }}
+                      className="px-4 py-2 rounded-xl border border-[#244f31] text-[#244f31] hover:bg-[#244f31]/5 font-bold text-xs transition disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {srTesting && <Loader2 className="size-3.5 animate-spin" />}
+                      <span>{srTesting ? "Testing Connection..." : "🔌 Test Shiprocket Connection"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const srToSave = {
+                          enabled: dbData.settings.shiprocket?.enabled ?? true,
+                          email: dbData.settings.shiprocket?.email || "",
+                          password: dbData.settings.shiprocket?.password || "",
+                          pickupLocation: dbData.settings.shiprocket?.pickupLocation || "PURE AYUR HERBS",
+                        };
+                        void handleSaveSettings("shiprocket", srToSave);
+                        showToast("Shiprocket settings saved successfully!");
+                      }}
+                      className="px-5 py-2 rounded-xl bg-[#244f31] hover:bg-[#1c3e26] text-white font-bold text-xs transition shadow-xs cursor-pointer"
+                    >
+                      Save Shiprocket Settings
+                    </button>
                   </div>
                 </div>
               </div>
@@ -9716,63 +9930,108 @@ export default function AdminDashboard() {
                 {/* Shiprocket Logistics Integration */}
                 <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-[#f8faf1]/60">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-[#244f31] uppercase tracking-wider text-[10px]">Shiprocket Shipping Status</h4>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${selectedOrder.shiprocketStatus === "Pushed" ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-amber-100 text-amber-800 border border-amber-300"}`}>
-                      {selectedOrder.shiprocketStatus === "Pushed" ? "🟢 Pushed to Shiprocket" : "⚪ Not Pushed Yet"}
+                    <h4 className="font-bold text-[#244f31] uppercase tracking-wider text-[10px]">Shiprocket Logistics Status</h4>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                        selectedOrder.shiprocketStatus === "Cancelled"
+                          ? "bg-gray-100 text-gray-700 border border-gray-300"
+                          : selectedOrder.shiprocketStatus === "Failed"
+                          ? "bg-red-100 text-red-800 border border-red-300"
+                          : selectedOrder.shiprocketStatus === "Pushed"
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : "bg-amber-100 text-amber-800 border border-amber-300"
+                      }`}
+                    >
+                      {selectedOrder.shiprocketStatus === "Cancelled"
+                        ? "❌ Cancelled on Shiprocket"
+                        : selectedOrder.shiprocketStatus === "Failed"
+                        ? "🔴 Push Failed"
+                        : selectedOrder.shiprocketStatus === "Pushed"
+                        ? "🟢 Pushed to Shiprocket"
+                        : "⚪ Not Pushed Yet"}
                     </span>
                   </div>
+
+                  {selectedOrder.shiprocketStatus === "Failed" && selectedOrder.shiprocketError && (
+                    <div className="text-[11px] text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200">
+                      <span className="font-bold block">Shiprocket Error:</span>
+                      <span>{selectedOrder.shiprocketError}</span>
+                    </div>
+                  )}
 
                   {selectedOrder.shiprocketOrderId && (
                     <div className="text-[11px] text-gray-700 bg-white p-2.5 rounded-lg border border-[#ddddd9] space-y-1 font-mono">
                       <div>Shiprocket Order ID: <span className="font-bold text-[#17231b]">{selectedOrder.shiprocketOrderId}</span></div>
                       {selectedOrder.shiprocketShipmentId && (
-                        <div>Shipment ID: <span className="font-bold text-[#17231b]">{selectedOrder.shiprocketShipmentId}</span></div>
+                        <div>
+                          Shipment ID: <span className="font-bold text-[#17231b]">{selectedOrder.shiprocketShipmentId}</span>
+                        </div>
+                      )}
+                      {selectedOrder.shiprocketShipmentId && (
+                        <div className="pt-1">
+                          <a
+                            href={`https://shiprocket.co/tracking/${selectedOrder.shiprocketShipmentId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-700 font-bold hover:underline font-sans text-[11px] inline-flex items-center gap-1"
+                          >
+                            <span>Track Package on Shiprocket ↗</span>
+                          </a>
+                        </div>
                       )}
                     </div>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setPushingSrOrderId(selectedOrder.id);
-                      try {
-                        const res = await fetch("/api/admin/shiprocket-push", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ orderId: selectedOrder.id }),
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                          showToast(`🟢 ${data.message}`);
-                          const updatedOrder = {
-                            ...selectedOrder,
-                            shiprocketOrderId: data.shiprocketOrderId,
-                            shiprocketShipmentId: data.shipmentId,
-                            shiprocketStatus: "Pushed",
-                          };
-                          setSelectedOrder(updatedOrder);
-                          setDbData((prev: any) => ({
-                            ...prev,
-                            orders: (prev.orders || []).map((o: any) => (o.id === selectedOrder.id ? updatedOrder : o)),
-                          }));
-                        } else {
-                          showToast(`🔴 Shiprocket Error: ${data.error}`);
+                  {selectedOrder.shiprocketStatus === "Cancelled" ? (
+                    <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-[11px] text-gray-600 text-center font-medium">
+                      Order shipment was cancelled & voided on Shiprocket.
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setPushingSrOrderId(selectedOrder.id);
+                        try {
+                          const res = await fetch("/api/admin/shiprocket-push", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ orderId: selectedOrder.id }),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            showToast(`🟢 ${data.message}`);
+                            const updatedOrder = {
+                              ...selectedOrder,
+                              shiprocketOrderId: data.shiprocketOrderId,
+                              shiprocketShipmentId: data.shipmentId,
+                              shiprocketStatus: "Pushed",
+                            };
+                            setSelectedOrder(updatedOrder);
+                            setDbData((prev: any) => ({
+                              ...prev,
+                              orders: (prev.orders || []).map((o: any) => (o.id === selectedOrder.id ? updatedOrder : o)),
+                            }));
+                          } else {
+                            showToast(`🔴 Shiprocket Error: ${data.error}`);
+                          }
+                        } catch {
+                          showToast("🔴 Network Error pushing order to Shiprocket.");
+                        } finally {
+                          setPushingSrOrderId(null);
                         }
-                      } catch {
-                        showToast("🔴 Network Error pushing order to Shiprocket.");
-                      } finally {
-                        setPushingSrOrderId(null);
-                      }
-                    }}
-                    disabled={pushingSrOrderId === selectedOrder.id}
-                    className="w-full py-2.5 bg-[#244f31] hover:bg-[#1c3e26] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
-                  >
-                    {pushingSrOrderId === selectedOrder.id
-                      ? "Pushing to Shiprocket API..."
-                      : selectedOrder.shiprocketStatus === "Pushed"
-                      ? "🔄 Re-Push Order to Shiprocket"
-                      : "🚀 Push Order to Shiprocket"}
-                  </button>
+                      }}
+                      disabled={pushingSrOrderId === selectedOrder.id}
+                      className="w-full py-2.5 bg-[#244f31] hover:bg-[#1c3e26] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      {pushingSrOrderId === selectedOrder.id
+                        ? "Pushing to Shiprocket API..."
+                        : selectedOrder.shiprocketStatus === "Pushed"
+                        ? "🔄 Re-Push Order to Shiprocket"
+                        : selectedOrder.shiprocketStatus === "Failed"
+                        ? "⚠️ Retry Push to Shiprocket"
+                        : "🚀 Push Order to Shiprocket"}
+                    </button>
+                  )}
                 </div>
 
                 {/* Danger actions */}

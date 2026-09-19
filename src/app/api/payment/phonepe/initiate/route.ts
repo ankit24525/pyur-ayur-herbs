@@ -108,6 +108,7 @@ export async function POST(request: Request) {
           return `${prod ? prod.name : "Remedy"} x${i.quantity}`;
         })
         .join(", ")}`,
+      itemsRaw: items,
     };
 
     db.orders.push(newOrder);

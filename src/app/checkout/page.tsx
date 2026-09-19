@@ -31,6 +31,7 @@ function CheckoutForm() {
   const variantIdParam = searchParams.get("variantId");
   const priceParam = searchParams.get("price");
   const variantNameParam = searchParams.get("variantName");
+  const variantImageParam = searchParams.get("variantImage");
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
@@ -143,6 +144,7 @@ function CheckoutForm() {
                   ...found,
                   price: varPrice,
                   compareAt: varMrp,
+                  image: matchedVar.image || variantImageParam || found.image,
                   name: varName && !found.name.includes(varName) ? `${found.name} (${varName})` : found.name,
                 });
                 return;
@@ -153,6 +155,7 @@ function CheckoutForm() {
                 setProduct({
                   ...found,
                   price: parsedP,
+                  image: variantImageParam || found.image,
                   name: variantNameParam && !found.name.includes(variantNameParam) ? `${found.name} (${variantNameParam})` : found.name,
                 });
                 return;
@@ -164,7 +167,7 @@ function CheckoutForm() {
       })
       .catch((e) => console.error("Error loading products:", e))
       .finally(() => setLoadingProduct(false));
-  }, [prodId, variantIdParam, priceParam, variantNameParam]);
+  }, [prodId, variantIdParam, priceParam, variantNameParam, variantImageParam]);
 
   const [userEmail, setUserEmail] = useState("");
 

@@ -64,7 +64,7 @@ function ProductVariantsEditor({
 }) {
   const currentBasePrice = parseFloat(String(basePrice)) || 999;
 
-  const addVariant = (item: { type: string; value: string; name: string; priceMultiplier?: number; badge?: string }) => {
+  const addVariant = (item: { type: string; value: string; name: string; priceMultiplier?: number; badge?: string; image?: string }) => {
     const calcPrice = item.priceMultiplier ? Math.round(currentBasePrice * item.priceMultiplier) : currentBasePrice;
     const calcMrp = Math.round(calcPrice * 1.25);
     const newVar = {
@@ -76,6 +76,7 @@ function ProductVariantsEditor({
       mrp: calcMrp,
       compareAt: calcMrp,
       badge: item.badge || "",
+      image: item.image || "",
       inStock: true,
     };
     onUpdateVariants([...variants, newVar]);
@@ -84,6 +85,41 @@ function ProductVariantsEditor({
   const updateVariantField = (idx: number, field: string, val: any) => {
     const updated = variants.map((v, i) => (i === idx ? { ...v, [field]: val } : v));
     onUpdateVariants(updated);
+  };
+
+  const handleVariantImageUpload = (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const target = e.target;
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = document.createElement("img");
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.82);
+          updateVariantField(idx, "image", compressed);
+          if (target) target.value = "";
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const removeVariant = (idx: number) => {
@@ -98,7 +134,7 @@ function ProductVariantsEditor({
             <span>📦 Multiple Options & Dynamic Pricing (Weight, Color, Size)</span>
           </span>
           <span className="text-[10px] text-[#666666]">
-            Add options like Amazon & Flipkart (e.g. 250g, 500g, 1kg, Red, Green) with separate prices.
+            Add options like Amazon & Flipkart (e.g. 250g, 500g, 1kg, Red, Green) with separate prices and photos.
           </span>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -120,6 +156,7 @@ function ProductVariantsEditor({
                     mrp: Math.round(currentBasePrice * 1.25),
                     compareAt: Math.round(currentBasePrice * 1.25),
                     badge: "POPULAR",
+                    image: "",
                     inStock: true,
                   },
                   {
@@ -131,6 +168,7 @@ function ProductVariantsEditor({
                     mrp: Math.round(currentBasePrice * 1.8 * 1.25),
                     compareAt: Math.round(currentBasePrice * 1.8 * 1.25),
                     badge: "BEST VALUE",
+                    image: "",
                     inStock: true,
                   },
                 ]);
@@ -241,8 +279,9 @@ function ProductVariantsEditor({
                 <thead>
                   <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[11px] text-[#17231b]">
                     <th className="p-2.5 font-bold">Type</th>
-                    <th className="p-2.5 font-bold">Option Value (e.g. 500g / Red)</th>
+                    <th className="p-2.5 font-bold">Option (e.g. 500g / Red)</th>
                     <th className="p-2.5 font-bold">Display Title (Buyer Sees)</th>
+                    <th className="p-2.5 font-bold">Option Photo</th>
                     <th className="p-2.5 font-bold">Selling Price (₹) *</th>
                     <th className="p-2.5 font-bold">MRP (₹)</th>
                     <th className="p-2.5 font-bold">Badge / Tag</th>
@@ -272,7 +311,7 @@ function ProductVariantsEditor({
                           placeholder="e.g. 500g"
                           value={variant.value || ""}
                           onChange={(e) => updateVariantField(idx, "value", e.target.value)}
-                          className="w-28 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-bold"
+                          className="w-24 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-bold"
                         />
                       </td>
                       <td className="p-2">
@@ -281,8 +320,52 @@ function ProductVariantsEditor({
                           placeholder="e.g. 500g Economy Pack"
                           value={variant.name || ""}
                           onChange={(e) => updateVariantField(idx, "name", e.target.value)}
-                          className="w-40 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-medium"
+                          className="w-36 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-medium"
                         />
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          {variant.image ? (
+                            <div className="relative group w-9 h-9 rounded-lg overflow-hidden border border-[#ddddd9] bg-neutral-100 shrink-0">
+                              <img
+                                src={variant.image}
+                                alt={variant.value || "variant"}
+                                className="w-full h-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => updateVariantField(idx, "image", "")}
+                                className="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-[10px] font-bold"
+                                title="Remove photo"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-9 h-9 rounded-lg border border-dashed border-[#ddddd9] flex items-center justify-center text-gray-400 bg-neutral-50 shrink-0 text-[9px] font-bold">
+                              No img
+                            </div>
+                          )}
+                          <div className="flex flex-col gap-1">
+                            <label className="cursor-pointer inline-flex items-center justify-center px-2 py-0.5 bg-white border border-[#ddddd9] hover:bg-[#eef5df] hover:border-[#244f31] text-[10px] font-bold text-[#244f31] rounded transition shadow-2xs">
+                              <span>Upload</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleVariantImageUpload(idx, e)}
+                              />
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Or URL"
+                              value={variant.image || ""}
+                              onChange={(e) => updateVariantField(idx, "image", e.target.value)}
+                              className="w-20 text-[10px] border border-[#ddddd9] rounded px-1.5 py-0.5 outline-none text-neutral-700 font-medium truncate"
+                              title="Paste direct image link"
+                            />
+                          </div>
+                        </div>
                       </td>
                       <td className="p-2">
                         <input
@@ -292,7 +375,7 @@ function ProductVariantsEditor({
                           placeholder="1199"
                           value={variant.price || ""}
                           onChange={(e) => updateVariantField(idx, "price", e.target.value)}
-                          className="w-24 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-black text-[#244f31]"
+                          className="w-20 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-black text-[#244f31]"
                         />
                       </td>
                       <td className="p-2">
@@ -304,7 +387,7 @@ function ProductVariantsEditor({
                             updateVariantField(idx, "mrp", e.target.value);
                             updateVariantField(idx, "compareAt", e.target.value);
                           }}
-                          className="w-24 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none text-gray-500 font-medium"
+                          className="w-20 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none text-gray-500 font-medium"
                         />
                       </td>
                       <td className="p-2">
@@ -313,7 +396,7 @@ function ProductVariantsEditor({
                           placeholder="e.g. BEST VALUE"
                           value={variant.badge || ""}
                           onChange={(e) => updateVariantField(idx, "badge", e.target.value)}
-                          className="w-28 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-bold text-[#80a03c]"
+                          className="w-24 rounded-lg border border-[#ddddd9] p-1.5 text-xs outline-none font-bold text-[#80a03c]"
                         />
                       </td>
                       <td className="p-2 text-center">
@@ -1500,6 +1583,7 @@ export default function AdminDashboard() {
             mrp: vMrp,
             compareAt: vMrp,
             badge: v.badge || "",
+            image: v.image || "",
             inStock: v.inStock !== false,
           };
         })
@@ -1673,6 +1757,7 @@ export default function AdminDashboard() {
             mrp: vMrp,
             compareAt: vMrp,
             badge: v.badge || "",
+            image: v.image || "",
             inStock: v.inStock !== false,
           };
         })

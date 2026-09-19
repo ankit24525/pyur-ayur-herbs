@@ -41,9 +41,11 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     }
   ];
 
-  const gallery = product.gallery && product.gallery.length > 0
+  const variantImages = (product.variants || []).map((v: any) => v.image).filter(Boolean);
+  const baseGallery = product.gallery && product.gallery.length > 0
     ? product.gallery.filter(Boolean)
     : [product.image || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80"];
+  const gallery = Array.from(new Set([...baseGallery, ...variantImages]));
 
   const ingredients = Array.isArray(product.ingredients)
     ? product.ingredients.map((item: any) =>
@@ -147,8 +149,13 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
   useEffect(() => {
-    setSelectedImage(gallery[0]);
-    setSelectedVariant(variants[0]);
+    const initialVariant = variants[0];
+    setSelectedVariant(initialVariant);
+    if (initialVariant?.image) {
+      setSelectedImage(initialVariant.image);
+    } else {
+      setSelectedImage(gallery[0]);
+    }
     setQuantity(1);
   }, [product.id, product.image]);
 
@@ -254,8 +261,9 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   const handleBuyNow = () => {
     const hasCustomVariant = variants.length > 1;
     const variantLabel = currentVariant.name || currentVariant.value || "";
+    const variantImage = currentVariant.image ? `&variantImage=${encodeURIComponent(currentVariant.image)}` : "";
     const variantQuery = hasCustomVariant
-      ? `&variantId=${encodeURIComponent(currentVariant.id)}&price=${unitPrice}&variantName=${encodeURIComponent(variantLabel)}`
+      ? `&variantId=${encodeURIComponent(currentVariant.id)}&price=${unitPrice}&variantName=${encodeURIComponent(variantLabel)}${variantImage}`
       : "";
     window.location.href = `/checkout?productId=${product.id}&quantity=${quantity}${variantQuery}`;
   };
@@ -435,25 +443,39 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                               : "border-[#ddddd9] bg-white hover:border-[#80a03c] hover:bg-neutral-50/50"
                           }`}
                         >
-                          <div className="min-w-0 pr-2">
-                            <div className="flex items-center gap-1.5">
-                              <span className="block text-xs font-black text-[#17231b] truncate">
-                                {variant.value || variant.name}
-                              </span>
-                              {isSelected && (
-                                <span className="size-2 rounded-full bg-[#244f31]" />
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            {variant.image && (
+                              <div className="size-9 rounded-lg overflow-hidden border border-[#ddddd9] shrink-0 bg-white">
+                                <Image
+                                  src={variant.image}
+                                  alt={variant.value || variant.name}
+                                  width={36}
+                                  height={36}
+                                  unoptimized
+                                  className="size-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="block text-xs font-black text-[#17231b] truncate">
+                                  {variant.value || variant.name}
+                                </span>
+                                {isSelected && (
+                                  <span className="size-2 rounded-full bg-[#244f31]" />
+                                )}
+                              </div>
+                              {variant.value && variant.name && variant.name !== variant.value && (
+                                <span className="block text-[10px] text-gray-500 truncate mt-0.5">
+                                  {variant.name}
+                                </span>
+                              )}
+                              {variant.badge && (
+                                <span className="mt-1 inline-block rounded bg-[#80a03c] px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-2xs">
+                                  {variant.badge}
+                                </span>
                               )}
                             </div>
-                            {variant.value && variant.name && variant.name !== variant.value && (
-                              <span className="block text-[10px] text-gray-500 truncate mt-0.5">
-                                {variant.name}
-                              </span>
-                            )}
-                            {variant.badge && (
-                              <span className="mt-1 inline-block rounded bg-[#80a03c] px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-2xs">
-                                {variant.badge}
-                              </span>
-                            )}
                           </div>
                           <div className="text-right shrink-0">
                             <div className="text-xs font-black text-[#244f31]">₹{varPrice}</div>

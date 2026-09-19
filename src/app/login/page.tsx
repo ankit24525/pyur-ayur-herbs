@@ -14,7 +14,6 @@ import {
   Eye,
   EyeOff,
   Smartphone,
-  ShieldCheck,
   CheckCircle2,
   MessageSquare,
 } from "lucide-react";
@@ -380,13 +379,6 @@ function LoginFormContent() {
           {!phoneOtpSent ? (
             /* Step 1: Phone Number Input */
             <form onSubmit={handleSendPhoneOtp} className="space-y-4 text-xs">
-              <div className="flex justify-center">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#25D366]/10 text-[#128C7E] font-bold text-[11px]">
-                  <MessageSquare className="size-3.5 text-[#25D366]" />
-                  <span>Official WhatsApp Verification</span>
-                </div>
-              </div>
-
               <div>
                 <label className="block font-bold text-[#666666] mb-1">
                   WhatsApp Mobile Number *
@@ -445,11 +437,6 @@ function LoginFormContent() {
                   </>
                 )}
               </button>
-
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 pt-1">
-                <ShieldCheck className="size-3.5 text-[#25D366]" />
-                <span>Instant delivery via Meta WhatsApp Business API</span>
-              </div>
             </form>
           ) : (
             /* Step 2: 6-Digit OTP Verification */

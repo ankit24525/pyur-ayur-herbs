@@ -55,6 +55,10 @@ export async function POST(request: Request) {
       };
       db.users = [...users, user];
       await writeDB(db);
+    } else if (name && name.trim() && user.name !== name.trim()) {
+      user.name = name.trim();
+      db.users = users.map((u: any) => (u.id === user.id ? user : u));
+      await writeDB(db);
     }
 
     // 3. Generate session and secure HTTP-only cookie

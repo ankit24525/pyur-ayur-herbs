@@ -16,11 +16,14 @@ export async function GET(request: Request) {
     const db = await readDB();
     const allOrders = db.orders || [];
 
-    // Filter orders matching email, phone number, customer name, or order ID
+    // Filter orders strictly matching verified phone number, email, or order ID
+    const cleanUserPhone = phone.replace(/\D/g, "").slice(-10);
+    const cleanEmail = email.includes("@pureayurherbs.com") ? "" : email;
+
     const userOrders = allOrders.filter((order) => {
       if (!order) return false;
 
-      // 1. Order ID match
+      // 1. Order ID match (from order search query)
       if (orderIdQuery) {
         const cleanOrderQuery = orderIdQuery.replace(/\D/g, "");
         const idLower = String(order.id || "").trim().toLowerCase();
@@ -39,36 +42,15 @@ export async function GET(request: Request) {
         }
       }
 
-      // 2. Email match
-      const orderEmail = (order.email || "").trim().toLowerCase();
-      const matchEmail = email && orderEmail && (
-        orderEmail === email ||
-        orderEmail.includes(email) ||
-        email.includes(orderEmail)
-      );
-
-      // 3. Phone number match
-      const cleanUserPhone = phone.replace(/\D/g, "").slice(-10);
+      // 2. Verified Phone number match (exact 10-digit match)
       const cleanOrderPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
-      const matchPhone = cleanUserPhone.length >= 5 && cleanOrderPhone.length >= 5 && (
-        cleanUserPhone === cleanOrderPhone ||
-        cleanOrderPhone.includes(cleanUserPhone) ||
-        cleanUserPhone.includes(cleanOrderPhone)
-      );
+      const matchPhone = cleanUserPhone.length === 10 && cleanOrderPhone === cleanUserPhone;
 
-      // 4. Customer Name match (full name or first name)
-      const orderCustomer = (order.customer || order.customerName || order.name || "").trim().toLowerCase();
-      const userFirstName = name.split(" ")[0];
-      const orderFirstName = orderCustomer.split(" ")[0];
+      // 3. Verified Email match (exact match, excluding synthetic placeholder emails)
+      const orderEmail = (order.email || "").trim().toLowerCase();
+      const matchEmail = Boolean(cleanEmail && orderEmail && orderEmail === cleanEmail);
 
-      const matchName = name && name.length >= 3 && orderCustomer && (
-        orderCustomer === name ||
-        orderCustomer.includes(name) ||
-        name.includes(orderCustomer) ||
-        (userFirstName.length >= 3 && userFirstName === orderFirstName)
-      );
-
-      return Boolean(matchEmail || matchPhone || matchName);
+      return Boolean(matchPhone || matchEmail);
     });
 
     // Sort orders by date/id descending (newest first)

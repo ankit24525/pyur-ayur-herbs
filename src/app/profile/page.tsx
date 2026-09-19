@@ -193,7 +193,7 @@ function ProfileDashboard() {
   useEffect(() => {
     if (!user || (!user.email && !user.phone)) return;
     setLoadingOrders(true);
-    fetch(`/api/profile/orders?email=${encodeURIComponent(user.email || "")}&phone=${encodeURIComponent(user.phone || "")}&name=${encodeURIComponent(user.name || "")}`)
+    fetch(`/api/profile/orders?email=${encodeURIComponent(user.email || "")}&phone=${encodeURIComponent(user.phone || "")}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {

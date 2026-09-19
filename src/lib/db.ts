@@ -78,6 +78,8 @@ function sanitizeDBData(data: any): DBData {
   if (!Array.isArray(data.reviews)) data.reviews = [];
   if (!Array.isArray(data.collections)) data.collections = [];
   if (!Array.isArray(data.categories)) data.categories = [];
+  if (!Array.isArray(data.otps)) data.otps = [];
+  if (!Array.isArray(data.verifiedPhones)) data.verifiedPhones = [];
 
   if (!data.marketing || typeof data.marketing !== "object") {
     data.marketing = { campaigns: [], banners: [], popups: [], notifications: [] };
@@ -210,9 +212,9 @@ function writeLocalDB(data: DBData): boolean {
   return written;
 }
 
-export async function readDB(): Promise<DBData> {
+export async function readDB(bypassCache = false): Promise<DBData> {
   // 1. Instant return from in-memory cache if valid (< 0.01ms)
-  if (dbMemoryCache && Date.now() - dbMemoryCache.timestamp < CACHE_TTL_MS) {
+  if (!bypassCache && dbMemoryCache && Date.now() - dbMemoryCache.timestamp < CACHE_TTL_MS) {
     return dbMemoryCache.data;
   }
 

@@ -29,6 +29,19 @@ export function generateOTP(): string {
 }
 
 /**
+ * Clean and normalize phone number (10 digits) or email (lowercase trimmed)
+ */
+export function normalizeIdentifier(id: string): string {
+  if (!id) return "";
+  const trimmed = String(id).trim().toLowerCase();
+  if (trimmed.includes("@")) {
+    return trimmed;
+  }
+  const digits = trimmed.replace(/\D/g, "");
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
+/**
  * Clean phone number to standard 12-digit Indian format (e.g. 919876543210)
  */
 export function formatPhoneNumber(phone: string): string {
@@ -48,17 +61,17 @@ export async function saveOTP(
   purpose: "login" | "reset" | "cod" | "checkout",
   ttlMinutes = 10
 ): Promise<void> {
-  const db = await readDB();
-  const cleanId = identifier.trim().toLowerCase();
+  const db = await readDB(true);
+  const cleanId = normalizeIdentifier(identifier);
   const expiresAt = Date.now() + ttlMinutes * 60 * 1000;
 
   (db as any).otps = ((db as any).otps || []).filter(
-    (item: any) => !(item.identifier?.toLowerCase() === cleanId && (item.purpose === purpose || (purpose === "checkout" && item.purpose === "cod") || (purpose === "cod" && item.purpose === "checkout")))
+    (item: any) => normalizeIdentifier(item.identifier) !== cleanId
   );
 
   (db as any).otps.push({
     identifier: cleanId,
-    otp,
+    otp: String(otp).trim(),
     purpose,
     expiresAt,
     createdAt: Date.now(),
@@ -75,16 +88,26 @@ export async function verifyOTP(
   otp: string,
   purpose: "login" | "reset" | "cod" | "checkout"
 ): Promise<{ valid: boolean; error?: string }> {
-  const db = await readDB();
-  const cleanId = identifier.trim().toLowerCase();
+  const db = await readDB(true);
+  const targetId = normalizeIdentifier(identifier);
+  const targetOtp = String(otp).trim();
   const otps = (db as any).otps || [];
 
-  const index = otps.findIndex(
-    (item: any) =>
-      item.identifier?.toLowerCase() === cleanId &&
-      item.purpose === purpose &&
-      String(item.otp).trim() === String(otp).trim()
-  );
+  const index = otps.findIndex((item: any) => {
+    const itemNorm = normalizeIdentifier(item.identifier || "");
+    const itemOtp = String(item.otp).trim();
+    if (itemNorm !== targetId || itemOtp !== targetOtp) return false;
+
+    // Match exact purpose or allow cross-verification for orders/login
+    if (item.purpose === purpose) return true;
+    if ((purpose === "checkout" || purpose === "cod") && (item.purpose === "checkout" || item.purpose === "cod" || item.purpose === "login")) {
+      return true;
+    }
+    if (purpose === "login" && (item.purpose === "checkout" || item.purpose === "cod")) {
+      return true;
+    }
+    return false;
+  });
 
   if (index === -1) {
     return { valid: false, error: "Invalid verification code. Please check and try again." };

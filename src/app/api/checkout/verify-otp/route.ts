@@ -23,15 +23,20 @@ export async function POST(request: Request) {
       );
     }
 
+    let lastError = "";
+
     // 1. Try verifying via WhatsApp OTP (phone)
     if (cleanPhone) {
       let waVerify = await verifyOTP(cleanPhone, String(otp).trim(), "checkout");
       if (!waVerify.valid) {
         waVerify = await verifyOTP(cleanPhone, String(otp).trim(), "cod");
       }
+      if (!waVerify.valid) {
+        waVerify = await verifyOTP(cleanPhone, String(otp).trim(), "login");
+      }
 
       if (waVerify.valid) {
-        const db = await readDB();
+        const db = await readDB(true);
         const now = Date.now();
         db.verifiedPhones = (db.verifiedPhones || []).filter(
           (v: any) => v.phone !== cleanPhone && now < (v.expiresAt || 0)
@@ -49,6 +54,8 @@ export async function POST(request: Request) {
           phone: cleanPhone,
           message: "Order mobile number verified successfully via WhatsApp.",
         });
+      } else if (waVerify.error) {
+        lastError = waVerify.error;
       }
     }
 
@@ -58,9 +65,12 @@ export async function POST(request: Request) {
       if (!emailVerify.valid) {
         emailVerify = await verifyOTP(cleanEmail, String(otp).trim(), "cod");
       }
+      if (!emailVerify.valid) {
+        emailVerify = await verifyOTP(cleanEmail, String(otp).trim(), "login");
+      }
 
       if (emailVerify.valid) {
-        const db = await readDB();
+        const db = await readDB(true);
         const now = Date.now();
         if (cleanPhone) {
           db.verifiedPhones = (db.verifiedPhones || []).filter(
@@ -80,10 +90,12 @@ export async function POST(request: Request) {
           phone: cleanPhone,
           message: "Order verified successfully.",
         });
+      } else if (emailVerify.error && !lastError) {
+        lastError = emailVerify.error;
       }
 
       // Legacy fallback check in db.orderOtps
-      const db = await readDB();
+      const db = await readDB(true);
       const legacyOtps = db.orderOtps || [];
       const record = legacyOtps.find((o: any) => o.email === cleanEmail);
       if (record && Date.now() <= record.expiresAt && record.otp === String(otp).trim()) {
@@ -110,7 +122,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { success: false, error: "Incorrect or expired verification code. Please try again." },
+      { success: false, error: lastError || "Incorrect or expired verification code. Please try again." },
       { status: 400 }
     );
   } catch (error: any) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
+import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 
 export async function GET() {
   const db = await readDB();
@@ -16,8 +17,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Order not found." }, { status: 404 });
     }
 
+    const prevStatus = db.orders[orderIndex].status;
     db.orders[orderIndex].status = newStatus;
     await writeDB(db);
+
+    // If status changed to Confirmed, send WhatsApp Order Confirmation to customer
+    if (newStatus === "Confirmed" && prevStatus !== "Confirmed") {
+      try {
+        await sendOrderConfirmationWhatsApp(db.orders[orderIndex]);
+      } catch (waErr) {
+        console.error("[Admin Order Confirmation WhatsApp Error]:", waErr);
+      }
+    }
 
     return NextResponse.json({ success: true, message: "Order status updated successfully!" });
   } catch (error) {

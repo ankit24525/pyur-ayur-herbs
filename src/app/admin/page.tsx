@@ -1377,27 +1377,35 @@ export default function AdminDashboard() {
 
           // Clean up expired mutations
           Object.keys(mutations).forEach((k) => {
-            if (now - mutations[k].timestamp >= 8000) {
+            if (now - mutations[k].timestamp >= 15000) {
               delete mutations[k];
             }
           });
 
           return {
-            orders: [],
-            leads: [],
-            reviews: [],
-            blogs: [],
-            faqs: [],
-            testimonials: [],
             ...data,
+            faqs: data.faqs || prev.faqs || [],
+            testimonials: data.testimonials || prev.testimonials || [],
             products: mergedProducts,
-            categories: (mutations["categories"] && now - mutations["categories"].timestamp < 8000)
+            leads: (mutations["leads"] && now - mutations["leads"].timestamp < 15000)
+              ? mutations["leads"].value
+              : (data.leads !== undefined ? data.leads : (prev.leads || [])),
+            orders: (mutations["orders"] && now - mutations["orders"].timestamp < 15000)
+              ? mutations["orders"].value
+              : (data.orders !== undefined ? data.orders : (prev.orders || [])),
+            reviews: (mutations["reviews"] && now - mutations["reviews"].timestamp < 15000)
+              ? mutations["reviews"].value
+              : (data.reviews !== undefined ? data.reviews : (prev.reviews || [])),
+            blogs: (mutations["blogs"] && now - mutations["blogs"].timestamp < 15000)
+              ? mutations["blogs"].value
+              : (data.blogs !== undefined ? data.blogs : (prev.blogs || [])),
+            categories: (mutations["categories"] && now - mutations["categories"].timestamp < 15000)
               ? mutations["categories"].value
               : (data.categories || prev.categories || []),
-            coupons: (mutations["coupons"] && now - mutations["coupons"].timestamp < 8000)
+            coupons: (mutations["coupons"] && now - mutations["coupons"].timestamp < 15000)
               ? mutations["coupons"].value
               : (data.coupons || prev.coupons || []),
-            collections: (mutations["collections"] && now - mutations["collections"].timestamp < 8000)
+            collections: (mutations["collections"] && now - mutations["collections"].timestamp < 15000)
               ? mutations["collections"].value
               : (data.collections || prev.collections || []),
             marketing: {
@@ -2393,10 +2401,34 @@ export default function AdminDashboard() {
 
   const handleDeleteLead = async (leadId: string) => {
     try {
-      const leads = dbData.leads || [];
-      const updated = leads.filter((l: any) => l.id !== leadId);
-      await saveKey("leads", updated);
-      showToast("Lead query deleted successfully!");
+      const targetStr = String(leadId || "").trim();
+      let updated: any[] = [];
+      setDbData((prev: any) => {
+        const currentLeads = Array.isArray(prev.leads) ? prev.leads : [];
+        updated = currentLeads.filter((l: any) => {
+          const match =
+            (l.id && String(l.id).trim() === targetStr) ||
+            (l._id && String(l._id).trim() === targetStr) ||
+            (l.waMessageId && String(l.waMessageId).trim() === targetStr) ||
+            (l.phone && String(l.phone).trim() === targetStr);
+          return !match;
+        });
+        return { ...prev, leads: updated };
+      });
+
+      recentMutationsRef.current["leads"] = { timestamp: Date.now(), value: updated };
+
+      // Immediately sync deletion across both endpoints
+      await Promise.all([
+        fetch("/api/admin/leads", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: leadId }),
+        }).catch(() => null),
+        saveKey("leads", updated).catch(() => null),
+      ]);
+
+      showToast("Chat / Lead deleted permanently!");
     } catch {
       showToast("Error deleting lead query.");
     }
@@ -9478,7 +9510,7 @@ export default function AdminDashboard() {
                                     </a>
                                   )}
                                   <button
-                                    onClick={() => handleDeleteLead(ld.id)}
+                                    onClick={() => handleDeleteLead(ld.id || ld._id || ld.waMessageId || ld.phone)}
                                     className="text-rose-600 hover:text-rose-800 text-[10px] font-bold transition hover:underline"
                                   >
                                     Delete

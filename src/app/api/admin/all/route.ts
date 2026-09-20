@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB } from "@/lib/db";
+import { readDB, writeDB, invalidateDBCache } from "@/lib/db";
 import { cancelOrderOnShiprocket } from "@/lib/shiprocket";
 import { revalidatePath } from "next/cache";
 
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     if (action === "updateKey" && key && value !== undefined) {
       (db as any)[key] = value;
       const success = await writeDB(db);
+      invalidateDBCache();
       if (!success) {
         return NextResponse.json(
           { success: false, error: "Database write failed." },

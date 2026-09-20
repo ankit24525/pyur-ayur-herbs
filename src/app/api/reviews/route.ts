@@ -70,6 +70,8 @@ export async function POST(request: Request) {
       customerPhone,
       orderId,
       location,
+      image,
+      images,
     } = body;
 
     // Validation
@@ -113,6 +115,11 @@ export async function POST(request: Request) {
       if (matchedOrder) verifiedBuyer = true;
     }
 
+    // Process review photos
+    const reviewImages = Array.isArray(images)
+      ? images.filter((img: any) => typeof img === "string" && img.trim().length > 0)
+      : (typeof image === "string" && image.trim().length > 0 ? [image.trim()] : []);
+
     // Create review object
     const newReview = {
       id: `REV-${Date.now()}`,
@@ -127,6 +134,8 @@ export async function POST(request: Request) {
       location: location || "India",
       verifiedBuyer,
       orderId: matchedOrder ? matchedOrder.id : (orderId || null),
+      image: reviewImages[0] || (typeof image === "string" ? image : null),
+      images: reviewImages,
       date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       status: "Approved", // Automatically approved and published
       createdAt: new Date().toISOString(),

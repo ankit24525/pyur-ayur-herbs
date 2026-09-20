@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Bell,
   ArrowRight,
+  Camera,
 } from "lucide-react";
 import AnnouncementBar from "./AnnouncementBar";
 import SiteHeader from "./SiteHeader";
@@ -28,6 +29,7 @@ import SiteFooter from "./SiteFooter";
 import ProductRail from "./ProductRail";
 import { ProductDetail, productDetails } from "@/lib/product-detail-data";
 import { products, Product } from "@/lib/store";
+import { uploadReviewImage } from "@/lib/upload";
 
 interface ProductDetailViewProps {
   product: ProductDetail;
@@ -82,7 +84,9 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     customerName: "",
     location: "",
     orderIdOrPhone: "",
+    image: "",
   });
+  const [uploadingReviewImg, setUploadingReviewImg] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSuccessMsg, setReviewSuccessMsg] = useState<string | null>(null);
@@ -781,6 +785,34 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                     </div>
                     <h4 className="mt-2 text-xs font-bold text-[#17231b]">{rev.title || "Ayurvedic Remedy Experience"}</h4>
                     <p className="mt-1 text-xs text-[#666666] leading-relaxed">{rev.comment}</p>
+
+                    {/* Customer Uploaded Photo */}
+                    {Boolean(rev.image || (Array.isArray(rev.images) && rev.images.length > 0)) && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <a
+                          href={rev.image || rev.images[0]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative size-16 sm:size-20 rounded-xl overflow-hidden border border-[#ddddd9] bg-gray-50 group shrink-0 shadow-2xs hover:border-[#244f31] transition"
+                          title="Click to view full photo"
+                        >
+                          <Image
+                            src={rev.image || rev.images[0]}
+                            alt="Customer Review Photo"
+                            width={80}
+                            height={80}
+                            unoptimized
+                            className="size-full object-cover group-hover:scale-105 transition"
+                          />
+                          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[9px] font-bold">
+                            🔍 View
+                          </div>
+                        </a>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded-full border border-emerald-200">
+                          📷 Customer Photo
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-[10px]">
                     <span className="font-semibold text-[#17231b]">
@@ -859,6 +891,8 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                       location: reviewForm.location || "India",
                       customerPhone: isPhone ? reviewForm.orderIdOrPhone.replace(/\D/g, "").slice(-10) : undefined,
                       orderId: !isPhone && reviewForm.orderIdOrPhone ? reviewForm.orderIdOrPhone.trim() : undefined,
+                      image: reviewForm.image || undefined,
+                      images: reviewForm.image ? [reviewForm.image] : undefined,
                     };
 
                     const res = await fetch("/api/reviews", {
@@ -882,6 +916,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                           customerName: "",
                           location: "",
                           orderIdOrPhone: "",
+                          image: "",
                         });
                       }, 1600);
                     } else {
@@ -998,6 +1033,76 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                     onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                     className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium resize-none"
                   />
+                </div>
+
+                {/* Photo / Image Attachment */}
+                <div>
+                  <label className="block font-bold text-[#17231b] mb-1">
+                    Attach Photo <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  {reviewForm.image ? (
+                    <div className="relative inline-block border border-gray-200 rounded-2xl overflow-hidden bg-gray-50 p-1">
+                      <div className="relative size-20 sm:size-24 rounded-xl overflow-hidden">
+                        <Image
+                          src={reviewForm.image}
+                          alt="Review Photo Preview"
+                          width={96}
+                          height={96}
+                          unoptimized
+                          className="size-full object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setReviewForm({ ...reviewForm, image: "" })}
+                        className="absolute -top-1 -right-1 size-6 bg-rose-600 text-white rounded-full flex items-center justify-center hover:bg-rose-700 transition shadow-xs cursor-pointer"
+                        title="Remove Photo"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-[#ddddd9] hover:border-[#244f31] bg-[#f8faf1]/60 hover:bg-[#f8faf1] rounded-2xl p-4 transition cursor-pointer group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploadingReviewImg}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploadingReviewImg(true);
+                          setReviewError(null);
+                          try {
+                            const url = await uploadReviewImage(file);
+                            if (url) {
+                              setReviewForm((prev) => ({ ...prev, image: url }));
+                            } else {
+                              setReviewError("Failed to upload image. Please try another photo.");
+                            }
+                          } catch {
+                            setReviewError("Could not process this image.");
+                          } finally {
+                            setUploadingReviewImg(false);
+                          }
+                        }}
+                      />
+                      {uploadingReviewImg ? (
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#244f31] py-1">
+                          <Loader2 className="size-4 animate-spin text-emerald-700" />
+                          <span>Compressing &amp; uploading photo...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center text-center">
+                          <div className="size-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mb-1.5 group-hover:scale-105 transition">
+                            <Camera className="size-4 text-emerald-700" />
+                          </div>
+                          <span className="text-xs font-bold text-[#17231b]">Upload Remedy Photo</span>
+                          <span className="text-[10px] text-gray-500 mt-0.5">Show remedy bottle, unboxing, or results (PNG, JPG, WebP)</span>
+                        </div>
+                      )}
+                    </label>
+                  )}
                 </div>
 
                 {/* Error Message */}

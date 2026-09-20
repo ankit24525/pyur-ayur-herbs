@@ -9294,6 +9294,29 @@ export default function AdminDashboard() {
                               <td className="p-3 max-w-[280px]">
                                 {r.title && <div className="font-bold text-[#17231b] text-xs leading-snug">{r.title}</div>}
                                 <div className="text-[#666666] text-xs line-clamp-2 mt-0.5">{r.comment || r.content}</div>
+                                {Boolean(r.image || (Array.isArray(r.images) && r.images.length > 0)) && (
+                                  <div className="mt-1.5 flex items-center gap-1.5">
+                                    <a
+                                      href={r.image || r.images[0]}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="size-8 rounded-lg overflow-hidden border border-gray-200 block shrink-0 hover:opacity-80 transition"
+                                      title="View customer review photo"
+                                    >
+                                      <Image
+                                        src={r.image || r.images[0]}
+                                        alt="Review Attachment"
+                                        width={32}
+                                        height={32}
+                                        unoptimized
+                                        className="size-full object-cover"
+                                      />
+                                    </a>
+                                    <span className="text-[9px] font-bold text-[#244f31] bg-[#eef5df] px-1.5 py-0.5 rounded border border-emerald-200">
+                                      📷 Photo Attached
+                                    </span>
+                                  </div>
+                                )}
                                 <div className="text-[10px] text-gray-400 mt-1">{r.date || "Recently"}</div>
                               </td>
                               <td className="p-3 text-center whitespace-nowrap">

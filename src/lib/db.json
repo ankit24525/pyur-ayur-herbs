@@ -399,6 +399,57 @@
       "doctorsOnlineText": "14 Doctors Currently Online",
       "availableSlotText": "Today, 4:30 PM"
     },
+    "aboutUs": {
+      "badge": "OUR HERITAGE & PHILOSOPHY",
+      "title": "Rooted in Ancient Ayurveda, Perfected for Modern Living",
+      "subtitle": "At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom with rigorous clinical purity to bring you 100% natural, potent, and safe Ayurvedic remedies.",
+      "storyBadge": "OUR SACRED JOURNEY",
+      "storyTitle": "Born from Pure Himalayan Forests & Traditional Vaidya Lineage",
+      "storyParagraph1": "Pure Ayur Herbs was founded with a single sacred conviction: true healing begins with nature's purest herbs, uncorrupted by chemicals, synthetic fillers, or artificial stimulants. Our journey started deep in the pristine valleys of the Himalayas and the dense botanical sanctuaries of India, where revered Ayurvedic vaidyas have harvested therapeutic herbs for millennia.",
+      "storyParagraph2": "Every formula we craft—from our signature Virja Energy Rasayana to Madhunashi Sugar Care—is developed following authentic classical Ayurvedic texts (Charaka Samhita and Sushruta Samhita), enriched with modern testing for zero heavy metals, microbiological purity, and optimal bio-availability.",
+      "heroImage": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80",
+      "storyImage": "https://images.unsplash.com/photo-1512290900672-1f02e0ad0ba8?auto=format&fit=crop&w=800&q=80",
+      "missionTitle": "Our Sacred Mission",
+      "missionDesc": "To restore authentic holistic health and vitality across every Indian household through honest, certified, and uncompromisingly potent Ayurvedic formulations.",
+      "visionTitle": "Our Vision",
+      "visionDesc": "To become India's most trusted natural wellness sanctuary, empowering seekers to achieve peak physical, mental, and spiritual harmony through Vedic wisdom.",
+      "stats": [
+        { "value": "50,000+", "label": "Seekers Healed Across India" },
+        { "value": "100%", "label": "Pure Natural Botanicals" },
+        { "value": "15+", "label": "Certified Ayurvedic Vaidyas" },
+        { "value": "GMP & AYUSH", "label": "Certified Manufacturing" }
+      ],
+      "pillars": [
+        {
+          "icon": "🌿",
+          "title": "100% Himalayan Herbs",
+          "description": "Wildcrafted and ethically sourced directly from organic regional farms and Himalayan valleys at peak botanical potency."
+        },
+        {
+          "icon": "🛡️",
+          "title": "AYUSH & GMP Certified",
+          "description": "Formulated in state-of-the-art GMP certified facilities meeting stringent national and global Ayurvedic safety standards."
+        },
+        {
+          "icon": "👨‍⚕️",
+          "title": "Formulated by Vaidyas",
+          "description": "Every batch is supervised, verified, and dosha-balanced by senior Ayurvedic doctors with decades of clinical experience."
+        },
+        {
+          "icon": "🔬",
+          "title": "Clinically Pure & Safe",
+          "description": "Zero heavy metals, zero steroids, zero parabens, and 100% vegetarian plant extracts for lifelong, side-effect-free wellness."
+        }
+      ],
+      "founderName": "Dr. Ananya Sharma (BAMS)",
+      "founderTitle": "Senior Ayurvedic Vaidya & Chief Research Director",
+      "founderMessage": "In a modern world flooded with synthetic quick-fixes, our ancient sages gifted us the science of longevity. Pure Ayur Herbs is our sacred promise to deliver that timeless Vedic wisdom with total honesty, supreme herb purity, and genuine compassion for your well-being.",
+      "founderImage": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80",
+      "ctaTitle": "Begin Your Natural Healing Journey Today",
+      "ctaSubtitle": "Explore our classical Ayurvedic formulations or speak with our certified Vaidyas for free guidance.",
+      "ctaButtonText": "Shop All Remedies",
+      "ctaButtonLink": "/#products"
+    },
     "footer": {
       "companyLegalName": "Pure Ayur Herbs Private Limited",
       "registeredAddress": "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
@@ -432,7 +483,7 @@
       "column2Links": [
         {
           "label": "About Us",
-          "url": "/contact-us"
+          "url": "/about-us"
         },
         {
           "label": "Blog",

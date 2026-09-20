@@ -10,6 +10,7 @@ import ProductRail from "@/components/ProductRail";
 import TrustSection from "@/components/TrustSection";
 import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
 import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
+import AboutSection from "@/components/AboutSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import SiteFooter from "@/components/SiteFooter";
 import { StorefrontSkeleton, HeroSkeleton, ConcernFilterSkeleton, ProductRailSkeleton } from "@/components/SkeletonLoader";
@@ -360,6 +361,9 @@ export default function Home() {
 
       {/* 1-on-1 Free Doctor Consultation Banner */}
       <DoctorConsultationBanner data={cmsData.consultationBanner} />
+
+      {/* Heritage & Philosophy About Us Section */}
+      <AboutSection cmsAboutUs={cmsData?.aboutUs} />
 
       {/* Why Pure Ayur Herbs Trust Section */}
       <TrustSection />

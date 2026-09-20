@@ -3114,7 +3114,7 @@ export default function AdminDashboard() {
 
     const column2Title = footer.column2Title || "About Us";
     const column2Links = Array.isArray(footer.column2Links) && footer.column2Links.length > 0 ? footer.column2Links : [
-      { label: "About Us", url: "/contact-us" },
+      { label: "About Us", url: "/about-us" },
       { label: "Blog", url: "/blog" },
       { label: "Media", url: "/solution/gym-and-fitness" },
       { label: "Contact Us", url: "/contact-us" }
@@ -3667,6 +3667,598 @@ export default function AdminDashboard() {
             className="bg-[#244f31] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-[#1d3b24] shadow transition cursor-pointer text-xs flex items-center gap-2"
           >
             Save Storefront Footer Configuration
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAboutUsCMSEditor = () => {
+    const about = dbData.content?.aboutUs || {};
+    const badge = about.badge !== undefined ? about.badge : "OUR HERITAGE & PHILOSOPHY";
+    const title = about.title !== undefined ? about.title : "Rooted in Ancient Ayurveda, Perfected for Modern Living";
+    const subtitle = about.subtitle !== undefined ? about.subtitle : "At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom with rigorous clinical purity to bring you 100% natural, potent, and safe Ayurvedic remedies.";
+    const heroImage = about.heroImage !== undefined ? about.heroImage : "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80";
+
+    const storyBadge = about.storyBadge !== undefined ? about.storyBadge : "OUR SACRED JOURNEY";
+    const storyTitle = about.storyTitle !== undefined ? about.storyTitle : "Born from Pure Himalayan Forests & Traditional Vaidya Lineage";
+    const storyParagraph1 = about.storyParagraph1 !== undefined ? about.storyParagraph1 : "Pure Ayur Herbs was founded with a single sacred conviction: true healing begins with nature's purest herbs, uncorrupted by chemicals, synthetic fillers, or artificial stimulants. Our journey started deep in the pristine valleys of the Himalayas and the dense botanical sanctuaries of India, where revered Ayurvedic vaidyas have harvested therapeutic herbs for millennia.";
+    const storyParagraph2 = about.storyParagraph2 !== undefined ? about.storyParagraph2 : "Every formula we craft—from our signature Virja Energy Rasayana to Madhunashi Sugar Care—is developed following authentic classical Ayurvedic texts (Charaka Samhita and Sushruta Samhita), enriched with modern testing for zero heavy metals, microbiological purity, and optimal bio-availability.";
+    const storyImage = about.storyImage !== undefined ? about.storyImage : "https://images.unsplash.com/photo-1512290900672-1f02e0ad0ba8?auto=format&fit=crop&w=800&q=80";
+
+    const missionTitle = about.missionTitle !== undefined ? about.missionTitle : "Our Sacred Mission";
+    const missionDesc = about.missionDesc !== undefined ? about.missionDesc : "To restore authentic holistic health and vitality across every Indian household through honest, certified, and uncompromisingly potent Ayurvedic formulations.";
+    const visionTitle = about.visionTitle !== undefined ? about.visionTitle : "Our Vision";
+    const visionDesc = about.visionDesc !== undefined ? about.visionDesc : "To become India's most trusted natural wellness sanctuary, empowering seekers to achieve peak physical, mental, and spiritual harmony through Vedic wisdom.";
+
+    const defaultStats = [
+      { value: "50,000+", label: "Seekers Healed Across India" },
+      { value: "100%", label: "Pure Natural Botanicals" },
+      { value: "15+", label: "Certified Ayurvedic Vaidyas" },
+      { value: "GMP & AYUSH", label: "Certified Manufacturing" }
+    ];
+    const stats = Array.isArray(about.stats) && about.stats.length === 4 ? about.stats : defaultStats;
+
+    const defaultPillars = [
+      {
+        icon: "🌿",
+        title: "100% Himalayan Herbs",
+        description: "Wildcrafted and ethically sourced directly from organic regional farms and Himalayan valleys at peak botanical potency."
+      },
+      {
+        icon: "🛡️",
+        title: "AYUSH & GMP Certified",
+        description: "Formulated in state-of-the-art GMP certified facilities meeting stringent national and global Ayurvedic safety standards."
+      },
+      {
+        icon: "👨‍⚕️",
+        title: "Formulated by Vaidyas",
+        description: "Every batch is supervised, verified, and dosha-balanced by senior Ayurvedic doctors with decades of clinical experience."
+      },
+      {
+        icon: "🔬",
+        title: "Clinically Pure & Safe",
+        description: "Zero heavy metals, zero steroids, zero parabens, and 100% vegetarian plant extracts for lifelong, side-effect-free wellness."
+      }
+    ];
+    const pillars = Array.isArray(about.pillars) && about.pillars.length === 4 ? about.pillars : defaultPillars;
+
+    const founderName = about.founderName !== undefined ? about.founderName : "Dr. Ananya Sharma (BAMS)";
+    const founderTitle = about.founderTitle !== undefined ? about.founderTitle : "Senior Ayurvedic Vaidya & Chief Research Director";
+    const founderMessage = about.founderMessage !== undefined ? about.founderMessage : "In a modern world flooded with synthetic quick-fixes, our ancient sages gifted us the science of longevity. Pure Ayur Herbs is our sacred promise to deliver that timeless Vedic wisdom with total honesty, supreme herb purity, and genuine compassion for your well-being.";
+    const founderImage = about.founderImage !== undefined ? about.founderImage : "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80";
+
+    const ctaTitle = about.ctaTitle !== undefined ? about.ctaTitle : "Begin Your Natural Healing Journey Today";
+    const ctaSubtitle = about.ctaSubtitle !== undefined ? about.ctaSubtitle : "Explore our classical Ayurvedic formulations or speak with our certified Vaidyas for free guidance.";
+    const ctaButtonText = about.ctaButtonText !== undefined ? about.ctaButtonText : "Shop All Remedies";
+    const ctaButtonLink = about.ctaButtonLink !== undefined ? about.ctaButtonLink : "/#products";
+
+    const updateAboutUsState = (field: string, value: any) => {
+      const current = dbData.content?.aboutUs || {};
+      const updatedAbout = {
+        ...current,
+        badge,
+        title,
+        subtitle,
+        heroImage,
+        storyBadge,
+        storyTitle,
+        storyParagraph1,
+        storyParagraph2,
+        storyImage,
+        missionTitle,
+        missionDesc,
+        visionTitle,
+        visionDesc,
+        stats,
+        pillars,
+        founderName,
+        founderTitle,
+        founderMessage,
+        founderImage,
+        ctaTitle,
+        ctaSubtitle,
+        ctaButtonText,
+        ctaButtonLink,
+        [field]: value
+      };
+
+      setDbData({
+        ...dbData,
+        content: {
+          ...(dbData.content || {}),
+          aboutUs: updatedAbout
+        }
+      });
+    };
+
+    const handleSaveAboutUs = async () => {
+      const finalAbout = {
+        badge,
+        title,
+        subtitle,
+        heroImage,
+        storyBadge,
+        storyTitle,
+        storyParagraph1,
+        storyParagraph2,
+        storyImage,
+        missionTitle,
+        missionDesc,
+        visionTitle,
+        visionDesc,
+        stats,
+        pillars,
+        founderName,
+        founderTitle,
+        founderMessage,
+        founderImage,
+        ctaTitle,
+        ctaSubtitle,
+        ctaButtonText,
+        ctaButtonLink,
+        ...(dbData.content?.aboutUs || {})
+      };
+
+      const updatedContent = {
+        ...(dbData.content || {}),
+        aboutUs: finalAbout
+      };
+
+      await handleSaveCMSContent(updatedContent, true);
+      showToast("✨ About Us content saved and live on /about-us & homepage!");
+    };
+
+    return (
+      <div className="space-y-6 text-xs">
+        {/* Header Bar with Quick Action Links */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#f8faf1] border border-[#ddddd9] p-4 sm:p-5 rounded-2xl">
+          <div>
+            <span className="font-bold text-[10px] uppercase tracking-widest text-[#80a03c] block">
+              PAGE & SECTION CMS
+            </span>
+            <h3 className="text-base font-black text-[#17231b]">🌿 About Us Story & Philosophy Editor</h3>
+            <p className="text-[11px] text-[#666666] mt-0.5">
+              Customize the brand narrative, heritage story, purity pillars, and founder quote shown on /about-us and the storefront homepage.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href="/about-us"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 rounded-xl border border-[#ddddd9] bg-white text-[#244f31] font-bold text-xs hover:bg-[#f8faf1] transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <span>View Live Page</span>
+              <ExternalLink className="size-3.5" />
+            </a>
+            <button
+              type="button"
+              onClick={handleSaveAboutUs}
+              className="bg-[#244f31] hover:bg-[#1d3b24] text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Save About Us</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 1. Hero Section & Main Philosophy */}
+        <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl space-y-4 shadow-2xs">
+          <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
+            1. Hero Header & Mission Statement
+          </span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Badge Tag</label>
+              <input
+                type="text"
+                value={badge}
+                onChange={(e) => updateAboutUsState("badge", e.target.value)}
+                placeholder="OUR HERITAGE & PHILOSOPHY"
+                className="w-full rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Hero Image URL</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={heroImage}
+                  onChange={(e) => updateAboutUsState("heroImage", e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="flex-1 rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+                />
+                <label className="px-3 py-2 rounded-lg bg-[#eef5df] text-[#244f31] font-bold text-xs hover:bg-[#dce7c4] transition cursor-pointer shrink-0 border border-[#80a03c]/40">
+                  <span>Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        showToast("Uploading hero image...");
+                        const url = await uploadImageToCloud(file, "pure_ayur_herbs/about_us");
+                        if (url) {
+                          updateAboutUsState("heroImage", url);
+                          showToast("Hero image uploaded!");
+                        }
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold mb-1">Main Headline</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => updateAboutUsState("title", e.target.value)}
+              placeholder="Rooted in Ancient Ayurveda, Perfected for Modern Living"
+              className="w-full rounded-lg border p-2.5 bg-white border-[#ddddd9] font-bold text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold mb-1">Introductory Subtitle</label>
+            <textarea
+              rows={2}
+              value={subtitle}
+              onChange={(e) => updateAboutUsState("subtitle", e.target.value)}
+              placeholder="At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom..."
+              className="w-full rounded-lg border p-2 bg-white border-[#ddddd9]"
+            />
+          </div>
+        </div>
+
+        {/* 2. Our Sacred Journey & Heritage Story */}
+        <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl space-y-4 shadow-2xs">
+          <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
+            2. Sacred Journey & Classical Heritage Narrative
+          </span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Story Badge</label>
+              <input
+                type="text"
+                value={storyBadge}
+                onChange={(e) => updateAboutUsState("storyBadge", e.target.value)}
+                placeholder="OUR SACRED JOURNEY"
+                className="w-full rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Story Image URL</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={storyImage}
+                  onChange={(e) => updateAboutUsState("storyImage", e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1 rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+                />
+                <label className="px-3 py-2 rounded-lg bg-[#eef5df] text-[#244f31] font-bold text-xs hover:bg-[#dce7c4] transition cursor-pointer shrink-0 border border-[#80a03c]/40">
+                  <span>Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        showToast("Uploading story image...");
+                        const url = await uploadImageToCloud(file, "pure_ayur_herbs/about_us");
+                        if (url) {
+                          updateAboutUsState("storyImage", url);
+                          showToast("Story image uploaded!");
+                        }
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold mb-1">Story Headline</label>
+            <input
+              type="text"
+              value={storyTitle}
+              onChange={(e) => updateAboutUsState("storyTitle", e.target.value)}
+              placeholder="Born from Pure Himalayan Forests & Traditional Vaidya Lineage"
+              className="w-full rounded-lg border p-2 bg-white border-[#ddddd9] font-bold"
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Story Paragraph 1 (Origins & Herb Harvesting)</label>
+              <textarea
+                rows={4}
+                value={storyParagraph1}
+                onChange={(e) => updateAboutUsState("storyParagraph1", e.target.value)}
+                placeholder="Pure Ayur Herbs was founded with a single sacred conviction..."
+                className="w-full rounded-lg border p-2.5 bg-white border-[#ddddd9]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Story Paragraph 2 (Classical Samhitas & Purity Testing)</label>
+              <textarea
+                rows={4}
+                value={storyParagraph2}
+                onChange={(e) => updateAboutUsState("storyParagraph2", e.target.value)}
+                placeholder="Every formula we craft—from our signature Virja Energy Rasayana..."
+                className="w-full rounded-lg border p-2.5 bg-white border-[#ddddd9]"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 pt-2">
+            <div className="bg-[#f8faf1] p-3.5 rounded-xl border border-[#ddddd9] space-y-2">
+              <label className="block font-black text-xs text-[#244f31]">🎯 Mission Card</label>
+              <input
+                type="text"
+                value={missionTitle}
+                onChange={(e) => updateAboutUsState("missionTitle", e.target.value)}
+                placeholder="Our Sacred Mission"
+                className="w-full rounded border p-2 bg-white border-[#ddddd9] font-bold text-xs"
+              />
+              <textarea
+                rows={2}
+                value={missionDesc}
+                onChange={(e) => updateAboutUsState("missionDesc", e.target.value)}
+                placeholder="Mission description..."
+                className="w-full rounded border p-2 bg-white border-[#ddddd9] text-xs"
+              />
+            </div>
+            <div className="bg-[#f8faf1] p-3.5 rounded-xl border border-[#ddddd9] space-y-2">
+              <label className="block font-black text-xs text-[#80a03c]">👁️ Vision Card</label>
+              <input
+                type="text"
+                value={visionTitle}
+                onChange={(e) => updateAboutUsState("visionTitle", e.target.value)}
+                placeholder="Our Vision"
+                className="w-full rounded border p-2 bg-white border-[#ddddd9] font-bold text-xs"
+              />
+              <textarea
+                rows={2}
+                value={visionDesc}
+                onChange={(e) => updateAboutUsState("visionDesc", e.target.value)}
+                placeholder="Vision description..."
+                className="w-full rounded border p-2 bg-white border-[#ddddd9] text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 3. The 4 Pillars of Pure Ayur Herbs */}
+        <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl space-y-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
+              3. The 4 Pillars of Herbal Purity
+            </span>
+            <span className="text-[10px] text-[#666666]">Displayed in 4-card grid across the page</span>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {pillars.map((pillar: any, idx: number) => (
+              <div key={idx} className="bg-[#f8faf1] p-4 rounded-xl border border-[#ddddd9] space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-12">
+                    <label className="block font-bold text-[10px] text-[#666666] mb-0.5">Icon</label>
+                    <input
+                      type="text"
+                      value={pillar.icon || ""}
+                      onChange={(e) => {
+                        const copy = [...pillars];
+                        copy[idx] = { ...copy[idx], icon: e.target.value };
+                        updateAboutUsState("pillars", copy);
+                      }}
+                      className="w-full rounded border p-1.5 text-center text-lg bg-white border-[#ddddd9]"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block font-bold text-[10px] text-[#666666] mb-0.5">Pillar {idx + 1} Title</label>
+                    <input
+                      type="text"
+                      value={pillar.title || ""}
+                      onChange={(e) => {
+                        const copy = [...pillars];
+                        copy[idx] = { ...copy[idx], title: e.target.value };
+                        updateAboutUsState("pillars", copy);
+                      }}
+                      className="w-full rounded border p-1.5 bg-white border-[#ddddd9] font-bold text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-bold text-[10px] text-[#666666] mb-0.5">Description</label>
+                  <textarea
+                    rows={2}
+                    value={pillar.description || ""}
+                    onChange={(e) => {
+                      const copy = [...pillars];
+                      copy[idx] = { ...copy[idx], description: e.target.value };
+                      updateAboutUsState("pillars", copy);
+                    }}
+                    className="w-full rounded border p-2 bg-white border-[#ddddd9] text-xs"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. Message from Chief Vaidya / Founder */}
+        <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl space-y-4 shadow-2xs">
+          <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
+            4. Message from Chief Vaidya / Founder
+          </span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Doctor / Founder Name</label>
+              <input
+                type="text"
+                value={founderName}
+                onChange={(e) => updateAboutUsState("founderName", e.target.value)}
+                placeholder="Dr. Ananya Sharma (BAMS)"
+                className="w-full rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9] font-bold"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Designation & Qualifications</label>
+              <input
+                type="text"
+                value={founderTitle}
+                onChange={(e) => updateAboutUsState("founderTitle", e.target.value)}
+                placeholder="Senior Ayurvedic Vaidya & Chief Research Director"
+                className="w-full rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold mb-1">Doctor Photo URL</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={founderImage}
+                onChange={(e) => updateAboutUsState("founderImage", e.target.value)}
+                placeholder="https://..."
+                className="flex-1 rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+              />
+              <label className="px-3 py-2 rounded-lg bg-[#eef5df] text-[#244f31] font-bold text-xs hover:bg-[#dce7c4] transition cursor-pointer shrink-0 border border-[#80a03c]/40">
+                <span>Upload</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      showToast("Uploading doctor photo...");
+                      const url = await uploadImageToCloud(file, "pure_ayur_herbs/about_us");
+                      if (url) {
+                        updateAboutUsState("founderImage", url);
+                        showToast("Doctor photo uploaded!");
+                      }
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold mb-1">Doctor Inspirational Quote / Message</label>
+            <textarea
+              rows={3}
+              value={founderMessage}
+              onChange={(e) => updateAboutUsState("founderMessage", e.target.value)}
+              placeholder="In a modern world flooded with synthetic quick-fixes..."
+              className="w-full rounded-lg border p-2.5 bg-white border-[#ddddd9] italic"
+            />
+          </div>
+        </div>
+
+        {/* 5. Key Statistics (4 Counter Boxes) */}
+        <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl space-y-4 shadow-2xs">
+          <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
+            5. Key Statistics & Achievements Counter
+          </span>
+          <div className="grid gap-3 sm:grid-cols-4">
+            {stats.map((st: any, idx: number) => (
+              <div key={idx} className="bg-[#f8faf1] p-3 rounded-xl border border-[#ddddd9] space-y-1.5">
+                <label className="block font-bold text-[10px] text-[#666666]">Stat {idx + 1} Number</label>
+                <input
+                  type="text"
+                  value={st.value}
+                  onChange={(e) => {
+                    const copy = [...stats];
+                    copy[idx] = { ...copy[idx], value: e.target.value };
+                    updateAboutUsState("stats", copy);
+                  }}
+                  className="w-full rounded border p-1.5 bg-white border-[#ddddd9] font-black text-xs"
+                />
+                <label className="block font-bold text-[10px] text-[#666666] pt-1">Label</label>
+                <input
+                  type="text"
+                  value={st.label}
+                  onChange={(e) => {
+                    const copy = [...stats];
+                    copy[idx] = { ...copy[idx], label: e.target.value };
+                    updateAboutUsState("stats", copy);
+                  }}
+                  className="w-full rounded border p-1.5 bg-white border-[#ddddd9] text-xs"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 6. Call to Action Banner */}
+        <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl space-y-4 shadow-2xs">
+          <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
+            6. Bottom Call to Action
+          </span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Banner Title</label>
+              <input
+                type="text"
+                value={ctaTitle}
+                onChange={(e) => updateAboutUsState("ctaTitle", e.target.value)}
+                placeholder="Begin Your Natural Healing Journey Today"
+                className="w-full rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9] font-bold"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Button Text</label>
+              <input
+                type="text"
+                value={ctaButtonText}
+                onChange={(e) => updateAboutUsState("ctaButtonText", e.target.value)}
+                placeholder="Shop All Remedies"
+                className="w-full rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+              />
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block font-bold mb-1">Banner Subtitle</label>
+              <input
+                type="text"
+                value={ctaSubtitle}
+                onChange={(e) => updateAboutUsState("ctaSubtitle", e.target.value)}
+                placeholder="Explore our classical Ayurvedic formulations..."
+                className="w-full rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold mb-1">Button Destination Link</label>
+              <input
+                type="text"
+                value={ctaButtonLink}
+                onChange={(e) => updateAboutUsState("ctaButtonLink", e.target.value)}
+                placeholder="/#products"
+                className="w-full rounded-lg border p-2 bg-[#f8faf1]/40 border-[#ddddd9]"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Save Action */}
+        <div className="flex justify-end pt-2 pb-6">
+          <button
+            type="button"
+            onClick={handleSaveAboutUs}
+            className="bg-[#244f31] text-white px-7 py-3 rounded-xl font-black hover:bg-[#1d3b24] shadow-md transition cursor-pointer text-xs flex items-center gap-2"
+          >
+            <span>Save About Us Configuration</span>
           </button>
         </div>
       </div>
@@ -7998,6 +8590,7 @@ export default function AdminDashboard() {
               <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm">
                 <div className="flex flex-wrap items-center gap-2 mb-5">
                   <button onClick={() => setSubTab("homepage")} className={subTabStyle("homepage")}>Homepage</button>
+                  <button onClick={() => setSubTab("aboutUs")} className={subTabStyle("aboutUs")}>About Us</button>
                   <button onClick={() => setSubTab("blogs")} className={subTabStyle("blogs")}>Blogs</button>
                   <button onClick={() => setSubTab("faqs")} className={subTabStyle("faqs")}>FAQs</button>
                   <button onClick={() => setSubTab("testimonials")} className={subTabStyle("testimonials")}>Testimonials</button>
@@ -8866,6 +9459,12 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })()}
+
+                {subTab === "aboutUs" && (
+                  <div className="space-y-6">
+                    {renderAboutUsCMSEditor()}
+                  </div>
+                )}
 
                 {subTab === "blogs" && (
                   <div className="space-y-6">

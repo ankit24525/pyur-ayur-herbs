@@ -91,7 +91,7 @@ export default function SiteFooter() {
   const col2Links = (Array.isArray(footerData?.column2Links) && footerData.column2Links.length > 0)
     ? footerData.column2Links
     : [
-        { label: "About Us", url: "/contact-us" },
+        { label: "About Us", url: "/about-us" },
         { label: "Blog", url: "/blog" },
         { label: "Media", url: "/solution/gym-and-fitness" },
         { label: "Contact Us", url: "/contact-us" },

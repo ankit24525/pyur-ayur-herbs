@@ -408,6 +408,70 @@ export default function SiteFooter() {
           </div>
         )}
 
+        {/* Amazon & Flipkart Style SEO Semantic Internal Linking Mesh */}
+        <div className="border-t border-[#f0f0eb] pt-6 pb-2 text-left">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
+            <span className="text-xs font-black uppercase tracking-wider text-[#17231b]">
+              🌿 Popular Ayurvedic Searches & Solutions in India
+            </span>
+            <span className="text-[10px] font-bold text-[#80a03c] uppercase tracking-wider">
+              100% AYUSH Certified Remedies • Priority India Delivery
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-[11px] leading-relaxed text-[#666666]">
+            <div>
+              <span className="font-bold text-[#17231b] block mb-1 text-xs">Sugar Management</span>
+              <ul className="space-y-1">
+                <li><Link href="/solution/sugar-management" className="hover:text-[#80a03c] transition">Madhunashi Sugar Care</Link></li>
+                <li><Link href="/products/madhunashi-powder" className="hover:text-[#80a03c] transition">Madhunashi Powder</Link></li>
+                <li><Link href="/solution/sugar-management" className="hover:text-[#80a03c] transition">Karela Jamun Juice</Link></li>
+                <li><Link href="/solution/sugar-management" className="hover:text-[#80a03c] transition">Gudmar Glucose Balance</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <span className="font-bold text-[#17231b] block mb-1 text-xs">Men's Stamina & Energy</span>
+              <ul className="space-y-1">
+                <li><Link href="/solution/energy" className="hover:text-[#80a03c] transition">Virja Ayurvedic Vitality</Link></li>
+                <li><Link href="/products/virja-powder" className="hover:text-[#80a03c] transition">Virja Powder for Men</Link></li>
+                <li><Link href="/products/virja-gold-majun" className="hover:text-[#80a03c] transition">Virja Gold Majun Tonic</Link></li>
+                <li><Link href="/solution/energy" className="hover:text-[#80a03c] transition">Pure Himalayan Shilajit</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <span className="font-bold text-[#17231b] block mb-1 text-xs">Gym, Fitness & Detox</span>
+              <ul className="space-y-1">
+                <li><Link href="/solution/gym-and-fitness" className="hover:text-[#80a03c] transition">Ayurvedic Fat Burner Juice</Link></li>
+                <li><Link href="/products/fat-burner" className="hover:text-[#80a03c] transition">Herbal Weight Loss Tonic</Link></li>
+                <li><Link href="/solution/liver-care" className="hover:text-[#80a03c] transition">Liver Cleanse & Detox</Link></li>
+                <li><Link href="/solution/daily-ayurveda" className="hover:text-[#80a03c] transition">Triphala Digestive Care</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <span className="font-bold text-[#17231b] block mb-1 text-xs">Skin Radiance & Hair</span>
+              <ul className="space-y-1">
+                <li><Link href="/solution/skin-and-hair" className="hover:text-[#80a03c] transition">Kashmiri Kumkumadi Oil</Link></li>
+                <li><Link href="/products/perfect-36-cream" className="hover:text-[#80a03c] transition">Perfect 36 Herbal Cream</Link></li>
+                <li><Link href="/solution/skin-and-hair" className="hover:text-[#80a03c] transition">Wild Organic Amla Juice</Link></li>
+                <li><Link href="/solution/skin-and-hair" className="hover:text-[#80a03c] transition">Bhringraj Hair Growth Elixir</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <span className="font-bold text-[#17231b] block mb-1 text-xs">Heart & Women's Care</span>
+              <ul className="space-y-1">
+                <li><Link href="/solution/heart-health" className="hover:text-[#80a03c] transition">Arjuna Cardiac BP Balance</Link></li>
+                <li><Link href="/solution/womens-health" className="hover:text-[#80a03c] transition">Women's Period Harmony</Link></li>
+                <li><Link href="/solution/womens-health" className="hover:text-[#80a03c] transition">Shatavari Hormonal Tonic</Link></li>
+                <li><Link href="/blog" className="hover:text-[#80a03c] transition">Ayurvedic Health Guides</Link></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         {/* Policy Links Row */}
         <div className="flex flex-wrap justify-between items-center gap-4 text-xs font-bold text-[#666666] tracking-wide pt-4 border-t border-[#f0f0eb] select-none">
           <Link href="/privacy-policy" className="hover:text-[#80a03c] transition">Privacy Policy</Link>

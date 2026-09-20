@@ -51,6 +51,9 @@ import {
   CheckCircle2,
   ExternalLink,
   Zap,
+  Key,
+  BarChart3,
+  Filter,
 } from "lucide-react";
 import { formatSeoTitle, formatSeoDescription, SITE_URL } from "@/lib/seo-schema";
 
@@ -1163,6 +1166,9 @@ export default function AdminDashboard() {
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [orderPaymentFilter, setOrderPaymentFilter] = useState("All");
   const [pushingSrOrderId, setPushingSrOrderId] = useState<string | null>(null);
+
+  const [seoProductFilter, setSeoProductFilter] = useState("");
+  const [seoStatusFilter, setSeoStatusFilter] = useState("all");
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -2543,14 +2549,74 @@ export default function AdminDashboard() {
         body: JSON.stringify({ action: "saveSeo", data: dbData.seo }),
       });
       if (res.ok) {
-        alert("SEO metadata configuration updated!");
+        showToast("SEO metadata & Webmaster verification tags saved successfully!");
       } else {
         const errData = await res.json().catch(() => ({}));
-        alert(`Error saving SEO configuration: ${errData.error || "Server error"}`);
+        showToast(`Error saving SEO: ${errData.error || "Server error"}`);
       }
     } catch {
-      alert("Error saving SEO configuration.");
+      showToast("Error saving SEO configuration.");
     }
+  };
+
+  const handleBulkAutoGenerateSeo = async () => {
+    if (!dbData.products || dbData.products.length === 0) return;
+    const confirm = window.confirm(
+      "This will automatically generate high-converting Meta Titles, Meta Descriptions, and Focus Keywords for all products that are currently missing them. Continue?"
+    );
+    if (!confirm) return;
+
+    let updatedCount = 0;
+    const updatedProducts = dbData.products.map((p: any) => {
+      const needsTitle = !p.metaTitle || p.metaTitle.trim().length === 0;
+      const needsDesc = !p.metaDesc || p.metaDesc.trim().length === 0;
+      const needsKeywords = !p.focusKeyword || p.focusKeyword.trim().length === 0;
+
+      if (needsTitle || needsDesc || needsKeywords) {
+        updatedCount++;
+        const price = Number(p.price) || 999;
+        return {
+          ...p,
+          metaTitle: p.metaTitle && p.metaTitle.trim() ? p.metaTitle : formatSeoTitle(p.name, p.concern),
+          metaDesc: p.metaDesc && p.metaDesc.trim() ? p.metaDesc : formatSeoDescription(p.name, price, p.concern),
+          focusKeyword:
+            p.focusKeyword && p.focusKeyword.trim()
+              ? p.focusKeyword
+              : `${(p.name || "").toLowerCase()}, ${(p.concern || "ayurveda").toLowerCase()}, pure ayur herbs, ayush certified, buy online in india`,
+        };
+      }
+      return p;
+    });
+
+    if (updatedCount === 0) {
+      showToast("All products already have 100% complete custom SEO!");
+      return;
+    }
+
+    setDbData((prev: any) => ({ ...prev, products: updatedProducts }));
+    showToast(`⚡ Automatically optimized SEO for ${updatedCount} products!`);
+    await saveKey("products", updatedProducts);
+  };
+
+  const handleQuickOptimizeProductSeo = async (productId: string) => {
+    const targetProduct = (dbData.products || []).find((p: any) => p.id === productId);
+    if (!targetProduct) return;
+
+    const price = Number(targetProduct.price) || 999;
+    const updatedProducts = (dbData.products || []).map((p: any) => {
+      if (p.id === productId) {
+        return {
+          ...p,
+          metaTitle: formatSeoTitle(p.name, p.concern),
+          metaDesc: formatSeoDescription(p.name, price, p.concern),
+          focusKeyword: `${(p.name || "").toLowerCase()}, ${(p.concern || "ayurveda").toLowerCase()}, pure ayur herbs, ayush certified, buy online`,
+        };
+      }
+      return p;
+    });
+    setDbData((prev: any) => ({ ...prev, products: updatedProducts }));
+    showToast(`SEO tags generated for ${targetProduct.name}!`);
+    await saveKey("products", updatedProducts);
   };
 
   const handleToggleProductStock = async (prodId: string) => {
@@ -9522,6 +9588,54 @@ export default function AdminDashboard() {
                       />
                       <p className="text-[11px] text-gray-400 mt-1">Keep between 120 and 160 characters with strong call-to-actions.</p>
                     </div>
+
+                    {/* Search Engine Ownership & Webmaster Verification */}
+                    <div className="pt-4 border-t border-[#ddddd9] space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div>
+                          <h4 className="text-xs font-black uppercase tracking-wider text-[#17231b] flex items-center gap-1.5">
+                            <Key className="size-3.5 text-emerald-700" />
+                            <span>Search Engine Webmaster Verification Tags</span>
+                          </h4>
+                          <p className="text-[11px] text-gray-500 mt-0.5">
+                            Paste your verification meta tag content. Injected directly into the website&apos;s &lt;head&gt; automatically.
+                          </p>
+                        </div>
+                        <span className="text-[9px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full shrink-0">
+                          Auto &lt;head&gt; Injected
+                        </span>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2 pt-1">
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#17231b] mb-1">
+                            Google Search Console Verification Tag / Token
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. google-site-verification=abc123xyz or abc123xyz"
+                            value={dbData.seo?.googleVerification || ""}
+                            onChange={(e) => setDbData({ ...dbData, seo: { ...dbData.seo, googleVerification: e.target.value } })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 text-xs outline-none focus:border-[#244f31] bg-[#fdfdfd] font-mono"
+                          />
+                          <p className="text-[10px] text-gray-400 mt-0.5">Under GSC &gt; Settings &gt; Ownership verification &gt; HTML tag.</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#17231b] mb-1">
+                            Bing Webmaster Tools Verification Tag / Token
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. msvalidate.01=xyz987 or xyz987"
+                            value={dbData.seo?.bingVerification || ""}
+                            onChange={(e) => setDbData({ ...dbData, seo: { ...dbData.seo, bingVerification: e.target.value } })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 text-xs outline-none focus:border-[#244f31] bg-[#fdfdfd] font-mono"
+                          />
+                          <p className="text-[10px] text-gray-400 mt-0.5">Under Bing Webmaster &gt; Verification &gt; HTML Meta Tag.</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
@@ -9531,9 +9645,247 @@ export default function AdminDashboard() {
                     >
                       Save SEO Configuration
                     </button>
-                    <span className="text-[11px] text-gray-400">Updates live site immediately</span>
+                    <span className="text-[11px] text-gray-400">Updates live site &amp; meta verification tags immediately</span>
                   </div>
                 </form>
+
+                {/* 3. Catalog-Wide SEO Quality Auditor & 1-Click Bulk Optimizer */}
+                {(() => {
+                  const allProds = dbData.products || [];
+                  const totalCount = allProds.length;
+                  const customOptimizedCount = allProds.filter(
+                    (p: any) => p.metaTitle && p.metaTitle.trim().length > 0 && p.metaDesc && p.metaDesc.trim().length > 0
+                  ).length;
+                  const fallbackCount = totalCount - customOptimizedCount;
+                  const healthPercent = totalCount > 0 ? Math.round((customOptimizedCount / totalCount) * 100) : 100;
+
+                  const filteredProds = allProds.filter((p: any) => {
+                    const matchesSearch =
+                      !seoProductFilter ||
+                      p.name?.toLowerCase().includes(seoProductFilter.toLowerCase()) ||
+                      p.concern?.toLowerCase().includes(seoProductFilter.toLowerCase());
+                    const isCustom = Boolean(p.metaTitle && p.metaTitle.trim().length > 0 && p.metaDesc && p.metaDesc.trim().length > 0);
+                    if (seoStatusFilter === "optimized") return matchesSearch && isCustom;
+                    if (seoStatusFilter === "fallback") return matchesSearch && !isCustom;
+                    return matchesSearch;
+                  });
+
+                  return (
+                    <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-5">
+                      {/* Auditor Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#ddddd9]">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <BarChart3 className="size-4 text-emerald-700" />
+                            <h3 className="text-sm font-black uppercase tracking-wider text-[#17231b]">
+                              Catalog SEO Readiness &amp; Bulk Auto-Optimizer
+                            </h3>
+                          </div>
+                          <p className="text-xs text-[#666666] mt-0.5">
+                            Audit keyword readiness across every SKU in your catalog and populate missing SEO tags in 1 click.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleBulkAutoGenerateSeo}
+                          className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-white bg-[#244f31] hover:bg-[#1c3e26] px-4 py-2.5 rounded-xl transition shadow-xs cursor-pointer shrink-0"
+                        >
+                          <Zap className="size-3.5 text-amber-300" />
+                          <span>⚡ 1-Click Bulk Auto-Fill Missing SEO</span>
+                        </button>
+                      </div>
+
+                      {/* Health Progress & Stats */}
+                      <div className="rounded-2xl border border-gray-200 bg-[#f8fafc] p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#17231b]">
+                            Catalog Optimization Progress: <span className="text-emerald-700 font-extrabold">{customOptimizedCount} of {totalCount} Products</span>
+                          </span>
+                          <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                            healthPercent >= 90
+                              ? "bg-emerald-100 text-emerald-800"
+                              : healthPercent >= 50
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-rose-100 text-rose-700"
+                          }`}>
+                            {healthPercent}% Ready
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                          <div
+                            className={`h-2.5 rounded-full transition-all duration-500 ${
+                              healthPercent >= 90 ? "bg-emerald-600" : healthPercent >= 50 ? "bg-amber-500" : "bg-rose-500"
+                            }`}
+                            style={{ width: `${Math.max(5, healthPercent)}%` }}
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-4 text-[11px] font-semibold text-[#555555]">
+                          <span className="flex items-center gap-1.5">
+                            <span className="size-2 rounded-full bg-emerald-500" />
+                            <strong>{customOptimizedCount}</strong> Custom Meta Tags
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="size-2 rounded-full bg-blue-500" />
+                            <strong>{fallbackCount}</strong> Using Smart E-Commerce Fallbacks
+                          </span>
+                          <span className="text-gray-400">|</span>
+                          <span className="text-gray-500">
+                            (Products using fallbacks automatically inherit high-converting formulas until customized)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Filter & Search Bar */}
+                      <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-2.5 size-4 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Search by product name or health concern..."
+                            value={seoProductFilter}
+                            onChange={(e) => setSeoProductFilter(e.target.value)}
+                            className="w-full rounded-xl border border-[#ddddd9] pl-9 pr-3 py-2 text-xs outline-none focus:border-[#244f31] bg-white"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={seoStatusFilter}
+                            onChange={(e) => setSeoStatusFilter(e.target.value)}
+                            className="rounded-xl border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31] bg-white font-medium cursor-pointer"
+                          >
+                            <option value="all">All Statuses ({totalCount})</option>
+                            <option value="optimized">Custom Optimized ({customOptimizedCount})</option>
+                            <option value="fallback">Using Fallbacks ({fallbackCount})</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Product SEO Audit Table */}
+                      <div className="rounded-xl border border-[#ddddd9] overflow-hidden overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead className="bg-[#f8faf1] border-b border-[#ddddd9] text-[10px] font-black uppercase text-[#17231b] tracking-wider">
+                            <tr>
+                              <th className="p-3">Product</th>
+                              <th className="p-3">Meta Title</th>
+                              <th className="p-3">Meta Description</th>
+                              <th className="p-3">Status</th>
+                              <th className="p-3 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#ddddd9]">
+                            {filteredProds.length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="p-6 text-center text-gray-400 text-xs">
+                                  No products matched your search filter.
+                                </td>
+                              </tr>
+                            ) : (
+                              filteredProds.map((product: any) => {
+                                const isCustom = Boolean(product.metaTitle && product.metaTitle.trim().length > 0 && product.metaDesc && product.metaDesc.trim().length > 0);
+                                const titleText = product.metaTitle || formatSeoTitle(product.name, product.concern);
+                                const descText = product.metaDesc || formatSeoDescription(product.name, Number(product.price) || 999, product.concern);
+
+                                return (
+                                  <tr key={product.id} className="hover:bg-neutral-50/60 transition">
+                                    <td className="p-3">
+                                      <div className="flex items-center gap-2.5 max-w-[200px]">
+                                        {product.image && (
+                                          <div className="size-9 rounded-lg border border-gray-200 overflow-hidden shrink-0 bg-white">
+                                            <Image
+                                              src={product.image}
+                                              alt={product.name}
+                                              width={36}
+                                              height={36}
+                                              unoptimized
+                                              className="size-full object-cover"
+                                            />
+                                          </div>
+                                        )}
+                                        <div className="min-w-0">
+                                          <span className="font-bold text-[#17231b] truncate block">
+                                            {product.name}
+                                          </span>
+                                          <span className="text-[10px] text-gray-500 block">
+                                            {product.concern || "Ayurveda"} • ₹{product.price}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </td>
+
+                                    <td className="p-3 max-w-[220px]">
+                                      <span className="line-clamp-1 font-medium text-[#17231b]">
+                                        {titleText}
+                                      </span>
+                                      <span className="text-[10px] text-gray-400">
+                                        {titleText.length} chars {product.metaTitle ? "• Custom" : "• Template"}
+                                      </span>
+                                    </td>
+
+                                    <td className="p-3 max-w-[260px]">
+                                      <span className="line-clamp-1 text-gray-600">
+                                        {descText}
+                                      </span>
+                                      <span className="text-[10px] text-gray-400">
+                                        {descText.length} chars
+                                      </span>
+                                    </td>
+
+                                    <td className="p-3 whitespace-nowrap">
+                                      {isCustom ? (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800">
+                                          <CheckCircle2 className="size-2.5 text-emerald-600" />
+                                          Custom
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-800">
+                                          Fallback Active
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    <td className="p-3 text-right whitespace-nowrap">
+                                      <div className="flex items-center justify-end gap-1.5">
+                                        {!isCustom && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleQuickOptimizeProductSeo(product.id)}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition cursor-pointer"
+                                            title="Auto-fill this product with high-CTR formula"
+                                          >
+                                            <Zap className="size-3 text-emerald-600" />
+                                            <span>Auto-Fill</span>
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingProduct({
+                                              ...product,
+                                              hasVariants: Array.isArray(product.variants) && product.variants.length > 0,
+                                              variants: product.variants || [],
+                                            });
+                                          }}
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold text-[#244f31] bg-[#f8faf1] hover:bg-[#eef5df] border border-[#ddddd9] rounded-lg transition cursor-pointer"
+                                        >
+                                          <span>Edit SEO</span>
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* 3. Official Google Webmaster & Diagnostic Tools */}
                 <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-4">

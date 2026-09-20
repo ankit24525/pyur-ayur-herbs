@@ -41,6 +41,19 @@ export async function generateMetadata(): Promise<Metadata> {
       alternates: {
         canonical: siteUrl,
       },
+      verification: {
+        google: seo.googleVerification
+          ? String(seo.googleVerification).replace(/^.*content=["']([^"']+)["'].*$/, "$1").trim()
+          : "tPj_yir64TOdcN3TJ0GdrlpMrugdan2CxJ1fZw5CqEY",
+        other: {
+          ...(seo.bingVerification
+            ? { "msvalidate.01": String(seo.bingVerification).replace(/^.*content=["']([^"']+)["'].*$/, "$1").trim() }
+            : {}),
+          ...(seo.pinterestVerification
+            ? { "p:domain_verify": String(seo.pinterestVerification).replace(/^.*content=["']([^"']+)["'].*$/, "$1").trim() }
+            : {}),
+        },
+      },
       openGraph: {
         title,
         description,
@@ -83,9 +96,6 @@ export async function generateMetadata(): Promise<Metadata> {
           { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
         ],
         shortcut: "/favicon.ico",
-      },
-      verification: {
-        google: "tPj_yir64TOdcN3TJ0GdrlpMrugdan2CxJ1fZw5CqEY",
       },
     };
   } catch (e) {

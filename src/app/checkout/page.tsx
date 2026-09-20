@@ -26,6 +26,7 @@ import {
   Loader2,
   LogIn,
   LogOut,
+  UserPlus,
 } from "lucide-react";
 import { products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
@@ -45,9 +46,13 @@ function CheckoutForm() {
   const [userCoins, setUserCoins] = useState<number>(0);
   const [redeemCoins, setRedeemCoins] = useState(false);
 
-  // In-Checkout Sign-In Modal / Drawer State
+  // In-Checkout Sign-In / Sign-Up Modal State
   const [inCheckoutLoginOpen, setInCheckoutLoginOpen] = useState(false);
   const [inCheckoutLoginMode, setInCheckoutLoginMode] = useState<"whatsapp" | "email">("whatsapp");
+  const [isCheckoutSignup, setIsCheckoutSignup] = useState(false);
+  const [signupName, setSignupName] = useState("");
+  const [signupPhone, setSignupPhone] = useState("");
+  const [signupShowPassword, setSignupShowPassword] = useState(false);
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPhoneName, setLoginPhoneName] = useState("");
   const [loginOtp, setLoginOtp] = useState("");
@@ -338,7 +343,7 @@ function CheckoutForm() {
         body: JSON.stringify({
           phone: clean,
           otp: loginOtp.trim(),
-          name: loginPhoneName.trim() || formData.name,
+          name: loginPhoneName.trim() || signupName.trim() || formData.name,
         }),
       });
       const data = await res.json();
@@ -348,7 +353,14 @@ function CheckoutForm() {
           window.dispatchEvent(new Event("pyur_auth_change"));
         } catch {}
         await checkAuthStatus();
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || data.user.name || loginPhoneName.trim() || signupName.trim(),
+          phone: prev.phone || clean,
+        }));
+        setIsPhoneVerified(true);
         setInCheckoutLoginOpen(false);
+        setIsCheckoutSignup(false);
         setLoginOtp("");
         setLoginOtpSent(false);
       } else {
@@ -383,7 +395,13 @@ function CheckoutForm() {
           window.dispatchEvent(new Event("pyur_auth_change"));
         } catch {}
         await checkAuthStatus();
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || data.user.name || "",
+          phone: prev.phone || data.user.phone || "",
+        }));
         setInCheckoutLoginOpen(false);
+        setIsCheckoutSignup(false);
         setLoginEmail("");
         setLoginPassword("");
       } else {
@@ -391,6 +409,85 @@ function CheckoutForm() {
       }
     } catch {
       setLoginError("Sign in failed. Please try again.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  // In-Checkout Email & Password sign-up (Create New Account)
+  const handleInCheckoutEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    setLoginSuccessMsg("");
+
+    const name = signupName.trim() || formData.name.trim();
+    if (!name) {
+      setLoginError("Please enter your full name.");
+      return;
+    }
+    if (!loginEmail.trim()) {
+      setLoginError("Please enter your email address.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(loginEmail.trim())) {
+      setLoginError("Please enter a valid email address.");
+      return;
+    }
+
+    const cleanPhone = (signupPhone || formData.phone).replace(/\D/g, "").slice(-10);
+    if (cleanPhone && cleanPhone.length !== 10) {
+      setLoginError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    if (
+      loginPassword.length < 8 ||
+      !/[A-Z]/.test(loginPassword) ||
+      !/[a-z]/.test(loginPassword) ||
+      !/[0-9]/.test(loginPassword) ||
+      !/[!@#$%^&*(),.?":{}|<>]/.test(loginPassword)
+    ) {
+      setLoginError("Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters.");
+      return;
+    }
+
+    setLoginLoading(true);
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email: loginEmail.trim(),
+          phone: cleanPhone,
+          password: loginPassword,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        try {
+          localStorage.setItem("pyur_user", JSON.stringify(data.user));
+          window.dispatchEvent(new Event("pyur_auth_change"));
+        } catch {}
+        await checkAuthStatus();
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || name,
+          phone: prev.phone || cleanPhone,
+        }));
+        setUserEmail(loginEmail.trim());
+        setInCheckoutLoginOpen(false);
+        setIsCheckoutSignup(false);
+        setSignupName("");
+        setSignupPhone("");
+        setLoginEmail("");
+        setLoginPassword("");
+      } else {
+        setLoginError(data.error || "Failed to create account.");
+      }
+    } catch {
+      setLoginError("Failed to create account. Please try again.");
     } finally {
       setLoginLoading(false);
     }
@@ -935,18 +1032,34 @@ function CheckoutForm() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setLoginError("");
-                setLoginSuccessMsg("");
-                setInCheckoutLoginOpen(true);
-              }}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#244f31] text-white text-xs font-black hover:bg-[#1d3b24] shadow-sm transition shrink-0"
-            >
-              <LogIn className="size-3.5" />
-              <span>Log In / Sign In</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCheckoutSignup(false);
+                  setLoginError("");
+                  setLoginSuccessMsg("");
+                  setInCheckoutLoginOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#244f31] text-white text-xs font-black hover:bg-[#1d3b24] shadow-xs transition"
+              >
+                <LogIn className="size-3.5" />
+                <span>Log In</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCheckoutSignup(true);
+                  setLoginError("");
+                  setLoginSuccessMsg("");
+                  setInCheckoutLoginOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#244f31] text-[#244f31] text-xs font-black hover:bg-[#f8faf1] shadow-xs transition"
+              >
+                <UserPlus className="size-3.5" />
+                <span>Create Account</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -1594,15 +1707,21 @@ function CheckoutForm() {
 
             <div className="flex items-center gap-2.5 mb-1">
               <div className="h-9 w-9 rounded-full bg-[#244f31]/10 text-[#244f31] flex items-center justify-center">
-                <LogIn className="size-5" />
+                {isCheckoutSignup ? <UserPlus className="size-5" /> : <LogIn className="size-5" />}
               </div>
               <div>
-                <h3 className="text-base font-black text-[#17231b]">Sign In to Pure Ayur Herbs</h3>
-                <p className="text-[11px] text-[#666666]">Access saved addresses & redeem Pure Coins</p>
+                <h3 className="text-base font-black text-[#17231b]">
+                  {isCheckoutSignup ? "Create Pure Ayur Account" : "Sign In to Pure Ayur Herbs"}
+                </h3>
+                <p className="text-[11px] text-[#666666]">
+                  {isCheckoutSignup
+                    ? "Get 50 bonus Pure Coins & save your delivery address"
+                    : "Access saved addresses & redeem Pure Coins"}
+                </p>
               </div>
             </div>
 
-            {/* Login Mode Tabs */}
+            {/* Login / Sign Up Mode Tabs */}
             <div className="mt-4 flex rounded-xl bg-gray-100 p-1">
               <button
                 type="button"
@@ -1675,13 +1794,19 @@ function CheckoutForm() {
                 {!loginOtpSent && (
                   <div>
                     <label className="block text-xs font-bold text-[#17231b] mb-1">
-                      Your Name <span className="text-gray-400 font-normal">(Optional)</span>
+                      Your Full Name{" "}
+                      {isCheckoutSignup ? (
+                        <span className="text-red-500">*</span>
+                      ) : (
+                        <span className="text-gray-400 font-normal">(Optional)</span>
+                      )}
                     </label>
                     <input
                       type="text"
+                      required={isCheckoutSignup}
                       value={loginPhoneName}
                       onChange={(e) => setLoginPhoneName(e.target.value)}
-                      placeholder="Enter your name"
+                      placeholder="Enter your full name"
                       className="w-full rounded-xl border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
                     />
                   </div>
@@ -1720,6 +1845,13 @@ function CheckoutForm() {
                   </div>
                 )}
 
+                {isCheckoutSignup && !loginOtpSent && (
+                  <div className="rounded-xl bg-[#244f31]/5 border border-[#244f31]/15 p-2 text-[11px] font-semibold text-[#244f31] flex items-center gap-1.5">
+                    <Sparkles className="size-3.5 shrink-0 text-amber-500" />
+                    <span>Instant account setup via WhatsApp OTP • 50 Pure Coins bonus</span>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={loginLoading}
@@ -1728,10 +1860,86 @@ function CheckoutForm() {
                   {loginLoading ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : loginOtpSent ? (
-                    "VERIFY & SIGN IN"
+                    isCheckoutSignup ? "VERIFY & CREATE ACCOUNT" : "VERIFY & SIGN IN"
                   ) : (
                     "SEND WHATSAPP OTP"
                   )}
+                </button>
+              </form>
+            ) : isCheckoutSignup ? (
+              <form onSubmit={handleInCheckoutEmailSignup} className="mt-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#17231b] mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={signupName}
+                    onChange={(e) => setSignupName(e.target.value)}
+                    placeholder="e.g. Rahul Sharma"
+                    className="w-full rounded-xl border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#17231b] mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full rounded-xl border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#17231b] mb-1">Mobile Number</label>
+                  <div className="flex rounded-xl border border-[#ddddd9] bg-white overflow-hidden focus-within:border-[#244f31] transition">
+                    <span className="bg-[#f1f5f9] text-[#64748b] text-xs font-bold px-3 py-2 flex items-center border-r border-[#e2e8f0]">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      required
+                      value={signupPhone}
+                      onChange={(e) => setSignupPhone(e.target.value.replace(/\D/g, ""))}
+                      placeholder="10-digit mobile number"
+                      className="flex-1 px-3 py-2 text-xs outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#17231b] mb-1">Password</label>
+                  <div className="relative">
+                    <input
+                      type={signupShowPassword ? "text" : "password"}
+                      required
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Min 8 chars (Uppercase, Lowercase, Number & Symbol)"
+                      className="w-full rounded-xl border border-[#ddddd9] px-3 py-2 text-xs outline-none focus:border-[#244f31] pr-9"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSignupShowPassword(!signupShowPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {signupShowPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[10px] text-gray-500">
+                    Must be 8+ chars with uppercase, lowercase, number & special char.
+                  </p>
+                </div>
+                <div className="rounded-xl bg-[#244f31]/5 border border-[#244f31]/15 p-2 text-[11px] font-semibold text-[#244f31] flex items-center gap-1.5">
+                  <Sparkles className="size-3.5 shrink-0 text-amber-500" />
+                  <span>🎁 50 Pure Coins will be added to your account instantly!</span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full rounded-xl bg-[#244f31] py-3 text-xs font-black tracking-wider text-white hover:bg-[#1d3b24] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loginLoading ? <Loader2 className="size-4 animate-spin" /> : "CREATE ACCOUNT & CONTINUE"}
                 </button>
               </form>
             ) : (
@@ -1768,16 +1976,50 @@ function CheckoutForm() {
               </form>
             )}
 
-            <p className="mt-4 text-center text-[11px] text-gray-500">
-              Prefer to checkout quickly?{" "}
-              <button
-                type="button"
-                onClick={() => setInCheckoutLoginOpen(false)}
-                className="font-bold text-[#244f31] hover:underline"
-              >
-                Continue as Guest
-              </button>
-            </p>
+            <div className="mt-5 pt-3 border-t border-gray-100 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 text-[11px] text-gray-500 text-center">
+              <span>
+                Prefer to checkout quickly?{" "}
+                <button
+                  type="button"
+                  onClick={() => setInCheckoutLoginOpen(false)}
+                  className="font-bold text-[#244f31] hover:underline"
+                >
+                  Continue as Guest
+                </button>
+              </span>
+              <span className="text-gray-300">|</span>
+              {isCheckoutSignup ? (
+                <span>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCheckoutSignup(false);
+                      setLoginError("");
+                      setLoginSuccessMsg("");
+                    }}
+                    className="font-bold text-[#244f31] hover:underline"
+                  >
+                    Sign In
+                  </button>
+                </span>
+              ) : (
+                <span>
+                  New customer?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCheckoutSignup(true);
+                      setLoginError("");
+                      setLoginSuccessMsg("");
+                    }}
+                    className="font-bold text-[#244f31] hover:underline"
+                  >
+                    Create New Account
+                  </button>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}

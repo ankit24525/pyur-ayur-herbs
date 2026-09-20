@@ -32,7 +32,8 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
         <a href={`/products/${product.slug}`} className="block overflow-hidden rounded-lg">
           <Image
             src={product.image}
-            alt={product.name}
+            alt={`${product.name} - 100% Certified Ayurvedic Remedy | Pure Ayur Herbs`}
+            title={product.name}
             width={320}
             height={320}
             unoptimized

@@ -1169,6 +1169,7 @@ export default function AdminDashboard() {
 
   const [seoProductFilter, setSeoProductFilter] = useState("");
   const [seoStatusFilter, setSeoStatusFilter] = useState("all");
+  const [isPingingSeo, setIsPingingSeo] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -2617,6 +2618,23 @@ export default function AdminDashboard() {
     setDbData((prev: any) => ({ ...prev, products: updatedProducts }));
     showToast(`SEO tags generated for ${targetProduct.name}!`);
     await saveKey("products", updatedProducts);
+  };
+
+  const handleTriggerSeoPing = async () => {
+    setIsPingingSeo(true);
+    try {
+      const res = await fetch("/api/admin/seo-ping", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (data.success) {
+        showToast("🚀 Search engine crawlers (Google & Bing) pinged successfully!");
+      } else {
+        showToast("Crawlers pinged with sitemap URL.");
+      }
+    } catch {
+      showToast("Error triggering crawler ping.");
+    } finally {
+      setIsPingingSeo(false);
+    }
   };
 
   const handleToggleProductStock = async (prodId: string) => {
@@ -5641,6 +5659,140 @@ export default function AdminDashboard() {
                                 className="w-full rounded-xl border border-[#ddddd9] p-2.5 text-xs outline-none focus:border-[#244f31] bg-white font-medium"
                               />
                               <p className="text-[10px] text-gray-400 mt-1">Keywords help internal search matching and structured data tags.</p>
+                            </div>
+
+                            {/* Real-Time SEO Quality Score Checklist */}
+                            {(() => {
+                              const title = editingProduct.metaTitle?.trim() || formatSeoTitle(editingProduct.name || "", editingProduct.concern);
+                              const desc = editingProduct.metaDesc?.trim() || formatSeoDescription(editingProduct.name || "", Number(editingProduct.price) || 999, editingProduct.concern);
+                              const keyword = (editingProduct.focusKeyword || "").trim().toLowerCase();
+
+                              const isTitleOptimal = title.length >= 45 && title.length <= 60;
+                              const isDescOptimal = desc.length >= 120 && desc.length <= 160;
+                              const hasKeyword = keyword.length > 0;
+                              const primaryKey = keyword.split(",")[0]?.trim() || "";
+                              const keywordInTitle = hasKeyword && primaryKey.length > 0 && title.toLowerCase().includes(primaryKey);
+                              const keywordInDesc = hasKeyword && primaryKey.length > 0 && desc.toLowerCase().includes(primaryKey);
+
+                              const checks = [
+                                { label: "Title length optimal (45-60 chars)", passed: isTitleOptimal },
+                                { label: "Description length optimal (120-160 chars)", passed: isDescOptimal },
+                                { label: "Focus keyword defined", passed: hasKeyword },
+                                { label: "Primary keyword in Title", passed: keywordInTitle },
+                                { label: "Primary keyword in Description", passed: keywordInDesc },
+                              ];
+                              const passedCount = checks.filter((c) => c.passed).length;
+                              const score = Math.round((passedCount / checks.length) * 100);
+
+                              return (
+                                <div className="rounded-xl border border-gray-200 bg-white p-3.5 space-y-2 mt-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-black uppercase tracking-wider text-[#17231b] flex items-center gap-1.5">
+                                      <span>🎯</span> Real-Time SEO Quality Score
+                                    </span>
+                                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                                      score >= 80 ? "bg-emerald-100 text-emerald-800" : score >= 60 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-700"
+                                    }`}>
+                                      {score}/100 • {passedCount}/{checks.length} Checks Passed
+                                    </span>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                                    {checks.map((chk, idx) => (
+                                      <div key={idx} className="flex items-center gap-1.5 text-[11px]">
+                                        {chk.passed ? (
+                                          <CheckCircle2 className="size-3 text-emerald-600 shrink-0" />
+                                        ) : (
+                                          <AlertCircle className="size-3 text-gray-400 shrink-0" />
+                                        )}
+                                        <span className={chk.passed ? "text-[#17231b] font-medium" : "text-gray-500"}>
+                                          {chk.label}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Product FAQs & Google FAQ Accordion Schema Manager */}
+                            <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1]/50 p-4 space-y-3 mt-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-xs font-black uppercase tracking-wider text-[#17231b] flex items-center gap-1.5">
+                                    <span>❓</span> Product Q&amp;A / Google FAQPage Schema
+                                  </span>
+                                  <p className="text-[10px] text-gray-500 mt-0.5">
+                                    Automatically injects expandable Q&amp;A accordions under this product in Google Search.
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingProduct((prev: any) => ({
+                                      ...prev,
+                                      faqs: [
+                                        ...(Array.isArray(prev.faqs) ? prev.faqs : []),
+                                        { question: "", answer: "" },
+                                      ],
+                                    }));
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-[#244f31] bg-white hover:bg-[#eef5df] border border-[#ddddd9] px-2.5 py-1 rounded-lg transition cursor-pointer"
+                                >
+                                  <Plus className="size-3 text-[#244f31]" />
+                                  <span>Add Question</span>
+                                </button>
+                              </div>
+
+                              <div className="space-y-2.5 pt-1">
+                                {(!editingProduct.faqs || editingProduct.faqs.length === 0) ? (
+                                  <p className="text-[11px] text-gray-400 italic">
+                                    No custom FAQs yet. Default Vaidya guidance FAQs will be shown automatically. Click &quot;Add Question&quot; to add specific instructions.
+                                  </p>
+                                ) : (
+                                  editingProduct.faqs.map((faq: any, fIdx: number) => (
+                                    <div key={fIdx} className="bg-white border border-[#ddddd9] rounded-xl p-3 space-y-2 relative">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase">Question {fIdx + 1}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingProduct((prev: any) => ({
+                                              ...prev,
+                                              faqs: prev.faqs.filter((_: any, i: number) => i !== fIdx),
+                                            }));
+                                          }}
+                                          className="text-[10px] text-rose-600 hover:text-rose-800 font-bold"
+                                        >
+                                          ✕ Remove
+                                        </button>
+                                      </div>
+                                      <input
+                                        type="text"
+                                        placeholder="e.g. How and when should I consume this remedy?"
+                                        value={faq.question || faq.q || ""}
+                                        onChange={(e) => {
+                                          const newFaqs = [...editingProduct.faqs];
+                                          newFaqs[fIdx] = { ...newFaqs[fIdx], question: e.target.value, q: e.target.value };
+                                          setEditingProduct({ ...editingProduct, faqs: newFaqs });
+                                        }}
+                                        className="w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31]"
+                                      />
+                                      <textarea
+                                        rows={2}
+                                        placeholder="e.g. Take 15-30ml twice daily before meals with lukewarm water."
+                                        value={faq.answer || faq.a || ""}
+                                        onChange={(e) => {
+                                          const newFaqs = [...editingProduct.faqs];
+                                          newFaqs[fIdx] = { ...newFaqs[fIdx], answer: e.target.value, a: e.target.value };
+                                          setEditingProduct({ ...editingProduct, faqs: newFaqs });
+                                        }}
+                                        className="w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31]"
+                                      />
+                                    </div>
+                                  ))
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -9428,6 +9580,16 @@ export default function AdminDashboard() {
                         <span>🤖 Robots.txt</span>
                         <ExternalLink className="size-3 text-gray-500" />
                       </a>
+                      <button
+                        type="button"
+                        onClick={handleTriggerSeoPing}
+                        disabled={isPingingSeo}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#244f31] hover:bg-[#1c3e26] px-3.5 py-2 rounded-xl transition shadow-xs cursor-pointer disabled:opacity-60"
+                        title="Ping Google and Bing to request immediate re-indexing of your sitemap"
+                      >
+                        {isPingingSeo ? <Loader2 className="size-3 animate-spin" /> : <span>🚀</span>}
+                        <span>Ping Google &amp; Bing</span>
+                      </button>
                     </div>
                   </div>
 

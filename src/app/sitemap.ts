@@ -32,11 +32,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (Array.isArray(db.products)) {
       db.products.forEach((product: any) => {
         if (product.slug) {
+          const productImages = [
+            product.image,
+            ...(Array.isArray(product.images) ? product.images : []),
+            ...(Array.isArray(product.gallery) ? product.gallery : []),
+          ].filter((img: string) => typeof img === "string" && img.startsWith("http"));
+
           routes.push({
             url: `${baseUrl}/products/${encodeURIComponent(product.slug)}`,
             lastModified: now,
             changeFrequency: "weekly",
             priority: 0.9,
+            images: productImages.length > 0 ? Array.from(new Set(productImages)) : undefined,
           });
         }
       });
@@ -47,11 +54,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       db.blogs.forEach((blog: any) => {
         const blogId = blog.id || blog.title?.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
         if (blogId && blog.status === "Published") {
+          const blogImages =
+            blog.image && typeof blog.image === "string" && blog.image.startsWith("http")
+              ? [blog.image]
+              : undefined;
+
           routes.push({
             url: `${baseUrl}/blog/${encodeURIComponent(blogId)}`,
             lastModified: now,
             changeFrequency: "weekly",
             priority: 0.7,
+            images: blogImages,
           });
         }
       });

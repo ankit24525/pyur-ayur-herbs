@@ -336,7 +336,8 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               )}
               <Image
                 src={selectedImage || product.image || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80"}
-                alt={product.name}
+                alt={`${product.name} - 100% Certified Authentic Ayurvedic Formula | Pure Ayur Herbs`}
+                title={`${product.name} - Buy 100% Ayurvedic Formula Online`}
                 width={600}
                 height={600}
                 unoptimized

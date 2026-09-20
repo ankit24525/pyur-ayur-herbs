@@ -1170,6 +1170,8 @@ export default function AdminDashboard() {
   const [seoProductFilter, setSeoProductFilter] = useState("");
   const [seoStatusFilter, setSeoStatusFilter] = useState("all");
   const [isPingingSeo, setIsPingingSeo] = useState(false);
+  const [showSeoGuide, setShowSeoGuide] = useState(false);
+  const [seoGuideTab, setSeoGuideTab] = useState<"quickstart" | "formulas" | "bulk" | "webmaster" | "faqs" | "oos">("quickstart");
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -5661,6 +5663,30 @@ export default function AdminDashboard() {
                               <p className="text-[10px] text-gray-400 mt-1">Keywords help internal search matching and structured data tags.</p>
                             </div>
 
+                            {/* Admin Guidance Helper Box */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-emerald-200 bg-emerald-50/60 text-xs">
+                              <div className="flex items-start gap-2">
+                                <Sparkles className="size-4 text-emerald-700 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="font-bold text-emerald-950 block">💡 High-Ranking SEO Formula:</span>
+                                  <span className="text-emerald-800 text-[11px]">
+                                    Title: <strong>45-60 chars</strong> | Description: <strong>120-160 chars</strong> with price &amp; AYUSH certification.
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingProduct(null);
+                                  setActiveMenu("seo");
+                                  setShowSeoGuide(true);
+                                }}
+                                className="text-[10px] font-bold text-emerald-900 bg-white border border-emerald-300 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition shrink-0 cursor-pointer self-start sm:self-auto shadow-2xs"
+                              >
+                                📖 Open Full SEO Guide
+                              </button>
+                            </div>
+
                             {/* Real-Time SEO Quality Score Checklist */}
                             {(() => {
                               const title = editingProduct.metaTitle?.trim() || formatSeoTitle(editingProduct.name || "", editingProduct.concern);
@@ -9590,6 +9616,19 @@ export default function AdminDashboard() {
                         {isPingingSeo ? <Loader2 className="size-3 animate-spin" /> : <span>🚀</span>}
                         <span>Ping Google &amp; Bing</span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowSeoGuide(!showSeoGuide)}
+                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-xs cursor-pointer border ${
+                          showSeoGuide
+                            ? "bg-[#244f31] text-white border-[#244f31]"
+                            : "bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300"
+                        }`}
+                        title="Toggle Admin SEO User Guide & Step-by-Step Playbook"
+                      >
+                        <BookOpen className="size-3.5" />
+                        <span>{showSeoGuide ? "Hide Guide" : "📖 Admin SEO Guide"}</span>
+                      </button>
                     </div>
                   </div>
 
@@ -9641,8 +9680,429 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* 2. Brand & Homepage Search Appearance */}
-                <form onSubmit={handleSaveSeo} className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-5">
+                {/* Interactive Admin SEO Playbook Banner & Collapsible Drawer */}
+                  <div className="rounded-2xl border border-emerald-200 bg-[#f4f8ee] overflow-hidden transition-all shadow-xs">
+                    <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="size-10 rounded-xl bg-[#244f31] text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <BookOpen className="size-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-black uppercase tracking-wider text-[#17231b]">
+                              Admin SEO Playbook &amp; User Guide
+                            </h3>
+                            <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                              Beginner Friendly
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#555555] mt-1 leading-relaxed">
+                            Practical steps to rank Pure Ayur Herbs products on Google #1, use high-CTR character limits, set up Google Search Console, generate FAQ accordions, and optimize in 1 click.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setShowSeoGuide(!showSeoGuide)}
+                          className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-white bg-[#244f31] hover:bg-[#1c3e26] px-4 py-2.5 rounded-xl transition shadow-xs cursor-pointer"
+                        >
+                          <BookOpen className="size-3.5" />
+                          <span>{showSeoGuide ? "Collapse Guide" : "📖 Open Step-by-Step Guide"}</span>
+                          <ChevronDown className={`size-3.5 transition-transform duration-200 ${showSeoGuide ? "rotate-180" : ""}`} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Guide Content with Tabs */}
+                    {showSeoGuide && (
+                      <div className="border-t border-emerald-200 bg-white p-5 sm:p-6 space-y-6">
+                        {/* Guide Navigation Tabs */}
+                        <div className="flex flex-wrap gap-1.5 p-1 bg-[#f4f8ee] rounded-xl border border-emerald-200">
+                          {[
+                            { id: "quickstart", label: "⚡ 3-Min Product Routine", icon: Zap },
+                            { id: "formulas", label: "🎯 Title & Snippet Rules", icon: Sparkles },
+                            { id: "bulk", label: "⚡ 1-Click Bulk Auto-Fill", icon: BarChart3 },
+                            { id: "webmaster", label: "🔑 Google & Bing Setup", icon: Key },
+                            { id: "faqs", label: "❓ Google FAQ Accordions", icon: HelpCircle },
+                            { id: "oos", label: "📦 Out-of-Stock Protection", icon: ShieldCheck },
+                          ].map((tab) => {
+                            const TabIcon = tab.icon;
+                            const isActive = seoGuideTab === tab.id;
+                            return (
+                              <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setSeoGuideTab(tab.id as any)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
+                                  isActive
+                                    ? "bg-[#244f31] text-white shadow-xs"
+                                    : "text-[#17231b] hover:bg-emerald-100/60"
+                                }`}
+                              >
+                                <TabIcon className="size-3.5" />
+                                <span>{tab.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* TAB 1: 3-Minute Routine */}
+                        {seoGuideTab === "quickstart" && (
+                          <div className="space-y-4">
+                            <div className="border-l-4 border-emerald-600 pl-3">
+                              <h4 className="text-sm font-black text-[#17231b]">The 3-Minute Product SEO Routine (For Every New Item)</h4>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Follow these 6 quick steps whenever adding or updating a remedy to guarantee Google Rich Snippets &amp; maximum organic sales.
+                              </p>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                              <div className="p-4 rounded-xl border border-gray-200 bg-[#fbfdfa] space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex size-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">1</span>
+                                  <strong className="text-xs font-bold text-[#17231b]">Basic Product Details</strong>
+                                </div>
+                                <p className="text-[11px] text-gray-600 leading-relaxed">
+                                  Fill the remedy name, category/concern (e.g. <em>Sugar Management</em>), price in ₹, and high-resolution product image in the main Product tab.
+                                </p>
+                              </div>
+
+                              <div className="p-4 rounded-xl border border-gray-200 bg-[#fbfdfa] space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex size-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">2</span>
+                                  <strong className="text-xs font-bold text-[#17231b]">Open SEO Settings Tab</strong>
+                                </div>
+                                <p className="text-[11px] text-gray-600 leading-relaxed">
+                                  In the Product Edit modal, switch to the <strong>SEO Settings</strong> tab to view live Google SERP preview and character meters.
+                                </p>
+                              </div>
+
+                              <div className="p-4 rounded-xl border border-gray-200 bg-[#fbfdfa] space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex size-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">3</span>
+                                  <strong className="text-xs font-bold text-[#17231b]">1-Click Auto-Generate</strong>
+                                </div>
+                                <p className="text-[11px] text-gray-600 leading-relaxed">
+                                  Click <strong>⚡ Auto-Generate SEO</strong>. The system crafts a high-CTR title and description pre-loaded with price, concern, and AYUSH certification.
+                                </p>
+                              </div>
+
+                              <div className="p-4 rounded-xl border border-gray-200 bg-[#fbfdfa] space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex size-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">4</span>
+                                  <strong className="text-xs font-bold text-[#17231b]">Check Quality Score</strong>
+                                </div>
+                                <p className="text-[11px] text-gray-600 leading-relaxed">
+                                  Aim for <strong>100/100</strong> on the checklist. Ensure title length is 45-60 chars (green badge) and description is 120-160 chars (green badge).
+                                </p>
+                              </div>
+
+                              <div className="p-4 rounded-xl border border-gray-200 bg-[#fbfdfa] space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex size-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">5</span>
+                                  <strong className="text-xs font-bold text-[#17231b]">Add 2-3 Product FAQs</strong>
+                                </div>
+                                <p className="text-[11px] text-gray-600 leading-relaxed">
+                                  Add common customer questions (dosage, safety, results timeline). Google automatically turns these into expandable accordions on Google Search!
+                                </p>
+                              </div>
+
+                              <div className="p-4 rounded-xl border border-gray-200 bg-[#fbfdfa] space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex size-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">6</span>
+                                  <strong className="text-xs font-bold text-[#17231b]">Save &amp; Ping Google</strong>
+                                </div>
+                                <p className="text-[11px] text-gray-600 leading-relaxed">
+                                  Save the product, then click <strong>🚀 Ping Google &amp; Bing</strong> in the header to request immediate re-indexing of your sitemap.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* TAB 2: Title & Snippet Rules */}
+                        {seoGuideTab === "formulas" && (
+                          <div className="space-y-5">
+                            <div className="border-l-4 border-emerald-600 pl-3">
+                              <h4 className="text-sm font-black text-[#17231b]">Google Character Limits &amp; High-CTR Copy Formulas</h4>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Modeled after top-ranking e-commerce giants. Never guess character lengths again.
+                              </p>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              {/* Title Rules */}
+                              <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-black uppercase tracking-wider text-[#17231b]">🏷️ Meta Title Tag</span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">45 – 60 Chars</span>
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                  Google desktop &amp; mobile displays a maximum of 60 characters before truncating with &quot;...&quot;. If shorter than 45, you waste valuable search keywords.
+                                </p>
+                                <div className="bg-[#f8fafc] p-3 rounded-lg border border-gray-200 space-y-1">
+                                  <span className="text-[10px] font-black uppercase text-gray-500 block">Recommended Formula:</span>
+                                  <code className="text-xs text-[#244f31] font-bold block font-mono">
+                                    [Product Name] - [Primary Benefit / Problem Solved] | Pure Ayur Herbs
+                                  </code>
+                                </div>
+                                <div className="space-y-1 text-xs">
+                                  <span className="text-[10px] font-bold text-gray-500 block">Live Proven Examples:</span>
+                                  <div className="p-2 rounded bg-emerald-50 text-emerald-900 border border-emerald-200 text-[11px]">
+                                    🟢 <strong>Madhunashi Sugar Care - Control Blood Sugar Naturally | Pure Ayur Herbs</strong> (59 chars)
+                                  </div>
+                                  <div className="p-2 rounded bg-emerald-50 text-emerald-900 border border-emerald-200 text-[11px]">
+                                    🟢 <strong>Virja Powder for Men - Stamina, Energy &amp; Strength Booster | Pure Ayur Herbs</strong> (58 chars)
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Description Rules */}
+                              <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-black uppercase tracking-wider text-[#17231b]">📝 Meta Description Tag</span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">120 – 160 Chars</span>
+                                </div>
+                                <p className="text-xs text-gray-600">
+                                  The sales snippet shown under the blue title. Google cuts off descriptions past 160 characters. Mobile screens show approximately 120-140 characters.
+                                </p>
+                                <div className="bg-[#f8fafc] p-3 rounded-lg border border-gray-200 space-y-1">
+                                  <span className="text-[10px] font-black uppercase text-gray-500 block">Recommended Formula:</span>
+                                  <code className="text-xs text-[#244f31] font-bold block font-mono">
+                                    Buy authentic [Product] online (₹[Price]). 100% AYUSH Certified herbal remedy for [Concern]. Formulated by Vaidyas. Free Delivery across India!
+                                  </code>
+                                </div>
+                                <div className="space-y-1 text-xs">
+                                  <span className="text-[10px] font-bold text-gray-500 block">Live Proven Example:</span>
+                                  <div className="p-2 rounded bg-emerald-50 text-emerald-900 border border-emerald-200 text-[11px]">
+                                    🟢 <strong>Buy authentic Virja Powder online (₹1,499). 100% AYUSH Certified herbal formula for men&apos;s stamina &amp; vitality. Pure herbs with Free Priority Delivery!</strong> (155 chars)
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Dos & Don'ts */}
+                            <div className="grid gap-3 sm:grid-cols-2 text-xs">
+                              <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-1.5">
+                                <strong className="text-emerald-900 font-bold flex items-center gap-1.5">
+                                  <CheckCircle2 className="size-3.5 text-emerald-600" /> Best Practices (Do This):
+                                </strong>
+                                <ul className="list-disc list-inside text-[11px] text-emerald-800 space-y-1">
+                                  <li>Always mention <strong>₹Price</strong> and <strong>100% AYUSH Certified</strong> for high buyer trust.</li>
+                                  <li>Always end the title with <strong>| Pure Ayur Herbs</strong> to build brand search authority.</li>
+                                  <li>Include action verbs: <em>Buy, Shop, Relieve, Boost, Naturally</em>.</li>
+                                </ul>
+                              </div>
+
+                              <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 space-y-1.5">
+                                <strong className="text-rose-900 font-bold flex items-center gap-1.5">
+                                  <AlertCircle className="size-3.5 text-rose-600" /> Mistakes to Avoid (Don&apos;t Do This):
+                                </strong>
+                                <ul className="list-disc list-inside text-[11px] text-rose-800 space-y-1">
+                                  <li><strong>Never keyword-stuff:</strong> <em>&quot;buy virja best virja buy online price cheap offer&quot;</em> (Google penalizes this).</li>
+                                  <li><strong>Never duplicate:</strong> Don&apos;t use the exact same title for two different remedies.</li>
+                                  <li><strong>Don&apos;t leave titles blank:</strong> While templates protect you, custom titles always rank higher!</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* TAB 3: 1-Click Bulk Auto-Optimizer */}
+                        {seoGuideTab === "bulk" && (
+                          <div className="space-y-4">
+                            <div className="border-l-4 border-emerald-600 pl-3">
+                              <h4 className="text-sm font-black text-[#17231b]">How the 1-Click Bulk Auto-Optimizer Works</h4>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Save dozens of hours of manual copy-pasting by letting the intelligent engine optimize your whole catalog at once.
+                              </p>
+                            </div>
+
+                            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/60 flex items-start gap-3">
+                              <Zap className="size-5 text-amber-600 shrink-0 mt-0.5" />
+                              <div className="text-xs space-y-1">
+                                <strong className="font-bold text-amber-950">When should you use the 1-Click Bulk Auto-Optimizer?</strong>
+                                <p className="text-amber-900 leading-relaxed">
+                                  Whenever you add several new remedies at once, import products via CSV, or when you notice the <strong>Catalog Optimization Progress</strong> bar below is under 100%. In 1 second, it fills missing titles, descriptions, and focus keywords using high-CTR e-commerce templates!
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-3 text-xs">
+                              <div className="p-3.5 rounded-xl border border-gray-200 bg-white space-y-1">
+                                <span className="font-bold text-[#17231b] block">1. 100% Non-Destructive</span>
+                                <p className="text-[11px] text-gray-600">
+                                  It <strong>never overwrites</strong> products where you already wrote custom titles or descriptions. It only targets products that are currently missing SEO tags.
+                                </p>
+                              </div>
+                              <div className="p-3.5 rounded-xl border border-gray-200 bg-white space-y-1">
+                                <span className="font-bold text-[#17231b] block">2. Dynamic Real Price &amp; Concern</span>
+                                <p className="text-[11px] text-gray-600">
+                                  Each product gets unique copy generated with its actual INR price, exact health concern (e.g. Stamina, Sugar, Fitness), and target keywords.
+                                </p>
+                              </div>
+                              <div className="p-3.5 rounded-xl border border-gray-200 bg-white space-y-1">
+                                <span className="font-bold text-[#17231b] block">3. Immediate Persistence</span>
+                                <p className="text-[11px] text-gray-600">
+                                  Changes are saved straight to the database instantly. The catalog audit scorecard refreshes immediately with green &quot;Custom&quot; badges.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* TAB 4: Google & Bing Verification Setup */}
+                        {seoGuideTab === "webmaster" && (
+                          <div className="space-y-4">
+                            <div className="border-l-4 border-emerald-600 pl-3">
+                              <h4 className="text-sm font-black text-[#17231b]">Search Engine Ownership Verification (Step-by-Step)</h4>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Proves ownership of www.purreayurherbs.com to Google and Bing, unlocking impressions data, search clicks, and crawling reports.
+                              </p>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-2.5 text-xs">
+                                <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+                                  <strong className="font-bold text-[#17231b]">Google Search Console (GSC) Setup:</strong>
+                                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded">Takes 1 Min</span>
+                                </div>
+                                <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-gray-600">
+                                  <li>Go to <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="text-[#244f31] font-bold underline">Google Search Console</a> and log in with your Google account.</li>
+                                  <li>Click <strong>&quot;Add Property&quot;</strong> &gt; Select <strong>&quot;URL prefix&quot;</strong> &gt; Enter <code className="bg-gray-100 px-1 py-0.5 rounded font-mono">https://www.purreayurherbs.com</code>.</li>
+                                  <li>Under &quot;Other verification methods&quot;, click on <strong>&quot;HTML tag&quot;</strong>.</li>
+                                  <li>Copy the tag code (e.g. <code className="bg-gray-100 px-1 py-0.5 rounded font-mono">google-site-verification=abc...123</code>).</li>
+                                  <li>Paste it into the <strong>Google Search Console Verification Tag / Token</strong> input below in this dashboard.</li>
+                                  <li>Click <strong>&quot;Save SEO Configuration&quot;</strong>. Our system automatically injects it into the website&apos;s <code className="font-mono">&lt;head&gt;</code>!</li>
+                                  <li>Return to Google Search Console and click <strong>&quot;Verify&quot;</strong>. You&apos;re done!</li>
+                                </ol>
+                              </div>
+
+                              <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-2.5 text-xs">
+                                <div className="flex items-center justify-between pb-1 border-b border-gray-100">
+                                  <strong className="font-bold text-[#17231b]">Bing Webmaster Tools Setup:</strong>
+                                  <span className="text-[10px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded">Takes 1 Min</span>
+                                </div>
+                                <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-gray-600">
+                                  <li>Go to <a href="https://www.bing.com/webmasters" target="_blank" rel="noopener noreferrer" className="text-[#244f31] font-bold underline">Bing Webmaster Tools</a> and sign in.</li>
+                                  <li>Add <code className="bg-gray-100 px-1 py-0.5 rounded font-mono">https://www.purreayurherbs.com</code>.</li>
+                                  <li>Choose <strong>&quot;HTML Meta Tag&quot;</strong> verification.</li>
+                                  <li>Copy the <code className="bg-gray-100 px-1 py-0.5 rounded font-mono">msvalidate.01</code> token.</li>
+                                  <li>Paste it into the <strong>Bing Webmaster Tools Verification Tag</strong> input below and click <strong>&quot;Save SEO Configuration&quot;</strong>.</li>
+                                  <li>Return to Bing Webmaster and click <strong>&quot;Verify&quot;</strong>.</li>
+                                </ol>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* TAB 5: Google FAQ Accordions */}
+                        {seoGuideTab === "faqs" && (
+                          <div className="space-y-4">
+                            <div className="border-l-4 border-emerald-600 pl-3">
+                              <h4 className="text-sm font-black text-[#17231b]">How Google FAQ Accordions 2.5x Your Search Clicks</h4>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Schema.org FAQPage structured data makes your Google search listing massive compared to standard blue links.
+                              </p>
+                            </div>
+
+                            <div className="p-4 rounded-xl border border-emerald-200 bg-[#fbfdfa] flex flex-col sm:flex-row gap-4 items-start">
+                              <div className="size-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                                <HelpCircle className="size-5" />
+                              </div>
+                              <div className="text-xs space-y-1.5 text-gray-700">
+                                <strong className="font-bold text-[#17231b] block text-sm">Why FAQ Accordions are an Unfair SEO Advantage:</strong>
+                                <p className="leading-relaxed">
+                                  When a user searches for terms like <em>&quot;best ayurvedic remedy for sugar&quot;</em> or <em>&quot;virja powder side effects&quot;</em>, Google can display 2 to 4 expandable accordion dropdowns under your search snippet.
+                                </p>
+                                <p className="leading-relaxed">
+                                  This doubles or triples the vertical screen space your listing occupies on smartphones, physically pushing competitors off the screen while instantly establishing Ayurvedic medical authority.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-3 text-xs">
+                              <div className="p-3.5 rounded-xl border border-gray-200 bg-white space-y-1">
+                                <span className="font-bold text-[#17231b] block">Question Idea 1: Dosage &amp; Timing</span>
+                                <p className="text-[11px] text-gray-500 italic">
+                                  &quot;How and when should I consume Virja Powder?&quot;
+                                </p>
+                                <p className="text-[11px] text-gray-600 mt-1">
+                                  Answer: &quot;Take 1 teaspoon twice daily with lukewarm milk or water 30 minutes before meals.&quot;
+                                </p>
+                              </div>
+
+                              <div className="p-3.5 rounded-xl border border-gray-200 bg-white space-y-1">
+                                <span className="font-bold text-[#17231b] block">Question Idea 2: Safety &amp; Certification</span>
+                                <p className="text-[11px] text-gray-500 italic">
+                                  &quot;Is this remedy 100% safe and free from chemicals?&quot;
+                                </p>
+                                <p className="text-[11px] text-gray-600 mt-1">
+                                  Answer: &quot;Yes, all Pure Ayur Herbs formulas are 100% AYUSH Certified, free from steroids, artificial additives, and heavy metals.&quot;
+                                </p>
+                              </div>
+
+                              <div className="p-3.5 rounded-xl border border-gray-200 bg-white space-y-1">
+                                <span className="font-bold text-[#17231b] block">Question Idea 3: Results Timeline</span>
+                                <p className="text-[11px] text-gray-500 italic">
+                                  &quot;How quickly can I expect noticeable results?&quot;
+                                </p>
+                                <p className="text-[11px] text-gray-600 mt-1">
+                                  Answer: &quot;Most customers report noticeable vitality improvements within 2 to 3 weeks of consistent daily usage.&quot;
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* TAB 6: Out-of-Stock Protection */}
+                        {seoGuideTab === "oos" && (
+                          <div className="space-y-4">
+                            <div className="border-l-4 border-emerald-600 pl-3">
+                              <h4 className="text-sm font-black text-[#17231b]">Out-of-Stock (OOS) Protection &amp; Lead Capture</h4>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Why deleting sold-out remedies ruins your Google SEO, and how Pure Ayur Herbs turns stockouts into sales.
+                              </p>
+                            </div>
+
+                            <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/60 flex items-start gap-3">
+                              <AlertCircle className="size-5 text-rose-600 shrink-0 mt-0.5" />
+                              <div className="text-xs space-y-1">
+                                <strong className="font-bold text-rose-950">The #1 Mistake: NEVER delete an Out-of-Stock Product!</strong>
+                                <p className="text-rose-900 leading-relaxed">
+                                  When you delete a product, its URL becomes a <strong>404 Not Found</strong> page. Google will permanently delete that page from its index, destroying months of keyword rankings, backlinks, and organic visitors.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-2 text-xs">
+                              <div className="p-4 rounded-xl border border-emerald-200 bg-[#fbfdfa] space-y-2">
+                                <strong className="font-bold text-emerald-950 block">What Pure Ayur Herbs does automatically:</strong>
+                                <ul className="list-disc list-inside text-[11px] text-emerald-900 space-y-1.5">
+                                  <li>Returns standard <strong>200 OK</strong> status code so Google keeps your rankings 100% intact.</li>
+                                  <li>Signals Google Merchant bot with <code className="bg-emerald-100 px-1 py-0.5 rounded font-mono">availability: OutOfStock</code> schema.</li>
+                                  <li>Disables checkout buttons and replaces them with reassuring batch brewing notices.</li>
+                                </ul>
+                              </div>
+
+                              <div className="p-4 rounded-xl border border-emerald-200 bg-[#fbfdfa] space-y-2">
+                                <strong className="font-bold text-emerald-950 block">Captures Leads via WhatsApp:</strong>
+                                <ul className="list-disc list-inside text-[11px] text-emerald-900 space-y-1.5">
+                                  <li>Displays a 1-click <strong>&quot;🔔 Notify Me on WhatsApp When Restocked&quot;</strong> button.</li>
+                                  <li>Pre-fills the WhatsApp conversation with the product and variant name.</li>
+                                  <li>Suggests in-stock alternative remedies in the same health category so the customer doesn&apos;t leave empty-handed!</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. Brand & Homepage Search Appearance */}
+                  <form onSubmit={handleSaveSeo} className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-5">
                   <div className="flex items-center justify-between pb-3 border-b border-[#ddddd9]">
                     <div>
                       <h3 className="text-sm font-black uppercase tracking-wider text-[#17231b]">

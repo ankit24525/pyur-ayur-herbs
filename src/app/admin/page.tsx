@@ -62,6 +62,38 @@ const exportCanvasAsWebP = (canvas: HTMLCanvasElement, quality = 0.78): string =
   return canvas.toDataURL("image/jpeg", quality);
 };
 
+// Direct Cloudinary upload helper: uploads image to Cloudinary CDN and returns optimized URL
+const uploadImageToCloud = async (fileOrDataUrl: File | string, folder = "pure_ayur_herbs"): Promise<string> => {
+  try {
+    let body: any;
+    let headers: Record<string, string> = {};
+
+    if (typeof fileOrDataUrl === "string") {
+      body = JSON.stringify({ file: fileOrDataUrl, folder });
+      headers["Content-Type"] = "application/json";
+    } else {
+      const formData = new FormData();
+      formData.append("file", fileOrDataUrl);
+      formData.append("folder", folder);
+      body = formData;
+    }
+
+    const res = await fetch("/api/admin/upload", {
+      method: "POST",
+      headers,
+      body,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.url) return data.url;
+    }
+  } catch (err) {
+    console.warn("Cloudinary upload failed, using fallback:", err);
+  }
+  return "";
+};
+
 function ProductVariantsEditor({
   hasVariants,
   onToggleVariants,
@@ -127,6 +159,9 @@ function ProductVariantsEditor({
           ctx?.drawImage(img, 0, 0, width, height);
           const compressed = exportCanvasAsWebP(canvas, 0.78);
           updateVariantField(idx, "image", compressed);
+          void uploadImageToCloud(compressed, "pure_ayur_herbs/variants").then((cloudUrl) => {
+            if (cloudUrl) updateVariantField(idx, "image", cloudUrl);
+          });
           if (target) target.value = "";
         };
         img.src = reader.result as string;
@@ -1582,6 +1617,9 @@ export default function AdminDashboard() {
           ctx?.drawImage(img, 0, 0, width, height);
           const compressed = exportCanvasAsWebP(canvas, 0.78);
           setNewProduct((prev) => ({ ...prev, image: compressed }));
+          void uploadImageToCloud(compressed, "pure_ayur_herbs/products").then((cloudUrl) => {
+            if (cloudUrl) setNewProduct((prev) => ({ ...prev, image: cloudUrl }));
+          });
         };
         img.src = reader.result as string;
       };
@@ -1619,8 +1657,18 @@ export default function AdminDashboard() {
             ...prev,
             images: [...(prev.images || []), compressed]
           }));
+          const currentImgIndex = (newProduct.images || []).length;
           target.value = "";
-          showToast("Additional image added successfully!");
+          showToast("Image added! Uploading to Cloudinary CDN...");
+          void uploadImageToCloud(compressed, "pure_ayur_herbs/products").then((cloudUrl) => {
+            if (cloudUrl) {
+              setNewProduct((prev: any) => {
+                const nextImgs = [...(prev.images || [])];
+                nextImgs[currentImgIndex] = cloudUrl;
+                return { ...prev, images: nextImgs };
+              });
+            }
+          });
         };
         img.src = reader.result as string;
       };
@@ -1756,6 +1804,9 @@ export default function AdminDashboard() {
           ctx?.drawImage(img, 0, 0, width, height);
           const compressed = exportCanvasAsWebP(canvas, 0.78);
           setEditingProduct((prev: any) => ({ ...prev, image: compressed }));
+          void uploadImageToCloud(compressed, "pure_ayur_herbs/products").then((cloudUrl) => {
+            if (cloudUrl) setEditingProduct((prev: any) => ({ ...prev, image: cloudUrl }));
+          });
         };
         img.src = reader.result as string;
       };
@@ -1793,8 +1844,18 @@ export default function AdminDashboard() {
             ...prev,
             images: [...(prev.images || []), compressed]
           }));
+          const currentImgIndex = (editingProduct.images || []).length;
           target.value = "";
-          showToast("Additional image added successfully!");
+          showToast("Image added! Uploading to Cloudinary CDN...");
+          void uploadImageToCloud(compressed, "pure_ayur_herbs/products").then((cloudUrl) => {
+            if (cloudUrl) {
+              setEditingProduct((prev: any) => {
+                const nextImgs = [...(prev.images || [])];
+                nextImgs[currentImgIndex] = cloudUrl;
+                return { ...prev, images: nextImgs };
+              });
+            }
+          });
         };
         img.src = reader.result as string;
       };
@@ -1897,6 +1958,9 @@ export default function AdminDashboard() {
           ctx?.drawImage(img, 0, 0, width, height);
           const compressed = exportCanvasAsWebP(canvas, 0.80);
           setNewCategory((prev) => ({ ...prev, image: compressed }));
+          void uploadImageToCloud(compressed, "pure_ayur_herbs/categories").then((cloudUrl) => {
+            if (cloudUrl) setNewCategory((prev) => ({ ...prev, image: cloudUrl }));
+          });
         };
         img.src = reader.result as string;
       };
@@ -1968,10 +2032,17 @@ export default function AdminDashboard() {
       try {
         const compressed = await compressImageFile(file, 1600, 900, 0.82);
         setNewSlide((prev) => ({ ...prev, image: compressed }));
+        void uploadImageToCloud(compressed, "pure_ayur_herbs/slides").then((cloudUrl) => {
+          if (cloudUrl) setNewSlide((prev) => ({ ...prev, image: cloudUrl }));
+        });
       } catch {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setNewSlide((prev) => ({ ...prev, image: reader.result as string }));
+          const raw = reader.result as string;
+          setNewSlide((prev) => ({ ...prev, image: raw }));
+          void uploadImageToCloud(raw, "pure_ayur_herbs/slides").then((cloudUrl) => {
+            if (cloudUrl) setNewSlide((prev) => ({ ...prev, image: cloudUrl }));
+          });
         };
         reader.readAsDataURL(file);
       }
@@ -1984,10 +2055,17 @@ export default function AdminDashboard() {
       try {
         const compressed = await compressImageFile(file, 1200, 800, 0.82);
         setNewBlog((prev: any) => ({ ...prev, image: compressed }));
+        void uploadImageToCloud(compressed, "pure_ayur_herbs/blogs").then((cloudUrl) => {
+          if (cloudUrl) setNewBlog((prev: any) => ({ ...prev, image: cloudUrl }));
+        });
       } catch {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setNewBlog((prev: any) => ({ ...prev, image: reader.result as string }));
+          const raw = reader.result as string;
+          setNewBlog((prev: any) => ({ ...prev, image: raw }));
+          void uploadImageToCloud(raw, "pure_ayur_herbs/blogs").then((cloudUrl) => {
+            if (cloudUrl) setNewBlog((prev: any) => ({ ...prev, image: cloudUrl }));
+          });
         };
         reader.readAsDataURL(file);
       }
@@ -8265,15 +8343,36 @@ export default function AdminDashboard() {
                                       };
                                       setDbData({ ...dbData, content: updated });
                                       void handleSaveCMSContent(updated);
+                                      void uploadImageToCloud(compressed, "pure_ayur_herbs/cms").then((cloudUrl) => {
+                                        if (cloudUrl) {
+                                          const cloudUpdated = {
+                                            ...content,
+                                            consultationBanner: { ...cb, doctorImage: cloudUrl }
+                                          };
+                                          setDbData({ ...dbData, content: cloudUpdated });
+                                          void handleSaveCMSContent(cloudUpdated);
+                                        }
+                                      });
                                     } catch {
                                       const reader = new FileReader();
                                       reader.onloadend = () => {
+                                        const raw = reader.result as string;
                                         const updated = {
                                           ...content,
-                                          consultationBanner: { ...cb, doctorImage: reader.result as string }
+                                          consultationBanner: { ...cb, doctorImage: raw }
                                         };
                                         setDbData({ ...dbData, content: updated });
                                         void handleSaveCMSContent(updated);
+                                        void uploadImageToCloud(raw, "pure_ayur_herbs/cms").then((cloudUrl) => {
+                                          if (cloudUrl) {
+                                            const cloudUpdated = {
+                                              ...content,
+                                              consultationBanner: { ...cb, doctorImage: cloudUrl }
+                                            };
+                                            setDbData({ ...dbData, content: cloudUpdated });
+                                            void handleSaveCMSContent(cloudUpdated);
+                                          }
+                                        });
                                       };
                                       reader.readAsDataURL(file);
                                     }

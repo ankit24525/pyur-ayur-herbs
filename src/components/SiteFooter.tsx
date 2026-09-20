@@ -29,9 +29,29 @@ export function formatFooterHref(rawUrl?: string, label?: string): string {
     }
   }
 
+  // 1b. If label is FAQs, always guarantee it resolves to /faqs
+  if (
+    cleanLabel === "faqs" ||
+    cleanLabel === "faq" ||
+    cleanLabel === "frequently asked questions" ||
+    cleanLabel.includes("faq")
+  ) {
+    if (
+      !raw ||
+      raw === "#" ||
+      raw === "/" ||
+      raw === "/contact-us" ||
+      raw === "contact-us" ||
+      raw.toLowerCase().includes("faq")
+    ) {
+      return "/faqs";
+    }
+  }
+
   // 2. Empty or hash fallback
   if (!raw || raw === "#") {
     if (cleanLabel.includes("about")) return "/about-us";
+    if (cleanLabel.includes("faq")) return "/faqs";
     if (cleanLabel.includes("blog")) return "/blog";
     if (cleanLabel.includes("contact")) return "/contact-us";
     return "#";
@@ -52,6 +72,10 @@ export function formatFooterHref(rawUrl?: string, label?: string): string {
 
   if (cleanedSlug.toLowerCase() === "about-us" || cleanedSlug.toLowerCase() === "about") {
     return "/about-us";
+  }
+
+  if (cleanedSlug.toLowerCase() === "faqs" || cleanedSlug.toLowerCase() === "faq") {
+    return "/faqs";
   }
 
   return `/${cleanedSlug}`;
@@ -85,8 +109,12 @@ export default function SiteFooter() {
           const f = { ...cached.content.footer };
           if (Array.isArray(f.column2Links)) {
             f.column2Links = f.column2Links.map((l: any) => {
-              if (l?.label?.toLowerCase().trim() === "about us") {
+              const label = l?.label?.toLowerCase().trim();
+              if (label === "about us" || label === "about") {
                 return { ...l, url: "/about-us" };
+              }
+              if (label === "faqs" || label === "faq" || label === "frequently asked questions") {
+                return { ...l, url: "/faqs" };
               }
               return l;
             });
@@ -105,8 +133,12 @@ export default function SiteFooter() {
           const f = { ...data.content.footer };
           if (Array.isArray(f.column2Links)) {
             f.column2Links = f.column2Links.map((l: any) => {
-              if (l?.label?.toLowerCase().trim() === "about us") {
+              const label = l?.label?.toLowerCase().trim();
+              if (label === "about us" || label === "about") {
                 return { ...l, url: "/about-us" };
+              }
+              if (label === "faqs" || label === "faq" || label === "frequently asked questions") {
+                return { ...l, url: "/faqs" };
               }
               return l;
             });
@@ -163,6 +195,7 @@ export default function SiteFooter() {
     ? footerData.column2Links
     : [
         { label: "About Us", url: "/about-us" },
+        { label: "FAQs", url: "/faqs" },
         { label: "Blog", url: "/blog" },
         { label: "Media", url: "/solution/gym-and-fitness" },
         { label: "Contact Us", url: "/contact-us" },

@@ -29,6 +29,10 @@ import {
   X,
   Trash2,
   ChevronDown,
+  ChevronUp,
+  ArrowUp,
+  ArrowDown,
+  Pencil,
   ChevronLeft,
   ChevronRight,
   PanelLeft,
@@ -1188,7 +1192,14 @@ export default function AdminDashboard() {
     applicableValue: "",
   });
   const [newCategory, setNewCategory] = useState({ name: "", image: "", icon: "🌿" });
-  const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
+  const [newFaq, setNewFaq] = useState({ question: "", answer: "", category: "Products & Ayurveda" });
+  const [editingFaqIndex, setEditingFaqIndex] = useState<number | null>(null);
+  const [editingFaqData, setEditingFaqData] = useState<{ question: string; answer: string; category?: string }>({
+    question: "",
+    answer: "",
+    category: "Products & Ayurveda",
+  });
+  const [faqSearchTerm, setFaqSearchTerm] = useState("");
   const [newBlog, setNewBlog] = useState<any>({
     title: "",
     author: "",
@@ -2312,12 +2323,69 @@ export default function AdminDashboard() {
 
   const handleAddFaq = async (e: React.FormEvent) => {
     e.preventDefault();
-    const faq = { question: newFaq.question, answer: newFaq.answer };
-    const updated = [...dbData.faqs, faq];
+    if (!newFaq.question.trim() || !newFaq.answer.trim()) {
+      alert("Please enter both question and answer.");
+      return;
+    }
+    const faq = {
+      question: newFaq.question.trim(),
+      answer: newFaq.answer.trim(),
+      category: newFaq.category?.trim() || "Products & Ayurveda",
+    };
+    const currentFaqs = Array.isArray(dbData.faqs) ? dbData.faqs : [];
+    const updated = [faq, ...currentFaqs];
     await saveKey("faqs", updated);
-    setNewFaq({ question: "", answer: "" });
+    setNewFaq({ question: "", answer: "", category: "Products & Ayurveda" });
     setSubTab("faqs");
-    alert("FAQ added!");
+    showToast("FAQ added and published to storefront!");
+  };
+
+  const handleDeleteFaq = async (index: number) => {
+    if (!confirm("Are you sure you want to delete this FAQ?")) return;
+    const currentFaqs = Array.isArray(dbData.faqs) ? [...dbData.faqs] : [];
+    currentFaqs.splice(index, 1);
+    await saveKey("faqs", currentFaqs);
+    if (editingFaqIndex === index) {
+      setEditingFaqIndex(null);
+    }
+    showToast("FAQ deleted successfully.");
+  };
+
+  const handleStartEditFaq = (index: number, faq: any) => {
+    setEditingFaqIndex(index);
+    setEditingFaqData({
+      question: faq.question || "",
+      answer: faq.answer || "",
+      category: faq.category || "Products & Ayurveda",
+    });
+  };
+
+  const handleSaveEditFaq = async (index: number) => {
+    if (!editingFaqData.question.trim() || !editingFaqData.answer.trim()) {
+      alert("Question and Answer cannot be empty.");
+      return;
+    }
+    const currentFaqs = Array.isArray(dbData.faqs) ? [...dbData.faqs] : [];
+    currentFaqs[index] = {
+      ...currentFaqs[index],
+      question: editingFaqData.question.trim(),
+      answer: editingFaqData.answer.trim(),
+      category: editingFaqData.category?.trim() || "Products & Ayurveda",
+    };
+    await saveKey("faqs", currentFaqs);
+    setEditingFaqIndex(null);
+    showToast("FAQ updated successfully.");
+  };
+
+  const handleMoveFaq = async (index: number, direction: "up" | "down") => {
+    const currentFaqs = Array.isArray(dbData.faqs) ? [...dbData.faqs] : [];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentFaqs.length) return;
+    const temp = currentFaqs[index];
+    currentFaqs[index] = currentFaqs[targetIndex];
+    currentFaqs[targetIndex] = temp;
+    await saveKey("faqs", currentFaqs);
+    showToast("FAQ order updated.");
   };
 
   const handleAddBlog = async (e: React.FormEvent) => {
@@ -9908,33 +9976,285 @@ export default function AdminDashboard() {
 
                 {subTab === "faqs" && (
                   <div className="space-y-6">
-                    <form onSubmit={handleAddFaq} className="grid gap-3 sm:grid-cols-2 text-xs border-b pb-6">
-                      <input
-                        type="text"
-                        placeholder="Question"
-                        required
-                        value={newFaq.question}
-                        onChange={(e) => setNewFaq({ ...newFaq, question: e.target.value })}
-                        className="rounded border p-2"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Answer"
-                        required
-                        value={newFaq.answer}
-                        onChange={(e) => setNewFaq({ ...newFaq, answer: e.target.value })}
-                        className="rounded border p-2"
-                      />
-                      <button type="submit" className="bg-[#244f31] text-white font-bold rounded p-2 sm:col-span-2">Add FAQ</button>
-                    </form>
-
-                    <div className="space-y-2 text-xs">
-                      {dbData.faqs.map((faq: any, idx: number) => (
-                        <div key={idx} className="border p-3 rounded bg-[#f8faf1]">
-                          <span className="block font-bold">Q: {faq.question}</span>
-                          <span className="block text-[#666666] mt-1">A: {faq.answer}</span>
+                    {/* Top Bar with Live Preview & Counter */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-neutral-200 shadow-xs">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-sm text-[#17231b]">
+                            Storefront Frequently Asked Questions (FAQs)
+                          </h3>
+                          <span className="bg-[#244f31]/10 text-[#244f31] font-extrabold text-[11px] px-2 py-0.5 rounded-full">
+                            {(Array.isArray(dbData.faqs) ? dbData.faqs.length : 0)} Questions
+                          </span>
                         </div>
-                      ))}
+                        <p className="text-xs text-[#666666] mt-0.5">
+                          Questions displayed on the public{" "}
+                          <code className="text-[#244f31] font-mono bg-[#f4f7f2] px-1 py-0.5 rounded">/faqs</code> page and indexed by Google FAQ rich snippets.
+                        </p>
+                      </div>
+
+                      <a
+                        href="/faqs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 bg-[#244f31] hover:bg-[#1b3d26] text-white font-bold text-xs px-3.5 py-2 rounded-lg transition shadow-xs shrink-0"
+                      >
+                        <ExternalLink className="size-3.5" />
+                        <span>View Live FAQ Page</span>
+                      </a>
+                    </div>
+
+                    {/* Add New FAQ Form */}
+                    <div className="bg-white p-5 rounded-xl border border-neutral-200 shadow-xs">
+                      <h4 className="font-black text-xs uppercase tracking-wider text-[#244f31] mb-3 flex items-center gap-1.5">
+                        <PlusCircle className="size-4" />
+                        <span>Add New Question & Answer</span>
+                      </h4>
+
+                      <form onSubmit={handleAddFaq} className="space-y-3 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="sm:col-span-2">
+                            <label className="block font-bold text-[#17231b] mb-1">
+                              Question <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. How to track my order? or Are products 100% vegetarian?"
+                              required
+                              value={newFaq.question}
+                              onChange={(e) => setNewFaq({ ...newFaq, question: e.target.value })}
+                              className="w-full rounded-lg border border-neutral-200 p-2.5 text-xs text-[#17231b] focus:outline-hidden focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-[#17231b] mb-1">Category</label>
+                            <select
+                              value={newFaq.category || "Products & Ayurveda"}
+                              onChange={(e) => setNewFaq({ ...newFaq, category: e.target.value })}
+                              className="w-full rounded-lg border border-neutral-200 p-2.5 text-xs text-[#17231b] bg-white focus:outline-hidden focus:border-[#244f31]"
+                            >
+                              <option value="Products & Ayurveda">Products & Ayurveda</option>
+                              <option value="Account & Orders">Account & Orders</option>
+                              <option value="Payments & Offers">Payments & Offers</option>
+                              <option value="General">General</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-[#17231b] mb-1">
+                            Answer <span className="text-red-500">*</span>
+                          </label>
+                          <textarea
+                            rows={3}
+                            placeholder="Provide a clear, helpful answer that addresses customer concerns..."
+                            required
+                            value={newFaq.answer}
+                            onChange={(e) => setNewFaq({ ...newFaq, answer: e.target.value })}
+                            className="w-full rounded-lg border border-neutral-200 p-2.5 text-xs text-[#17231b] focus:outline-hidden focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31]"
+                          />
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="submit"
+                            className="bg-[#244f31] hover:bg-[#1b3d26] text-white font-bold text-xs px-5 py-2.5 rounded-lg shadow-xs transition inline-flex items-center gap-2"
+                          >
+                            <Plus className="size-3.5" />
+                            <span>Publish FAQ to Storefront</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* Filter & Search */}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-neutral-400" />
+                        <input
+                          type="text"
+                          placeholder="Search existing questions or answers..."
+                          value={faqSearchTerm}
+                          onChange={(e) => setFaqSearchTerm(e.target.value)}
+                          className="w-full bg-white rounded-lg pl-9 pr-8 py-2 text-xs text-[#17231b] border border-neutral-200 focus:outline-hidden focus:border-[#244f31]"
+                        />
+                        {faqSearchTerm && (
+                          <button
+                            onClick={() => setFaqSearchTerm("")}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Existing FAQs List */}
+                    <div className="space-y-3">
+                      {(!Array.isArray(dbData.faqs) || dbData.faqs.length === 0) ? (
+                        <div className="bg-white p-8 rounded-xl border border-neutral-200 text-center text-xs text-[#666666]">
+                          No FAQs found. Add your first question above!
+                        </div>
+                      ) : (
+                        dbData.faqs
+                          .map((faq: any, originalIndex: number) => ({ faq, originalIndex }))
+                          .filter(({ faq }: any) => {
+                            if (!faqSearchTerm.trim()) return true;
+                            const term = faqSearchTerm.toLowerCase();
+                            return (
+                              (faq.question && faq.question.toLowerCase().includes(term)) ||
+                              (faq.answer && faq.answer.toLowerCase().includes(term)) ||
+                              (faq.category && faq.category.toLowerCase().includes(term))
+                            );
+                          })
+                          .map(({ faq, originalIndex }: any) => {
+                            const isEditing = editingFaqIndex === originalIndex;
+
+                            if (isEditing) {
+                              return (
+                                <div
+                                  key={originalIndex}
+                                  className="bg-white p-4 rounded-xl border-2 border-[#244f31] shadow-sm space-y-3 text-xs"
+                                >
+                                  <div className="font-bold text-[#244f31] flex items-center justify-between">
+                                    <span>Editing FAQ #{originalIndex + 1}</span>
+                                    <span className="text-[11px] text-neutral-400 font-normal">Directly updates storefront</span>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="sm:col-span-2">
+                                      <label className="block font-bold text-neutral-700 mb-1">Question</label>
+                                      <input
+                                        type="text"
+                                        value={editingFaqData.question}
+                                        onChange={(e) =>
+                                          setEditingFaqData({ ...editingFaqData, question: e.target.value })
+                                        }
+                                        className="w-full rounded-lg border border-neutral-300 p-2 text-xs font-semibold focus:outline-hidden focus:border-[#244f31]"
+                                      />
+                                    </div>
+
+                                    <div>
+                                      <label className="block font-bold text-neutral-700 mb-1">Category</label>
+                                      <select
+                                        value={editingFaqData.category || "Products & Ayurveda"}
+                                        onChange={(e) =>
+                                          setEditingFaqData({ ...editingFaqData, category: e.target.value })
+                                        }
+                                        className="w-full rounded-lg border border-neutral-300 p-2 text-xs bg-white focus:outline-hidden focus:border-[#244f31]"
+                                      >
+                                        <option value="Products & Ayurveda">Products & Ayurveda</option>
+                                        <option value="Account & Orders">Account & Orders</option>
+                                        <option value="Payments & Offers">Payments & Offers</option>
+                                        <option value="General">General</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <label className="block font-bold text-neutral-700 mb-1">Answer</label>
+                                    <textarea
+                                      rows={3}
+                                      value={editingFaqData.answer}
+                                      onChange={(e) =>
+                                        setEditingFaqData({ ...editingFaqData, answer: e.target.value })
+                                      }
+                                      className="w-full rounded-lg border border-neutral-300 p-2 text-xs focus:outline-hidden focus:border-[#244f31]"
+                                    />
+                                  </div>
+
+                                  <div className="flex items-center justify-end gap-2 pt-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingFaqIndex(null)}
+                                      className="px-3 py-1.5 rounded-lg border border-neutral-200 text-neutral-600 font-bold hover:bg-neutral-50 transition"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleSaveEditFaq(originalIndex)}
+                                      className="px-4 py-1.5 rounded-lg bg-[#244f31] text-white font-bold hover:bg-[#1b3d26] transition shadow-xs"
+                                    >
+                                      Save Changes
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                key={originalIndex}
+                                className="bg-white p-4 rounded-xl border border-neutral-200 shadow-2xs hover:border-neutral-300 transition text-xs flex flex-col sm:flex-row sm:items-start justify-between gap-4"
+                              >
+                                <div className="space-y-1.5 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-[11px] font-bold text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded">
+                                      #{originalIndex + 1}
+                                    </span>
+                                    {faq.category && (
+                                      <span className="bg-emerald-50 text-[#244f31] font-bold text-[10px] px-2 py-0.5 rounded-full border border-emerald-100">
+                                        {faq.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h5 className="font-bold text-sm text-[#17231b] leading-snug">
+                                    {faq.question}
+                                  </h5>
+                                  <p className="text-[#555555] leading-relaxed whitespace-pre-line text-xs">
+                                    {faq.answer}
+                                  </p>
+                                </div>
+
+                                <div className="flex sm:flex-col items-center justify-end gap-1.5 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
+                                  {/* Reorder Up / Down */}
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={originalIndex === 0}
+                                      onClick={() => void handleMoveFaq(originalIndex, "up")}
+                                      title="Move Up"
+                                      className="p-1.5 rounded hover:bg-neutral-100 text-neutral-500 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                      <ArrowUp className="size-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={originalIndex === dbData.faqs.length - 1}
+                                      onClick={() => void handleMoveFaq(originalIndex, "down")}
+                                      title="Move Down"
+                                      className="p-1.5 rounded hover:bg-neutral-100 text-neutral-500 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed"
+                                    >
+                                      <ArrowDown className="size-3.5" />
+                                    </button>
+                                  </div>
+
+                                  {/* Edit & Delete */}
+                                  <div className="flex items-center gap-1 ml-auto sm:ml-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartEditFaq(originalIndex, faq)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-md transition"
+                                    >
+                                      <Pencil className="size-3" />
+                                      <span>Edit</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteFaq(originalIndex)}
+                                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition"
+                                      title="Delete FAQ"
+                                    >
+                                      <Trash2 className="size-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                      )}
                     </div>
                   </div>
                 )}

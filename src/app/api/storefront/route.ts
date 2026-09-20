@@ -17,6 +17,7 @@ export async function GET(request: Request) {
       content: db.content || { announcement: {}, heroSlides: [], consultationBanner: {} },
       reviews: db.reviews || [],
       testimonials: db.testimonials || [],
+      faqs: Array.isArray(db.faqs) ? db.faqs : [],
       blogs: Array.isArray(db.blogs)
         ? db.blogs
             .filter((b: any) => b.status === "Published")

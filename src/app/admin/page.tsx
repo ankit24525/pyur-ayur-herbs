@@ -1424,14 +1424,18 @@ export default function AdminDashboard() {
               notifications: [],
               ...(data.marketing || {})
             },
-            content: (activeMenuRef.current === "content" && prev?.content) ? prev.content : {
-              announcement: {},
-              heroSlides: [],
-              consultationBanner: {},
-              footer: {},
-              ...(data.content || {})
-            },
-            settings: (activeMenuRef.current === "settings" && prev?.settings) ? prev.settings : settings,
+            content: (mutations["content"] && now - mutations["content"].timestamp < 15000)
+              ? mutations["content"].value
+              : ((activeMenuRef.current === "content" && prev?.content) ? prev.content : {
+                  announcement: {},
+                  heroSlides: [],
+                  consultationBanner: {},
+                  footer: {},
+                  ...(data.content || {})
+                }),
+            settings: (mutations["settings"] && now - mutations["settings"].timestamp < 15000)
+              ? mutations["settings"].value
+              : ((activeMenuRef.current === "settings" && prev?.settings) ? prev.settings : settings),
             seo: {
               title: "Pure Ayur Herbs | 100% Certified Ayurvedic Formulations - Virja, Madhunashi & Fat Burner",
               metaDesc: "Shop authentic 100% AYUSH Certified Virja Powder & Gold Majun for Men's Stamina, Madhunashi Sugar Management, Fat Burner Tonic, and Perfect 36 Cream. Free Priority Delivery across India.",
@@ -3104,21 +3108,23 @@ export default function AdminDashboard() {
     const supportEmail = footer.supportEmail !== undefined ? footer.supportEmail : (dbData.settings?.supportEmail || "info@pureayurherbs.com");
 
     const column1Title = footer.column1Title || "Shop All";
-    const column1Links = Array.isArray(footer.column1Links) && footer.column1Links.length > 0 ? footer.column1Links : [
-      { label: "Glowing Skin Juices", url: "/products/kapiva-glowing-skin-juice" },
-      { label: "Shilajit Resins", url: "/products/pure-himalayan-shilajit" },
-      { label: "My Account", url: "/profile?tab=orders" },
-      { label: "Faqs", url: "/contact-us" },
-      { label: "Innovation Fund", url: "/solution/daily-ayurveda" }
+    const defaultCol1 = [
+      { label: "Virja Powder", url: "/products/virja-powder" },
+      { label: "Madhunashi Powder", url: "/products/madhunashi-powder" },
+      { label: "Fat Burner", url: "/products/fat-burner" },
+      { label: "Perfect 36 Cream", url: "/products/perfect-36-cream" },
+      { label: "Virja Gold Majun", url: "/products/virja-gold-majun" }
     ];
+    const column1Links = Array.isArray(footer.column1Links) ? footer.column1Links : defaultCol1;
 
     const column2Title = footer.column2Title || "About Us";
-    const column2Links = Array.isArray(footer.column2Links) && footer.column2Links.length > 0 ? footer.column2Links : [
+    const defaultCol2 = [
       { label: "About Us", url: "/about-us" },
       { label: "Blog", url: "/blog" },
       { label: "Media", url: "/solution/gym-and-fitness" },
       { label: "Contact Us", url: "/contact-us" }
     ];
+    const column2Links = Array.isArray(footer.column2Links) ? footer.column2Links : defaultCol2;
 
     const social = footer.socialLinks || dbData.settings?.socialLinks || {
       instagram: "https://instagram.com",
@@ -3251,9 +3257,6 @@ export default function AdminDashboard() {
         ...(dbData.content || {}),
         footer: finalFooter
       };
-
-      await handleSaveCMSContent(updatedContent);
-
       const updatedSettings = {
         ...dbData.settings,
         companyLegalName,
@@ -3262,24 +3265,49 @@ export default function AdminDashboard() {
         socialLinks: social,
       };
 
+      // 1. Lock mutation timestamps for 15s to protect from stale background polling
+      recentMutationsRef.current["content"] = { timestamp: Date.now(), value: updatedContent };
+      recentMutationsRef.current["settings"] = { timestamp: Date.now(), value: updatedSettings };
+
+      // 2. Immediate optimistic local state update
+      setDbData((prev: any) => ({
+        ...prev,
+        content: updatedContent,
+        settings: updatedSettings
+      }));
+
+      // 3. LocalStorage & cache sync
+      if (typeof window !== "undefined") {
+        try {
+          const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+          cached.content = updatedContent;
+          cached.settings = updatedSettings;
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+          window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updatedContent } }));
+        } catch {}
+      }
+
+      // 4. Single atomic cloud database write
       try {
-        await fetch("/api/admin/all", {
+        const res = await fetch(`/api/admin/all?t=${Date.now()}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "saveSettings", data: updatedSettings }),
+          body: JSON.stringify({
+            action: "saveFooterCMS",
+            data: {
+              footer: finalFooter,
+              settings: updatedSettings
+            }
+          }),
         });
-        setDbData((prev: any) => ({ ...prev, content: updatedContent, settings: updatedSettings }));
-        if (typeof window !== "undefined") {
-          try {
-            const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
-            cached.content = updatedContent;
-            cached.settings = updatedSettings;
-            localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
-            window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updatedContent } }));
-          } catch {}
+        if (res.ok) {
+          showToast("✨ Footer links and settings saved permanently!");
+        } else {
+          showToast("Notice: Saved locally, syncing to cloud database...");
         }
-      } catch {}
-      showToast("Storefront Footer configuration saved successfully!");
+      } catch (err) {
+        console.error("Error saving footer:", err);
+      }
     };
 
     return (

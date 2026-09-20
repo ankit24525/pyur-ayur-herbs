@@ -79,6 +79,33 @@ export async function POST(request: Request) {
       );
     }
 
+    if (action === "saveFooterCMS" && data) {
+      const { footer, settings: newSettings } = data;
+      if (footer) {
+        if (!db.content) db.content = {};
+        db.content.footer = footer;
+      }
+      if (newSettings) {
+        db.settings = { ...db.settings, ...newSettings };
+      }
+      const success = await writeDB(db);
+      invalidateDBCache();
+      if (!success) {
+        return NextResponse.json(
+          { success: false, error: "Database write failed." },
+          { status: 500, headers: NO_CACHE_HEADERS }
+        );
+      }
+      try {
+        revalidatePath("/", "layout");
+        revalidatePath("/about-us", "page");
+      } catch {}
+      return NextResponse.json(
+        { success: true, footer: db.content?.footer, settings: db.settings },
+        { headers: NO_CACHE_HEADERS }
+      );
+    }
+
     if (action === "saveSettings" && data) {
       db.settings = { ...db.settings, ...data };
       const success = await writeDB(db);

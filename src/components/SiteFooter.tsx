@@ -148,7 +148,7 @@ export default function SiteFooter() {
   };
 
   const col1Title = footerData?.column1Title || "Shop All";
-  const col1Links = (Array.isArray(footerData?.column1Links) && footerData.column1Links.length > 0)
+  const col1Links = Array.isArray(footerData?.column1Links)
     ? footerData.column1Links
     : [
         { label: "Virja Powder", url: "/products/virja-powder" },
@@ -159,7 +159,7 @@ export default function SiteFooter() {
       ];
 
   const col2Title = footerData?.column2Title || "About Us";
-  const col2Links = (Array.isArray(footerData?.column2Links) && footerData.column2Links.length > 0)
+  const col2Links = Array.isArray(footerData?.column2Links)
     ? footerData.column2Links
     : [
         { label: "About Us", url: "/about-us" },

@@ -215,7 +215,13 @@
         "email": "vaidya.specialist@pureayurherbs.com",
         "role": "Ayurveda Doctor"
       }
-    ]
+    ],
+    "shiprocket": {
+      "enabled": true,
+      "email": "imranshah244830@gmail.com",
+      "password": "@16*APnSzf$&O9oZi#AT2kVISPTvRrqi",
+      "pickupLocation": "PURE AYUR HERBS"
+    }
   },
   "reviews": [
     {
@@ -414,10 +420,22 @@
       "visionTitle": "Our Vision",
       "visionDesc": "To become India's most trusted natural wellness sanctuary, empowering seekers to achieve peak physical, mental, and spiritual harmony through Vedic wisdom.",
       "stats": [
-        { "value": "50,000+", "label": "Seekers Healed Across India" },
-        { "value": "100%", "label": "Pure Natural Botanicals" },
-        { "value": "15+", "label": "Certified Ayurvedic Vaidyas" },
-        { "value": "GMP & AYUSH", "label": "Certified Manufacturing" }
+        {
+          "value": "50,000+",
+          "label": "Seekers Healed Across India"
+        },
+        {
+          "value": "100%",
+          "label": "Pure Natural Botanicals"
+        },
+        {
+          "value": "15+",
+          "label": "Certified Ayurvedic Vaidyas"
+        },
+        {
+          "value": "GMP & AYUSH",
+          "label": "Certified Manufacturing"
+        }
       ],
       "pillars": [
         {
@@ -451,11 +469,6 @@
       "ctaButtonLink": "/#products"
     },
     "footer": {
-      "companyLegalName": "Pure Ayur Herbs Private Limited",
-      "registeredAddress": "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
-      "gstin": "09AAPCP8765A1Z5",
-      "supportWhatsapp": "",
-      "supportEmail": "info@pureayurherbs.com",
       "column1Title": "Shop All",
       "column1Links": [
         {
@@ -497,21 +510,7 @@
           "label": "Contact Us",
           "url": "/contact-us"
         }
-      ],
-      "socialLinks": {
-        "instagram": "https://instagram.com",
-        "facebook": "https://facebook.com",
-        "youtube": "https://youtube.com",
-        "twitter": "https://twitter.com",
-        "linkedin": ""
-      },
-      "showLeafPattern": true,
-      "showMarketplaces": true,
-      "showPaymentGateways": true,
-      "showColumnLinks": true,
-      "showColumn1": true,
-      "showColumn2": true,
-      "copyrightText": "Pure Ayur Herbs Private Limited | © Copyright 2026 Pure Ayur"
+      ]
     }
   },
   "users": [
@@ -574,5 +573,6 @@
       "icon": "🌸",
       "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=120&q=80"
     }
-  ]
+  ],
+  "verifiedPhones": []
 }

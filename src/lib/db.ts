@@ -157,6 +157,12 @@ function sanitizeDBData(data: any): DBData {
         saltIndex: "1",
         env: "sandbox",
         enabled: true
+      },
+      shiprocket: {
+        enabled: true,
+        email: "imranshah244830@gmail.com",
+        password: "@16*APnSzf$&O9oZi#AT2kVISPTvRrqi",
+        pickupLocation: "PURE AYUR HERBS",
       }
     };
   } else {
@@ -171,6 +177,19 @@ function sanitizeDBData(data: any): DBData {
         twitter: "https://twitter.com",
         linkedin: "",
       };
+    }
+    if (!data.settings.shiprocket || typeof data.settings.shiprocket !== "object") {
+      data.settings.shiprocket = {
+        enabled: true,
+        email: "imranshah244830@gmail.com",
+        password: "@16*APnSzf$&O9oZi#AT2kVISPTvRrqi",
+        pickupLocation: "PURE AYUR HERBS",
+      };
+    } else {
+      if (data.settings.shiprocket.enabled === undefined) data.settings.shiprocket.enabled = true;
+      if (!data.settings.shiprocket.email) data.settings.shiprocket.email = "imranshah244830@gmail.com";
+      if (!data.settings.shiprocket.password) data.settings.shiprocket.password = "@16*APnSzf$&O9oZi#AT2kVISPTvRrqi";
+      if (!data.settings.shiprocket.pickupLocation) data.settings.shiprocket.pickupLocation = "PURE AYUR HERBS";
     }
   }
 

@@ -91,8 +91,8 @@ export async function formatOrderStatusMessage(order: any, customerName?: string
   if (order.shiprocketShipmentId) {
     try {
       const srConfig = db.settings?.shiprocket || {};
-      const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;
-      const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD;
+      const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL || "imranshah244830@gmail.com";
+      const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD || "@16*APnSzf$&O9oZi#AT2kVISPTvRrqi";
       if (srEmail && srPassword) {
         const token = await getShiprocketToken(srEmail, srPassword);
         if (token) {

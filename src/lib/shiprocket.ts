@@ -3,12 +3,16 @@
  * Handles authentication, automated order creation, and live shipment tracking.
  */
 
+export const DEFAULT_SHIPROCKET_EMAIL = process.env.SHIPROCKET_EMAIL || "imranshah244830@gmail.com";
+export const DEFAULT_SHIPROCKET_PASSWORD = process.env.SHIPROCKET_PASSWORD || "@16*APnSzf$&O9oZi#AT2kVISPTvRrqi";
+export const DEFAULT_SHIPROCKET_PICKUP_LOCATION = process.env.SHIPROCKET_PICKUP_LOCATION || "PURE AYUR HERBS";
+
 let cachedToken: string | null = null;
 let tokenExpiresAt: number = 0;
 
 export async function getShiprocketToken(email?: string, password?: string): Promise<string | null> {
-  const srEmail = email || process.env.SHIPROCKET_EMAIL;
-  const srPassword = password || process.env.SHIPROCKET_PASSWORD;
+  const srEmail = email || DEFAULT_SHIPROCKET_EMAIL;
+  const srPassword = password || DEFAULT_SHIPROCKET_PASSWORD;
 
   if (!srEmail || !srPassword) {
     console.warn("[Shiprocket API] Missing email or password credentials.");
@@ -283,17 +287,17 @@ export async function pushOrderToShiprocket(order: any, dbInstance?: any): Promi
     const db = dbInstance || (await readDB());
 
     const srConfig = db.settings?.shiprocket || {};
-    const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;
-    const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD;
+    const srEmail = srConfig.email || DEFAULT_SHIPROCKET_EMAIL;
+    const srPassword = srConfig.password || DEFAULT_SHIPROCKET_PASSWORD;
     const srEnabled = srConfig.enabled !== false;
 
     if (!srEmail || !srPassword) {
-      console.log(`[Shiprocket Auto-Push]: Skipped for ${order.id} (Credentials not configured in Settings -> Shipping & Rates)`);
-      return { success: false, skipped: true, error: "Shiprocket credentials missing. Please configure them in Settings -> Shipping & Rates." };
+      console.log(`[Shiprocket Auto-Push]: Skipped for ${order.id} (Credentials missing)`);
+      return { success: false, skipped: true, error: "Shiprocket credentials missing." };
     }
 
     if (!srEnabled) {
-      console.log(`[Shiprocket Auto-Push]: Skipped for ${order.id} (Auto-push toggle is turned off in Settings)`);
+      console.log(`[Shiprocket Auto-Push]: Skipped for ${order.id} (Auto-push is turned off in settings)`);
       return { success: false, skipped: true, error: "Shiprocket auto-push is disabled in settings." };
     }
 
@@ -379,7 +383,7 @@ export async function pushOrderToShiprocket(order: any, dbInstance?: any): Promi
       {
         order_id: order.id,
         order_date: nowStr,
-        pickup_location: srConfig.pickupLocation || "PURE AYUR HERBS",
+        pickup_location: srConfig.pickupLocation || DEFAULT_SHIPROCKET_PICKUP_LOCATION,
         billing_customer_name: firstName,
         billing_last_name: lastName,
         billing_address: cleanAddress,
@@ -452,8 +456,8 @@ export async function cancelOrderOnShiprocket(order: any, dbInstance?: any): Pro
     const db = dbInstance || (await readDB());
 
     const srConfig = db.settings?.shiprocket || {};
-    const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;
-    const srPassword = srConfig.password || process.env.SHIPROCKET_PASSWORD;
+    const srEmail = srConfig.email || DEFAULT_SHIPROCKET_EMAIL;
+    const srPassword = srConfig.password || DEFAULT_SHIPROCKET_PASSWORD;
 
     if (!srEmail || !srPassword) {
       console.log(`[Shiprocket Auto-Cancel]: No credentials found, marking order ${order.id} cancelled in store.`);

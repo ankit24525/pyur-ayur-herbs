@@ -18,7 +18,18 @@ export async function GET(request: Request) {
       reviews: db.reviews || [],
       testimonials: db.testimonials || [],
       blogs: Array.isArray(db.blogs)
-        ? db.blogs.filter((b: any) => b.status === "Published")
+        ? db.blogs
+            .filter((b: any) => b.status === "Published")
+            .map((b: any) => ({
+              id: b.id || b.title?.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-"),
+              title: b.title,
+              author: b.author,
+              date: b.date,
+              status: b.status,
+              image: b.image && b.image.length < 5000 ? b.image : "/brand/pure-ayur-logo.png",
+              readTime: b.readTime || "4 min",
+              excerpt: b.excerpt || (typeof b.content === "string" ? b.content.slice(0, 150) : ""),
+            }))
         : [],
       settings: {
         storeName: db.settings?.storeName || "Pure Ayur Herbs Store",
@@ -41,10 +52,10 @@ export async function GET(request: Request) {
       },
     };
 
-    // Edge CDN Caching: Fast revalidation (5s) so product updates are near-instantaneous
+    // Edge CDN Caching: 60s at Vercel edge to save Origin Transfer quota (served from 100GB Fast Data Transfer instead of 10GB Origin Transfer)
     const cacheControlHeader = forceFresh
       ? "no-store, no-cache, must-revalidate, max-age=0"
-      : "public, s-maxage=5, stale-while-revalidate=15";
+      : "public, s-maxage=60, stale-while-revalidate=300";
 
     return NextResponse.json(responseData, {
       status: 200,

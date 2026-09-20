@@ -1413,12 +1413,32 @@ export default function AdminDashboard() {
       setLoading(false);
     }, 1500);
 
-    // Poll for real-time database updates (every 5 seconds, non-overlapping)
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        void loadData();
+    // Lightweight heartbeat poll for new orders (120 bytes instead of 1.43 MB)
+    const pollRealtimeUpdates = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const res = await fetch(`/api/admin/poll?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { "Pragma": "no-cache" },
+        });
+        if (res.ok) {
+          const pollData = await res.json();
+          if (typeof pollData.ordersCount === "number") {
+            if (previousOrdersCountRef.current !== null && pollData.ordersCount > previousOrdersCountRef.current) {
+              playNotificationSound();
+              showToast(`🔔 New Order Received: #${pollData.latestOrderId || ""} (${pollData.latestOrderCustomer || "Customer"} - ₹${pollData.latestOrderTotal || ""})`);
+              // Trigger full data reload only when a genuine new order arrives
+              void loadData();
+            }
+            previousOrdersCountRef.current = pollData.ordersCount;
+          }
+        }
+      } catch (pollErr) {
+        console.warn("Heartbeat poll error:", pollErr);
       }
-    }, 5000);
+    };
+
+    const interval = setInterval(pollRealtimeUpdates, 10000);
 
     return () => {
       clearTimeout(safetyTimer);

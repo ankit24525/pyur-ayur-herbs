@@ -60,7 +60,11 @@ async function getMongoClient(): Promise<MongoClient> {
 }
 
 let dbMemoryCache: { data: DBData; timestamp: number } | null = null;
-const CACHE_TTL_MS = 6000; // 6s in-memory cache for ultra-fast response (< 0.01ms)
+const CACHE_TTL_MS = 2000; // 2s max in-memory cache for rapid real-time synchronization
+
+export function invalidateDBCache() {
+  dbMemoryCache = null;
+}
 
 import { products as defaultProducts } from "./store";
 
@@ -267,8 +271,12 @@ export async function readDB(bypassCache = false): Promise<DBData> {
 }
 
 export async function writeDB(data: DBData): Promise<boolean> {
-  // 1. Always write to memory cache and local filesystem immediately
-  dbMemoryCache = { data, timestamp: Date.now() };
+  // 1. Always write to memory cache and local filesystem immediately with clean clone
+  try {
+    dbMemoryCache = { data: JSON.parse(JSON.stringify(data)), timestamp: Date.now() };
+  } catch {
+    dbMemoryCache = { data, timestamp: Date.now() };
+  }
   writeLocalDB(data);
 
   if (!uri) {

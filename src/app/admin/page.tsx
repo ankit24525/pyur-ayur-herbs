@@ -1226,12 +1226,19 @@ export default function AdminDashboard() {
   };
 
   const isFetchingRef = useRef(false);
+  const recentMutationsRef = useRef<Record<string, { timestamp: number; value: any }>>({});
 
   const loadData = async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     try {
-      const res = await fetch("/api/admin/all", { cache: "no-store" });
+      const res = await fetch(`/api/admin/all?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Pragma": "no-cache",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         
@@ -1300,11 +1307,17 @@ export default function AdminDashboard() {
         }
 
         setDbData((prev: any) => {
+          const now = Date.now();
+          const mutations = recentMutationsRef.current;
+
           let mergedProducts = (Array.isArray(data.products) && data.products.length > 0)
             ? data.products
             : (prev.products && prev.products.length > 0 ? prev.products : []);
 
-          if (mergedProducts.length === 0 && typeof window !== "undefined") {
+          // If products were mutated locally in the last 8 seconds, prioritize the local mutation to prevent stale background poll from reverting it
+          if (mutations["products"] && now - mutations["products"].timestamp < 8000) {
+            mergedProducts = mutations["products"].value;
+          } else if (mergedProducts.length === 0 && typeof window !== "undefined") {
             try {
               const localBackup = localStorage.getItem("pyur_admin_products_backup");
               if (localBackup) {
@@ -1316,18 +1329,31 @@ export default function AdminDashboard() {
             } catch {}
           }
 
+          // Clean up expired mutations
+          Object.keys(mutations).forEach((k) => {
+            if (now - mutations[k].timestamp >= 8000) {
+              delete mutations[k];
+            }
+          });
+
           return {
             orders: [],
-            coupons: [],
             leads: [],
             reviews: [],
             blogs: [],
             faqs: [],
             testimonials: [],
-            collections: [],
-            categories: [],
             ...data,
             products: mergedProducts,
+            categories: (mutations["categories"] && now - mutations["categories"].timestamp < 8000)
+              ? mutations["categories"].value
+              : (data.categories || prev.categories || []),
+            coupons: (mutations["coupons"] && now - mutations["coupons"].timestamp < 8000)
+              ? mutations["coupons"].value
+              : (data.coupons || prev.coupons || []),
+            collections: (mutations["collections"] && now - mutations["collections"].timestamp < 8000)
+              ? mutations["collections"].value
+              : (data.collections || prev.collections || []),
             marketing: {
               campaigns: [],
               banners: [],
@@ -1344,8 +1370,8 @@ export default function AdminDashboard() {
             },
             settings: (activeMenuRef.current === "settings" && prev?.settings) ? prev.settings : settings,
             seo: {
-              title: "Pure Ayur Herbs - Original Ayurvedic Formulations",
-              metaDesc: "Shop authentic gold-grade Shilajit, juices, and wellness supplements certified by Ayurvedic experts.",
+              title: "Pure Ayur Herbs | 100% Certified Ayurvedic Formulations - Virja, Madhunashi & Fat Burner",
+              metaDesc: "Shop authentic 100% AYUSH Certified Virja Powder & Gold Majun for Men's Stamina, Madhunashi Sugar Management, Fat Burner Tonic, and Perfect 36 Cream. Free Priority Delivery across India.",
               ...(data.seo || {})
             }
           };
@@ -1402,6 +1428,9 @@ export default function AdminDashboard() {
 
   const saveKey = async (key: string, value: any) => {
     try {
+      // Record mutation timestamp to protect against stale background poll overwrite for 8 seconds
+      recentMutationsRef.current[key] = { timestamp: Date.now(), value };
+
       // Optimistic update of local state immediately
       setDbData((prev: any) => ({ ...prev, [key]: value }));
 
@@ -1419,7 +1448,7 @@ export default function AdminDashboard() {
         }
       }
 
-      const res = await fetch("/api/admin/all", {
+      const res = await fetch(`/api/admin/all?t=${Date.now()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "updateKey", key, value }),

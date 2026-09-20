@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const forceFresh = searchParams.get("fresh") === "1";
 
-    const db = await readDB();
+    const db = await readDB(forceFresh);
 
     const responseData = {
       products: Array.isArray(db.products) && db.products.length > 0 ? db.products : products,
@@ -41,10 +41,10 @@ export async function GET(request: Request) {
       },
     };
 
-    // Edge CDN Caching: Cache at Vercel Edge for 2 minutes, revalidate in background up to 10 minutes
+    // Edge CDN Caching: Fast revalidation (5s) so product updates are near-instantaneous
     const cacheControlHeader = forceFresh
-      ? "no-store, no-cache, must-revalidate"
-      : "public, s-maxage=120, stale-while-revalidate=600";
+      ? "no-store, no-cache, must-revalidate, max-age=0"
+      : "public, s-maxage=5, stale-while-revalidate=15";
 
     return NextResponse.json(responseData, {
       status: 200,

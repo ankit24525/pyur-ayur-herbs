@@ -8,7 +8,8 @@ import Link from "next/link";
 import { ArrowLeft, PackageX } from "lucide-react";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+// Enable Incremental Static Regeneration (ISR): Cache at Edge CDN for 60 seconds
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

@@ -68,6 +68,9 @@ export async function POST(request: Request) {
       }
       try {
         revalidatePath("/", "layout");
+        revalidatePath("/products/[slug]", "page");
+        revalidatePath("/blog/[id]", "page");
+        revalidatePath("/blog", "page");
       } catch {}
       return NextResponse.json(
         { success: true, message: `${key} updated successfully.`, data: value },

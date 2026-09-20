@@ -3,9 +3,20 @@ import { readDB, writeDB } from "@/lib/db";
 import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 import { cancelOrderOnShiprocket } from "@/lib/shiprocket";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
-  const db = await readDB();
-  return NextResponse.json({ orders: db.orders });
+  const db = await readDB(true);
+  return NextResponse.json(
+    { orders: db.orders || [] },
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    }
+  );
 }
 
 export async function POST(request: Request) {

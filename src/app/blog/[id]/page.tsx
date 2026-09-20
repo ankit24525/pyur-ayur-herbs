@@ -21,25 +21,43 @@ export default function BlogPostPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
-    // Fetch storefront catalog and blogs
-    getStorefrontData()
-      .then((data) => {
-        if (data && data.products) {
-          setCatalog(data.products);
+    // Fetch individual full blog content from dedicated cached API
+    const fetchBlogData = async () => {
+      try {
+        const [blogRes, storefrontData] = await Promise.all([
+          fetch(`/api/blog/${encodeURIComponent(blogId)}`).catch(() => null),
+          getStorefrontData().catch(() => null),
+        ]);
+
+        if (storefrontData && storefrontData.products) {
+          setCatalog(storefrontData.products);
         }
-        if (data && data.blogs) {
-          const match = data.blogs.find((b: any) => {
+
+        let foundBlog = null;
+        if (blogRes && blogRes.ok) {
+          const blogJson = await blogRes.json();
+          if (blogJson.blog) {
+            foundBlog = blogJson.blog;
+          }
+        }
+
+        // Fallback to storefront blogs if dedicated route failed
+        if (!foundBlog && storefrontData && storefrontData.blogs) {
+          foundBlog = storefrontData.blogs.find((b: any) => {
             const cleanId = b.id || b.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
             return cleanId === blogId;
           });
-          setBlog(match || null);
         }
-        setLoading(false);
-      })
-      .catch((e) => {
+
+        setBlog(foundBlog || null);
+      } catch (e) {
         console.error("Error loading blog details:", e);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    void fetchBlogData();
 
     // Load cart from localStorage
     if (typeof window !== "undefined") {

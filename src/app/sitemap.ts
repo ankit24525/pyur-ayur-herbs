@@ -14,6 +14,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/return-policy`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
     { url: `${baseUrl}/privacy-policy`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
     { url: `${baseUrl}/terms-of-service`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
+    // Core solution / concern category hubs
+    { url: `${baseUrl}/solution/sugar-management`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/solution/gym-and-fitness`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/solution/energy`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/solution/skin-and-hair`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/solution/heart-health`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/solution/liver-care`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/solution/daily-ayurveda`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/solution/womens-health`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
   ];
 
   try {

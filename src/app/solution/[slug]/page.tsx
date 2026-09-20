@@ -12,6 +12,7 @@ import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
 import SiteFooter from "@/components/SiteFooter";
 import { concerns, products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
+import { generateBreadcrumbSchema, SITE_URL } from "@/lib/seo-schema";
 
 const concernDetailsMap: Record<
   string,
@@ -236,8 +237,37 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
     return <StorefrontSkeleton />;
   }
 
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: "Home", path: "/" },
+    { name: details.title, path: `/solution/${slug}` },
+  ]);
+
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: details.title,
+    description: details.description,
+    url: `${SITE_URL}/solution/${slug}`,
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Pure Ayur Herbs",
+      url: SITE_URL,
+    },
+  };
+
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
+      {/* Google Rich Snippets: Solution Breadcrumbs */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      {/* Google Rich Snippets: Collection Category Page */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
+
       {/* Announcement Ticker */}
       <AnnouncementBar onOpenAppModal={() => setAppModalOpen(true)} />
 
@@ -251,6 +281,15 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
         onOpenConsultationModal={() => setConsultationModalOpen(true)}
         products={catalog}
       />
+
+      {/* Breadcrumbs Navigation */}
+      <div className="mx-auto max-w-[1440px] px-4 py-3 text-xs text-[#666666] md:px-6">
+        <Link href="/" className="hover:text-[#244f31]">
+          Home
+        </Link>
+        <span className="mx-2">/</span>
+        <span className="font-bold text-[#17231b]">{details.title}</span>
+      </div>
 
       {/* Hero Header Banner */}
       <section className={`bg-gradient-to-r ${details.bg} py-12 text-white`}>

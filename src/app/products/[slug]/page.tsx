@@ -7,6 +7,14 @@ import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
 import { ArrowLeft, PackageX } from "lucide-react";
 import type { Metadata } from "next";
+import {
+  generateProductSchema,
+  generateBreadcrumbSchema,
+  generateFaqSchema,
+  formatSeoTitle,
+  formatSeoDescription,
+  SITE_URL,
+} from "@/lib/seo-schema";
 
 // Enable Incremental Static Regeneration (ISR): Cache at Edge CDN for 60 seconds
 export const revalidate = 60;
@@ -37,23 +45,55 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
   
   if (dbProduct) {
-    const title = `${dbProduct.name} | Pure Ayur Herbs`;
-    const description = dbProduct.description || "Premium certified herbal remedy formulated by Ayurvedic Vaidyas.";
+    const price = Number(dbProduct.price) || 0;
+    const title = dbProduct.metaTitle || formatSeoTitle(dbProduct.name, dbProduct.concern);
+    const description = dbProduct.metaDesc || formatSeoDescription(dbProduct.name, price, dbProduct.concern);
+    const canonicalUrl = `${SITE_URL}/products/${encodeURIComponent(dbProduct.slug || normalizedSlug)}`;
+    const ogImages = (dbProduct.images && dbProduct.images.length > 0 ? [dbProduct.image, ...dbProduct.images] : [dbProduct.image])
+      .filter((img: string) => typeof img === "string" && img.startsWith("http"));
+
     return {
       title,
       description,
+      alternates: {
+        canonical: canonicalUrl,
+      },
+      keywords: dbProduct.keywords && Array.isArray(dbProduct.keywords) && dbProduct.keywords.length > 0
+        ? dbProduct.keywords
+        : [
+            dbProduct.name,
+            dbProduct.concern || "Ayurvedic Health",
+            "Pure Ayur Herbs",
+            "100% Ayurvedic Formula",
+            "AYUSH Certified",
+            "Buy Ayurvedic Remedy Online",
+          ],
       openGraph: {
         title,
         description,
-        images: [dbProduct.image],
+        url: canonicalUrl,
+        siteName: "Pure Ayur Herbs",
+        images: ogImages.map((img: string) => ({
+          url: img,
+          width: 800,
+          height: 800,
+          alt: dbProduct.name,
+        })),
         type: "website",
-      }
+        locale: "en_IN",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: ogImages.slice(0, 1),
+      },
     };
   }
   
   return {
     title: "Product Details | Pure Ayur Herbs",
-    description: "Authentic Himalayan Ayurvedic formulations."
+    description: "Authentic Himalayan Ayurvedic formulations.",
   };
 }
 
@@ -171,7 +211,55 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       faqs: matchedProduct.faqs || []
     };
 
-    return <ProductDetailView key={detailProduct.slug} product={detailProduct} />;
+    const productSchema = generateProductSchema({
+      id: detailProduct.id,
+      slug: detailProduct.slug,
+      name: detailProduct.name,
+      category: detailProduct.category,
+      concernSlug: detailProduct.concernSlug,
+      description: detailProduct.description,
+      price: detailProduct.price,
+      mrp: detailProduct.mrp,
+      image: detailProduct.image,
+      gallery: detailProduct.gallery,
+      sku: matchedProduct.sku,
+      inStock: matchedProduct.inStock !== false,
+      rating: dynamicRating,
+      reviewsCount: dynamicReviewsCount,
+      customerReviews: allCustomerReviews,
+      faqs: detailProduct.faqs,
+    });
+
+    const breadcrumbSchema = generateBreadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: detailProduct.category, path: `/solution/${detailProduct.concernSlug || "general"}` },
+      { name: detailProduct.name, path: `/products/${detailProduct.slug}` },
+    ]);
+
+    const faqSchema = generateFaqSchema(detailProduct.faqs || []);
+
+    return (
+      <>
+        {/* Google Rich Snippet: Product, Price, Stock & 5-Star Ratings */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+        />
+        {/* Google Rich Snippet: Breadcrumbs Navigation */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        {/* Google Rich Snippet: Expandable Product FAQs */}
+        {faqSchema && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+          />
+        )}
+        <ProductDetailView key={detailProduct.slug} product={detailProduct} />
+      </>
+    );
   }
 
   // Graceful Product Not Found Page

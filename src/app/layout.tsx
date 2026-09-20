@@ -48,11 +48,26 @@ export async function generateMetadata(): Promise<Metadata> {
         siteName: "Pure Ayur Herbs",
         locale: "en_IN",
         type: "website",
+        images: [
+          {
+            url: `${siteUrl}/brand/pure-ayur-og-banner.jpg`,
+            width: 1200,
+            height: 630,
+            alt: "Pure Ayur Herbs - 100% Certified Ayurvedic Formulations",
+          },
+          {
+            url: `${siteUrl}/brand/pure-ayur-logo.jpg`,
+            width: 530,
+            height: 530,
+            alt: "Pure Ayur Herbs Official Logo",
+          },
+        ],
       },
       twitter: {
         card: "summary_large_image",
         title,
         description,
+        images: [`${siteUrl}/brand/pure-ayur-og-banner.jpg`],
       },
       icons: {
         icon: [
@@ -90,6 +105,26 @@ export async function generateMetadata(): Promise<Metadata> {
         siteName: "Pure Ayur Herbs",
         locale: "en_IN",
         type: "website",
+        images: [
+          {
+            url: `${siteUrl}/brand/pure-ayur-og-banner.jpg`,
+            width: 1200,
+            height: 630,
+            alt: "Pure Ayur Herbs - 100% Certified Ayurvedic Formulations",
+          },
+          {
+            url: `${siteUrl}/brand/pure-ayur-logo.jpg`,
+            width: 530,
+            height: 530,
+            alt: "Pure Ayur Herbs Official Logo",
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: fallbackTitle,
+        description: fallbackDesc,
+        images: [`${siteUrl}/brand/pure-ayur-og-banner.jpg`],
       },
       icons: {
         icon: [
@@ -122,7 +157,8 @@ const jsonLdSchema = {
       "name": "Pure Ayur Herbs",
       "alternateName": "Pure Ayur Herbs Private Limited",
       "url": "https://www.purreayurherbs.com",
-      "logo": "https://www.purreayurherbs.com/brand/pure-ayur-logo.png",
+      "logo": "https://www.purreayurherbs.com/brand/pure-ayur-logo.jpg",
+      "image": "https://www.purreayurherbs.com/brand/pure-ayur-og-banner.jpg",
       "description": "Pure Ayur Herbs bridges ancient Ayurvedic wisdom with modern clinical research for purity you can taste & feel.",
       "contactPoint": {
         "@type": "ContactPoint",
@@ -137,6 +173,12 @@ const jsonLdSchema = {
       "name": "Pure Ayur Herbs",
       "publisher": {
         "@id": "https://www.purreayurherbs.com/#organization",
+      },
+      "primaryImageOfPage": {
+        "@type": "ImageObject",
+        "url": "https://www.purreayurherbs.com/brand/pure-ayur-og-banner.jpg",
+        "width": "1200",
+        "height": "630",
       },
     },
   ],
@@ -154,6 +196,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="icon" type="image/svg+xml" href="/brand/pure-ayur-logo.svg" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
         <link rel="shortcut icon" href="/favicon.ico" />
+        <meta name="thumbnail" content="https://www.purreayurherbs.com/brand/pure-ayur-logo.jpg" />
+        <link rel="image_src" href="https://www.purreayurherbs.com/brand/pure-ayur-og-banner.jpg" />
+        <meta property="og:image" content="https://www.purreayurherbs.com/brand/pure-ayur-og-banner.jpg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:image" content="https://www.purreayurherbs.com/brand/pure-ayur-og-banner.jpg" />
         <meta name="google-site-verification" content="tPj_yir64TOdcN3TJ0GdrlpMrugdan2CxJ1fZw5CqEY" />
         <script
           type="application/ld+json"

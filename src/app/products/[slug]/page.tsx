@@ -151,6 +151,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         title: r.title || "Ayurvedic Remedy Experience",
         comment: r.content || r.comment || "",
         date: r.date || "Recently",
+        image: r.image || (Array.isArray(r.images) && r.images[0]) || null,
+        images: r.images || (r.image ? [r.image] : []),
         verifiedBuyer: r.verifiedBuyer === true || r.isVerified === true,
         source: "customer"
       }));

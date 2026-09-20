@@ -18,42 +18,6 @@ interface Testimonial {
   date?: string;
 }
 
-const DEFAULT_REVIEWS: Testimonial[] = [
-  {
-    id: "default-1",
-    name: "Rajesh K., Mumbai",
-    verified: true,
-    product: "Madhunashi Powder (200g)",
-    rating: 5,
-    comment:
-      "Switched to Madhunashi as part of my morning routine and noticed healthy sugar balance within weeks. 100% natural herbs!",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-    customerPhoto: null,
-  },
-  {
-    id: "default-2",
-    name: "Arjun Sharma, Jaipur",
-    verified: true,
-    product: "Virja Powder",
-    rating: 5,
-    comment:
-      "Remarkable difference in my daily stamina and afternoon energy levels. 100% authentic Ayurvedic formulation that truly works.",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
-    customerPhoto: null,
-  },
-  {
-    id: "default-3",
-    name: "Meera Sen, Delhi",
-    verified: true,
-    product: "Fat Burner Slim Tonic (500ml)",
-    rating: 5,
-    comment:
-      "Recommended by my Ayurvedic doctor. Supported my metabolism, detox, and digestion significantly within 3 weeks.",
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-    customerPhoto: null,
-  },
-];
-
 const POPULAR_PRODUCTS = [
   "Madhunashi Sugar Care Powder",
   "Virja Powder for Men",
@@ -66,7 +30,8 @@ const POPULAR_PRODUCTS = [
 ];
 
 export default function TestimonialsSection() {
-  const [reviews, setReviews] = useState<Testimonial[]>(DEFAULT_REVIEWS);
+  const [reviews, setReviews] = useState<Testimonial[]>([]);
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Review submission modal state
@@ -95,12 +60,12 @@ export default function TestimonialsSection() {
       .then((res) => res.json())
       .then((data) => {
         if (!isMounted) return;
-        if (data && data.success && Array.isArray(data.reviews) && data.reviews.length > 0) {
+        if (data && data.success && Array.isArray(data.reviews)) {
           const realReviews: Testimonial[] = data.reviews.map((r: any, idx: number) => {
             const photo = r.image || (Array.isArray(r.images) && r.images[0]) || null;
             return {
               id: r.id || `real-${idx}`,
-              name: r.customer || r.name || "Customer",
+              name: r.customer || r.customerName || r.name || "Customer",
               verified: Boolean(r.verifiedBuyer || r.verified || true),
               product: r.product || r.productName || "Ayurvedic Remedy",
               rating: Math.min(5, Math.max(1, Number(r.rating) || 5)),
@@ -112,15 +77,7 @@ export default function TestimonialsSection() {
             };
           });
 
-          // Prepend real customer reviews, and fill with default reviews if needed
-          const combined = [...realReviews];
-          DEFAULT_REVIEWS.forEach((def) => {
-            if (!combined.some((c) => c.name.toLowerCase() === def.name.toLowerCase())) {
-              combined.push(def);
-            }
-          });
-
-          setReviews(combined);
+          setReviews(realReviews);
         }
       })
       .catch((err) => console.warn("Could not load reviews feed:", err))
@@ -229,7 +186,16 @@ export default function TestimonialsSection() {
           </p>
         </div>
 
-        <div className="shrink-0 flex justify-center md:justify-end">
+        <div className="shrink-0 flex flex-col sm:flex-row items-center justify-center md:justify-end gap-3">
+          {reviews.length > 6 && !showAllReviews && (
+            <button
+              type="button"
+              onClick={() => setShowAllReviews(true)}
+              className="text-xs font-bold text-[#244f31] hover:underline cursor-pointer"
+            >
+              See all reviews ({reviews.length}) →
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
@@ -241,97 +207,131 @@ export default function TestimonialsSection() {
         </div>
       </div>
 
-      {/* Testimonials Grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {reviews.slice(0, 6).map((rev) => (
-          <div
-            key={rev.id}
-            className="flex flex-col justify-between rounded-2xl border border-[#ddddd9] bg-white p-6 shadow-xs transition hover:shadow-md"
+      {/* Empty State when no real reviews exist */}
+      {reviews.length === 0 && !loading && (
+        <div className="rounded-2xl border border-dashed border-[#ddddd9] bg-white p-8 text-center max-w-md mx-auto">
+          <Star className="size-8 text-[#80a03c] mx-auto mb-2 opacity-50" />
+          <h3 className="font-bold text-sm text-[#17231b]">No customer reviews yet</h3>
+          <p className="text-xs text-[#666666] mt-1">Be the first to share your experience with our authentic Ayurvedic remedies.</p>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#244f31] text-white text-xs font-bold transition hover:bg-[#1c3e26] cursor-pointer"
           >
-            <div>
-              {/* Rating Stars */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1 text-[#f2c94c]">
-                  {[...Array(rev.rating)].map((_, i) => (
-                    <Star key={i} className="size-4 fill-[#f2c94c]" />
-                  ))}
-                </div>
-                {rev.date && (
-                  <span className="text-[10px] text-gray-400 font-medium">{rev.date}</span>
-                )}
-              </div>
+            <Star className="size-3.5 fill-white" />
+            <span>Write a Review</span>
+          </button>
+        </div>
+      )}
 
-              {/* Review Text */}
-              <p className="text-xs leading-relaxed text-[#17231b] italic md:text-sm">
-                &ldquo;{rev.comment}&rdquo;
-              </p>
-
-              {/* Customer Uploaded Photo Thumbnail */}
-              {rev.customerPhoto && (
-                <div className="mt-3.5 pt-3 border-t border-gray-100 flex items-center gap-2.5">
-                  <a
-                    href={rev.customerPhoto}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="relative size-14 rounded-xl overflow-hidden border border-[#ddddd9] bg-gray-50 group shrink-0 hover:border-[#244f31] transition shadow-2xs"
-                    title="Click to view customer photo full size"
-                  >
-                    <Image
-                      src={rev.customerPhoto}
-                      alt={`${rev.name} Review Photo`}
-                      width={56}
-                      height={56}
-                      unoptimized
-                      className="size-full object-cover group-hover:scale-105 transition"
-                    />
-                    <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[9px] font-bold">
-                      🔍 View
+      {/* Testimonials Grid (Maximum 6 top reviews by default) */}
+      {reviews.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {(showAllReviews ? reviews : reviews.slice(0, 6)).map((rev) => (
+              <div
+                key={rev.id}
+                className="flex flex-col justify-between rounded-2xl border border-[#ddddd9] bg-white p-6 shadow-xs transition hover:shadow-md"
+              >
+                <div>
+                  {/* Rating Stars */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1 text-[#f2c94c]">
+                      {[...Array(rev.rating)].map((_, i) => (
+                        <Star key={i} className="size-4 fill-[#f2c94c]" />
+                      ))}
                     </div>
-                  </a>
-                  <div className="text-[11px]">
-                    <span className="inline-flex items-center gap-1 font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded-full text-[10px] border border-emerald-200">
-                      📷 Customer Photo
-                    </span>
-                    <span className="text-gray-400 block text-[10px] mt-0.5">Verified remedy upload</span>
+                    {rev.date && (
+                      <span className="text-[10px] text-gray-400 font-medium">{rev.date}</span>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
 
-            {/* Author Footer */}
-            <div className="mt-6 pt-4 border-t border-[#ddddd9] flex items-center gap-3">
-              <div className="relative size-10 overflow-hidden rounded-full border border-[#80a03c] bg-[#eef5df] flex items-center justify-center text-[#244f31] font-black text-xs shrink-0">
-                {rev.image ? (
-                  <Image
-                    src={rev.image}
-                    alt={rev.name}
-                    width={40}
-                    height={40}
-                    unoptimized
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <span>{rev.name.charAt(0).toUpperCase()}</span>
-                )}
-              </div>
+                  {/* Review Text */}
+                  <p className="text-xs leading-relaxed text-[#17231b] italic md:text-sm">
+                    &ldquo;{rev.comment}&rdquo;
+                  </p>
 
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs font-bold text-[#17231b] truncate">{rev.name}</h4>
-                  {rev.verified && (
-                    <span title="Verified Buyer" className="shrink-0">
-                      <CheckCircle2 className="size-3.5 text-[#80a03c]" />
-                    </span>
+                  {/* Customer Uploaded Photo Thumbnail */}
+                  {rev.customerPhoto && (
+                    <div className="mt-3.5 pt-3 border-t border-gray-100 flex items-center gap-2.5">
+                      <a
+                        href={rev.customerPhoto}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative size-14 rounded-xl overflow-hidden border border-[#ddddd9] bg-gray-50 group shrink-0 hover:border-[#244f31] transition shadow-2xs"
+                        title="Click to view customer photo full size"
+                      >
+                        <Image
+                          src={rev.customerPhoto}
+                          alt={`${rev.name} Review Photo`}
+                          width={56}
+                          height={56}
+                          unoptimized
+                          className="size-full object-cover group-hover:scale-105 transition"
+                        />
+                        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[9px] font-bold">
+                          🔍 View
+                        </div>
+                      </a>
+                      <div className="text-[11px]">
+                        <span className="inline-flex items-center gap-1 font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded-full text-[10px] border border-emerald-200">
+                          📷 Customer Photo
+                        </span>
+                        <span className="text-gray-400 block text-[10px] mt-0.5">Verified remedy upload</span>
+                      </div>
+                    </div>
                   )}
                 </div>
-                <span className="text-[10px] font-medium text-[#666666] truncate block">
-                  Verified Purchase: {rev.product}
-                </span>
+
+                {/* Author Footer */}
+                <div className="mt-6 pt-4 border-t border-[#ddddd9] flex items-center gap-3">
+                  <div className="relative size-10 overflow-hidden rounded-full border border-[#80a03c] bg-[#eef5df] flex items-center justify-center text-[#244f31] font-black text-xs shrink-0">
+                    {rev.image ? (
+                      <Image
+                        src={rev.image}
+                        alt={rev.name}
+                        width={40}
+                        height={40}
+                        unoptimized
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <span>{rev.name.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-xs font-bold text-[#17231b] truncate">{rev.name}</h4>
+                      {rev.verified && (
+                        <span title="Verified Buyer" className="shrink-0">
+                          <CheckCircle2 className="size-3.5 text-[#80a03c]" />
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-medium text-[#666666] truncate block">
+                      Verified Purchase: {rev.product}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          {/* Small link to See All Reviews on main page */}
+          {reviews.length > 6 && (
+            <div className="mt-8 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAllReviews((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#244f31] hover:text-[#17231b] bg-[#eef5df] hover:bg-[#e2ecc9] px-5 py-2 rounded-full transition cursor-pointer shadow-2xs"
+              >
+                <span>{showAllReviews ? "Show less ↑" : `See all reviews (${reviews.length}) →`}</span>
+              </button>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Interactive Write a Review Modal */}
       {isModalOpen && (

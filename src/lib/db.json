@@ -8,7 +8,7 @@
       "price": 1199,
       "compareAt": 1499,
       "rating": 5,
-      "reviews": 142,
+      "reviews": 0,
       "badge": "BESTSELLER",
       "image": "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80",
       "ingredients": [
@@ -33,7 +33,7 @@
       "price": 449,
       "compareAt": 499,
       "rating": 5,
-      "reviews": 98,
+      "reviews": 0,
       "badge": "POPULAR",
       "image": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80",
       "ingredients": [
@@ -58,7 +58,7 @@
       "price": 1487,
       "compareAt": 2199,
       "rating": 5,
-      "reviews": 215,
+      "reviews": 1,
       "badge": "AYUSH CERTIFIED",
       "image": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=600&q=80",
       "ingredients": [
@@ -82,7 +82,7 @@
       "price": 410,
       "compareAt": 499,
       "rating": 5,
-      "reviews": 86,
+      "reviews": 0,
       "badge": "POPULAR",
       "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
       "ingredients": [
@@ -106,7 +106,7 @@
       "price": 499,
       "compareAt": 599,
       "rating": 5,
-      "reviews": 134,
+      "reviews": 0,
       "badge": "TOP RATED",
       "image": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80",
       "ingredients": [
@@ -131,7 +131,7 @@
       "price": 5,
       "compareAt": 799,
       "rating": 5,
-      "reviews": 79,
+      "reviews": 0,
       "badge": "SAFE & GENTLE",
       "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80",
       "ingredients": [
@@ -219,19 +219,19 @@
   },
   "reviews": [
     {
-      "id": "REV-101",
+      "id": "rev-pooja-1",
+      "productId": "prod_1788511819071",
+      "productSlug": "madhunashi-powder",
       "product": "MADHUNASHI POWDER",
-      "customer": "Sanjay V.",
+      "productName": "MADHUNASHI POWDER",
+      "customer": "pooja",
+      "customerName": "pooja",
+      "name": "pooja",
       "rating": 5,
-      "comment": "Fasting sugar levels dropped cleanly. Excellent taste and authentic Ayurvedic herbs.",
-      "status": "Approved"
-    },
-    {
-      "id": "REV-102",
-      "product": "VIRJA POWDER",
-      "customer": "Arjun K.",
-      "rating": 5,
-      "comment": "Best herbal formula for stamina and strength. Feeling energetic all day.",
+      "title": "must try it",
+      "comment": "must try it",
+      "date": "19 Sept 2026",
+      "verifiedBuyer": true,
       "status": "Approved"
     }
   ],
@@ -259,14 +259,7 @@
       "answer": "Take 1 teaspoon of Virja Powder with warm milk or water in the morning, and 5-10g of Virja Gold Majun with warm milk before bedtime."
     }
   ],
-  "testimonials": [
-    {
-      "name": "Meera Sen",
-      "rating": 5,
-      "comment": "The skin glow elixir is magic! Cleared dark spots.",
-      "status": "Approved"
-    }
-  ],
+  "testimonials": [],
   "marketing": {
     "campaigns": [
       {

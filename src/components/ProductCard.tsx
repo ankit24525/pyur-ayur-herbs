@@ -23,9 +23,18 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
 
         {/* Rating Stars Top Left */}
         <div className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded bg-white/90 px-1.5 py-0.5 text-[11px] font-bold text-[#17231b] shadow-xs backdrop-blur-xs">
-          <Star className="size-3 fill-[#f2c94c] text-[#f2c94c]" />
-          <span>{product.rating}</span>
-          <span className="text-[9px] text-[#666666]">({product.reviews})</span>
+          {Number(product.reviews) > 0 ? (
+            <>
+              <Star className="size-3 fill-[#f2c94c] text-[#f2c94c]" />
+              <span>{product.rating}</span>
+              <span className="text-[9px] text-[#666666]">({product.reviews})</span>
+            </>
+          ) : (
+            <>
+              <Star className="size-3 text-[#80a03c] stroke-[1.5]" />
+              <span className="text-[10px] text-[#244f31]">New</span>
+            </>
+          )}
         </div>
 
         {/* Product Image */}

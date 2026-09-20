@@ -31,274 +31,6 @@ import { ProductDetail, productDetails } from "@/lib/product-detail-data";
 import { products, Product } from "@/lib/store";
 import { uploadReviewImage } from "@/lib/upload";
 
-const DEFAULT_PRODUCT_REVIEWS: Record<string, any[]> = {
-  sugar: [
-    {
-      id: "rev-s-1",
-      name: "Ayush Kushwaha",
-      date: "25/08/2026",
-      rating: 5,
-      title: "Good",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "India",
-    },
-    {
-      id: "rev-s-2",
-      name: "Buddha deb Chowdhury",
-      date: "25/08/2026",
-      rating: 5,
-      title: "Sugar control",
-      comment: "Very helpful every sugar patient must try",
-      verifiedBuyer: true,
-      location: "Kolkata",
-    },
-    {
-      id: "rev-s-3",
-      name: "Mr. SHIVA",
-      date: "24/08/2026",
-      rating: 5,
-      title: "It's worked",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "Hyderabad",
-    },
-    {
-      id: "rev-s-4",
-      name: "VEERRAGHAVA REDDY",
-      date: "24/08/2026",
-      rating: 4,
-      title: "Good",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "Bangalore",
-    },
-    {
-      id: "rev-s-5",
-      name: "Sukanta",
-      date: "23/08/2026",
-      rating: 5,
-      title: "Ok",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "West Bengal",
-    },
-    {
-      id: "rev-s-6",
-      name: "DHIRENDRA SINGH",
-      date: "23/08/2026",
-      rating: 5,
-      title: "Nice product",
-      comment: "Very nice",
-      verifiedBuyer: true,
-      location: "Varanasi",
-    },
-  ],
-  stamina: [
-    {
-      id: "rev-v-1",
-      name: "Vikram Rathore",
-      date: "25/08/2026",
-      rating: 5,
-      title: "Tremendous Energy",
-      comment: "Remarkable increase in daily stamina and endurance. 100% natural and authentic Ayurvedic remedy.",
-      verifiedBuyer: true,
-      location: "Jaipur",
-    },
-    {
-      id: "rev-v-2",
-      name: "Ayush Kushwaha",
-      date: "25/08/2026",
-      rating: 5,
-      title: "Good",
-      comment: "Good results within first 2 weeks. Highly recommended.",
-      verifiedBuyer: true,
-      location: "Delhi",
-    },
-    {
-      id: "rev-v-3",
-      name: "Mr. SHIVA",
-      date: "24/08/2026",
-      rating: 5,
-      title: "It's worked",
-      comment: "Good strength and recovery.",
-      verifiedBuyer: true,
-      location: "Hyderabad",
-    },
-    {
-      id: "rev-v-4",
-      name: "VEERRAGHAVA REDDY",
-      date: "24/08/2026",
-      rating: 4,
-      title: "Good",
-      comment: "Good quality herbs and quick delivery.",
-      verifiedBuyer: true,
-      location: "Bangalore",
-    },
-    {
-      id: "rev-v-5",
-      name: "Sukanta",
-      date: "23/08/2026",
-      rating: 5,
-      title: "Ok",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "West Bengal",
-    },
-    {
-      id: "rev-v-6",
-      name: "DHIRENDRA SINGH",
-      date: "23/08/2026",
-      rating: 5,
-      title: "Nice product",
-      comment: "Very nice",
-      verifiedBuyer: true,
-      location: "Varanasi",
-    },
-  ],
-  weight: [
-    {
-      id: "rev-w-1",
-      name: "Priya Nair",
-      date: "25/08/2026",
-      rating: 5,
-      title: "Lost 4 kgs safely",
-      comment: "Helped reduce belly bloating and curb unwanted cravings naturally without any weakness.",
-      verifiedBuyer: true,
-      location: "Kochi",
-    },
-    {
-      id: "rev-w-2",
-      name: "Buddha deb Chowdhury",
-      date: "25/08/2026",
-      rating: 5,
-      title: "Metabolism booster",
-      comment: "Very helpful for weight control. Feeling light and energetic.",
-      verifiedBuyer: true,
-      location: "Kolkata",
-    },
-    {
-      id: "rev-w-3",
-      name: "Ayush Kushwaha",
-      date: "24/08/2026",
-      rating: 5,
-      title: "Good",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "Patna",
-    },
-    {
-      id: "rev-w-4",
-      name: "VEERRAGHAVA REDDY",
-      date: "24/08/2026",
-      rating: 4,
-      title: "Good",
-      comment: "Good results along with morning walks.",
-      verifiedBuyer: true,
-      location: "Bangalore",
-    },
-    {
-      id: "rev-w-5",
-      name: "Sukanta",
-      date: "23/08/2026",
-      rating: 5,
-      title: "Ok",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "West Bengal",
-    },
-    {
-      id: "rev-w-6",
-      name: "DHIRENDRA SINGH",
-      date: "23/08/2026",
-      rating: 5,
-      title: "Nice product",
-      comment: "Very nice",
-      verifiedBuyer: true,
-      location: "Kanpur",
-    },
-  ],
-  default: [
-    {
-      id: "rev-d-1",
-      name: "Ayush Kushwaha",
-      date: "25/08/2026",
-      rating: 5,
-      title: "Good",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "India",
-    },
-    {
-      id: "rev-d-2",
-      name: "Buddha deb Chowdhury",
-      date: "25/08/2026",
-      rating: 5,
-      title: "Ayurvedic wellness",
-      comment: "Very helpful every patient must try",
-      verifiedBuyer: true,
-      location: "Kolkata",
-    },
-    {
-      id: "rev-d-3",
-      name: "Mr. SHIVA",
-      date: "24/08/2026",
-      rating: 5,
-      title: "It's worked",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "Hyderabad",
-    },
-    {
-      id: "rev-d-4",
-      name: "VEERRAGHAVA REDDY",
-      date: "24/08/2026",
-      rating: 4,
-      title: "Good",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "Bangalore",
-    },
-    {
-      id: "rev-d-5",
-      name: "Sukanta",
-      date: "23/08/2026",
-      rating: 5,
-      title: "Ok",
-      comment: "Good",
-      verifiedBuyer: true,
-      location: "West Bengal",
-    },
-    {
-      id: "rev-d-6",
-      name: "DHIRENDRA SINGH",
-      date: "23/08/2026",
-      rating: 5,
-      title: "Nice product",
-      comment: "Very nice",
-      verifiedBuyer: true,
-      location: "Varanasi",
-    },
-  ],
-};
-
-function getInitialProductReviews(prod: ProductDetail): any[] {
-  if (Array.isArray(prod.customerReviews) && prod.customerReviews.length > 0) {
-    return prod.customerReviews;
-  }
-  const str = `${prod.name || ""} ${prod.slug || ""} ${prod.category || ""}`.toLowerCase();
-  if (str.includes("madhu") || str.includes("sugar") || str.includes("diabet")) {
-    return DEFAULT_PRODUCT_REVIEWS.sugar;
-  }
-  if (str.includes("virja") || str.includes("vital") || str.includes("stamina") || str.includes("energy")) {
-    return DEFAULT_PRODUCT_REVIEWS.stamina;
-  }
-  if (str.includes("fat") || str.includes("burn") || str.includes("weight") || str.includes("slim")) {
-    return DEFAULT_PRODUCT_REVIEWS.weight;
-  }
-  return DEFAULT_PRODUCT_REVIEWS.default;
-}
-
 interface ProductDetailViewProps {
   product: ProductDetail;
 }
@@ -344,8 +76,9 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   const [reviewsList, setReviewsList] = useState<any[]>(() =>
     Array.isArray(product.customerReviews) && product.customerReviews.length > 0
       ? product.customerReviews
-      : getInitialProductReviews(product)
+      : []
   );
+  const [showAllProductReviews, setShowAllProductReviews] = useState(false);
   const [selectedStarFilter, setSelectedStarFilter] = useState<number | null>(null);
   const [sortOption, setSortOption] = useState<"recent" | "highest" | "lowest" | "photos">("recent");
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
@@ -382,55 +115,32 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     fetch(`/api/reviews?productId=${encodeURIComponent(product.id)}&slug=${encodeURIComponent(product.slug)}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.success && Array.isArray(data.reviews) && data.reviews.length > 0) {
-          setReviewsList((prev) => {
-            const map = new Map();
-            data.reviews.forEach((r: any) =>
-              map.set(String(r.id || r._id), { ...r, isUserSubmitted: true, verifiedBuyer: true })
-            );
-            prev.forEach((r: any) => {
-              const id = String(r.id || r.title || r.name);
-              if (!map.has(id)) map.set(id, r);
-            });
-            return Array.from(map.values());
-          });
+        if (data && data.success && Array.isArray(data.reviews)) {
+          setReviewsList(data.reviews);
         }
       })
       .catch((e) => console.error("Error loading product reviews:", e));
   }, [product.id, product.slug]);
 
-  const baseRatings = {
-    total: 1310,
-    5: 882,
-    4: 349,
-    3: 15,
-    2: 24,
-    1: 40,
-  };
-
   const ratingBreakdown = useMemo(() => {
     const starCounts: Record<number, number> = {
-      5: baseRatings[5],
-      4: baseRatings[4],
-      3: baseRatings[3],
-      2: baseRatings[2],
-      1: baseRatings[1],
+      5: 0,
+      4: 0,
+      3: 0,
+      2: 0,
+      1: 0,
     };
 
-    let extraCount = 0;
     reviewsList.forEach((r) => {
-      if (r.isUserSubmitted || r.source === "customer") {
-        const star = Math.min(5, Math.max(1, Math.round(Number(r.rating) || 5)));
-        starCounts[star] = (starCounts[star] || 0) + 1;
-        extraCount++;
-      }
+      const star = Math.min(5, Math.max(1, Math.round(Number(r.rating) || 5)));
+      starCounts[star] = (starCounts[star] || 0) + 1;
     });
 
-    const total = baseRatings.total + extraCount;
+    const total = reviewsList.length;
 
     return [5, 4, 3, 2, 1].map((star) => {
       const count = starCounts[star] || 0;
-      const percentage = Math.round((count / total) * 100);
+      const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
       return {
         star,
         count,
@@ -439,14 +149,13 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     });
   }, [reviewsList]);
 
-  const totalRatingsCount = useMemo(() => {
-    return ratingBreakdown.reduce((sum, item) => sum + item.count, 0);
-  }, [ratingBreakdown]);
+  const totalRatingsCount = reviewsList.length;
 
   const displayRating = useMemo(() => {
-    const totalScore = ratingBreakdown.reduce((sum, item) => sum + item.star * item.count, 0);
-    return totalRatingsCount > 0 ? Number((totalScore / totalRatingsCount).toFixed(1)) : 4.6;
-  }, [ratingBreakdown, totalRatingsCount]);
+    if (reviewsList.length === 0) return 5.0;
+    const sum = reviewsList.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+    return Number((sum / reviewsList.length).toFixed(1));
+  }, [reviewsList]);
 
   const displayReviewsCount = totalRatingsCount;
 
@@ -731,9 +440,15 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                 href="#reviews"
                 className="flex items-center gap-1.5 rounded-full bg-[#eef5df] px-3 py-1 text-xs font-bold text-[#244f31] hover:bg-[#e2ecc9] transition cursor-pointer"
               >
-                <Star className="size-3.5 fill-[#788c3b] text-[#788c3b]" />
-                <span>{displayRating}</span>
-                <span className="text-[#666666]">| {displayReviewsCount} Verified Ratings</span>
+                <Star
+                  className={`size-3.5 ${
+                    totalRatingsCount > 0 ? "fill-[#788c3b] text-[#788c3b]" : "text-[#788c3b] stroke-[1.5] fill-none"
+                  }`}
+                />
+                <span>{totalRatingsCount > 0 ? displayRating : "New"}</span>
+                <span className="text-[#666666]">
+                  | {totalRatingsCount > 0 ? `${totalRatingsCount} Verified ${totalRatingsCount === 1 ? "Rating" : "Ratings"}` : "Write a Review"}
+                </span>
               </a>
               {product.showCoins !== false && Number(product.coins || 0) > 0 && (
                 <div className="inline-flex items-center gap-1 rounded-full bg-[#fff6d9] px-3 py-1 text-xs font-bold text-[#6b5700]">
@@ -1090,16 +805,29 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                 <Star
                   key={s}
                   className={`size-5 sm:size-6 ${
-                    s <= 4
+                    totalRatingsCount > 0 && s <= Math.round(displayRating)
                       ? "fill-[#788c3b] text-[#788c3b]"
-                      : "text-[#788c3b] stroke-[1.5] fill-none"
+                      : "text-[#788c3b] stroke-[1.5] fill-none opacity-30"
                   }`}
                 />
               ))}
             </div>
-            <p className="text-xs text-neutral-600 font-medium mt-1">
-              Based on {totalRatingsCount} Ratings
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs text-neutral-600 font-medium">
+                {totalRatingsCount > 0
+                  ? `Based on ${totalRatingsCount} Rating${totalRatingsCount > 1 ? "s" : ""}`
+                  : "No customer reviews yet"}
+              </p>
+              {sortedAndFilteredReviews.length > 6 && !showAllProductReviews && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllProductReviews(true)}
+                  className="text-xs font-bold text-[#244f31] hover:underline cursor-pointer"
+                >
+                  See all reviews ({sortedAndFilteredReviews.length}) →
+                </button>
+              )}
+            </div>
           </div>
 
           <button
@@ -1115,134 +843,160 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           </button>
         </div>
 
-        {/* Rating Breakdown Bars (5 Rows) */}
-        <div className="space-y-1.5 mb-2">
-          {ratingBreakdown.map((item) => (
-            <button
-              type="button"
-              key={item.star}
-              onClick={() =>
-                setSelectedStarFilter(selectedStarFilter === item.star ? null : item.star)
-              }
-              className={`group w-full flex items-center gap-2 sm:gap-3 py-1 px-1.5 rounded-sm transition text-left cursor-pointer hover:bg-neutral-50 ${
-                selectedStarFilter === item.star ? "bg-[#f4f7eb] ring-1 ring-[#788c3b]" : ""
-              }`}
-              title={`Filter by ${item.star} star ratings`}
-            >
-              <div className="flex items-center gap-0.5 shrink-0">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    className={`size-3.5 sm:size-4 ${
-                      s <= item.star
-                        ? "fill-[#788c3b] text-[#788c3b]"
-                        : "text-[#788c3b] stroke-[1.5] fill-none opacity-40"
+        {totalRatingsCount > 0 && (
+          <>
+            {/* Rating Breakdown Bars (5 Rows) */}
+            <div className="space-y-1.5 mb-2">
+              {ratingBreakdown.map((item) => (
+                <button
+                  type="button"
+                  key={item.star}
+                  onClick={() =>
+                    setSelectedStarFilter(selectedStarFilter === item.star ? null : item.star)
+                  }
+                  className={`group w-full flex items-center gap-2 sm:gap-3 py-1 px-1.5 rounded-sm transition text-left cursor-pointer hover:bg-neutral-50 ${
+                    selectedStarFilter === item.star ? "bg-[#f4f7eb] ring-1 ring-[#788c3b]" : ""
+                  }`}
+                  title={`Filter by ${item.star} star ratings`}
+                >
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`size-3.5 sm:size-4 ${
+                          s <= item.star
+                            ? "fill-[#788c3b] text-[#788c3b]"
+                            : "text-[#788c3b] stroke-[1.5] fill-none opacity-40"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="h-2.5 sm:h-3 rounded-xs border border-neutral-300 bg-white overflow-hidden relative flex-1">
+                    <div
+                      className="h-full bg-[#f59e0b] transition-all duration-500 rounded-xs"
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-neutral-600 font-medium w-16 sm:w-20 text-right shrink-0">
+                    {item.percentage}% ({item.count})
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Sort & Star Filter Bar */}
+            <div className="relative flex items-center justify-between mt-6 mb-5" ref={sortDropdownRef}>
+              {selectedStarFilter !== null ? (
+                <div className="flex items-center gap-2 bg-[#f4f7eb] text-[#244f31] border border-[#d8e4bd] px-3 py-1 rounded-md text-xs font-semibold">
+                  <span>Showing {selectedStarFilter}★ reviews ({sortedAndFilteredReviews.length})</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStarFilter(null)}
+                    className="text-xs underline font-bold text-[#788c3b] hover:text-[#526027] cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : (
+                <div />
+              )}
+
+              {/* Olive Green Sort Dropdown Button */}
+              <div className="relative ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsSortDropdownOpen((prev) => !prev)}
+                  className="bg-[#788c3b] hover:bg-[#687a32] text-white px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                >
+                  <span>{sortLabels[sortOption] || "MOST RECENT"}</span>
+                  <ChevronDown
+                    className={`size-3.5 stroke-[2.5] transition-transform ${
+                      isSortDropdownOpen ? "rotate-180" : ""
                     }`}
                   />
-                ))}
-              </div>
-              <div className="h-2.5 sm:h-3 rounded-xs border border-neutral-300 bg-white overflow-hidden relative flex-1">
-                <div
-                  className="h-full bg-[#f59e0b] transition-all duration-500 rounded-xs"
-                  style={{ width: `${item.percentage}%` }}
-                />
-              </div>
-              <div className="text-xs text-neutral-600 font-medium w-16 sm:w-20 text-right shrink-0">
-                {item.percentage}% ({item.count})
-              </div>
-            </button>
-          ))}
-        </div>
+                </button>
 
-        {/* Sort & Star Filter Bar */}
-        <div className="relative flex items-center justify-between mt-6 mb-5" ref={sortDropdownRef}>
-          {selectedStarFilter !== null ? (
-            <div className="flex items-center gap-2 bg-[#f4f7eb] text-[#244f31] border border-[#d8e4bd] px-3 py-1 rounded-md text-xs font-semibold">
-              <span>Showing {selectedStarFilter}★ reviews ({sortedAndFilteredReviews.length})</span>
-              <button
-                type="button"
-                onClick={() => setSelectedStarFilter(null)}
-                className="text-xs underline font-bold text-[#788c3b] hover:text-[#526027] cursor-pointer"
-              >
-                Clear
-              </button>
+                {isSortDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-neutral-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSortOption("recent");
+                        setIsSortDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#f7f9f0] transition ${
+                        sortOption === "recent" ? "text-[#788c3b] font-bold bg-[#f4f7eb]" : "text-neutral-700"
+                      }`}
+                    >
+                      Most Recent
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSortOption("highest");
+                        setIsSortDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#f7f9f0] transition ${
+                        sortOption === "highest" ? "text-[#788c3b] font-bold bg-[#f4f7eb]" : "text-neutral-700"
+                      }`}
+                    >
+                      Highest Rating
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSortOption("lowest");
+                        setIsSortDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#f7f9f0] transition ${
+                        sortOption === "lowest" ? "text-[#788c3b] font-bold bg-[#f4f7eb]" : "text-neutral-700"
+                      }`}
+                    >
+                      Lowest Rating
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSortOption("photos");
+                        setIsSortDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#f7f9f0] transition ${
+                        sortOption === "photos" ? "text-[#788c3b] font-bold bg-[#f4f7eb]" : "text-neutral-700"
+                      }`}
+                    >
+                      With Photos Only
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div />
-          )}
+          </>
+        )}
 
-          {/* Olive Green Sort Dropdown Button */}
-          <div className="relative ml-auto">
+        {/* Review Cards Grid or Authentic Empty State */}
+        {totalRatingsCount === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[#ddddd9] bg-white p-10 text-center my-6 max-w-lg mx-auto shadow-2xs">
+            <div className="mx-auto size-12 rounded-full bg-[#eef5df] flex items-center justify-center text-[#788c3b] mb-3">
+              <Star className="size-6 stroke-[1.5] fill-none" />
+            </div>
+            <h3 className="text-base font-black text-[#17231b]">Be the first to review this remedy!</h3>
+            <p className="text-xs text-[#666666] mt-1.5 leading-relaxed">
+              Have you experienced the benefits of {product.name}? Share your authentic Ayurvedic experience to guide fellow seekers across India.
+            </p>
             <button
               type="button"
-              onClick={() => setIsSortDropdownOpen((prev) => !prev)}
-              className="bg-[#788c3b] hover:bg-[#687a32] text-white px-4 py-2 rounded-md text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              onClick={() => {
+                setReviewError(null);
+                setReviewSuccessMsg(null);
+                setReviewModalOpen(true);
+              }}
+              className="mt-5 inline-flex items-center gap-2 border border-neutral-900 bg-neutral-900 hover:bg-[#788c3b] hover:border-[#788c3b] text-white px-6 py-2.5 text-xs font-black uppercase tracking-wider rounded-xs transition cursor-pointer shadow-xs"
             >
-              <span>{sortLabels[sortOption] || "MOST RECENT"}</span>
-              <ChevronDown
-                className={`size-3.5 stroke-[2.5] transition-transform ${
-                  isSortDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
+              <Star className="size-3.5 fill-amber-300 text-amber-300" />
+              <span>Write a Review</span>
             </button>
-
-            {isSortDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-neutral-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSortOption("recent");
-                    setIsSortDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#f7f9f0] transition ${
-                    sortOption === "recent" ? "text-[#788c3b] font-bold bg-[#f4f7eb]" : "text-neutral-700"
-                  }`}
-                >
-                  Most Recent
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSortOption("highest");
-                    setIsSortDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#f7f9f0] transition ${
-                    sortOption === "highest" ? "text-[#788c3b] font-bold bg-[#f4f7eb]" : "text-neutral-700"
-                  }`}
-                >
-                  Highest Rating
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSortOption("lowest");
-                    setIsSortDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#f7f9f0] transition ${
-                    sortOption === "lowest" ? "text-[#788c3b] font-bold bg-[#f4f7eb]" : "text-neutral-700"
-                  }`}
-                >
-                  Lowest Rating
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSortOption("photos");
-                    setIsSortDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#f7f9f0] transition ${
-                    sortOption === "photos" ? "text-[#788c3b] font-bold bg-[#f4f7eb]" : "text-neutral-700"
-                  }`}
-                >
-                  With Photos Only
-                </button>
-              </div>
-            )}
           </div>
-        </div>
-
-        {/* 3-Column Review Cards Grid */}
-        {sortedAndFilteredReviews.length === 0 ? (
+        ) : sortedAndFilteredReviews.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-200 p-8 text-center bg-white">
             <p className="text-xs text-neutral-500">No reviews found matching your filter.</p>
             <button
@@ -1257,97 +1011,115 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {sortedAndFilteredReviews.map((rev: any, idx: number) => {
-              const ratingNum = Math.min(5, Math.max(1, Math.round(Number(rev.rating) || 5)));
-              const isVerified = Boolean(rev.verifiedBuyer || rev.verified !== false);
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {(showAllProductReviews
+                ? sortedAndFilteredReviews
+                : sortedAndFilteredReviews.slice(0, 6)
+              ).map((rev: any, idx: number) => {
+                const ratingNum = Math.min(5, Math.max(1, Math.round(Number(rev.rating) || 5)));
+                const isVerified = Boolean(rev.verifiedBuyer || rev.verified !== false);
 
-              return (
-                <div
-                  key={rev.id || idx}
-                  className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col justify-between hover:shadow-md transition"
-                >
-                  <div>
-                    {/* Reviewer Name */}
-                    <div className="font-bold text-[#17231b] text-sm">
-                      {rev.name || rev.customer || rev.customerName || "Valued Customer"}
-                    </div>
-
-                    {/* Date */}
-                    <div className="text-xs text-neutral-400 mt-0.5">
-                      {rev.date || "25/08/2026"}
-                    </div>
-
-                    {/* Rating Stars (Olive Green #788c3b) */}
-                    <div className="flex items-center gap-0.5 my-2.5">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          className={`size-3.5 ${
-                            s <= ratingNum
-                              ? "fill-[#788c3b] text-[#788c3b]"
-                              : "text-[#788c3b] stroke-[1.5] fill-none opacity-40"
-                          }`}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Review Headline / Title */}
-                    <h4 className="font-bold text-[#17231b] text-sm tracking-tight">
-                      {rev.title || "Good"}
-                    </h4>
-
-                    {/* Review Body */}
-                    <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
-                      {rev.comment || rev.content || "Good"}
-                    </p>
-
-                    {/* Customer Photo (if attached) */}
-                    {Boolean(rev.image || (Array.isArray(rev.images) && rev.images.length > 0)) && (
-                      <div className="mt-3 flex items-center gap-2">
-                        <a
-                          href={rev.image || rev.images[0]}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="relative size-16 rounded-xl overflow-hidden border border-neutral-200 group shrink-0"
-                          title="Click to view full photo"
-                        >
-                          <Image
-                            src={rev.image || rev.images[0]}
-                            alt="Customer Review Photo"
-                            width={64}
-                            height={64}
-                            unoptimized
-                            className="size-full object-cover group-hover:scale-105 transition"
-                          />
-                          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[9px] font-bold">
-                            View
-                          </div>
-                        </a>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded-full border border-emerald-200">
-                          📷 Customer Photo
-                        </span>
+                return (
+                  <div
+                    key={rev.id || idx}
+                    className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col justify-between hover:shadow-md transition"
+                  >
+                    <div>
+                      {/* Reviewer Name */}
+                      <div className="font-bold text-[#17231b] text-sm">
+                        {rev.name || rev.customer || rev.customerName || "Valued Customer"}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Verified Buyer Footer */}
-                  <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px]">
-                    {isVerified ? (
-                      <span className="inline-flex items-center gap-1 text-[#788c3b] font-semibold">
-                        <CheckCircle2 className="size-3.5 text-[#788c3b]" /> Verified Buyer
-                      </span>
-                    ) : (
-                      <span className="text-neutral-400">Customer Review</span>
-                    )}
-                    {rev.location && (
-                      <span className="text-neutral-400 text-[10px]">{rev.location}</span>
-                    )}
+                      {/* Date */}
+                      <div className="text-xs text-neutral-400 mt-0.5">
+                        {rev.date || "Verified Purchase"}
+                      </div>
+
+                      {/* Rating Stars (Olive Green #788c3b) */}
+                      <div className="flex items-center gap-0.5 my-2.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`size-3.5 ${
+                              s <= ratingNum
+                                ? "fill-[#788c3b] text-[#788c3b]"
+                                : "text-[#788c3b] stroke-[1.5] fill-none opacity-40"
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Review Headline / Title */}
+                      <h4 className="font-bold text-[#17231b] text-sm tracking-tight">
+                        {rev.title || "Good"}
+                      </h4>
+
+                      {/* Review Body */}
+                      <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
+                        {rev.comment || rev.content || "Good"}
+                      </p>
+
+                      {/* Customer Photo (if attached) */}
+                      {Boolean(rev.image || (Array.isArray(rev.images) && rev.images.length > 0)) && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <a
+                            href={rev.image || rev.images[0]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="relative size-16 rounded-xl overflow-hidden border border-neutral-200 group shrink-0"
+                            title="Click to view full photo"
+                          >
+                            <Image
+                              src={rev.image || rev.images[0]}
+                              alt="Customer Review Photo"
+                              width={64}
+                              height={64}
+                              unoptimized
+                              className="size-full object-cover group-hover:scale-105 transition"
+                            />
+                            <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[9px] font-bold">
+                              View
+                            </div>
+                          </a>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded-full border border-emerald-200">
+                            📷 Customer Photo
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Verified Buyer Footer */}
+                    <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px]">
+                      {isVerified ? (
+                        <span className="inline-flex items-center gap-1 text-[#788c3b] font-semibold">
+                          <CheckCircle2 className="size-3.5 text-[#788c3b]" /> Verified Buyer
+                        </span>
+                      ) : (
+                        <span className="text-neutral-400">Customer Review</span>
+                      )}
+                      {rev.location && (
+                        <span className="text-neutral-400 text-[10px]">{rev.location}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Small link to See All Reviews on product page if more than 6 */}
+            {sortedAndFilteredReviews.length > 6 && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAllProductReviews((prev) => !prev)}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#244f31] hover:text-[#17231b] bg-[#eef5df] hover:bg-[#e2ecc9] px-5 py-2 rounded-full transition cursor-pointer shadow-2xs"
+                >
+                  <span>{showAllProductReviews ? "Show less ↑" : `See all reviews (${sortedAndFilteredReviews.length}) →`}</span>
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
 

@@ -6,6 +6,57 @@ import Image from "next/image";
 import { Phone, Mail, CreditCard, ShieldCheck, Wallet, Truck, Smartphone } from "lucide-react";
 import { getStorefrontData } from "@/lib/storefront-client";
 
+export function formatFooterHref(rawUrl?: string, label?: string): string {
+  const cleanLabel = (label || "").trim().toLowerCase();
+  const raw = (rawUrl || "").trim();
+
+  // 1. If label is About Us, always guarantee it resolves to /about-us
+  if (
+    cleanLabel === "about us" ||
+    cleanLabel === "about-us" ||
+    cleanLabel === "about" ||
+    cleanLabel === "our story"
+  ) {
+    if (
+      !raw ||
+      raw === "#" ||
+      raw === "/" ||
+      raw === "/contact-us" ||
+      raw === "contact-us" ||
+      raw.toLowerCase().includes("about")
+    ) {
+      return "/about-us";
+    }
+  }
+
+  // 2. Empty or hash fallback
+  if (!raw || raw === "#") {
+    if (cleanLabel.includes("about")) return "/about-us";
+    if (cleanLabel.includes("blog")) return "/blog";
+    if (cleanLabel.includes("contact")) return "/contact-us";
+    return "#";
+  }
+
+  // 3. Absolute external URLs or protocol schemes
+  if (/^(https?:|\/\/|mailto:|tel:)/i.test(raw)) {
+    return raw;
+  }
+
+  // 4. Hash/anchor links
+  if (raw.startsWith("#")) {
+    return raw;
+  }
+
+  // 5. Any slug or relative path: ensure single leading slash and clean whitespace
+  const cleanedSlug = raw.replace(/^\/+/, "").replace(/\s+/g, "-");
+
+  if (cleanedSlug.toLowerCase() === "about-us" || cleanedSlug.toLowerCase() === "about") {
+    return "/about-us";
+  }
+
+  return `/${cleanedSlug}`;
+}
+
 export default function SiteFooter() {
   const [footerData, setFooterData] = useState<any>(null);
   const [settings, setSettings] = useState<any>({
@@ -30,17 +81,37 @@ export default function SiteFooter() {
       try {
         const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
         if (cached.settings) setSettings((prev: any) => ({ ...prev, ...cached.settings }));
-        if (cached.content?.footer) setFooterData(cached.content.footer);
+        if (cached.content?.footer) {
+          const f = { ...cached.content.footer };
+          if (Array.isArray(f.column2Links)) {
+            f.column2Links = f.column2Links.map((l: any) => {
+              if (l?.label?.toLowerCase().trim() === "about us") {
+                return { ...l, url: "/about-us" };
+              }
+              return l;
+            });
+          }
+          setFooterData(f);
+        }
       } catch {}
     }
 
-    getStorefrontData()
+    getStorefrontData(true)
       .then((data) => {
         if (data && data.settings) {
           setSettings((prev: any) => ({ ...prev, ...data.settings }));
         }
         if (data && data.content?.footer) {
-          setFooterData(data.content.footer);
+          const f = { ...data.content.footer };
+          if (Array.isArray(f.column2Links)) {
+            f.column2Links = f.column2Links.map((l: any) => {
+              if (l?.label?.toLowerCase().trim() === "about us") {
+                return { ...l, url: "/about-us" };
+              }
+              return l;
+            });
+          }
+          setFooterData(f);
         }
       })
       .catch((e) => console.error("Error loading settings in footer:", e));
@@ -194,11 +265,22 @@ export default function SiteFooter() {
                 {col1Title}
               </h4>
               <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
-                {col1Links.filter((link: any) => link.visible !== false && !link.hidden).map((link: any, idx: number) => (
-                  <Link key={idx} href={link.url || "#"} className="hover:text-[#80a03c] transition">
-                    {link.label}
-                  </Link>
-                ))}
+                {col1Links.filter((link: any) => link.visible !== false && !link.hidden).map((link: any, idx: number) => {
+                  const href = formatFooterHref(link.url, link.label);
+                  const isExternal = /^(https?:|\/\/)/i.test(href);
+                  if (isExternal) {
+                    return (
+                      <a key={idx} href={href} target="_blank" rel="noopener noreferrer" className="hover:text-[#80a03c] transition">
+                        {link.label}
+                      </a>
+                    );
+                  }
+                  return (
+                    <Link key={idx} href={href} prefetch={true} className="hover:text-[#80a03c] transition cursor-pointer">
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -210,11 +292,22 @@ export default function SiteFooter() {
                 {col2Title}
               </h4>
               <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
-                {col2Links.filter((link: any) => link.visible !== false && !link.hidden).map((link: any, idx: number) => (
-                  <Link key={idx} href={link.url || "#"} className="hover:text-[#80a03c] transition">
-                    {link.label}
-                  </Link>
-                ))}
+                {col2Links.filter((link: any) => link.visible !== false && !link.hidden).map((link: any, idx: number) => {
+                  const href = formatFooterHref(link.url, link.label);
+                  const isExternal = /^(https?:|\/\/)/i.test(href);
+                  if (isExternal) {
+                    return (
+                      <a key={idx} href={href} target="_blank" rel="noopener noreferrer" className="hover:text-[#80a03c] transition">
+                        {link.label}
+                      </a>
+                    );
+                  }
+                  return (
+                    <Link key={idx} href={href} prefetch={true} className="hover:text-[#80a03c] transition cursor-pointer">
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}

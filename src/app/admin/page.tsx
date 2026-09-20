@@ -3168,7 +3168,64 @@ export default function AdminDashboard() {
       });
     };
 
-    const handleSaveFooterCMS = async () => {
+    const normalizeSlugOrUrl = (rawUrl?: string, label?: string): string => {
+      const cleanLabel = (label || "").trim().toLowerCase();
+      const raw = (rawUrl || "").trim();
+
+      if (
+        cleanLabel === "about us" ||
+        cleanLabel === "about-us" ||
+        cleanLabel === "about" ||
+        cleanLabel === "our story"
+      ) {
+        if (
+          !raw ||
+          raw === "#" ||
+          raw === "/" ||
+          raw === "/contact-us" ||
+          raw === "contact-us" ||
+          raw.toLowerCase().includes("about")
+        ) {
+          return "/about-us";
+        }
+      }
+
+      if (!raw || raw === "#") {
+        if (cleanLabel.includes("about")) return "/about-us";
+        if (cleanLabel.includes("blog")) return "/blog";
+        if (cleanLabel.includes("contact")) return "/contact-us";
+        return "#";
+      }
+
+      if (/^(https?:|\/\/|mailto:|tel:)/i.test(raw)) {
+        return raw;
+      }
+
+      if (raw.startsWith("#")) {
+        return raw;
+      }
+
+      const cleaned = raw.replace(/^\/+/, "").replace(/\s+/g, "-");
+      if (cleaned.toLowerCase() === "about-us" || cleaned.toLowerCase() === "about") {
+        return "/about-us";
+      }
+
+      return `/${cleaned}`;
+    };
+
+    const handleSaveFooterCMS = async (explicitCol2?: any, explicitCol1?: any) => {
+      const linksToUse1 = Array.isArray(explicitCol1) ? explicitCol1 : column1Links;
+      const linksToUse2 = Array.isArray(explicitCol2) ? explicitCol2 : column2Links;
+
+      const cleanCol1 = (linksToUse1 || []).map((l: any) => ({
+        ...l,
+        url: normalizeSlugOrUrl(l.url, l.label)
+      }));
+      const cleanCol2 = (linksToUse2 || []).map((l: any) => ({
+        ...l,
+        url: normalizeSlugOrUrl(l.url, l.label)
+      }));
+
       const finalFooter = {
         ...(dbData.content?.footer || {}),
         companyLegalName,
@@ -3177,9 +3234,9 @@ export default function AdminDashboard() {
         supportWhatsapp,
         supportEmail,
         column1Title,
-        column1Links,
+        column1Links: cleanCol1,
         column2Title,
-        column2Links,
+        column2Links: cleanCol2,
         socialLinks: social,
         showLeafPattern,
         showMarketplaces,
@@ -3197,7 +3254,6 @@ export default function AdminDashboard() {
 
       await handleSaveCMSContent(updatedContent);
 
-      // Harmonize with settings so both general settings and footer share the latest address & social links
       const updatedSettings = {
         ...dbData.settings,
         companyLegalName,
@@ -3223,7 +3279,7 @@ export default function AdminDashboard() {
           } catch {}
         }
       } catch {}
-      alert("Storefront Footer CMS configuration saved successfully!");
+      showToast("Storefront Footer configuration saved successfully!");
     };
 
     return (
@@ -3266,7 +3322,7 @@ export default function AdminDashboard() {
             </button>
             <button
               type="button"
-              onClick={handleSaveFooterCMS}
+              onClick={() => void handleSaveFooterCMS()}
               className="bg-[#244f31] text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-[#1d3b24] shadow-xs transition cursor-pointer"
             >
               Save Footer
@@ -3470,7 +3526,15 @@ export default function AdminDashboard() {
                         copy[idx] = { ...copy[idx], url: e.target.value };
                         updateFooterState("column1Links", copy);
                       }}
-                      placeholder="/url"
+                      onBlur={() => {
+                        const copy = [...column1Links];
+                        if (copy[idx]?.url) {
+                          copy[idx].url = normalizeSlugOrUrl(copy[idx].url, copy[idx].label);
+                          updateFooterState("column1Links", copy);
+                          void handleSaveFooterCMS(undefined, copy);
+                        }
+                      }}
+                      placeholder="/url or slug"
                       className="w-1/2 rounded border p-1 text-xs font-mono"
                     />
                     <button
@@ -3479,6 +3543,7 @@ export default function AdminDashboard() {
                       onClick={() => {
                         const copy = column1Links.filter((_: any, i: number) => i !== idx);
                         updateFooterState("column1Links", copy);
+                        void handleSaveFooterCMS(undefined, copy);
                       }}
                       className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
                     >
@@ -3501,7 +3566,7 @@ export default function AdminDashboard() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-[#244f31] bg-white px-2 py-1 rounded border border-[#ddddd9] hover:bg-emerald-50 transition select-none">
                   <input
                     type="checkbox"
@@ -3520,6 +3585,13 @@ export default function AdminDashboard() {
                   className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   + Add Link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveFooterCMS()}
+                  className="px-2.5 py-1 bg-[#244f31] hover:bg-[#1d3b24] text-white text-xs font-bold rounded-lg shadow-2xs transition cursor-pointer"
+                >
+                  Save Links
                 </button>
               </div>
             </div>
@@ -3544,6 +3616,7 @@ export default function AdminDashboard() {
                         const copy = [...column2Links];
                         copy[idx] = { ...copy[idx], visible: !isLinkVisible };
                         updateFooterState("column2Links", copy);
+                        void handleSaveFooterCMS(copy);
                       }}
                       className={`p-1.5 rounded transition ${isLinkVisible ? "text-[#244f31] hover:bg-emerald-50" : "text-neutral-400 hover:bg-neutral-200"}`}
                     >
@@ -3568,7 +3641,15 @@ export default function AdminDashboard() {
                         copy[idx] = { ...copy[idx], url: e.target.value };
                         updateFooterState("column2Links", copy);
                       }}
-                      placeholder="/url"
+                      onBlur={() => {
+                        const copy = [...column2Links];
+                        if (copy[idx]?.url) {
+                          copy[idx].url = normalizeSlugOrUrl(copy[idx].url, copy[idx].label);
+                          updateFooterState("column2Links", copy);
+                          void handleSaveFooterCMS(copy);
+                        }
+                      }}
+                      placeholder="/about-us or about-us"
                       className="w-1/2 rounded border p-1 text-xs font-mono"
                     />
                     <button
@@ -3577,6 +3658,7 @@ export default function AdminDashboard() {
                       onClick={() => {
                         const copy = column2Links.filter((_: any, i: number) => i !== idx);
                         updateFooterState("column2Links", copy);
+                        void handleSaveFooterCMS(copy);
                       }}
                       className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
                     >
@@ -3663,7 +3745,7 @@ export default function AdminDashboard() {
         <div className="flex justify-end pt-2">
           <button
             type="button"
-            onClick={handleSaveFooterCMS}
+            onClick={() => void handleSaveFooterCMS()}
             className="bg-[#244f31] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-[#1d3b24] shadow transition cursor-pointer text-xs flex items-center gap-2"
           >
             Save Storefront Footer Configuration
@@ -3842,7 +3924,43 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 1. Hero Section & Main Philosophy */}
+        {/* Live Route & Footer Link Connection Indicator */}
+        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-950 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className="size-2.5 rounded-full bg-emerald-600 animate-pulse shrink-0" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold">Live Storefront Page:</span>
+                <code className="bg-white px-2 py-0.5 rounded border border-emerald-200 text-[#244f31] font-mono font-bold text-[11px]">/about-us</code>
+              </div>
+              <p className="text-emerald-800 text-[11px] mt-0.5">
+                The storefront footer "About Us" link automatically resolves directly to this dedicated page.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              const currentFooter = dbData.content?.footer || {};
+              const links = Array.isArray(currentFooter.column2Links) ? [...currentFooter.column2Links] : [];
+              const aboutIdx = links.findIndex((l: any) => l.label?.toLowerCase().includes("about"));
+              if (aboutIdx !== -1) {
+                links[aboutIdx] = { ...links[aboutIdx], label: "About Us", url: "/about-us", visible: true };
+              } else {
+                links.unshift({ label: "About Us", url: "/about-us", visible: true });
+              }
+              const updatedContent = {
+                ...(dbData.content || {}),
+                footer: { ...currentFooter, column2Links: links }
+              };
+              await handleSaveCMSContent(updatedContent, true);
+              showToast("✨ Footer 'About Us' link firmly set to /about-us!");
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-[#244f31] text-white font-bold text-xs hover:bg-[#1d3b24] transition shrink-0 cursor-pointer shadow-xs flex items-center gap-1.5"
+          >
+            <span>✓ Ensure Footer Links to /about-us</span>
+          </button>
+        </div>
         <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl space-y-4 shadow-2xs">
           <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
             1. Hero Header & Mission Statement

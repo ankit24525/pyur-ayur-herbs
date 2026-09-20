@@ -18,6 +18,9 @@ import {
   Award,
   X,
   Loader2,
+  AlertCircle,
+  Bell,
+  ArrowRight,
 } from "lucide-react";
 import AnnouncementBar from "./AnnouncementBar";
 import SiteHeader from "./SiteHeader";
@@ -269,6 +272,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   };
 
   const currentVariant = selectedVariant || variants[0];
+  const isAvailable = product.inStock !== false && currentVariant.inStock !== false;
   const unitPrice = Number(currentVariant.price) || 0;
   const unitMrp = Number(currentVariant.mrp) || Math.round(unitPrice * 1.2);
   const savings = Math.max(0, unitMrp - unitPrice);
@@ -470,7 +474,12 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
                                   {variant.name}
                                 </span>
                               )}
-                              {variant.badge && (
+                              {variant.inStock === false && (
+                                <span className="mt-1 inline-block rounded bg-amber-600 px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-2xs">
+                                  Out of Stock
+                                </span>
+                              )}
+                              {variant.inStock !== false && variant.badge && (
                                 <span className="mt-1 inline-block rounded bg-[#80a03c] px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-2xs">
                                   {variant.badge}
                                 </span>
@@ -530,59 +539,101 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
               )}
             </div>
 
-            {/* Quantity Selector & Action Buttons */}
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <div className="flex h-12 items-center justify-between rounded-xl border border-[#ddddd9] px-4 sm:w-36">
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="p-1">
-                  <Minus className="size-4" />
+            {/* Quantity Selector & Action Buttons OR Out-of-Stock Notice */}
+            {isAvailable ? (
+              <>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <div className="flex h-12 items-center justify-between rounded-xl border border-[#ddddd9] px-4 sm:w-36">
+                    <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="p-1">
+                      <Minus className="size-4" />
+                    </button>
+                    <span className="text-sm font-bold">{quantity}</span>
+                    <button onClick={() => setQuantity((q) => q + 1)} className="p-1">
+                      <Plus className="size-4" />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const hasCustomVariant = variants.length > 1;
+                      const variantLabel = currentVariant.name || currentVariant.value || "";
+                      const displayName = hasCustomVariant && variantLabel && !product.name.includes(variantLabel)
+                        ? `${product.name} (${variantLabel})`
+                        : product.name;
+                      const cartItemId = hasCustomVariant ? `${product.id}-${currentVariant.id}` : product.id;
+
+                      handleAddToCart({
+                        id: cartItemId,
+                        name: displayName,
+                        slug: product.slug,
+                        concern: product.category,
+                        price: unitPrice,
+                        compareAt: unitMrp,
+                        rating: Number(product.rating) || 5.0,
+                        reviews: Number(product.reviews) || 0,
+                        badge: currentVariant.badge || product.discount || "NEW",
+                        image: currentVariant.image || product.image,
+                        ingredients: ingredients.map((i) => i.name),
+                        description: product.description || "",
+                        coinsEarned: product.showCoins !== false ? Number(product.coins || 0) : 0,
+                        showCoins: product.showCoins !== false && Number(product.coins || 0) > 0,
+                        deliveryDays: "3 - 5 Days",
+                        inStock: true,
+                      });
+                    }}
+                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#80a03c] text-xs font-black uppercase tracking-widest text-white shadow-md transition hover:bg-[#6c8930]"
+                  >
+                    <ShoppingBag className="size-4" />
+                    <span>ADD TO BASKET</span>
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleBuyNow}
+                  className="mt-3 h-12 w-full rounded-xl bg-[#244f31] text-xs font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-[#1d3b24]"
+                >
+                  BUY NOW (INSTANT CHECKOUT)
                 </button>
-                <span className="text-sm font-bold">{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)} className="p-1">
-                  <Plus className="size-4" />
-                </button>
+              </>
+            ) : (
+              <div className="mt-6 space-y-3">
+                <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-4">
+                  <div className="flex items-start gap-2.5 text-amber-900">
+                    <AlertCircle className="size-5 shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-black uppercase tracking-wider text-amber-800">
+                        Temporarily Out of Stock
+                      </span>
+                      <p className="mt-1 text-xs text-amber-700 leading-relaxed">
+                        Our Vaidyas brew formulations in small, high-potency herbal batches to ensure peak active phytochemicals. Restocking is currently in progress.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href={`https://wa.me/919936856002?text=${encodeURIComponent(
+                    `Hello Pure Ayur Herbs, please notify me when ${product.name}${
+                      currentVariant.name ? ` (${currentVariant.name})` : ""
+                    } is back in stock.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] text-xs font-black uppercase tracking-wider text-white shadow-md transition hover:bg-[#128C7E]"
+                >
+                  <Bell className="size-4" />
+                  <span>Notify Me on WhatsApp When Restocked</span>
+                </a>
+
+                <Link
+                  href={`/solution/${product.concernSlug || "sugar-management"}`}
+                  className="flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[#244f31] bg-white text-xs font-bold uppercase tracking-wider text-[#244f31] transition hover:bg-[#eef5df]"
+                >
+                  <span>Explore In-Stock {product.category || "Ayurvedic"} Remedies</span>
+                  <ArrowRight className="size-3.5" />
+                </Link>
               </div>
-
-              <button
-                onClick={() => {
-                  const hasCustomVariant = variants.length > 1;
-                  const variantLabel = currentVariant.name || currentVariant.value || "";
-                  const displayName = hasCustomVariant && variantLabel && !product.name.includes(variantLabel)
-                    ? `${product.name} (${variantLabel})`
-                    : product.name;
-                  const cartItemId = hasCustomVariant ? `${product.id}-${currentVariant.id}` : product.id;
-
-                  handleAddToCart({
-                    id: cartItemId,
-                    name: displayName,
-                    slug: product.slug,
-                    concern: product.category,
-                    price: unitPrice,
-                    compareAt: unitMrp,
-                    rating: Number(product.rating) || 5.0,
-                    reviews: Number(product.reviews) || 0,
-                    badge: currentVariant.badge || product.discount || "NEW",
-                    image: currentVariant.image || product.image,
-                    ingredients: ingredients.map((i) => i.name),
-                    description: product.description || "",
-                    coinsEarned: product.showCoins !== false ? Number(product.coins || 0) : 0,
-                    showCoins: product.showCoins !== false && Number(product.coins || 0) > 0,
-                    deliveryDays: "3 - 5 Days",
-                    inStock: true,
-                  });
-                }}
-                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#80a03c] text-xs font-black uppercase tracking-widest text-white shadow-md transition hover:bg-[#6c8930]"
-              >
-                <ShoppingBag className="size-4" />
-                <span>ADD TO BASKET</span>
-              </button>
-            </div>
-
-            <button
-              onClick={handleBuyNow}
-              className="mt-3 h-12 w-full rounded-xl bg-[#244f31] text-xs font-black uppercase tracking-widest text-white shadow-lg transition hover:bg-[#1d3b24]"
-            >
-              BUY NOW (INSTANT CHECKOUT)
-            </button>
+            )}
 
             {/* Trust Badges Bar */}
             <div className="mt-6 grid grid-cols-3 gap-2 border-t border-[#ddddd9] pt-4 text-center">

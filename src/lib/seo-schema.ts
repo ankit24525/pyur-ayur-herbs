@@ -218,3 +218,76 @@ export function formatSeoDescription(productName: string, price: number, concern
   const concernStr = concern ? ` for ${concern}` : "";
   return `Buy authentic ${productName.trim()} online at best price (₹${price})${concernStr}. 100% AYUSH Certified, natural herbs, zero side effects. Fast Free Shipping & COD across India.`;
 }
+
+/**
+ * Generates Schema.org BlogPosting / Article JSON-LD for Google Discover, News, and SERPs.
+ */
+export function generateArticleSchema(
+  article: {
+    title: string;
+    description?: string;
+    image?: string;
+    datePublished?: string;
+    authorName?: string;
+    url: string;
+  },
+  siteUrl = SITE_URL
+) {
+  const articleUrl = article.url.startsWith("http") ? article.url : `${siteUrl}${article.url.startsWith("/") ? "" : "/"}${article.url}`;
+  const imageUrl = article.image && article.image.startsWith("http") ? article.image : `${siteUrl}/brand/pure-ayur-og-banner.jpg`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "@id": `${articleUrl}#article`,
+    headline: article.title,
+    description: article.description || article.title,
+    image: imageUrl,
+    datePublished: article.datePublished || "2026-08-01",
+    author: {
+      "@type": "Person",
+      name: article.authorName || "Pure Ayur Herbs Vaidya Team",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: BRAND_NAME,
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/brand/pure-ayur-logo.jpg`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": articleUrl,
+    },
+  };
+}
+
+/**
+ * Generates Schema.org CollectionPage JSON-LD for Category & Concern Solution Hubs.
+ */
+export function generateCollectionSchema(
+  collection: {
+    name: string;
+    description?: string;
+    url: string;
+  },
+  siteUrl = SITE_URL
+) {
+  const collectionUrl = collection.url.startsWith("http") ? collection.url : `${siteUrl}${collection.url.startsWith("/") ? "" : "/"}${collection.url}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${collectionUrl}#collection`,
+    name: collection.name,
+    url: collectionUrl,
+    description: collection.description || `Explore 100% certified Ayurvedic formulations for ${collection.name} by ${BRAND_NAME}.`,
+    isPartOf: {
+      "@type": "WebSite",
+      name: BRAND_NAME,
+      url: siteUrl,
+    },
+  };
+}
+

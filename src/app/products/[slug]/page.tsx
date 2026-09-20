@@ -186,6 +186,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ),
       tag: matchedProduct.tag || "100% Certified Ayurvedic",
       description: matchedProduct.description || "Authentic Ayurvedic formula formulated with potent natural herbs.",
+      inStock: matchedProduct.inStock !== false,
       variants: matchedProduct.variants && matchedProduct.variants.length > 0 ? matchedProduct.variants : [
         {
           id: `${matchedProduct.id || "1"}-single`,
@@ -193,6 +194,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           price,
           mrp,
           discount: badge,
+          inStock: matchedProduct.inStock !== false,
         }
       ],
       benefits: matchedProduct.benefits || [

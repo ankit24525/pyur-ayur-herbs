@@ -59,6 +59,7 @@ export type ProductDetail = {
   dosageSteps: DosageStep[];
   customerReviews: CustomerReviewItem[];
   faqs: { question: string; answer: string }[];
+  inStock?: boolean;
 };
 
 export const productDetails: ProductDetail[] = [];

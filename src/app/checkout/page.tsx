@@ -261,6 +261,7 @@ function CheckoutForm() {
         fetch("/api/cart/abandoned", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             name: formData.name || "Valued Customer",
             phone: cleanPhone,
@@ -751,8 +752,21 @@ function CheckoutForm() {
     }
   }
 
-  const maxCoinsRedeemable = Math.min(userCoins, Math.floor(subtotal * 0.2));
-  const coinsDiscount = currentUser && redeemCoins ? maxCoinsRedeemable : 0;
+  // Pure Coins Configuration & Dynamic Exchange Rate
+  const coinsEnabled = settings.coinsSettings?.enabled !== false;
+  const coinsPerRupee = Number(settings.coinsSettings?.coinsPerRupee) || 10;
+  const maxCoinsPercent = Number(settings.coinsSettings?.maxRedemptionPercent) || 20;
+  const minCoinsToRedeem = Number(settings.coinsSettings?.minCoinsToRedeem) || 1;
+
+  // Max allowed discount in rupees on this subtotal
+  const maxAllowedRupeesDiscount = Math.floor(subtotal * (maxCoinsPercent / 100));
+  // Total coins needed for maximum discount
+  const maxCoinsUsable = maxAllowedRupeesDiscount * coinsPerRupee;
+  // Actual coins customer can redeem from wallet
+  const coinsToRedeem = Math.min(userCoins, maxCoinsUsable);
+  // Actual rupee discount (coins / coinsPerRupee)
+  const maxDiscountInRupees = Math.floor(coinsToRedeem / coinsPerRupee);
+  const coinsDiscount = currentUser && redeemCoins && coinsEnabled ? maxDiscountInRupees : 0;
 
   const freeThreshold = settings.shipping?.freeThreshold ?? 999;
   const baseRate = settings.shipping?.baseRate ?? 49;
@@ -1104,25 +1118,28 @@ function CheckoutForm() {
         )}
 
         {/* Pure Coins Redemption Toggle */}
-        {currentUser && userCoins > 0 && (
+        {coinsEnabled && currentUser && userCoins >= minCoinsToRedeem && maxDiscountInRupees > 0 && (
           <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 shadow-sm flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-full bg-amber-500/20 text-amber-600 flex items-center justify-center font-bold shrink-0">
                 <Coins className="size-5" />
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs font-black text-[#17231b]">Pure Coins Available</span>
                   <span className="text-xs font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                     🪙 {userCoins} Coins
                   </span>
+                  <span className="text-[10px] text-gray-500 font-semibold">
+                    (Worth ₹{(userCoins / coinsPerRupee).toFixed(2)})
+                  </span>
                 </div>
-                <p className="text-[11px] text-amber-900/80">
-                  Redeem up to ₹{maxCoinsRedeemable} (20% max discount, 1 Coin = ₹1)
+                <p className="text-[11px] text-amber-900/80 mt-0.5">
+                  Redeem up to <strong>₹{maxDiscountInRupees}</strong> ({coinsPerRupee} Coins = ₹1, max {maxCoinsPercent}% order discount)
                 </p>
               </div>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer select-none shrink-0 bg-white border border-amber-300 px-3 py-1.5 rounded-xl shadow-xs">
+            <label className="flex items-center gap-2 cursor-pointer select-none shrink-0 bg-white border border-amber-300 px-3 py-1.5 rounded-xl shadow-xs hover:border-[#244f31] transition">
               <input
                 type="checkbox"
                 checked={redeemCoins}
@@ -1580,7 +1597,7 @@ function CheckoutForm() {
             {coinsDiscount > 0 && (
               <div className="flex justify-between text-amber-600 font-bold">
                 <span className="flex items-center gap-1">
-                  <Coins className="size-3.5" /> Pure Coins Redeemed
+                  <Coins className="size-3.5" /> Pure Coins ({coinsDiscount * coinsPerRupee} redeemed)
                 </span>
                 <span>-₹{coinsDiscount}</span>
               </div>

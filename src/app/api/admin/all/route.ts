@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB, invalidateDBCache } from "@/lib/db";
+import { readDB, writeDB, invalidateDBCache, getDBHealthStatus } from "@/lib/db";
 import { cancelOrderOnShiprocket } from "@/lib/shiprocket";
 import { revalidatePath } from "next/cache";
 
@@ -17,14 +17,12 @@ export async function GET() {
   try {
     // Always bypass cache for admin dashboard to ensure 100% fresh data
     const db = await readDB(true);
-    const hasMongoUri = Boolean(process.env.MONGODB_URI);
+    const healthStatus = await getDBHealthStatus();
+
     return NextResponse.json(
       {
         ...db,
-        _dbStatus: {
-          mongoConfigured: hasMongoUri,
-          dbName: process.env.MONGODB_DB || "pure_ayur_herbs",
-        },
+        _dbStatus: healthStatus,
       },
       {
         headers: NO_CACHE_HEADERS,

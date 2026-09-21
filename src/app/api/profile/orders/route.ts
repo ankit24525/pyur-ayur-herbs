@@ -56,22 +56,32 @@ export async function GET(request: Request) {
     // Sort orders by date/id descending (newest first)
     userOrders.reverse();
 
-    // Calculate Pure Coins:
-    // 1. Welcome Bonus = 100
-    // 2. Earned from orders = 5% of order total
-    let coinsBalance = 100;
+    // Calculate Pure Coins using live store settings:
+    const coinsSettings = db.settings?.coinsSettings || {
+      enabled: true,
+      coinsPerRupee: 10,
+      maxRedemptionPercent: 20,
+      minCoinsToRedeem: 10,
+      welcomeBonus: 100,
+      orderRewardPercent: 5,
+    };
+    const welcomeBonus = Number(coinsSettings.welcomeBonus) ?? 100;
+    const rewardPercent = (Number(coinsSettings.orderRewardPercent) || 5) / 100;
+    const coinsPerRupee = Number(coinsSettings.coinsPerRupee) || 10;
+
+    let coinsBalance = welcomeBonus;
     const transactions = [
       {
         id: "TX-WELCOME",
         type: "credit",
-        amount: 100,
+        amount: welcomeBonus,
         description: "Welcome Bonus - Joined Pure Ayur Herbs",
         date: "Joined Date",
       },
     ];
 
     userOrders.forEach((order) => {
-      const earned = Math.round(order.total * 0.05) || 10; // minimum 10 coins per order
+      const earned = Math.round((order.total || 0) * rewardPercent) || 10;
       coinsBalance += earned;
       transactions.push({
         id: `TX-${order.id}`,
@@ -80,6 +90,18 @@ export async function GET(request: Request) {
         description: `Coins earned from Order #${order.id}`,
         date: order.date || "Order Date",
       });
+
+      if (order.coinsRedeemed && Number(order.coinsRedeemed) > 0) {
+        const coinsSpent = Math.round(Number(order.coinsRedeemed) * coinsPerRupee);
+        coinsBalance = Math.max(0, coinsBalance - coinsSpent);
+        transactions.push({
+          id: `TX-REDEEM-${order.id}`,
+          type: "debit",
+          amount: -coinsSpent,
+          description: `Coins redeemed on Order #${order.id} (-₹${order.coinsRedeemed})`,
+          date: order.date || "Order Date",
+        });
+      }
     });
 
     // Return newest transactions first
@@ -89,6 +111,7 @@ export async function GET(request: Request) {
       success: true,
       orders: userOrders,
       coinsBalance,
+      coinsSettings,
       transactions,
     });
   } catch (error) {

@@ -35,14 +35,37 @@ const getSlideBackgroundClass = (bgColor?: string, isFullWidth?: boolean): strin
   return "bg-gradient-to-r from-[#4a0404] via-[#330202] to-[#1a0101]";
 };
 
-export default function HeroSlider({ slides }: { slides?: any[] }) {
+export default function HeroSlider({ slides, marketingBanners }: { slides?: any[]; marketingBanners?: any[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  const activeSlides = slides && slides.length > 0 ? slides : defaultSlides;
+  const baseSlides = slides && slides.length > 0 ? slides : defaultSlides;
+
+  // Convert any active marketing banners with placement "Top Hero Slider" into slides
+  const heroMarketingSlides = (marketingBanners || [])
+    .filter(
+      (b: any) =>
+        b.status === "Active" &&
+        ((b.placement || "").toLowerCase().includes("hero") ||
+          (b.placement || "").toLowerCase().includes("carousel") ||
+          (b.placement || "").toLowerCase().includes("top"))
+    )
+    .map((b: any, idx: number) => ({
+      id: b.id || `mkt_slide_${idx}`,
+      badge: "Featured Promotion",
+      title: b.name,
+      subtitle: b.subtitle || "100% Certified Ayurvedic Formulations",
+      image: b.image || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
+      ctaText: b.ctaText || "Explore Formulations",
+      link: b.link || "#shop",
+      bgColor: "from-[#1b3d26] via-[#244f31] to-[#163320]",
+    }));
+
+  const activeSlides =
+    heroMarketingSlides.length > 0 ? [...heroMarketingSlides, ...baseSlides] : baseSlides;
   const slideCount = activeSlides.length;
 
   const nextSlide = useCallback(() => {

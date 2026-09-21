@@ -59,6 +59,12 @@ import {
   BarChart3,
   Filter,
   RotateCcw,
+  Film,
+  Coins,
+  Copy,
+  Upload,
+  Tag,
+  Send,
 } from "lucide-react";
 import { formatSeoTitle, formatSeoDescription, SITE_URL } from "@/lib/seo-schema";
 import { defaultFaqs } from "@/lib/default-faqs";
@@ -1214,19 +1220,94 @@ export default function AdminDashboard() {
     audio: "", // Audio/Podcast URL
   });
   const [blogFaqs, setBlogFaqs] = useState<{ question: string; answer: string }[]>([]);
-  const [newTestimonial, setNewTestimonial] = useState({ name: "", rating: 5, comment: "", status: "Approved" });
+  const [blogImageUploading, setBlogImageUploading] = useState(false);
+  const [editingBlogIndex, setEditingBlogIndex] = useState<number | null>(null);
+  const [newTestimonial, setNewTestimonial] = useState<any>({
+    id: "",
+    name: "",
+    location: "Mumbai, Maharashtra",
+    rating: 5,
+    title: "",
+    comment: "",
+    productTagged: "Virja Powder for Men",
+    verifiedBuyer: true,
+    avatar: "",
+    status: "Approved",
+    date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+  });
+  const [editingTestimonialIndex, setEditingTestimonialIndex] = useState<number | null>(null);
+  const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState(false);
+  const [testimonialSearchQuery, setTestimonialSearchQuery] = useState("");
+  const [testimonialStatusFilter, setTestimonialStatusFilter] = useState("All");
+  const [testimonialAvatarUploading, setTestimonialAvatarUploading] = useState(false);
+
+  // MongoDB Atlas Diagnostics Modal State
+  const [isDbHealthModalOpen, setIsDbHealthModalOpen] = useState(false);
+  const [isPingingDb, setIsPingingDb] = useState(false);
+  const [dbPingLatency, setDbPingLatency] = useState<number | null>(null);
+
+  // Media Hub Manager State
+  const [newMedia, setNewMedia] = useState<any>({
+    type: "reel",
+    title: "",
+    caption: "",
+    url: "",
+    thumbnail: "",
+    category: "Reels & Shorts",
+    taggedProductId: "",
+    duration: "",
+    author: "",
+    status: "Published",
+    featured: false,
+  });
+  const [editingMediaIndex, setEditingMediaIndex] = useState<number | null>(null);
+  const [mediaFileUploading, setMediaFileUploading] = useState(false);
+  const [mediaFilterCategory, setMediaFilterCategory] = useState("All");
 
   const [campaignName, setCampaignName] = useState("");
   const [campaignChannel, setCampaignChannel] = useState("Meta Ads");
   const [campaignSpend, setCampaignSpend] = useState("");
+  const [campaignRevenue, setCampaignRevenue] = useState("");
+  const [campaignStatus, setCampaignStatus] = useState("Running");
+  const [campaignTargetUrl, setCampaignTargetUrl] = useState("/products/virja-powder");
+  const [campaignUtmSource, setCampaignUtmSource] = useState("facebook");
+  const [campaignUtmMedium, setCampaignUtmMedium] = useState("cpc");
+
+  const [bannerImageUploading, setBannerImageUploading] = useState(false);
+  const [popupImageUploading, setPopupImageUploading] = useState(false);
+  const [editingCampaignIndex, setEditingCampaignIndex] = useState<number | null>(null);
+  const [editingBannerIndex, setEditingBannerIndex] = useState<number | null>(null);
+  const [editingPopupIndex, setEditingPopupIndex] = useState<number | null>(null);
+  const [editingNotificationIndex, setEditingNotificationIndex] = useState<number | null>(null);
 
   const [flashSaleTimer, setFlashSaleTimer] = useState("12:00:00");
   const [newBlockedPhone, setNewBlockedPhone] = useState("");
-  const [campaignRevenue, setCampaignRevenue] = useState("");
-  const [campaignStatus, setCampaignStatus] = useState("Running");
-  const [newBanner, setNewBanner] = useState({ name: "", link: "", image: "", status: "Active" });
-  const [newPopup, setNewPopup] = useState({ title: "", discount: "", couponCode: "", trigger: "Exit Intent", status: "Active" });
-  const [newNotification, setNewNotification] = useState({ title: "", delay: "30 mins", message: "", status: "Active" });
+  const [newBanner, setNewBanner] = useState({
+    name: "",
+    subtitle: "",
+    link: "",
+    image: "",
+    ctaText: "Shop Now",
+    placement: "Homepage Middle Strip",
+    status: "Active",
+  });
+  const [newPopup, setNewPopup] = useState({
+    title: "",
+    subtitle: "",
+    discount: "FLAT 10% OFF",
+    couponCode: "PURE10",
+    image: "",
+    trigger: "Exit Intent",
+    ctaText: "Claim Coupon & Shop Now",
+    status: "Active",
+  });
+  const [newNotification, setNewNotification] = useState({
+    title: "",
+    type: "Cart Recovery",
+    delay: "30 mins",
+    message: "",
+    status: "Active",
+  });
 
   // Inventory & Collections control states
   const [inventorySearchQuery, setInventorySearchQuery] = useState("");
@@ -1576,6 +1657,13 @@ export default function AdminDashboard() {
             localStorage.setItem("pyur_admin_products_backup", JSON.stringify(value));
           }
           window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key, value } }));
+
+          // Real-time broadcast to storefront tabs
+          try {
+            const channel = new BroadcastChannel("pyur_storefront_sync");
+            channel.postMessage({ type: "SYNC", key, value, timestamp: Date.now() });
+            channel.close();
+          } catch {}
         } catch (storageErr) {
           console.warn("Could not write to localStorage cache:", storageErr);
         }
@@ -2101,22 +2189,27 @@ export default function AdminDashboard() {
   const handleBlogFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setBlogImageUploading(true);
       try {
         const compressed = await compressImageFile(file, 1200, 800, 0.82);
         setNewBlog((prev: any) => ({ ...prev, image: compressed }));
-        void uploadImageToCloud(compressed, "pure_ayur_herbs/blogs").then((cloudUrl) => {
+        try {
+          const cloudUrl = await uploadImageToCloud(compressed, "pure_ayur_herbs/blogs");
           if (cloudUrl) setNewBlog((prev: any) => ({ ...prev, image: cloudUrl }));
-        });
+        } catch {}
       } catch {
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
           const raw = reader.result as string;
           setNewBlog((prev: any) => ({ ...prev, image: raw }));
-          void uploadImageToCloud(raw, "pure_ayur_herbs/blogs").then((cloudUrl) => {
+          try {
+            const cloudUrl = await uploadImageToCloud(raw, "pure_ayur_herbs/blogs");
             if (cloudUrl) setNewBlog((prev: any) => ({ ...prev, image: cloudUrl }));
-          });
+          } catch {}
         };
         reader.readAsDataURL(file);
+      } finally {
+        setBlogImageUploading(false);
       }
     }
   };
@@ -2199,30 +2292,112 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBannerImageUploading(true);
+      try {
+        const compressed = await compressImageFile(file, 1600, 900, 0.82);
+        setNewBanner((prev) => ({ ...prev, image: compressed }));
+        try {
+          const cloudUrl = await uploadImageToCloud(compressed, "pure_ayur_herbs/marketing");
+          if (cloudUrl) setNewBanner((prev) => ({ ...prev, image: cloudUrl }));
+        } catch {}
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const raw = reader.result as string;
+          setNewBanner((prev) => ({ ...prev, image: raw }));
+          try {
+            const cloudUrl = await uploadImageToCloud(raw, "pure_ayur_herbs/marketing");
+            if (cloudUrl) setNewBanner((prev) => ({ ...prev, image: cloudUrl }));
+          } catch {}
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setBannerImageUploading(false);
+      }
+    }
+  };
+
+  const handlePopupFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPopupImageUploading(true);
+      try {
+        const compressed = await compressImageFile(file, 1000, 800, 0.82);
+        setNewPopup((prev) => ({ ...prev, image: compressed }));
+        try {
+          const cloudUrl = await uploadImageToCloud(compressed, "pure_ayur_herbs/marketing");
+          if (cloudUrl) setNewPopup((prev) => ({ ...prev, image: cloudUrl }));
+        } catch {}
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const raw = reader.result as string;
+          setNewPopup((prev) => ({ ...prev, image: raw }));
+          try {
+            const cloudUrl = await uploadImageToCloud(raw, "pure_ayur_herbs/marketing");
+            if (cloudUrl) setNewPopup((prev) => ({ ...prev, image: cloudUrl }));
+          } catch {}
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setPopupImageUploading(false);
+      }
+    }
+  };
+
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     const spendVal = parseFloat(campaignSpend) || 0;
     const revVal = parseFloat(campaignRevenue) || 0;
     const roasVal = spendVal > 0 ? parseFloat((revVal / spendVal).toFixed(2)) : 0;
+
+    const baseTarget = campaignTargetUrl.trim().startsWith("http")
+      ? campaignTargetUrl.trim()
+      : `https://www.pureayurherbs.com${campaignTargetUrl.trim().startsWith("/") ? "" : "/"}${campaignTargetUrl.trim()}`;
+    const utmSlug = campaignName.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    const queryJoiner = baseTarget.includes("?") ? "&" : "?";
+    const utmUrl = `${baseTarget}${queryJoiner}utm_source=${encodeURIComponent(campaignUtmSource.trim())}&utm_medium=${encodeURIComponent(campaignUtmMedium.trim())}&utm_campaign=${encodeURIComponent(utmSlug)}`;
     
     const camp = {
-      name: campaignName,
+      id: editingCampaignIndex !== null && dbData.marketing.campaigns[editingCampaignIndex]?.id
+        ? dbData.marketing.campaigns[editingCampaignIndex].id
+        : `camp_${Date.now()}`,
+      name: campaignName.trim(),
       channel: campaignChannel,
       spend: spendVal,
       revenue: revVal,
       roas: roasVal,
+      targetUrl: campaignTargetUrl.trim(),
+      utmUrl,
       status: campaignStatus,
     };
+
+    let updatedCampaigns: any[];
+    if (editingCampaignIndex !== null) {
+      updatedCampaigns = dbData.marketing.campaigns.map((c: any, idx: number) =>
+        idx === editingCampaignIndex ? camp : c
+      );
+    } else {
+      updatedCampaigns = [...(dbData.marketing.campaigns || []), camp];
+    }
+
     const updated = {
       ...dbData.marketing,
-      campaigns: [...dbData.marketing.campaigns, camp],
+      campaigns: updatedCampaigns,
     };
     await saveKey("marketing", updated);
     setCampaignName("");
     setCampaignSpend("");
     setCampaignRevenue("");
     setCampaignStatus("Running");
-    showToast("Ad campaign logged successfully!");
+    setCampaignTargetUrl("/products/virja-powder");
+    setCampaignUtmSource("facebook");
+    setCampaignUtmMedium("cpc");
+    setEditingCampaignIndex(null);
+    showToast(editingCampaignIndex !== null ? "Campaign updated successfully!" : "Ad campaign launched successfully!");
   };
 
   const handleDeleteCampaign = async (index: number) => {
@@ -2231,6 +2406,12 @@ export default function AdminDashboard() {
         const updatedCampaigns = dbData.marketing.campaigns.filter((_: any, idx: number) => idx !== index);
         const updated = { ...dbData.marketing, campaigns: updatedCampaigns };
         await saveKey("marketing", updated);
+        if (editingCampaignIndex === index) {
+          setEditingCampaignIndex(null);
+          setCampaignName("");
+          setCampaignSpend("");
+          setCampaignRevenue("");
+        }
         showToast("Campaign deleted successfully!");
       } catch {
         alert("Error deleting campaign.");
@@ -2241,13 +2422,43 @@ export default function AdminDashboard() {
   const handleAddBanner = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const updatedBanners = [...(dbData.marketing.banners || []), newBanner];
+      const bannerItem = {
+        id: editingBannerIndex !== null && dbData.marketing.banners[editingBannerIndex]?.id
+          ? dbData.marketing.banners[editingBannerIndex].id
+          : `ban_${Date.now()}`,
+        name: newBanner.name.trim(),
+        subtitle: newBanner.subtitle?.trim() || "",
+        link: newBanner.link.trim() || "#shop",
+        image: newBanner.image?.trim() || "",
+        ctaText: newBanner.ctaText?.trim() || "Explore Formulations",
+        placement: newBanner.placement || "Homepage Middle Strip",
+        status: newBanner.status || "Active",
+      };
+
+      let updatedBanners: any[];
+      if (editingBannerIndex !== null) {
+        updatedBanners = (dbData.marketing.banners || []).map((b: any, idx: number) =>
+          idx === editingBannerIndex ? bannerItem : b
+        );
+      } else {
+        updatedBanners = [...(dbData.marketing.banners || []), bannerItem];
+      }
+
       const updated = { ...dbData.marketing, banners: updatedBanners };
       await saveKey("marketing", updated);
-      setNewBanner({ name: "", link: "", image: "", status: "Active" });
-      showToast("Promotional banner added successfully!");
+      setNewBanner({
+        name: "",
+        subtitle: "",
+        link: "",
+        image: "",
+        ctaText: "Shop Now",
+        placement: "Homepage Middle Strip",
+        status: "Active",
+      });
+      setEditingBannerIndex(null);
+      showToast(editingBannerIndex !== null ? "Promotional banner updated!" : "Promotional banner created successfully!");
     } catch {
-      alert("Error adding banner.");
+      alert("Error saving banner.");
     }
   };
 
@@ -2257,6 +2468,18 @@ export default function AdminDashboard() {
         const updatedBanners = dbData.marketing.banners.filter((_: any, idx: number) => idx !== index);
         const updated = { ...dbData.marketing, banners: updatedBanners };
         await saveKey("marketing", updated);
+        if (editingBannerIndex === index) {
+          setEditingBannerIndex(null);
+          setNewBanner({
+            name: "",
+            subtitle: "",
+            link: "",
+            image: "",
+            ctaText: "Shop Now",
+            placement: "Homepage Middle Strip",
+            status: "Active",
+          });
+        }
         showToast("Banner deleted successfully!");
       } catch {
         alert("Error deleting banner.");
@@ -2267,13 +2490,45 @@ export default function AdminDashboard() {
   const handleAddPopup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const updatedPopups = [...(dbData.marketing.popups || []), newPopup];
+      const popupItem = {
+        id: editingPopupIndex !== null && dbData.marketing.popups[editingPopupIndex]?.id
+          ? dbData.marketing.popups[editingPopupIndex].id
+          : `pop_${Date.now()}`,
+        title: newPopup.title.trim(),
+        subtitle: newPopup.subtitle?.trim() || "",
+        discount: newPopup.discount.trim(),
+        couponCode: newPopup.couponCode.trim().toUpperCase(),
+        image: newPopup.image?.trim() || "",
+        trigger: newPopup.trigger || "Exit Intent",
+        ctaText: newPopup.ctaText?.trim() || "Claim Coupon & Shop Now",
+        status: newPopup.status || "Active",
+      };
+
+      let updatedPopups: any[];
+      if (editingPopupIndex !== null) {
+        updatedPopups = (dbData.marketing.popups || []).map((p: any, idx: number) =>
+          idx === editingPopupIndex ? popupItem : p
+        );
+      } else {
+        updatedPopups = [...(dbData.marketing.popups || []), popupItem];
+      }
+
       const updated = { ...dbData.marketing, popups: updatedPopups };
       await saveKey("marketing", updated);
-      setNewPopup({ title: "", discount: "", couponCode: "", trigger: "Exit Intent", status: "Active" });
-      showToast("Exit intent popup created!");
+      setNewPopup({
+        title: "",
+        subtitle: "",
+        discount: "FLAT 10% OFF",
+        couponCode: "PURE10",
+        image: "",
+        trigger: "Exit Intent",
+        ctaText: "Claim Coupon & Shop Now",
+        status: "Active",
+      });
+      setEditingPopupIndex(null);
+      showToast(editingPopupIndex !== null ? "Popup updated successfully!" : "Exit intent popup created successfully!");
     } catch {
-      alert("Error creating popup.");
+      alert("Error saving popup.");
     }
   };
 
@@ -2283,6 +2538,19 @@ export default function AdminDashboard() {
         const updatedPopups = dbData.marketing.popups.filter((_: any, idx: number) => idx !== index);
         const updated = { ...dbData.marketing, popups: updatedPopups };
         await saveKey("marketing", updated);
+        if (editingPopupIndex === index) {
+          setEditingPopupIndex(null);
+          setNewPopup({
+            title: "",
+            subtitle: "",
+            discount: "FLAT 10% OFF",
+            couponCode: "PURE10",
+            image: "",
+            trigger: "Exit Intent",
+            ctaText: "Claim Coupon & Shop Now",
+            status: "Active",
+          });
+        }
         showToast("Popup deleted successfully!");
       } catch {
         alert("Error deleting popup.");
@@ -2293,13 +2561,39 @@ export default function AdminDashboard() {
   const handleAddNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const updatedNotifications = [...(dbData.marketing.notifications || []), newNotification];
+      const notifItem = {
+        id: editingNotificationIndex !== null && dbData.marketing.notifications[editingNotificationIndex]?.id
+          ? dbData.marketing.notifications[editingNotificationIndex].id
+          : `notif_${Date.now()}`,
+        title: newNotification.title.trim(),
+        type: newNotification.type || "Cart Recovery",
+        delay: newNotification.delay || "30 mins",
+        message: newNotification.message.trim(),
+        status: newNotification.status || "Active",
+      };
+
+      let updatedNotifications: any[];
+      if (editingNotificationIndex !== null) {
+        updatedNotifications = (dbData.marketing.notifications || []).map((n: any, idx: number) =>
+          idx === editingNotificationIndex ? notifItem : n
+        );
+      } else {
+        updatedNotifications = [...(dbData.marketing.notifications || []), notifItem];
+      }
+
       const updated = { ...dbData.marketing, notifications: updatedNotifications };
       await saveKey("marketing", updated);
-      setNewNotification({ title: "", delay: "30 mins", message: "", status: "Active" });
-      showToast("Notification trigger configured!");
+      setNewNotification({
+        title: "",
+        type: "Cart Recovery",
+        delay: "30 mins",
+        message: "",
+        status: "Active",
+      });
+      setEditingNotificationIndex(null);
+      showToast(editingNotificationIndex !== null ? "Notification trigger updated!" : "Notification trigger configured!");
     } catch {
-      alert("Error configuring notification.");
+      alert("Error saving notification trigger.");
     }
   };
 
@@ -2309,6 +2603,16 @@ export default function AdminDashboard() {
         const updatedNotifications = dbData.marketing.notifications.filter((_: any, idx: number) => idx !== index);
         const updated = { ...dbData.marketing, notifications: updatedNotifications };
         await saveKey("marketing", updated);
+        if (editingNotificationIndex === index) {
+          setEditingNotificationIndex(null);
+          setNewNotification({
+            title: "",
+            type: "Cart Recovery",
+            delay: "30 mins",
+            message: "",
+            status: "Active",
+          });
+        }
         showToast("Notification trigger deleted!");
       } catch {
         alert("Error deleting notification trigger.");
@@ -2354,6 +2658,13 @@ export default function AdminDashboard() {
           localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
           localStorage.setItem("pyur_admin_faqs_backup", JSON.stringify(updatedFaqs));
           window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "faqs", value: updatedFaqs } }));
+
+          // Real-time broadcast to storefront & FAQs tabs
+          try {
+            const channel = new BroadcastChannel("pyur_storefront_sync");
+            channel.postMessage({ type: "SYNC", key: "faqs", value: updatedFaqs, timestamp: Date.now() });
+            channel.close();
+          } catch {}
         } catch {}
       }
 
@@ -2459,7 +2770,7 @@ export default function AdminDashboard() {
     
     // Parse related videos
     const parsedVideos = newBlog.videos
-      ? newBlog.videos.split(",").map((v: any) => v.trim()).filter(Boolean)
+      ? (typeof newBlog.videos === "string" ? newBlog.videos.split(",").map((v: any) => v.trim()).filter(Boolean) : newBlog.videos)
       : [];
 
     const blog = {
@@ -2468,15 +2779,23 @@ export default function AdminDashboard() {
       author: newBlog.author,
       content: newBlog.content,
       image: newBlog.image || "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
-      date: newBlog.date,
-      status: newBlog.status,
+      date: newBlog.date || new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+      status: newBlog.status || "Published",
       relatedProducts: newBlog.relatedProducts || [],
       videos: parsedVideos,
       audio: newBlog.audio || "",
       faqs: blogFaqs
     };
 
-    const updated = [...(dbData.blogs || []), blog];
+    let updated: any[];
+    if (editingBlogIndex !== null && editingBlogIndex >= 0 && editingBlogIndex < (dbData.blogs || []).length) {
+      updated = dbData.blogs.map((b: any, idx: number) => (idx === editingBlogIndex ? { ...b, ...blog } : b));
+      setEditingBlogIndex(null);
+      showToast("Blog post updated successfully!");
+    } else {
+      updated = [...(dbData.blogs || []), blog];
+      showToast("Blog published successfully!");
+    }
     await saveKey("blogs", updated);
 
     setNewBlog({
@@ -2492,7 +2811,6 @@ export default function AdminDashboard() {
     });
     setBlogFaqs([]);
     setSubTab("blogs");
-    showToast("Blog published successfully!");
   };
 
   const handleDeleteBlog = async (index: number) => {
@@ -2520,14 +2838,267 @@ export default function AdminDashboard() {
     }
   };
 
+  // Media Hub Management Handlers
+  const handleMediaFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setMediaFileUploading(true);
+      try {
+        const compressed = await compressImageFile(file, 1200, 800, 0.85);
+        setNewMedia((prev: any) => ({
+          ...prev,
+          url: prev.type === "photo" ? compressed : prev.url,
+          thumbnail: compressed,
+        }));
+        try {
+          const cloudUrl = await uploadImageToCloud(compressed, "pure_ayur_herbs/media");
+          if (cloudUrl) {
+            setNewMedia((prev: any) => ({
+              ...prev,
+              url: prev.type === "photo" ? cloudUrl : prev.url,
+              thumbnail: cloudUrl,
+            }));
+          }
+        } catch {}
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const raw = reader.result as string;
+          setNewMedia((prev: any) => ({
+            ...prev,
+            url: prev.type === "photo" ? raw : prev.url,
+            thumbnail: raw,
+          }));
+          try {
+            const cloudUrl = await uploadImageToCloud(raw, "pure_ayur_herbs/media");
+            if (cloudUrl) {
+              setNewMedia((prev: any) => ({
+                ...prev,
+                url: prev.type === "photo" ? cloudUrl : prev.url,
+                thumbnail: cloudUrl,
+              }));
+            }
+          } catch {}
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setMediaFileUploading(false);
+      }
+    }
+  };
+
+  const handleSaveMedia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMedia.title?.trim()) {
+      showToast("⚠️ Please provide a title for the media item.");
+      return;
+    }
+    if (!newMedia.url?.trim()) {
+      showToast("⚠️ Please provide a media URL or upload an image file.");
+      return;
+    }
+
+    // Auto-detect YouTube thumbnail if user didn't upload a custom thumbnail
+    let thumb = newMedia.thumbnail || "";
+    if (!thumb && (newMedia.type === "video" || newMedia.type === "reel")) {
+      const url = newMedia.url;
+      if (url.includes("youtube.com/watch?v=")) {
+        const id = url.split("youtube.com/watch?v=")[1].split("&")[0];
+        thumb = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+      } else if (url.includes("youtu.be/")) {
+        const id = url.split("youtu.be/")[1].split("?")[0];
+        thumb = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+      } else if (url.includes("youtube.com/shorts/")) {
+        const id = url.split("youtube.com/shorts/")[1].split("?")[0];
+        thumb = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+      } else if (newMedia.type === "reel") {
+        thumb = "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80";
+      } else {
+        thumb = "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80";
+      }
+    } else if (!thumb && newMedia.type === "photo") {
+      thumb = newMedia.url;
+    }
+
+    const mediaItem = {
+      id: newMedia.id || `media_${Date.now()}`,
+      type: newMedia.type || "reel",
+      title: newMedia.title.trim(),
+      caption: newMedia.caption?.trim() || "",
+      url: newMedia.url.trim(),
+      thumbnail: thumb,
+      category: newMedia.category || "Reels & Shorts",
+      taggedProductId: newMedia.taggedProductId || "",
+      duration: newMedia.duration?.trim() || "",
+      author: newMedia.author?.trim() || "",
+      status: newMedia.status || "Published",
+      featured: Boolean(newMedia.featured),
+      date: newMedia.date || new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+    };
+
+    const currentMedia = Array.isArray(dbData.media) ? dbData.media : [];
+    let updatedMedia: any[];
+
+    if (editingMediaIndex !== null && editingMediaIndex >= 0 && editingMediaIndex < currentMedia.length) {
+      updatedMedia = currentMedia.map((m: any, idx: number) => (idx === editingMediaIndex ? { ...m, ...mediaItem } : m));
+      setEditingMediaIndex(null);
+      showToast("Media item updated successfully!");
+    } else {
+      updatedMedia = [mediaItem, ...currentMedia];
+      showToast("New media item published to Media Hub!");
+    }
+
+    await saveKey("media", updatedMedia);
+
+    setNewMedia({
+      type: "reel",
+      title: "",
+      caption: "",
+      url: "",
+      thumbnail: "",
+      category: "Reels & Shorts",
+      taggedProductId: "",
+      duration: "",
+      author: "",
+      status: "Published",
+      featured: false,
+    });
+  };
+
+  const handleDeleteMedia = async (index: number) => {
+    const currentMedia = Array.isArray(dbData.media) ? dbData.media : [];
+    const updated = currentMedia.filter((_: any, idx: number) => idx !== index);
+    await saveKey("media", updated);
+    showToast("Media item removed.");
+  };
+
+  const handleToggleMediaStatus = async (index: number) => {
+    const currentMedia = Array.isArray(dbData.media) ? dbData.media : [];
+    const updated = currentMedia.map((m: any, idx: number) => {
+      if (idx === index) {
+        return { ...m, status: m.status === "Published" ? "Draft" : "Published" };
+      }
+      return m;
+    });
+    await saveKey("media", updated);
+    showToast("Media status updated.");
+  };
+
   const handleAddTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
-    const test = { name: newTestimonial.name, rating: newTestimonial.rating, comment: newTestimonial.comment, status: newTestimonial.status };
-    const updated = [...dbData.testimonials, test];
+    if (!newTestimonial.name.trim()) {
+      showToast("Customer name is required.");
+      return;
+    }
+    if (!newTestimonial.comment.trim()) {
+      showToast("Testimonial review comment is required.");
+      return;
+    }
+
+    const testItem = {
+      id: newTestimonial.id || `test_${Date.now()}`,
+      name: newTestimonial.name.trim(),
+      location: newTestimonial.location.trim() || "India",
+      rating: Number(newTestimonial.rating) || 5,
+      title: newTestimonial.title.trim() || "Authentic Ayurvedic Formulation",
+      comment: newTestimonial.comment.trim(),
+      productTagged: newTestimonial.productTagged || "Virja Powder for Men",
+      verifiedBuyer: Boolean(newTestimonial.verifiedBuyer !== false),
+      avatar: newTestimonial.avatar || "",
+      status: newTestimonial.status || "Approved",
+      date: newTestimonial.date || new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+    };
+
+    const currentList = Array.isArray(dbData.testimonials) ? [...dbData.testimonials] : [];
+    let updated: any[];
+
+    if (editingTestimonialIndex !== null && editingTestimonialIndex >= 0 && editingTestimonialIndex < currentList.length) {
+      currentList[editingTestimonialIndex] = testItem;
+      updated = currentList;
+      showToast("Testimonial updated successfully!");
+    } else {
+      updated = [testItem, ...currentList];
+      showToast("Testimonial added to live storefront!");
+    }
+
     await saveKey("testimonials", updated);
-    setNewTestimonial({ name: "", rating: 5, comment: "", status: "Approved" });
-    setSubTab("testimonials");
-    alert("Testimonial added!");
+    setEditingTestimonialIndex(null);
+    setIsTestimonialModalOpen(false);
+    setNewTestimonial({
+      id: "",
+      name: "",
+      location: "Mumbai, Maharashtra",
+      rating: 5,
+      title: "",
+      comment: "",
+      productTagged: "Virja Powder for Men",
+      verifiedBuyer: true,
+      avatar: "",
+      status: "Approved",
+      date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+    });
+  };
+
+  const handleEditTestimonial = (index: number) => {
+    const list = Array.isArray(dbData.testimonials) ? dbData.testimonials : [];
+    const item = list[index];
+    if (!item) return;
+    setNewTestimonial({
+      id: item.id || `test_${index + 1}`,
+      name: item.name || "",
+      location: item.location || "India",
+      rating: Number(item.rating) || 5,
+      title: item.title || "",
+      comment: item.comment || "",
+      productTagged: item.productTagged || "Virja Powder for Men",
+      verifiedBuyer: item.verifiedBuyer !== false,
+      avatar: item.avatar || "",
+      status: item.status || "Approved",
+      date: item.date || "",
+    });
+    setEditingTestimonialIndex(index);
+    setIsTestimonialModalOpen(true);
+  };
+
+  const handleDeleteTestimonial = async (index: number) => {
+    if (!confirm("Are you sure you want to delete this customer testimonial?")) return;
+    const list = Array.isArray(dbData.testimonials) ? dbData.testimonials : [];
+    const updated = list.filter((_: any, idx: number) => idx !== index);
+    await saveKey("testimonials", updated);
+    if (editingTestimonialIndex === index) {
+      setEditingTestimonialIndex(null);
+      setIsTestimonialModalOpen(false);
+    }
+    showToast("Testimonial deleted.");
+  };
+
+  const handleToggleTestimonialStatus = async (index: number) => {
+    const list = Array.isArray(dbData.testimonials) ? [...dbData.testimonials] : [];
+    if (!list[index]) return;
+    const currentStatus = list[index].status || "Approved";
+    const nextStatus = currentStatus === "Approved" ? "Hidden" : "Approved";
+    list[index] = { ...list[index], status: nextStatus };
+    await saveKey("testimonials", list);
+    showToast(`Testimonial is now ${nextStatus}`);
+  };
+
+  const handlePingMongoDB = async () => {
+    setIsPingingDb(true);
+    const start = Date.now();
+    try {
+      const res = await fetch("/api/admin/all", { cache: "no-store" });
+      const data = await res.json();
+      const elapsed = Date.now() - start;
+      setDbPingLatency(elapsed);
+      if (data && data._dbStatus) {
+        setDbData((prev: any) => ({ ...prev, _dbStatus: data._dbStatus }));
+      }
+      showToast(`MongoDB Atlas ping: ${elapsed}ms (Healthy)`);
+    } catch {
+      showToast("MongoDB Atlas ping timeout.");
+    } finally {
+      setIsPingingDb(false);
+    }
   };
 
   const handleUpdateLeadStatus = async (leadId: string, newStatus: string) => {
@@ -2656,6 +3227,30 @@ export default function AdminDashboard() {
       setSendingRecoveryId(null);
     }
   };
+
+  const [isRunningRecoveryScan, setIsRunningRecoveryScan] = useState(false);
+  const handleRunRecoveryScan = async () => {
+    setIsRunningRecoveryScan(true);
+    try {
+      const res = await fetch("/api/cron/recovery");
+      const data = await res.json();
+      if (data.success) {
+        alert(
+          `⚡ Logged-In User Recovery Scan Complete!\n` +
+          `• Incomplete/Failed Payment Alerts Sent: ${data.summary?.paymentRecoveryAlertsSent || 0}\n` +
+          `• Abandoned Cart Alerts Sent: ${data.summary?.cartRecoveryAlertsSent || 0}`
+        );
+        loadData();
+      } else {
+        alert(`❌ Error running scan: ${data.error || "Unknown error"}`);
+      }
+    } catch (err: any) {
+      alert(`❌ Network error: ${err.message}`);
+    } finally {
+      setIsRunningRecoveryScan(false);
+    }
+  };
+
 
   const handleSaveSettings = async (section: string, value: any) => {
     const updatedSettings = {
@@ -3329,10 +3924,43 @@ export default function AdminDashboard() {
         }
       }
 
+      if (
+        cleanLabel === "faqs" ||
+        cleanLabel === "faq" ||
+        cleanLabel === "frequently asked questions"
+      ) {
+        if (
+          !raw ||
+          raw === "#" ||
+          raw === "/" ||
+          raw === "/contact-us" ||
+          raw === "contact-us" ||
+          raw.toLowerCase().includes("faq")
+        ) {
+          return "/faqs";
+        }
+      }
+
+      if (
+        cleanLabel === "shop all" ||
+        cleanLabel === "shop all " ||
+        cleanLabel === "shop" ||
+        cleanLabel === "all products" ||
+        cleanLabel === "shop all products"
+      ) {
+        if (!raw || raw === "/" || raw === "#" || raw === "/#shop") {
+          return "/#shop";
+        }
+      }
+
       if (!raw || raw === "#") {
         if (cleanLabel.includes("about")) return "/about-us";
+        if (cleanLabel.includes("faq")) return "/faqs";
+        if (cleanLabel.includes("shop")) return "/#shop";
         if (cleanLabel.includes("blog")) return "/blog";
         if (cleanLabel.includes("contact")) return "/contact-us";
+        if (cleanLabel.includes("order") || cleanLabel.includes("track")) return "/track";
+        if (cleanLabel.includes("account") || cleanLabel.includes("profile")) return "/profile";
         return "#";
       }
 
@@ -3348,9 +3976,65 @@ export default function AdminDashboard() {
       if (cleaned.toLowerCase() === "about-us" || cleaned.toLowerCase() === "about") {
         return "/about-us";
       }
+      if (cleaned.toLowerCase() === "faqs" || cleaned.toLowerCase() === "faq") {
+        return "/faqs";
+      }
 
       return `/${cleaned}`;
     };
+
+    const availablePresets: { group: string; items: { label: string; url: string }[] }[] = [
+      {
+        group: "📄 Store Pages",
+        items: [
+          { label: "Home", url: "/" },
+          { label: "Shop All Products", url: "/#shop" },
+          { label: "About Us", url: "/about-us" },
+          { label: "FAQs", url: "/faqs" },
+          { label: "Contact Us", url: "/contact-us" },
+          { label: "Blog", url: "/blog" },
+          { label: "Track Order", url: "/track" },
+          { label: "My Account", url: "/profile" },
+          { label: "My Orders", url: "/profile?tab=orders" },
+          { label: "Cart", url: "/cart" },
+          { label: "Privacy Policy", url: "/privacy-policy" },
+          { label: "Terms of Service", url: "/terms-of-service" },
+          { label: "Shipping Policy", url: "/shipping-policy" },
+          { label: "Return & Refund Policy", url: "/return-policy" },
+        ],
+      },
+      ...(dbData.products && Array.isArray(dbData.products) && dbData.products.length > 0
+        ? [
+            {
+              group: "🛍️ Products",
+              items: dbData.products
+                .filter((p: any) => p && p.slug)
+                .map((p: any) => ({
+                  label: p.name || p.title || p.slug,
+                  url: `/products/${p.slug}`,
+                })),
+            },
+          ]
+        : []),
+      ...(dbData.categories && Array.isArray(dbData.categories) && dbData.categories.length > 0
+        ? [
+            {
+              group: "📂 Categories",
+              items: dbData.categories
+                .filter((c: any) => c && (c.slug || c.id || c.name))
+                .map((c: any) => {
+                  const catSlug = (c.slug || c.id || c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")).toLowerCase();
+                  return {
+                    label: c.name || catSlug,
+                    url: `/solution/${catSlug}`,
+                  };
+                }),
+            },
+          ]
+        : []),
+    ];
+
+    const flattenedPresets = availablePresets.flatMap((g) => g.items);
 
     const handleSaveFooterCMS = async (explicitCol2?: any, explicitCol1?: any) => {
       const linksToUse1 = Array.isArray(explicitCol1) ? explicitCol1 : column1Links;
@@ -3417,6 +4101,13 @@ export default function AdminDashboard() {
           cached.settings = updatedSettings;
           localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
           window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updatedContent } }));
+
+          // Real-time broadcast to storefront tabs
+          try {
+            const channel = new BroadcastChannel("pyur_storefront_sync");
+            channel.postMessage({ type: "SYNC", key: "content", value: updatedContent, timestamp: Date.now() });
+            channel.close();
+          } catch {}
         } catch {}
       }
 
@@ -3620,7 +4311,7 @@ export default function AdminDashboard() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-[#244f31] bg-white px-2 py-1 rounded border border-[#ddddd9] hover:bg-emerald-50 transition select-none">
                   <input
                     type="checkbox"
@@ -3630,6 +4321,30 @@ export default function AdminDashboard() {
                   />
                   <span>{showColumn1 ? "Visible" : "Hidden"}</span>
                 </label>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const selectedUrl = e.target.value;
+                    if (!selectedUrl) return;
+                    const matched = flattenedPresets.find((p) => p.url === selectedUrl);
+                    const newLabel = matched ? matched.label : "New Page";
+                    const links = [...column1Links, { label: newLabel, url: selectedUrl, visible: true }];
+                    updateFooterState("column1Links", links);
+                    void handleSaveFooterCMS(undefined, links);
+                  }}
+                  className="text-xs font-bold text-[#244f31] bg-white border border-[#ddddd9] hover:bg-emerald-50 rounded px-2 py-1 cursor-pointer outline-none shadow-2xs"
+                >
+                  <option value="" disabled>+ Add Page...</option>
+                  {availablePresets.map((g) => (
+                    <optgroup key={g.group} label={g.group}>
+                      {g.items.map((item) => (
+                        <option key={item.url} value={item.url}>
+                          {item.label} ({item.url})
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={() => {
@@ -3638,7 +4353,14 @@ export default function AdminDashboard() {
                   }}
                   className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  + Add Link
+                  + Blank Link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSaveFooterCMS()}
+                  className="px-2.5 py-1 bg-[#244f31] hover:bg-[#1d3b24] text-white text-xs font-bold rounded-lg shadow-2xs transition cursor-pointer"
+                >
+                  Save Links
                 </button>
               </div>
             </div>
@@ -3654,62 +4376,130 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               {column1Links.map((link: any, idx: number) => {
                 const isLinkVisible = link.visible !== false && !link.hidden;
+                const currentUrl = (link.url || "").trim().toLowerCase();
+                const matchedPreset = flattenedPresets.find(
+                  (p) => p.url.toLowerCase() === currentUrl
+                );
+                const selectValue = matchedPreset ? matchedPreset.url : "custom";
+
                 return (
-                  <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg border transition ${isLinkVisible ? "bg-white border-[#ddddd9]" : "bg-neutral-50 border-neutral-200 opacity-60"}`}>
-                    <button
-                      type="button"
-                      title={isLinkVisible ? "Click to hide link on storefront" : "Click to show link on storefront"}
-                      onClick={() => {
-                        const copy = [...column1Links];
-                        copy[idx] = { ...copy[idx], visible: !isLinkVisible };
-                        updateFooterState("column1Links", copy);
-                      }}
-                      className={`p-1.5 rounded transition ${isLinkVisible ? "text-[#244f31] hover:bg-emerald-50" : "text-neutral-400 hover:bg-neutral-200"}`}
-                    >
-                      {isLinkVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-                    </button>
-                    <input
-                      type="text"
-                      value={link.label}
-                      onChange={(e) => {
-                        const copy = [...column1Links];
-                        copy[idx] = { ...copy[idx], label: e.target.value };
-                        updateFooterState("column1Links", copy);
-                      }}
-                      placeholder="Link Label"
-                      className={`w-1/2 rounded border p-1 text-xs ${!isLinkVisible ? "line-through text-neutral-400" : ""}`}
-                    />
-                    <input
-                      type="text"
-                      value={link.url}
-                      onChange={(e) => {
-                        const copy = [...column1Links];
-                        copy[idx] = { ...copy[idx], url: e.target.value };
-                        updateFooterState("column1Links", copy);
-                      }}
-                      onBlur={() => {
-                        const copy = [...column1Links];
-                        if (copy[idx]?.url) {
-                          copy[idx].url = normalizeSlugOrUrl(copy[idx].url, copy[idx].label);
+                  <div
+                    key={idx}
+                    className={`p-2.5 rounded-lg border transition space-y-2 ${
+                      isLinkVisible ? "bg-white border-[#ddddd9]" : "bg-neutral-50 border-neutral-200 opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <button
+                          type="button"
+                          title={isLinkVisible ? "Click to hide link on storefront" : "Click to show link on storefront"}
+                          onClick={() => {
+                            const copy = [...column1Links];
+                            copy[idx] = { ...copy[idx], visible: !isLinkVisible };
+                            updateFooterState("column1Links", copy);
+                            void handleSaveFooterCMS(undefined, copy);
+                          }}
+                          className={`p-1 rounded transition shrink-0 ${
+                            isLinkVisible ? "text-[#244f31] hover:bg-emerald-50" : "text-neutral-400 hover:bg-neutral-200"
+                          }`}
+                        >
+                          {isLinkVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                        </button>
+
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <span className="text-[10px] uppercase font-bold text-neutral-500 shrink-0">Page:</span>
+                          <select
+                            value={selectValue}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val !== "custom") {
+                                const preset = flattenedPresets.find((p) => p.url === val);
+                                const copy = [...column1Links];
+                                const shouldUpdateLabel =
+                                  !copy[idx].label ||
+                                  copy[idx].label === "New Link" ||
+                                  flattenedPresets.some((p) => p.label.toLowerCase() === (copy[idx].label || "").toLowerCase());
+                                copy[idx] = {
+                                  ...copy[idx],
+                                  url: val,
+                                  label: shouldUpdateLabel && preset ? preset.label : copy[idx].label,
+                                };
+                                updateFooterState("column1Links", copy);
+                                void handleSaveFooterCMS(undefined, copy);
+                              }
+                            }}
+                            className="w-full text-xs font-semibold bg-[#f8faf1] border border-emerald-300 text-[#17231b] rounded px-2 py-1 focus:ring-1 focus:ring-emerald-600 outline-none truncate cursor-pointer"
+                          >
+                            <option value="" disabled>⚡ Select Page / Slug...</option>
+                            {availablePresets.map((g) => (
+                              <optgroup key={g.group} label={g.group}>
+                                {g.items.map((item) => (
+                                  <option key={item.url} value={item.url}>
+                                    {item.label} ({item.url})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            ))}
+                            <option value="custom">✏️ Custom URL / Slug</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        title="Delete link"
+                        onClick={() => {
+                          const copy = column1Links.filter((_: any, i: number) => i !== idx);
                           updateFooterState("column1Links", copy);
                           void handleSaveFooterCMS(undefined, copy);
-                        }
-                      }}
-                      placeholder="/url or slug"
-                      className="w-1/2 rounded border p-1 text-xs font-mono"
-                    />
-                    <button
-                      type="button"
-                      title="Delete link"
-                      onClick={() => {
-                        const copy = column1Links.filter((_: any, i: number) => i !== idx);
-                        updateFooterState("column1Links", copy);
-                        void handleSaveFooterCMS(undefined, copy);
-                      }}
-                      className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
-                    >
-                      ✕
-                    </button>
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer shrink-0"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-1/2">
+                        <label className="block text-[10px] font-bold text-neutral-500 mb-0.5">Link Label</label>
+                        <input
+                          type="text"
+                          value={link.label}
+                          onChange={(e) => {
+                            const copy = [...column1Links];
+                            copy[idx] = { ...copy[idx], label: e.target.value };
+                            updateFooterState("column1Links", copy);
+                          }}
+                          placeholder="Link Label"
+                          className={`w-full rounded border border-[#ddddd9] p-1.5 text-xs bg-white ${
+                            !isLinkVisible ? "line-through text-neutral-400" : ""
+                          }`}
+                        />
+                      </div>
+                      <div className="w-1/2">
+                        <label className="block text-[10px] font-bold text-neutral-500 mb-0.5">Slug / URL</label>
+                        <input
+                          type="text"
+                          value={link.url}
+                          onChange={(e) => {
+                            const copy = [...column1Links];
+                            copy[idx] = { ...copy[idx], url: e.target.value };
+                            updateFooterState("column1Links", copy);
+                          }}
+                          onBlur={() => {
+                            const copy = [...column1Links];
+                            if (copy[idx]?.url) {
+                              copy[idx].url = normalizeSlugOrUrl(copy[idx].url, copy[idx].label);
+                              updateFooterState("column1Links", copy);
+                              void handleSaveFooterCMS(undefined, copy);
+                            }
+                          }}
+                          placeholder="/url or slug"
+                          className="w-full rounded border border-[#ddddd9] p-1.5 text-xs font-mono bg-white text-neutral-700"
+                        />
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -3727,7 +4517,7 @@ export default function AdminDashboard() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-[#244f31] bg-white px-2 py-1 rounded border border-[#ddddd9] hover:bg-emerald-50 transition select-none">
                   <input
                     type="checkbox"
@@ -3737,6 +4527,30 @@ export default function AdminDashboard() {
                   />
                   <span>{showColumn2 ? "Visible" : "Hidden"}</span>
                 </label>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const selectedUrl = e.target.value;
+                    if (!selectedUrl) return;
+                    const matched = flattenedPresets.find((p) => p.url === selectedUrl);
+                    const newLabel = matched ? matched.label : "New Page";
+                    const links = [...column2Links, { label: newLabel, url: selectedUrl, visible: true }];
+                    updateFooterState("column2Links", links);
+                    void handleSaveFooterCMS(links);
+                  }}
+                  className="text-xs font-bold text-[#244f31] bg-white border border-[#ddddd9] hover:bg-emerald-50 rounded px-2 py-1 cursor-pointer outline-none shadow-2xs"
+                >
+                  <option value="" disabled>+ Add Page...</option>
+                  {availablePresets.map((g) => (
+                    <optgroup key={g.group} label={g.group}>
+                      {g.items.map((item) => (
+                        <option key={item.url} value={item.url}>
+                          {item.label} ({item.url})
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={() => {
@@ -3745,7 +4559,7 @@ export default function AdminDashboard() {
                   }}
                   className="text-xs font-bold text-[#244f31] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  + Add Link
+                  + Blank Link
                 </button>
                 <button
                   type="button"
@@ -3768,63 +4582,130 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               {column2Links.map((link: any, idx: number) => {
                 const isLinkVisible = link.visible !== false && !link.hidden;
+                const currentUrl = (link.url || "").trim().toLowerCase();
+                const matchedPreset = flattenedPresets.find(
+                  (p) => p.url.toLowerCase() === currentUrl
+                );
+                const selectValue = matchedPreset ? matchedPreset.url : "custom";
+
                 return (
-                  <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg border transition ${isLinkVisible ? "bg-white border-[#ddddd9]" : "bg-neutral-50 border-neutral-200 opacity-60"}`}>
-                    <button
-                      type="button"
-                      title={isLinkVisible ? "Click to hide link on storefront" : "Click to show link on storefront"}
-                      onClick={() => {
-                        const copy = [...column2Links];
-                        copy[idx] = { ...copy[idx], visible: !isLinkVisible };
-                        updateFooterState("column2Links", copy);
-                        void handleSaveFooterCMS(copy);
-                      }}
-                      className={`p-1.5 rounded transition ${isLinkVisible ? "text-[#244f31] hover:bg-emerald-50" : "text-neutral-400 hover:bg-neutral-200"}`}
-                    >
-                      {isLinkVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-                    </button>
-                    <input
-                      type="text"
-                      value={link.label}
-                      onChange={(e) => {
-                        const copy = [...column2Links];
-                        copy[idx] = { ...copy[idx], label: e.target.value };
-                        updateFooterState("column2Links", copy);
-                      }}
-                      placeholder="Link Label"
-                      className={`w-1/2 rounded border p-1 text-xs ${!isLinkVisible ? "line-through text-neutral-400" : ""}`}
-                    />
-                    <input
-                      type="text"
-                      value={link.url}
-                      onChange={(e) => {
-                        const copy = [...column2Links];
-                        copy[idx] = { ...copy[idx], url: e.target.value };
-                        updateFooterState("column2Links", copy);
-                      }}
-                      onBlur={() => {
-                        const copy = [...column2Links];
-                        if (copy[idx]?.url) {
-                          copy[idx].url = normalizeSlugOrUrl(copy[idx].url, copy[idx].label);
+                  <div
+                    key={idx}
+                    className={`p-2.5 rounded-lg border transition space-y-2 ${
+                      isLinkVisible ? "bg-white border-[#ddddd9]" : "bg-neutral-50 border-neutral-200 opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <button
+                          type="button"
+                          title={isLinkVisible ? "Click to hide link on storefront" : "Click to show link on storefront"}
+                          onClick={() => {
+                            const copy = [...column2Links];
+                            copy[idx] = { ...copy[idx], visible: !isLinkVisible };
+                            updateFooterState("column2Links", copy);
+                            void handleSaveFooterCMS(copy);
+                          }}
+                          className={`p-1 rounded transition shrink-0 ${
+                            isLinkVisible ? "text-[#244f31] hover:bg-emerald-50" : "text-neutral-400 hover:bg-neutral-200"
+                          }`}
+                        >
+                          {isLinkVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                        </button>
+
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <span className="text-[10px] uppercase font-bold text-neutral-500 shrink-0">Page:</span>
+                          <select
+                            value={selectValue}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val !== "custom") {
+                                const preset = flattenedPresets.find((p) => p.url === val);
+                                const copy = [...column2Links];
+                                const shouldUpdateLabel =
+                                  !copy[idx].label ||
+                                  copy[idx].label === "New Link" ||
+                                  flattenedPresets.some((p) => p.label.toLowerCase() === (copy[idx].label || "").toLowerCase());
+                                copy[idx] = {
+                                  ...copy[idx],
+                                  url: val,
+                                  label: shouldUpdateLabel && preset ? preset.label : copy[idx].label,
+                                };
+                                updateFooterState("column2Links", copy);
+                                void handleSaveFooterCMS(copy);
+                              }
+                            }}
+                            className="w-full text-xs font-semibold bg-[#f8faf1] border border-emerald-300 text-[#17231b] rounded px-2 py-1 focus:ring-1 focus:ring-emerald-600 outline-none truncate cursor-pointer"
+                          >
+                            <option value="" disabled>⚡ Select Page / Slug...</option>
+                            {availablePresets.map((g) => (
+                              <optgroup key={g.group} label={g.group}>
+                                {g.items.map((item) => (
+                                  <option key={item.url} value={item.url}>
+                                    {item.label} ({item.url})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            ))}
+                            <option value="custom">✏️ Custom URL / Slug</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        title="Delete link"
+                        onClick={() => {
+                          const copy = column2Links.filter((_: any, i: number) => i !== idx);
                           updateFooterState("column2Links", copy);
                           void handleSaveFooterCMS(copy);
-                        }
-                      }}
-                      placeholder="/about-us or about-us"
-                      className="w-1/2 rounded border p-1 text-xs font-mono"
-                    />
-                    <button
-                      type="button"
-                      title="Delete link"
-                      onClick={() => {
-                        const copy = column2Links.filter((_: any, i: number) => i !== idx);
-                        updateFooterState("column2Links", copy);
-                        void handleSaveFooterCMS(copy);
-                      }}
-                      className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer"
-                    >
-                      ✕
-                    </button>
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1 font-bold cursor-pointer shrink-0"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="w-1/2">
+                        <label className="block text-[10px] font-bold text-neutral-500 mb-0.5">Link Label</label>
+                        <input
+                          type="text"
+                          value={link.label}
+                          onChange={(e) => {
+                            const copy = [...column2Links];
+                            copy[idx] = { ...copy[idx], label: e.target.value };
+                            updateFooterState("column2Links", copy);
+                          }}
+                          placeholder="Link Label"
+                          className={`w-full rounded border border-[#ddddd9] p-1.5 text-xs bg-white ${
+                            !isLinkVisible ? "line-through text-neutral-400" : ""
+                          }`}
+                        />
+                      </div>
+                      <div className="w-1/2">
+                        <label className="block text-[10px] font-bold text-neutral-500 mb-0.5">Slug / URL</label>
+                        <input
+                          type="text"
+                          value={link.url}
+                          onChange={(e) => {
+                            const copy = [...column2Links];
+                            copy[idx] = { ...copy[idx], url: e.target.value };
+                            updateFooterState("column2Links", copy);
+                          }}
+                          onBlur={() => {
+                            const copy = [...column2Links];
+                            if (copy[idx]?.url) {
+                              copy[idx].url = normalizeSlugOrUrl(copy[idx].url, copy[idx].label);
+                              updateFooterState("column2Links", copy);
+                              void handleSaveFooterCMS(copy);
+                            }
+                          }}
+                          placeholder="/about-us or about-us"
+                          className="w-full rounded border border-[#ddddd9] p-1.5 text-xs font-mono bg-white text-neutral-700"
+                        />
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -4017,6 +4898,7 @@ export default function AdminDashboard() {
 
     const handleSaveAboutUs = async () => {
       const finalAbout = {
+        ...(dbData.content?.aboutUs || {}),
         badge,
         title,
         subtitle,
@@ -4040,13 +4922,28 @@ export default function AdminDashboard() {
         ctaSubtitle,
         ctaButtonText,
         ctaButtonLink,
-        ...(dbData.content?.aboutUs || {})
       };
 
       const updatedContent = {
         ...(dbData.content || {}),
         aboutUs: finalAbout
       };
+
+      // 1. Instant 0ms cache & live cross-tab broadcast
+      if (typeof window !== "undefined") {
+        try {
+          const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+          cached.content = updatedContent;
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+          window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: updatedContent } }));
+
+          try {
+            const channel = new BroadcastChannel("pyur_storefront_sync");
+            channel.postMessage({ type: "SYNC", key: "content", value: updatedContent, timestamp: Date.now() });
+            channel.close();
+          } catch {}
+        } catch {}
+      }
 
       await handleSaveCMSContent(updatedContent, true);
       showToast("✨ About Us content saved and live on /about-us & homepage!");
@@ -5007,23 +5904,37 @@ export default function AdminDashboard() {
             <span>View Store</span>
           </a>
 
-          {/* Database Live Status Badge */}
+          {/* Database Live Status Badge (Clickable for Diagnostics Modal) */}
           {dbData?._dbStatus && (
-            <div
-              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-bold border shadow-xs ${
-                dbData._dbStatus.mongoConfigured
-                  ? "bg-emerald-900/40 text-emerald-300 border-emerald-500/40"
-                  : "bg-amber-900/40 text-amber-300 border-amber-500/40"
+            <button
+              type="button"
+              onClick={() => setIsDbHealthModalOpen(true)}
+              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-bold border shadow-xs transition hover:scale-105 active:scale-95 cursor-pointer ${
+                dbData._dbStatus.connected
+                  ? "bg-emerald-900/50 text-emerald-300 border-emerald-500/50 hover:bg-emerald-900/70"
+                  : dbData._dbStatus.mongoConfigured
+                  ? "bg-amber-900/50 text-amber-300 border-amber-500/50 hover:bg-amber-900/70"
+                  : "bg-neutral-800 text-neutral-300 border-neutral-600 hover:bg-neutral-700"
               }`}
-              title={
-                dbData._dbStatus.mongoConfigured
-                  ? `MongoDB Atlas Cloud Connected (${dbData._dbStatus.dbName})`
-                  : "MONGODB_URI is not set in environment variables. Falling back to local storage."
-              }
+              title="Click to view live MongoDB Atlas cloud health & connection metrics"
             >
-              <span className={`size-2 rounded-full ${dbData._dbStatus.mongoConfigured ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
-              <span>{dbData._dbStatus.mongoConfigured ? "MongoDB Atlas Active" : "Local DB (No Mongo)"}</span>
-            </div>
+              <span
+                className={`size-2 rounded-full ${
+                  dbData._dbStatus.connected
+                    ? "bg-emerald-400 animate-pulse"
+                    : dbData._dbStatus.mongoConfigured
+                    ? "bg-amber-400"
+                    : "bg-neutral-400"
+                }`}
+              />
+              <span>
+                {dbData._dbStatus.connected
+                  ? `MongoDB Atlas Active${dbData._dbStatus.latencyMs ? ` • ${dbData._dbStatus.latencyMs}ms` : ""}`
+                  : dbData._dbStatus.mongoConfigured
+                  ? "MongoDB Reconnecting (Local Mode)"
+                  : "Local DB (No Mongo)"}
+              </span>
+            </button>
           )}
 
           {/* Interactive Admin Profile Dropdown Menu */}
@@ -5919,6 +6830,22 @@ export default function AdminDashboard() {
                                   >
                                     View
                                   </button>
+                                  {(o.status === "Pending Payment" || o.status === "Payment Failed") && (
+                                    <>
+                                      <span className="text-gray-300">|</span>
+                                      <a
+                                        href={`https://wa.me/91${(o.phone || "").replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(
+                                          `Namaste ${o.customer || "Ji"}! 🙏 We noticed your online payment of ₹${o.total} for order #${o.id} was incomplete. Your package is safely reserved. Complete payment: https://www.purreayurherbs.com/checkout?retryOrder=${o.id} or Switch to Cash on Delivery (COD): https://www.purreayurherbs.com/api/orders/switch-cod?orderId=${o.id}&token=${(o.phone || "").replace(/\D/g, "").slice(-10)}`
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
+                                        title="Recover payment via WhatsApp Web"
+                                      >
+                                        💬 WA Recovery
+                                      </a>
+                                    </>
+                                  )}
                                   <span className="text-gray-300">|</span>
                                   <button
                                     type="button"
@@ -7840,6 +8767,28 @@ export default function AdminDashboard() {
 
                 {subTab === "abandoned" && (
                   <div className="space-y-4">
+                    {/* Auto-Recovery Action Banner */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f8faf1] p-4 rounded-xl border border-[#ddddd9] shadow-xs">
+                      <div>
+                        <div className="font-bold text-sm text-[#17231b] flex items-center gap-2">
+                          <span>⚡ WhatsApp Automated Recovery Engine</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200">
+                            Logged-In Users Priority
+                          </span>
+                        </div>
+                        <div className="text-xs text-neutral-500 mt-0.5">
+                          Recovers pending/failed PhonePe payments & abandoned carts with 1-click retry and 1-click Switch to COD options.
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleRunRecoveryScan}
+                        disabled={isRunningRecoveryScan}
+                        className="bg-[#244f31] hover:bg-[#1a3a24] text-white px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-xs transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                      >
+                        <span>{isRunningRecoveryScan ? "⏳ Scanning..." : "⚡ Run Auto-Recovery Scan"}</span>
+                      </button>
+                    </div>
+
                     {/* Stats Header */}
                     {(() => {
                       const carts = dbData.abandonedCarts || [];
@@ -7893,10 +8842,20 @@ export default function AdminDashboard() {
                             dbData.abandonedCarts.map((c: any) => {
                               const isConverted = c.status === "Converted";
                               const isNotified = c.status === "Notified" || (c.recoveryMessagesSent && c.recoveryMessagesSent > 0);
+                              const cleanPhone10 = (c.phone || "").replace(/\D/g, "").slice(-10);
+                              const isLogged = Boolean(c.isLoggedInUser || c.userId);
+
                               return (
                                 <tr key={c.id} className="hover:bg-[#fcfdf9] transition-colors">
                                   <td className="p-3">
-                                    <div className="font-bold text-[#17231b]">{c.name || "Customer"}</div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold text-[#17231b]">{c.name || "Customer"}</span>
+                                      {isLogged && (
+                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-purple-100 text-purple-800 border border-purple-200">
+                                          👤 Logged In
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="text-[11px] text-neutral-500 font-mono mt-0.5">+91 {c.phone}</div>
                                     {c.email && <div className="text-[10px] text-neutral-400">{c.email}</div>}
                                   </td>
@@ -7942,14 +8901,31 @@ export default function AdminDashboard() {
                                         Order {c.convertedOrderId || "Placed"}
                                       </span>
                                     ) : (
-                                      <button
-                                        onClick={() => handleSendAbandonedRecovery(c.id)}
-                                        disabled={sendingRecoveryId === c.id}
-                                        className="bg-[#25D366] hover:bg-[#1ebd59] text-white px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
-                                      >
-                                        <span>💬</span>
-                                        {sendingRecoveryId === c.id ? "Sending..." : "Send WhatsApp (5% OFF)"}
-                                      </button>
+                                      <div className="flex items-center justify-end gap-1.5">
+                                        {/* Direct WhatsApp Web Button (wa.me) */}
+                                        <a
+                                          href={`https://wa.me/91${cleanPhone10}?text=${encodeURIComponent(
+                                            `Namaste ${c.name || "Ji"}! 🙏 We noticed you left items in your cart at Pure Ayur Herbs. Use coupon code AYUR5 for an extra 5% OFF + Free Shipping! Complete order: https://www.purreayurherbs.com/cart`
+                                          )}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1 shadow-2xs transition-transform active:scale-95"
+                                          title="Open WhatsApp Web chat directly"
+                                        >
+                                          <span>📱 WA Web</span>
+                                        </a>
+
+                                        {/* Meta Cloud API Button */}
+                                        <button
+                                          onClick={() => handleSendAbandonedRecovery(c.id)}
+                                          disabled={sendingRecoveryId === c.id}
+                                          className="bg-[#25D366] hover:bg-[#1ebd59] text-white px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                                          title="Send automated message via WhatsApp Cloud API"
+                                        >
+                                          <span>💬</span>
+                                          {sendingRecoveryId === c.id ? "Sending..." : "Cloud API"}
+                                        </button>
+                                      </div>
                                     )}
                                   </td>
                                 </tr>
@@ -7970,6 +8946,7 @@ export default function AdminDashboard() {
                 <div className="flex flex-wrap items-center gap-2 mb-5">
                   <button onClick={() => setSubTab("coupons")} className={subTabStyle("coupons")}>Coupons</button>
                   <button onClick={() => setSubTab("offers")} className={subTabStyle("offers")}>Offers</button>
+                  <button onClick={() => setSubTab("coins")} className={subTabStyle("coins")}>🪙 Pure Coins (Loyalty)</button>
                   <button onClick={() => setSubTab("flash-sales")} className={subTabStyle("flash-sales")}>Flash Sales</button>
                 </div>
 
@@ -8247,9 +9224,33 @@ export default function AdminDashboard() {
                         await handleSaveSettings("shipping", dbData.settings.shipping);
                         await handleSaveSettings("codOtpEnabled", dbData.settings.codOtpEnabled);
                       }}
-                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2 mt-4"
+                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2 mt-4 cursor-pointer"
                     >
                       Save Offers & Delivery Settings
+                    </button>
+                  </div>
+
+                  {/* Pure Coins Exchange Rate Quick Card */}
+                  <div className="text-xs border border-emerald-200 bg-[#f8faf1] p-5 rounded-2xl space-y-3 max-w-xl shadow-xs flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="size-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800 text-base shrink-0">
+                        🪙
+                      </div>
+                      <div>
+                        <div className="font-black text-[#17231b] text-xs uppercase tracking-wider">
+                          Pure Coins Valuation & Loyalty
+                        </div>
+                        <div className="text-[11px] text-gray-600 mt-0.5">
+                          Current Rate: <strong className="text-[#244f31]">🪙 {Number(dbData.settings?.coinsSettings?.coinsPerRupee) || 10} Coins = ₹1.00</strong>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSubTab("coins")}
+                      className="px-3 py-1.5 rounded-xl bg-[#244f31] text-white font-bold text-[11px] hover:bg-[#1d3b24] transition shrink-0 cursor-pointer"
+                    >
+                      Configure Coin Value →
                     </button>
                   </div>
 
@@ -8369,12 +9370,344 @@ export default function AdminDashboard() {
                         await handleSaveSettings("maxMonthlyCancellations", dbData.settings.maxMonthlyCancellations ?? 3);
                         await handleSaveSettings("blockedCodPhones", dbData.settings.blockedCodPhones || []);
                       }}
-                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2 mt-4"
+                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2 mt-4 cursor-pointer"
                     >
                       Save Anti-Abuse & Fraud Settings
                     </button>
                   </div>
                   </>
+                )}
+
+                {subTab === "coins" && (
+                  <div className="space-y-6 max-w-2xl">
+                    <div className="text-xs border border-[#ddddd9] p-6 rounded-2xl space-y-5 bg-white shadow-xs">
+                      {/* Header */}
+                      <div className="border-b border-[#ddddd9] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <h4 className="font-black text-[#17231b] text-[14px] uppercase tracking-wider flex items-center gap-2">
+                            <span>🪙 Pure Coins Loyalty & Rewards</span>
+                            <span className="bg-[#eef5df] text-[#244f31] font-extrabold text-[10px] px-2.5 py-0.5 rounded-full">
+                              {(dbData.settings?.coinsSettings?.enabled !== false) ? "Active" : "Disabled"}
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-[#666666] mt-1">
+                            Configure how customers earn, value, and redeem Pure Coins for discounts across checkout and their wallet.
+                          </p>
+                        </div>
+
+                        {/* Master Enable/Disable Switch */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[11px] font-bold text-[#17231b]">
+                            {(dbData.settings?.coinsSettings?.enabled !== false) ? "Redemption Enabled" : "Redemption Paused"}
+                          </span>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={dbData.settings?.coinsSettings?.enabled !== false}
+                              onChange={(e) => {
+                                const current = dbData.settings?.coinsSettings || {};
+                                setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    coinsSettings: {
+                                      ...current,
+                                      enabled: e.target.checked,
+                                    },
+                                  },
+                                });
+                              }}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#244f31]"></div>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Primary Coin Valuation Setting (User Request: e.g. 10 coins = 1 rs) */}
+                      <div className="rounded-2xl border-2 border-emerald-300/80 bg-[#f8faf1] p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-black uppercase tracking-wider text-[#244f31] flex items-center gap-1.5">
+                            <Zap className="size-4 text-[#80a03c]" />
+                            <span>Coin Value Exchange Rate (Coins per ₹1.00 Discount) *</span>
+                          </label>
+                          <span className="bg-white border border-emerald-300 text-[#244f31] font-black text-xs px-2.5 py-1 rounded-lg font-mono">
+                            🪙 {Number(dbData.settings?.coinsSettings?.coinsPerRupee) || 10} Coins = ₹1.00
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex-1">
+                            <input
+                              type="number"
+                              min={1}
+                              max={1000}
+                              required
+                              value={dbData.settings?.coinsSettings?.coinsPerRupee ?? 10}
+                              onChange={(e) => {
+                                const val = Math.max(1, parseInt(e.target.value) || 1);
+                                const current = dbData.settings?.coinsSettings || {};
+                                setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    coinsSettings: {
+                                      ...current,
+                                      coinsPerRupee: val,
+                                    },
+                                  },
+                                });
+                              }}
+                              className="w-full rounded-xl border border-[#ddddd9] p-3 text-sm font-bold text-[#17231b] outline-none focus:border-[#244f31] bg-white pr-28 shadow-xs font-mono"
+                              placeholder="10"
+                            />
+                            <span className="absolute right-3 top-3 text-xs font-bold text-gray-500">
+                              Coins = ₹1.00
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-gray-600 leading-relaxed">
+                          Enter how many Pure Coins a customer must redeem to receive <strong>₹1.00 off</strong> their order at checkout.
+                          (Example: Setting this to <strong>10</strong> means 10 Coins = ₹1.00, so 100 coins give a ₹10 discount).
+                        </p>
+
+                        {/* Live Conversion Value Calculator Grid */}
+                        {(() => {
+                          const rate = Number(dbData.settings?.coinsSettings?.coinsPerRupee) || 10;
+                          return (
+                            <div className="rounded-xl border border-emerald-200 bg-white p-3.5 space-y-2">
+                              <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block">
+                                📊 Real-Time Coin Value Matrix:
+                              </span>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                                <div className="p-2 rounded-lg bg-[#f8faf1] border border-emerald-100">
+                                  <div className="text-xs font-bold text-gray-500">🪙 {rate} Coins</div>
+                                  <div className="text-sm font-black text-[#244f31] mt-0.5">₹1.00</div>
+                                </div>
+                                <div className="p-2 rounded-lg bg-[#f8faf1] border border-emerald-100">
+                                  <div className="text-xs font-bold text-gray-500">🪙 {rate * 10} Coins</div>
+                                  <div className="text-sm font-black text-[#244f31] mt-0.5">₹10.00</div>
+                                </div>
+                                <div className="p-2 rounded-lg bg-[#f8faf1] border border-emerald-100">
+                                  <div className="text-xs font-bold text-gray-500">🪙 {rate * 50} Coins</div>
+                                  <div className="text-sm font-black text-[#244f31] mt-0.5">₹50.00</div>
+                                </div>
+                                <div className="p-2 rounded-lg bg-[#f8faf1] border border-emerald-100">
+                                  <div className="text-xs font-bold text-gray-500">🪙 {rate * 100} Coins</div>
+                                  <div className="text-sm font-black text-[#244f31] mt-0.5">₹100.00</div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Checkout Redemption Limits & Controls */}
+                      <div className="grid gap-4 sm:grid-cols-2 pt-1">
+                        <div>
+                          <label className="block font-bold text-[#17231b] mb-1">
+                            Max Order Redemption Limit (%)
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min={1}
+                              max={100}
+                              value={dbData.settings?.coinsSettings?.maxRedemptionPercent ?? 20}
+                              onChange={(e) => {
+                                const val = Math.min(100, Math.max(1, parseInt(e.target.value) || 1));
+                                const current = dbData.settings?.coinsSettings || {};
+                                setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    coinsSettings: {
+                                      ...current,
+                                      maxRedemptionPercent: val,
+                                    },
+                                  },
+                                });
+                              }}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold pr-10"
+                              placeholder="20"
+                            />
+                            <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-500">%</span>
+                          </div>
+                          <p className="mt-1 text-[10px] text-gray-400">
+                            Caps coin discount to this % of order subtotal (e.g. 20% on a ₹1,000 order = max ₹200 discount).
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-[#17231b] mb-1">
+                            Minimum Coins Required to Redeem
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min={1}
+                              max={10000}
+                              value={dbData.settings?.coinsSettings?.minCoinsToRedeem ?? 10}
+                              onChange={(e) => {
+                                const val = Math.max(1, parseInt(e.target.value) || 1);
+                                const current = dbData.settings?.coinsSettings || {};
+                                setDbData({
+                                  ...dbData,
+                                  settings: {
+                                    ...dbData.settings,
+                                    coinsSettings: {
+                                      ...current,
+                                      minCoinsToRedeem: val,
+                                    },
+                                  },
+                                });
+                              }}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold pr-16"
+                              placeholder="10"
+                            />
+                            <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-500">Coins</span>
+                          </div>
+                          <p className="mt-1 text-[10px] text-gray-400">
+                            Minimum coin balance a user must have before the apply coins toggle appears.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Earning / Loyalty Cashback Rules */}
+                      <div className="border-t border-[#ddddd9] pt-4 space-y-4">
+                        <span className="block font-black text-[#17231b] uppercase tracking-wider text-[11px]">
+                          🎁 Customer Reward & Earning Rules
+                        </span>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className="block font-bold text-[#17231b] mb-1">
+                              Welcome Bonus on Signup (Coins)
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min={0}
+                                max={5000}
+                                value={dbData.settings?.coinsSettings?.welcomeBonus ?? 100}
+                                onChange={(e) => {
+                                  const val = Math.max(0, parseInt(e.target.value) || 0);
+                                  const current = dbData.settings?.coinsSettings || {};
+                                  setDbData({
+                                    ...dbData,
+                                    settings: {
+                                      ...dbData.settings,
+                                      coinsSettings: {
+                                        ...current,
+                                        welcomeBonus: val,
+                                      },
+                                    },
+                                  });
+                                }}
+                                className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold pr-16"
+                                placeholder="100"
+                              />
+                              <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-500">Coins</span>
+                            </div>
+                            {(() => {
+                              const bonus = Number(dbData.settings?.coinsSettings?.welcomeBonus) || 100;
+                              const rate = Number(dbData.settings?.coinsSettings?.coinsPerRupee) || 10;
+                              return (
+                                <p className="mt-1 text-[10px] text-emerald-700 font-semibold">
+                                  Worth ₹{(bonus / rate).toFixed(2)} instant discount on first purchase.
+                                </p>
+                              );
+                            })()}
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-[#17231b] mb-1">
+                              Order Cashback Reward Rate (%)
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={dbData.settings?.coinsSettings?.orderRewardPercent ?? 5}
+                                onChange={(e) => {
+                                  const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                                  const current = dbData.settings?.coinsSettings || {};
+                                  setDbData({
+                                    ...dbData,
+                                    settings: {
+                                      ...dbData.settings,
+                                      coinsSettings: {
+                                        ...current,
+                                        orderRewardPercent: val,
+                                      },
+                                    },
+                                  });
+                                }}
+                                className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold pr-10"
+                                placeholder="5"
+                              />
+                              <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-500">%</span>
+                            </div>
+                            <p className="mt-1 text-[10px] text-gray-400">
+                              Percentage of order total credited back in coins upon order completion.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Storefront Customer Preview Mockup */}
+                      <div className="rounded-xl border border-gray-200 bg-[#f8fafc] p-4 space-y-2">
+                        <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block">
+                          👀 How it looks to customers at checkout:
+                        </span>
+                        {(() => {
+                          const rate = Number(dbData.settings?.coinsSettings?.coinsPerRupee) || 10;
+                          const maxP = Number(dbData.settings?.coinsSettings?.maxRedemptionPercent) || 20;
+                          return (
+                            <div className="p-3.5 rounded-xl border border-emerald-300 bg-white flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="size-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-800 text-sm font-bold shrink-0">
+                                  🪙
+                                </div>
+                                <div>
+                                  <div className="text-xs font-bold text-[#17231b]">Pure Coins Available: 150 Coins</div>
+                                  <div className="text-[11px] text-emerald-800 font-medium">
+                                    Redeem up to ₹15.00 ({rate} Coins = ₹1, max {maxP}% order discount)
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="px-3 py-1 rounded-lg bg-[#244f31] text-white text-[11px] font-bold shrink-0">
+                                -₹15.00 Applied
+                              </span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Save Button */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const target = {
+                            enabled: dbData.settings?.coinsSettings?.enabled !== false,
+                            coinsPerRupee: Number(dbData.settings?.coinsSettings?.coinsPerRupee) || 10,
+                            maxRedemptionPercent: Number(dbData.settings?.coinsSettings?.maxRedemptionPercent) || 20,
+                            minCoinsToRedeem: Number(dbData.settings?.coinsSettings?.minCoinsToRedeem) || 10,
+                            welcomeBonus: Number(dbData.settings?.coinsSettings?.welcomeBonus) || 100,
+                            orderRewardPercent: Number(dbData.settings?.coinsSettings?.orderRewardPercent) || 5,
+                          };
+                          await handleSaveSettings("coinsSettings", target);
+                          showToast("Pure Coins valuation and loyalty rules saved!");
+                        }}
+                        className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3.5 shadow-sm transition flex items-center justify-center gap-2 mt-4 cursor-pointer"
+                      >
+                        <Zap className="size-4 text-amber-300" />
+                        <span>Save Pure Coins Configuration</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 {subTab === "flash-sales" && (
@@ -8414,217 +9747,542 @@ export default function AdminDashboard() {
                   <button onClick={() => setSubTab("notifications")} className={subTabStyle("notifications")}>Notifications</button>
                 </div>
 
-                {subTab === "campaigns" && (
-                  <div className="space-y-6">
-                    <form onSubmit={handleAddCampaign} className="space-y-4 text-xs border-b pb-6 bg-[#f8faf1]/40 border border-[#ddddd9] p-5 rounded-2xl">
-                      <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Launch Ad Campaign</h4>
-                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-5">
-                        <div className="sm:col-span-2">
-                          <label className="block font-bold text-[#666666] mb-1">Campaign Title *</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Independence Day Sale - Shilajit"
-                            required
-                            value={campaignName}
-                            onChange={(e) => setCampaignName(e.target.value)}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
-                          />
+                {subTab === "campaigns" && (() => {
+                  const campaignsList = dbData.marketing?.campaigns || [];
+                  const totalSpend = campaignsList.reduce((sum: number, c: any) => sum + (Number(c.spend) || 0), 0);
+                  const totalRevenue = campaignsList.reduce((sum: number, c: any) => sum + (Number(c.revenue) || 0), 0);
+                  const blendedRoas = totalSpend > 0 ? (totalRevenue / totalSpend).toFixed(2) : "0.00";
+                  const activeRunningCount = campaignsList.filter((c: any) => c.status === "Running").length;
+
+                  const liveTarget = campaignTargetUrl.trim().startsWith("http")
+                    ? campaignTargetUrl.trim()
+                    : `https://www.pureayurherbs.com${campaignTargetUrl.trim().startsWith("/") ? "" : "/"}${campaignTargetUrl.trim()}`;
+                  const liveUtmSlug = (campaignName || "campaign").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+                  const liveJoiner = liveTarget.includes("?") ? "&" : "?";
+                  const liveUtmUrl = `${liveTarget}${liveJoiner}utm_source=${encodeURIComponent(campaignUtmSource.trim() || "facebook")}&utm_medium=${encodeURIComponent(campaignUtmMedium.trim() || "cpc")}&utm_campaign=${encodeURIComponent(liveUtmSlug)}`;
+
+                  return (
+                    <div className="space-y-6">
+                      {/* KPI Performance Cards */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="p-4 rounded-2xl border border-[#ddddd9] bg-gradient-to-br from-white to-[#f8faf1] shadow-xs">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">Total Ad Spend</span>
+                          <div className="mt-1 text-xl sm:text-2xl font-black text-[#17231b]">
+                            ₹{totalSpend.toLocaleString("en-IN")}
+                          </div>
+                          <span className="text-[10px] text-gray-500 mt-0.5 block">Across all channels</span>
                         </div>
-                        <div>
-                          <label className="block font-bold text-[#666666] mb-1">Channel *</label>
-                          <select
-                            value={campaignChannel}
-                            onChange={(e) => setCampaignChannel(e.target.value)}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer"
-                          >
-                            <option value="Meta Ads">Meta Ads</option>
-                            <option value="Google Ads">Google Ads</option>
-                            <option value="Email Campaigns">Email Campaigns</option>
-                            <option value="WhatsApp Broadcast">WhatsApp Broadcast</option>
-                            <option value="SMS Marketing">SMS Marketing</option>
-                          </select>
+                        <div className="p-4 rounded-2xl border border-[#ddddd9] bg-gradient-to-br from-white to-[#f8faf1] shadow-xs">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">Tracked Revenue</span>
+                          <div className="mt-1 text-xl sm:text-2xl font-black text-emerald-700">
+                            ₹{totalRevenue.toLocaleString("en-IN")}
+                          </div>
+                          <span className="text-[10px] text-emerald-700 font-semibold mt-0.5 block">Attributed sales</span>
                         </div>
-                        <div>
-                          <label className="block font-bold text-[#666666] mb-1">Budget Spend (₹) *</label>
-                          <input
-                            type="number"
-                            placeholder="e.g. 15000"
-                            required
-                            value={campaignSpend}
-                            onChange={(e) => setCampaignSpend(e.target.value)}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
-                          />
+                        <div className="p-4 rounded-2xl border border-[#ddddd9] bg-gradient-to-br from-white to-[#f8faf1] shadow-xs">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">Blended ROAS</span>
+                          <div className="mt-1 text-xl sm:text-2xl font-black text-[#244f31]">
+                            {blendedRoas}x
+                          </div>
+                          <span className="text-[10px] text-[#244f31] font-semibold mt-0.5 block">Return on Ad Spend</span>
                         </div>
-                        <div>
-                          <label className="block font-bold text-[#666666] mb-1">Tracked Revenue (₹) *</label>
-                          <input
-                            type="number"
-                            placeholder="e.g. 45000"
-                            required
-                            value={campaignRevenue}
-                            onChange={(e) => setCampaignRevenue(e.target.value)}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
-                          />
+                        <div className="p-4 rounded-2xl border border-[#ddddd9] bg-gradient-to-br from-white to-[#f8faf1] shadow-xs">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">Active Campaigns</span>
+                          <div className="mt-1 text-xl sm:text-2xl font-black text-[#17231b]">
+                            {activeRunningCount} / {campaignsList.length}
+                          </div>
+                          <span className="text-[10px] text-emerald-600 font-bold mt-0.5 block">Currently Running</span>
                         </div>
                       </div>
 
-                      <div className="flex justify-between items-center pt-2">
-                        <div className="flex items-center gap-2">
-                          <label className="font-bold text-[#666666]">Campaign Status:</label>
-                          <select
-                            value={campaignStatus}
-                            onChange={(e) => setCampaignStatus(e.target.value)}
-                            className="rounded-lg border border-[#ddddd9] p-1.5 font-bold bg-white cursor-pointer"
-                          >
-                            <option value="Running">Running</option>
-                            <option value="Paused">Paused</option>
-                            <option value="Completed">Completed</option>
-                          </select>
-                        </div>
-                        <button type="submit" className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-5 py-3 transition shadow-md">
-                          Launch Ad Campaign
-                        </button>
-                      </div>
-                    </form>
-
-                    <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
-                      <table className="w-full text-left">
-                        <thead>
-                          <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
-                            <th className="p-3 font-bold">Campaign Name</th>
-                            <th className="p-3 font-bold">Channel</th>
-                            <th className="p-3 font-bold text-right">Spend</th>
-                            <th className="p-3 font-bold text-right">Revenue</th>
-                            <th className="p-3 font-bold text-center">ROAS</th>
-                            <th className="p-3 font-bold text-center">Status</th>
-                            <th className="p-3 font-bold text-center">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#ddddd9]">
-                          {dbData.marketing.campaigns.length === 0 ? (
-                            <tr>
-                              <td colSpan={7} className="p-6 text-center text-gray-500 font-semibold">No campaigns tracked yet.</td>
-                            </tr>
-                          ) : (
-                            dbData.marketing.campaigns.map((camp: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-[#f8faf1]/20 transition">
-                                <td className="p-3 font-bold text-[#17231b]">{camp.name}</td>
-                                <td className="p-3 text-gray-600 font-semibold">{camp.channel}</td>
-                                <td className="p-3 text-right text-gray-600 font-semibold">₹{(camp.spend || 0).toLocaleString("en-IN")}</td>
-                                <td className="p-3 text-right text-emerald-600 font-bold">₹{(camp.revenue || 0).toLocaleString("en-IN")}</td>
-                                <td className="p-3 text-center font-bold text-[#244f31]">
-                                  {camp.roas ? `${camp.roas}x` : "0.0x"}
-                                </td>
-                                <td className="p-3 text-center">
-                                  <button
-                                    onClick={() => handleToggleMarketingStatus("campaigns", idx)}
-                                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                      camp.status === "Running" ? "bg-emerald-100 text-emerald-800" :
-                                      camp.status === "Paused" ? "bg-amber-100 text-amber-800" :
-                                      "bg-gray-100 text-gray-800"
-                                    }`}
-                                    title="Click to cycle status"
-                                  >
-                                    {camp.status}
-                                  </button>
-                                </td>
-                                <td className="p-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => void handleDeleteCampaign(idx)}
-                                    className="text-red-600 font-bold hover:underline"
-                                  >
-                                    Delete
-                                  </button>
-                                </td>
-                              </tr>
-                            ))
+                      {/* Launch / Edit Ad Campaign Form */}
+                      <form onSubmit={handleAddCampaign} className="space-y-4 text-xs border bg-[#f8faf1]/40 border-[#ddddd9] p-5 rounded-2xl shadow-xs">
+                        <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                          <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider flex items-center gap-2">
+                            <TrendingUp className="size-4 text-[#244f31]" />
+                            <span>{editingCampaignIndex !== null ? `Edit Campaign #${editingCampaignIndex + 1}` : "Launch & Track Ad Campaign"}</span>
+                          </h4>
+                          {editingCampaignIndex !== null && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingCampaignIndex(null);
+                                setCampaignName("");
+                                setCampaignSpend("");
+                                setCampaignRevenue("");
+                                setCampaignStatus("Running");
+                              }}
+                              className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
+                            >
+                              Cancel Edit
+                            </button>
                           )}
-                        </tbody>
-                      </table>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                          <div className="sm:col-span-2">
+                            <label className="block font-bold text-[#666666] mb-1">Campaign Title / Angle *</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Independence Day Sale - Shilajit Vitality"
+                              required
+                              value={campaignName}
+                              onChange={(e) => setCampaignName(e.target.value)}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">Channel / Platform *</label>
+                            <select
+                              value={campaignChannel}
+                              onChange={(e) => setCampaignChannel(e.target.value)}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-medium"
+                            >
+                              <option value="Meta Ads">Meta Ads (FB & IG)</option>
+                              <option value="Google Ads">Google Ads (Search & Shopping)</option>
+                              <option value="Influencer">Influencer Collaboration</option>
+                              <option value="WhatsApp Broadcast">WhatsApp Broadcast</option>
+                              <option value="SMS Marketing">SMS Marketing</option>
+                              <option value="Email Campaigns">Email Campaigns</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">Campaign Status</label>
+                            <select
+                              value={campaignStatus}
+                              onChange={(e) => setCampaignStatus(e.target.value)}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-bold"
+                            >
+                              <option value="Running">Running (Active)</option>
+                              <option value="Paused">Paused</option>
+                              <option value="Completed">Completed</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* UTM Parameter Tracking Builder */}
+                        <div className="grid gap-4 sm:grid-cols-3 pt-1">
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">Target Landing Page URL *</label>
+                            <input
+                              type="text"
+                              placeholder="/products/virja-powder"
+                              value={campaignTargetUrl}
+                              onChange={(e) => setCampaignTargetUrl(e.target.value)}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-mono text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">UTM Source</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. facebook or google"
+                              value={campaignUtmSource}
+                              onChange={(e) => setCampaignUtmSource(e.target.value)}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">UTM Medium</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. cpc, story, banner"
+                              value={campaignUtmMedium}
+                              onChange={(e) => setCampaignUtmMedium(e.target.value)}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Spend & Tracked Revenue */}
+                        <div className="grid gap-4 sm:grid-cols-2 pt-1">
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">Budget Spend (₹) *</label>
+                            <input
+                              type="number"
+                              placeholder="e.g. 15000"
+                              required
+                              value={campaignSpend}
+                              onChange={(e) => setCampaignSpend(e.target.value)}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">Tracked Revenue (₹) *</label>
+                            <input
+                              type="number"
+                              placeholder="e.g. 45000"
+                              required
+                              value={campaignRevenue}
+                              onChange={(e) => setCampaignRevenue(e.target.value)}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold text-emerald-800"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Live Generated UTM Tracking Link Preview */}
+                        <div className="rounded-xl border border-[#80a03c]/40 bg-[#f8faf1] p-3.5 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-[#244f31] flex items-center gap-1.5">
+                              <ExternalLink className="size-3.5" />
+                              Auto-Generated UTM Tracking Link
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(liveUtmUrl);
+                                showToast("UTM tracking URL copied to clipboard!");
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] font-black text-[#244f31] hover:underline cursor-pointer"
+                            >
+                              <Copy className="size-3" />
+                              Copy Link
+                            </button>
+                          </div>
+                          <div className="font-mono text-[11px] text-gray-700 break-all select-all bg-white p-2 rounded-lg border border-[#ddddd9]">
+                            {liveUtmUrl}
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                          <button
+                            type="submit"
+                            className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-6 py-3 transition shadow-md cursor-pointer flex items-center gap-2"
+                          >
+                            <TrendingUp className="size-4" />
+                            <span>{editingCampaignIndex !== null ? "Update Campaign" : "Launch Ad Campaign"}</span>
+                          </button>
+                        </div>
+                      </form>
+
+                      {/* Configured Campaigns Table */}
+                      <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
+                              <th className="p-3 font-bold">Campaign Name & Tracking Link</th>
+                              <th className="p-3 font-bold">Channel</th>
+                              <th className="p-3 font-bold text-right">Spend</th>
+                              <th className="p-3 font-bold text-right">Revenue</th>
+                              <th className="p-3 font-bold text-center">ROAS</th>
+                              <th className="p-3 font-bold text-center">Status</th>
+                              <th className="p-3 font-bold text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#ddddd9]">
+                            {campaignsList.length === 0 ? (
+                              <tr>
+                                <td colSpan={7} className="p-6 text-center text-gray-500 font-semibold">No ad campaigns tracked yet.</td>
+                              </tr>
+                            ) : (
+                              campaignsList.map((camp: any, idx: number) => (
+                                <tr key={idx} className="hover:bg-[#f8faf1]/30 transition">
+                                  <td className="p-3">
+                                    <div className="font-bold text-[#17231b]">{camp.name}</div>
+                                    {camp.utmUrl && (
+                                      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-gray-400">
+                                        <span className="font-mono truncate max-w-xs">{camp.utmUrl}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(camp.utmUrl);
+                                            showToast("UTM URL copied!");
+                                          }}
+                                          className="text-[#244f31] hover:underline cursor-pointer shrink-0 font-bold"
+                                        >
+                                          Copy
+                                        </button>
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="p-3 text-gray-600 font-semibold">{camp.channel}</td>
+                                  <td className="p-3 text-right text-gray-600 font-semibold">₹{(camp.spend || 0).toLocaleString("en-IN")}</td>
+                                  <td className="p-3 text-right text-emerald-700 font-bold">₹{(camp.revenue || 0).toLocaleString("en-IN")}</td>
+                                  <td className="p-3 text-center font-bold text-[#244f31]">
+                                    {camp.roas ? `${camp.roas}x` : "0.0x"}
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleMarketingStatus("campaigns", idx)}
+                                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition ${
+                                        camp.status === "Running" ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" :
+                                        camp.status === "Paused" ? "bg-amber-100 text-amber-800 hover:bg-amber-200" :
+                                        "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                                      }`}
+                                      title="Click to cycle status"
+                                    >
+                                      {camp.status}
+                                    </button>
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <div className="flex items-center justify-center gap-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingCampaignIndex(idx);
+                                          setCampaignName(camp.name || "");
+                                          setCampaignChannel(camp.channel || "Meta Ads");
+                                          setCampaignSpend(String(camp.spend || ""));
+                                          setCampaignRevenue(String(camp.revenue || ""));
+                                          setCampaignStatus(camp.status || "Running");
+                                          if (camp.targetUrl) setCampaignTargetUrl(camp.targetUrl);
+                                        }}
+                                        className="text-[#244f31] font-bold hover:underline cursor-pointer"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleDeleteCampaign(idx)}
+                                        className="text-red-600 font-bold hover:underline cursor-pointer"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {subTab === "banners" && (
                   <div className="space-y-6">
-                    <form onSubmit={handleAddBanner} className="space-y-4 text-xs border-b pb-6 bg-[#f8faf1]/40 border border-[#ddddd9] p-5 rounded-2xl">
-                      <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Create Home Promo Banner</h4>
+                    {/* Create / Edit Banner Form */}
+                    <form onSubmit={handleAddBanner} className="space-y-4 text-xs border bg-[#f8faf1]/40 border-[#ddddd9] p-5 rounded-2xl shadow-xs">
+                      <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                        <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider flex items-center gap-2">
+                          <Megaphone className="size-4 text-[#244f31]" />
+                          <span>{editingBannerIndex !== null ? `Edit Promotional Banner #${editingBannerIndex + 1}` : "Create Home Promotional Banner"}</span>
+                        </h4>
+                        {editingBannerIndex !== null && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingBannerIndex(null);
+                              setNewBanner({
+                                name: "",
+                                subtitle: "",
+                                link: "",
+                                image: "",
+                                ctaText: "Shop Now",
+                                placement: "Homepage Middle Strip",
+                                status: "Active",
+                              });
+                            }}
+                            className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
+                      </div>
+
                       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <div className="sm:col-span-2">
-                          <label className="block font-bold text-[#666666] mb-1">Banner Name *</label>
+                          <label className="block font-bold text-[#666666] mb-1">Banner Heading / Title *</label>
                           <input
                             type="text"
-                            placeholder="e.g. Shilajit Discount Header Banner"
+                            placeholder="e.g. 100% Ayurvedic Vitality & Sugar Care"
                             required
                             value={newBanner.name}
                             onChange={(e) => setNewBanner({ ...newBanner, name: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
                           />
                         </div>
                         <div>
                           <label className="block font-bold text-[#666666] mb-1">Redirect URL Link *</label>
                           <input
                             type="text"
-                            placeholder="e.g. /products/dia-free-juice"
+                            placeholder="e.g. /products/virja-powder"
                             required
                             value={newBanner.link}
                             onChange={(e) => setNewBanner({ ...newBanner, link: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-mono text-xs"
                           />
                         </div>
                         <div>
-                          <label className="block font-bold text-[#666666] mb-1">Promo Image URL (Optional)</label>
+                          <label className="block font-bold text-[#666666] mb-1">CTA Button Text</label>
                           <input
                             type="text"
-                            placeholder="e.g. https://images.unsplash.com/..."
-                            value={newBanner.image}
-                            onChange={(e) => setNewBanner({ ...newBanner, image: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            placeholder="e.g. Explore Formulations"
+                            value={newBanner.ctaText}
+                            onChange={(e) => setNewBanner({ ...newBanner, ctaText: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
                           />
                         </div>
                       </div>
 
-                      <div className="flex justify-end pt-2">
-                        <button type="submit" className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-5 py-3 transition shadow-md">
-                          Create Banner
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1">Subtitle / Supporting Description</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Formulated by certified Ayurvedic Vaidyas. Clinically backed botanicals for peak stamina."
+                            value={newBanner.subtitle}
+                            onChange={(e) => setNewBanner({ ...newBanner, subtitle: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">Placement</label>
+                            <select
+                              value={newBanner.placement}
+                              onChange={(e) => setNewBanner({ ...newBanner, placement: e.target.value })}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer"
+                            >
+                              <option value="Homepage Middle Strip">Homepage Middle Strip (Between Bestsellers & Categories)</option>
+                              <option value="Top Hero Slider">Top Hero Slider (In Hero Carousel)</option>
+                              <option value="Top Header Bar">Top Header Announcement Bar (Above Navigation with Timer)</option>
+                              <option value="Above Consultation">Above Consultation</option>
+                              <option value="Cart Drawer">Cart Drawer</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block font-bold text-[#666666] mb-1">Status</label>
+                            <select
+                              value={newBanner.status}
+                              onChange={(e) => setNewBanner({ ...newBanner, status: e.target.value })}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-bold"
+                            >
+                              <option value="Active">Active (Live)</option>
+                              <option value="Inactive">Inactive</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Image Upload Section */}
+                      <div className="border border-dashed border-[#80a03c] rounded-2xl p-4 bg-white space-y-3">
+                        <label className="block font-bold text-[#17231b]">
+                          Banner Hero Image (Device Upload + Live Preview)
+                        </label>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                          <label className="inline-flex items-center gap-2 rounded-xl bg-[#244f31] hover:bg-[#1b3b24] px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-sm cursor-pointer transition">
+                            <Upload className="size-4" />
+                            <span>{bannerImageUploading ? "Uploading..." : "Upload from Device"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              disabled={bannerImageUploading}
+                              onChange={handleBannerFileChange}
+                              className="hidden"
+                            />
+                          </label>
+
+                          <div className="flex-1 w-full">
+                            <input
+                              type="text"
+                              placeholder="Or paste image URL (e.g. https://...)"
+                              value={newBanner.image}
+                              onChange={(e) => setNewBanner({ ...newBanner, image: e.target.value })}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white text-xs font-mono"
+                            />
+                          </div>
+
+                          {newBanner.image && (
+                            <button
+                              type="button"
+                              onClick={() => setNewBanner({ ...newBanner, image: "" })}
+                              className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
+                            >
+                              Remove Image
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Live Banner Mockup Card */}
+                        {newBanner.image && (
+                          <div className="mt-3 p-3 rounded-xl bg-[#eef5df]/50 border border-[#80a03c]/30 flex items-center gap-4">
+                            <img
+                              src={newBanner.image}
+                              alt="Preview"
+                              className="size-16 rounded-xl object-cover border border-[#ddddd9] shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-[10px] font-bold text-[#244f31] uppercase">Live Banner Preview</span>
+                              <h5 className="text-xs font-black text-[#17231b] truncate">{newBanner.name || "Banner Headline"}</h5>
+                              <p className="text-[11px] text-[#666666] truncate">{newBanner.subtitle || "Banner subtitle goes here..."}</p>
+                            </div>
+                            <span className="px-3 py-1 bg-[#f2c94c] text-[#17231b] rounded-lg text-[10px] font-black uppercase shrink-0">
+                              {newBanner.ctaText || "Shop Now"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                        <a
+                          href="/#marketing-banner"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-[#244f31] text-[#244f31] hover:bg-[#eef5df] px-4 py-3 text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                        >
+                          <ExternalLink className="size-4" />
+                          <span>Preview Banner on Storefront</span>
+                        </a>
+
+                        <button
+                          type="submit"
+                          disabled={bannerImageUploading}
+                          className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-6 py-3 transition shadow-md cursor-pointer flex items-center gap-2"
+                        >
+                          <Megaphone className="size-4" />
+                          <span>{editingBannerIndex !== null ? "Update Banner" : "Create Banner"}</span>
                         </button>
                       </div>
                     </form>
 
+                    {/* Banners Table */}
                     <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
                       <table className="w-full text-left">
                         <thead>
                           <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
-                            <th className="p-3 font-bold">Banner Graphic Preview</th>
-                            <th className="p-3 font-bold">Banner Name</th>
-                            <th className="p-3 font-bold">Funnels to Link</th>
+                            <th className="p-3 font-bold">Graphic Preview</th>
+                            <th className="p-3 font-bold">Banner Details</th>
+                            <th className="p-3 font-bold">Redirect Link & Placement</th>
                             <th className="p-3 font-bold text-center">Status</th>
                             <th className="p-3 font-bold text-center">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#ddddd9]">
-                          {(!dbData.marketing.banners || dbData.marketing.banners.length === 0) ? (
+                          {(!dbData.marketing?.banners || dbData.marketing.banners.length === 0) ? (
                             <tr>
                               <td colSpan={5} className="p-6 text-center text-gray-500 font-semibold">No promotional banners configured.</td>
                             </tr>
                           ) : (
                             dbData.marketing.banners.map((b: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-[#f8faf1]/20 transition">
+                              <tr key={idx} className="hover:bg-[#f8faf1]/30 transition">
                                 <td className="p-3">
                                   {b.image ? (
-                                    <img src={b.image} alt="" className="h-8 w-16 rounded object-cover border" />
+                                    <img src={b.image} alt="" className="h-10 w-20 rounded-lg object-cover border border-[#ddddd9]" />
                                   ) : (
-                                    <span className="text-[10px] text-gray-400 italic">No Graphic</span>
+                                    <div className="h-10 w-20 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] text-gray-400 italic">
+                                      No Graphic
+                                    </div>
                                   )}
                                 </td>
-                                <td className="p-3 font-bold text-[#17231b]">{b.name}</td>
-                                <td className="p-3 text-emerald-700 font-bold">{b.link}</td>
+                                <td className="p-3">
+                                  <div className="font-black text-[#17231b]">{b.name}</div>
+                                  {b.subtitle && (
+                                    <div className="text-[11px] text-gray-500 max-w-sm truncate">{b.subtitle}</div>
+                                  )}
+                                </td>
+                                <td className="p-3">
+                                  <div className="text-emerald-700 font-bold font-mono">{b.link}</div>
+                                  <div className="text-[10px] text-gray-400 font-medium">{b.placement || "Homepage"}</div>
+                                </td>
                                 <td className="p-3 text-center">
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleMarketingStatus("banners", idx)}
-                                    className={`px-2.5 py-0.5 rounded text-[10px] font-bold ${
-                                      b.status === "Active" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition ${
+                                      b.status === "Active" ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : "bg-red-100 text-red-800 hover:bg-red-200"
                                     }`}
                                     title="Click to toggle status"
                                   >
@@ -8632,13 +10290,33 @@ export default function AdminDashboard() {
                                   </button>
                                 </td>
                                 <td className="p-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => void handleDeleteBanner(idx)}
-                                    className="text-red-600 font-bold hover:underline"
-                                  >
-                                    Delete
-                                  </button>
+                                  <div className="flex items-center justify-center gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingBannerIndex(idx);
+                                        setNewBanner({
+                                          name: b.name || "",
+                                          subtitle: b.subtitle || "",
+                                          link: b.link || "",
+                                          image: b.image || "",
+                                          ctaText: b.ctaText || "Explore Formulations",
+                                          placement: b.placement || "Homepage Middle Strip",
+                                          status: b.status || "Active",
+                                        });
+                                      }}
+                                      className="text-[#244f31] font-bold hover:underline cursor-pointer"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteBanner(idx)}
+                                      className="text-red-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))
@@ -8651,40 +10329,92 @@ export default function AdminDashboard() {
 
                 {subTab === "popups" && (
                   <div className="space-y-6">
-                    <form onSubmit={handleAddPopup} className="space-y-4 text-xs border-b pb-6 bg-[#f8faf1]/40 border border-[#ddddd9] p-5 rounded-2xl">
-                      <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Create Exit-Intent Popup</h4>
-                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-5">
+                    {/* Create / Edit Popup Form */}
+                    <form onSubmit={handleAddPopup} className="space-y-4 text-xs border bg-[#f8faf1]/40 border-[#ddddd9] p-5 rounded-2xl shadow-xs">
+                      <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                        <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider flex items-center gap-2">
+                          <Tag className="size-4 text-[#244f31]" />
+                          <span>{editingPopupIndex !== null ? `Edit Exit-Intent Popup #${editingPopupIndex + 1}` : "Create Exit-Intent & Promo Popup"}</span>
+                        </h4>
+                        {editingPopupIndex !== null && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPopupIndex(null);
+                              setNewPopup({
+                                title: "",
+                                subtitle: "",
+                                discount: "FLAT 10% OFF",
+                                couponCode: "PURE10",
+                                image: "",
+                                trigger: "Exit Intent",
+                                ctaText: "Claim Coupon & Shop Now",
+                                status: "Active",
+                              });
+                            }}
+                            className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                         <div className="sm:col-span-2">
                           <label className="block font-bold text-[#666666] mb-1">Popup Header Title *</label>
                           <input
                             type="text"
-                            placeholder="e.g. Wait! Get 10% Extra Off coupon code"
+                            placeholder="e.g. Wait! Claim Extra 10% Off Your Order"
                             required
                             value={newPopup.title}
                             onChange={(e) => setNewPopup({ ...newPopup, title: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
                           />
                         </div>
                         <div>
-                          <label className="block font-bold text-[#666666] mb-1">Discount Tag (e.g. 10% OFF) *</label>
+                          <label className="block font-bold text-[#666666] mb-1">Discount Tag *</label>
                           <input
                             type="text"
-                            placeholder="e.g. 10% OFF"
+                            placeholder="e.g. FLAT 10% OFF"
                             required
                             value={newPopup.discount}
                             onChange={(e) => setNewPopup({ ...newPopup, discount: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold text-emerald-800"
                           />
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-[#666666] mb-1">Subtitle / Body Pitch</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Join thousands who restored balance with pure Ayurvedic remedies. Use code at checkout."
+                          value={newPopup.subtitle}
+                          onChange={(e) => setNewPopup({ ...newPopup, subtitle: e.target.value })}
+                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                        />
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <div>
                           <label className="block font-bold text-[#666666] mb-1">Auto Coupon Code *</label>
                           <input
                             type="text"
-                            placeholder="e.g. COMEBACK10"
+                            placeholder="e.g. PURE10"
                             required
                             value={newPopup.couponCode}
                             onChange={(e) => setNewPopup({ ...newPopup, couponCode: e.target.value.toUpperCase() })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-mono font-bold text-[#244f31]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1">CTA Button Text</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Claim Coupon & Shop Now"
+                            value={newPopup.ctaText}
+                            onChange={(e) => setNewPopup({ ...newPopup, ctaText: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
                           />
                         </div>
                         <div>
@@ -8692,28 +10422,129 @@ export default function AdminDashboard() {
                           <select
                             value={newPopup.trigger}
                             onChange={(e) => setNewPopup({ ...newPopup, trigger: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-medium"
                           >
-                            <option value="Exit Intent">Exit Intent</option>
-                            <option value="Time delay (10s)">Time delay (10s)</option>
+                            <option value="Exit Intent">Exit Intent (Mouse Leave / 12s)</option>
+                            <option value="Time delay (8s)">Time delay (8s)</option>
                             <option value="Scroll Depth (50%)">Scroll Depth (50%)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1">Status</label>
+                          <select
+                            value={newPopup.status}
+                            onChange={(e) => setNewPopup({ ...newPopup, status: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-bold"
+                          >
+                            <option value="Active">Active (Live)</option>
+                            <option value="Inactive">Inactive</option>
                           </select>
                         </div>
                       </div>
 
-                      <div className="flex justify-end pt-2">
-                        <button type="submit" className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-5 py-3 transition shadow-md">
-                          Create Popup
+                      {/* Popup Image Upload Section */}
+                      <div className="border border-dashed border-[#80a03c] rounded-2xl p-4 bg-white space-y-3">
+                        <label className="block font-bold text-[#17231b]">
+                          Popup Graphic / Header Photo (Optional)
+                        </label>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                          <label className="inline-flex items-center gap-2 rounded-xl bg-[#244f31] hover:bg-[#1b3b24] px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-sm cursor-pointer transition">
+                            <Upload className="size-4" />
+                            <span>{popupImageUploading ? "Uploading..." : "Upload from Device"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              disabled={popupImageUploading}
+                              onChange={handlePopupFileChange}
+                              className="hidden"
+                            />
+                          </label>
+
+                          <div className="flex-1 w-full">
+                            <input
+                              type="text"
+                              placeholder="Or paste image URL (e.g. https://...)"
+                              value={newPopup.image}
+                              onChange={(e) => setNewPopup({ ...newPopup, image: e.target.value })}
+                              className="w-full rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white text-xs font-mono"
+                            />
+                          </div>
+
+                          {newPopup.image && (
+                            <button
+                              type="button"
+                              onClick={() => setNewPopup({ ...newPopup, image: "" })}
+                              className="text-xs font-bold text-red-600 hover:underline cursor-pointer"
+                            >
+                              Remove Image
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Interactive Live Mockup Card */}
+                        <div className="mt-4 rounded-2xl border border-gray-300 bg-gray-50 p-4 max-w-sm mx-auto shadow-inner text-center">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-2">
+                            👀 Storefront Modal Mockup Preview:
+                          </span>
+                          <div className="rounded-2xl bg-white border border-gray-200 p-4 shadow-md space-y-2.5">
+                            {newPopup.image && (
+                              <img
+                                src={newPopup.image}
+                                alt=""
+                                className="h-28 w-full object-cover rounded-xl"
+                              />
+                            )}
+                            <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#f2c94c] text-[10px] font-black text-[#17231b]">
+                              {newPopup.discount || "SPECIAL OFFER"}
+                            </span>
+                            <h5 className="text-xs font-black text-[#17231b]">
+                              {newPopup.title || "Wait! Claim Your Exclusive Discount"}
+                            </h5>
+                            <p className="text-[10px] text-gray-500">
+                              {newPopup.subtitle || "Save extra on all Ayurvedic remedies today."}
+                            </p>
+                            <div className="p-2 rounded-xl bg-[#f8faf1] border border-dashed border-[#80a03c] font-mono font-black text-xs text-[#244f31]">
+                              {newPopup.couponCode || "PURE10"}
+                            </div>
+                            <button
+                              type="button"
+                              className="w-full py-2 bg-[#244f31] text-white rounded-xl text-[10px] font-black uppercase"
+                            >
+                              {newPopup.ctaText || "Claim Coupon & Shop Now"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+                        <a
+                          href="/?popup=1"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-[#244f31] text-[#244f31] hover:bg-[#eef5df] px-4 py-3 text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                        >
+                          <ExternalLink className="size-4" />
+                          <span>Preview Live on Storefront</span>
+                        </a>
+
+                        <button
+                          type="submit"
+                          disabled={popupImageUploading}
+                          className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-6 py-3 transition shadow-md cursor-pointer flex items-center gap-2"
+                        >
+                          <Tag className="size-4" />
+                          <span>{editingPopupIndex !== null ? "Update Popup" : "Create Popup"}</span>
                         </button>
                       </div>
                     </form>
 
+                    {/* Popups Table */}
                     <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
                       <table className="w-full text-left">
                         <thead>
                           <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
-                            <th className="p-3 font-bold">Popup Title</th>
-                            <th className="p-3 font-bold">Discount Header</th>
+                            <th className="p-3 font-bold">Graphic</th>
+                            <th className="p-3 font-bold">Popup Title & Discount</th>
                             <th className="p-3 font-bold">Coupon Code</th>
                             <th className="p-3 font-bold">Trigger Rule</th>
                             <th className="p-3 font-bold text-center">Status</th>
@@ -8721,22 +10552,34 @@ export default function AdminDashboard() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#ddddd9]">
-                          {(!dbData.marketing.popups || dbData.marketing.popups.length === 0) ? (
+                          {(!dbData.marketing?.popups || dbData.marketing.popups.length === 0) ? (
                             <tr>
                               <td colSpan={6} className="p-6 text-center text-gray-500 font-semibold">No exit-intent popups defined.</td>
                             </tr>
                           ) : (
                             dbData.marketing.popups.map((p: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-[#f8faf1]/20 transition">
-                                <td className="p-3 font-bold text-[#17231b]">{p.title}</td>
-                                <td className="p-3 text-gray-600 font-semibold">{p.discount || "N/A"}</td>
+                              <tr key={idx} className="hover:bg-[#f8faf1]/30 transition">
+                                <td className="p-3">
+                                  {p.image ? (
+                                    <img src={p.image} alt="" className="size-10 rounded-lg object-cover border border-[#ddddd9]" />
+                                  ) : (
+                                    <div className="size-10 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">
+                                      None
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-3">
+                                  <div className="font-bold text-[#17231b]">{p.title}</div>
+                                  <div className="text-[11px] text-emerald-800 font-bold">{p.discount || "N/A"}</div>
+                                </td>
                                 <td className="p-3 font-mono text-[#244f31] font-bold">{p.couponCode || "N/A"}</td>
-                                <td className="p-3 text-gray-600 font-semibold">{p.trigger}</td>
+                                <td className="p-3 text-gray-600 font-medium">{p.trigger}</td>
                                 <td className="p-3 text-center">
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleMarketingStatus("popups", idx)}
-                                    className={`px-2.5 py-0.5 rounded text-[10px] font-bold ${
-                                      p.status === "Active" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition ${
+                                      p.status === "Active" ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : "bg-red-100 text-red-800 hover:bg-red-200"
                                     }`}
                                     title="Click to toggle status"
                                   >
@@ -8744,13 +10587,34 @@ export default function AdminDashboard() {
                                   </button>
                                 </td>
                                 <td className="p-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => void handleDeletePopup(idx)}
-                                    className="text-red-600 font-bold hover:underline"
-                                  >
-                                    Delete
-                                  </button>
+                                  <div className="flex items-center justify-center gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingPopupIndex(idx);
+                                        setNewPopup({
+                                          title: p.title || "",
+                                          subtitle: p.subtitle || "",
+                                          discount: p.discount || "FLAT 10% OFF",
+                                          couponCode: p.couponCode || "PURE10",
+                                          image: p.image || "",
+                                          trigger: p.trigger || "Exit Intent",
+                                          ctaText: p.ctaText || "Claim Coupon & Shop Now",
+                                          status: p.status || "Active",
+                                        });
+                                      }}
+                                      className="text-[#244f31] font-bold hover:underline cursor-pointer"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeletePopup(idx)}
+                                      className="text-red-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))
@@ -8763,81 +10627,173 @@ export default function AdminDashboard() {
 
                 {subTab === "notifications" && (
                   <div className="space-y-6">
-                    <form onSubmit={handleAddNotification} className="space-y-4 text-xs border-b pb-6 bg-[#f8faf1]/40 border border-[#ddddd9] p-5 rounded-2xl">
-                      <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Configure Cart recovery Alert</h4>
-                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                    {/* Configure Cart recovery & Notifications Form */}
+                    <form onSubmit={handleAddNotification} className="space-y-4 text-xs border bg-[#f8faf1]/40 border-[#ddddd9] p-5 rounded-2xl shadow-xs">
+                      <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                        <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider flex items-center gap-2">
+                          <Bell className="size-4 text-[#244f31]" />
+                          <span>{editingNotificationIndex !== null ? `Edit Alert Trigger #${editingNotificationIndex + 1}` : "Configure Cart Recovery & Social Proof Alerts"}</span>
+                        </h4>
+                        {editingNotificationIndex !== null && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingNotificationIndex(null);
+                              setNewNotification({
+                                title: "",
+                                type: "Cart Recovery",
+                                delay: "30 mins",
+                                message: "",
+                                status: "Active",
+                              });
+                            }}
+                            className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <div className="sm:col-span-2">
-                          <label className="block font-bold text-[#666666] mb-1">Alert Title / Name *</label>
+                          <label className="block font-bold text-[#666666] mb-1">Alert Title / Purpose *</label>
                           <input
                             type="text"
-                            placeholder="e.g. Abandoned Cart Reminder SMS"
+                            placeholder="e.g. Abandoned Cart WhatsApp Recovery"
                             required
                             value={newNotification.title}
                             onChange={(e) => setNewNotification({ ...newNotification, title: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
                           />
                         </div>
                         <div>
-                          <label className="block font-bold text-[#666666] mb-1">Delay After Cart Abandon *</label>
+                          <label className="block font-bold text-[#666666] mb-1">Notification Type</label>
+                          <select
+                            value={newNotification.type}
+                            onChange={(e) => setNewNotification({ ...newNotification, type: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-medium"
+                          >
+                            <option value="Cart Recovery">Cart Recovery (WhatsApp / SMS)</option>
+                            <option value="Live Social Proof Toast">Live Social Proof Toast</option>
+                            <option value="Post-Purchase Followup">Post-Purchase Followup</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1">Trigger Delay *</label>
                           <select
                             value={newNotification.delay}
                             onChange={(e) => setNewNotification({ ...newNotification, delay: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer"
+                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-medium"
                           >
                             <option value="15 mins">15 mins after abandon</option>
                             <option value="30 mins">30 mins after abandon</option>
                             <option value="1 hour">1 hour after abandon</option>
                             <option value="24 hours">24 hours after abandon</option>
+                            <option value="Every 12s">Every 12s (For Social Proof)</option>
                           </select>
                         </div>
                       </div>
 
                       <div>
-                        <label className="block font-bold text-[#666666] mb-1">SMS Message Template Text *</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block font-bold text-[#666666]">
+                            Message Template Text *
+                          </label>
+                          <span className="text-[10px] text-gray-400">
+                            Available variables: <code className="text-[#244f31] font-bold">{"{customer_name}"}</code>, <code className="text-[#244f31] font-bold">{"{cart_total}"}</code>, <code className="text-[#244f31] font-bold">{"{recovery_url}"}</code>
+                          </span>
+                        </div>
                         <textarea
-                          placeholder="e.g. Hey, you forgot items in your cart! Complete your purchase now and get 10% off. Use code: PURE10"
+                          placeholder="Namaste {customer_name}! 🌿 You left your herbal wellness order in your basket (₹{cart_total}). Complete your order today & get Extra 10% OFF with code PURE10: {recovery_url}"
                           required
                           value={newNotification.message}
                           onChange={(e) => setNewNotification({ ...newNotification, message: e.target.value })}
                           rows={3}
-                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white resize-none"
+                          className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white resize-none font-medium"
                         />
                       </div>
 
+                      {/* WhatsApp Test Button */}
+                      {newNotification.message && (
+                        <div className="rounded-xl border border-[#25D366]/40 bg-[#25D366]/5 p-3 flex items-center justify-between gap-3">
+                          <div className="text-[11px] text-gray-700">
+                            <strong>Test Alert:</strong> Preview how this recovery message looks in WhatsApp.
+                          </div>
+                          <a
+                            href={`https://wa.me/?text=${encodeURIComponent(
+                              newNotification.message
+                                .replace("{customer_name}", "Rahul Sharma")
+                                .replace("{cart_total}", "1,499")
+                                .replace("{recovery_url}", "https://www.pureayurherbs.com/checkout")
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#1ebc59] transition cursor-pointer shrink-0"
+                          >
+                            <Send className="size-3.5" />
+                            <span>Test on WhatsApp</span>
+                          </a>
+                        </div>
+                      )}
+
                       <div className="flex justify-end pt-2">
-                        <button type="submit" className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-5 py-3 transition shadow-md">
-                          Configure Trigger
+                        <button
+                          type="submit"
+                          className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-6 py-3 transition shadow-md cursor-pointer flex items-center gap-2"
+                        >
+                          <Bell className="size-4" />
+                          <span>{editingNotificationIndex !== null ? "Update Trigger" : "Configure Trigger"}</span>
                         </button>
                       </div>
                     </form>
 
+                    {/* Storefront Social Proof Info Card */}
+                    <div className="p-4 rounded-2xl border border-emerald-300 bg-emerald-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 text-xs font-black text-[#244f31] uppercase tracking-wider">
+                          <CheckCircle className="size-4 text-emerald-600" />
+                          <span>Live Storefront Buyer Social Proof Toasts</span>
+                        </div>
+                        <p className="text-xs text-[#555555] mt-1">
+                          When the Live Social Proof item below is set to <strong>Active</strong>, visitors browsing the store will see authentic real-time recent order popups, boosting conversion trust.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Notifications Table */}
                     <div className="border border-[#ddddd9] rounded-xl overflow-hidden text-xs bg-white shadow-xs">
                       <table className="w-full text-left">
                         <thead>
                           <tr className="bg-[#f8faf1] border-b border-[#ddddd9] text-[#17231b]">
                             <th className="p-3 font-bold">Notification Title</th>
-                            <th className="p-3 font-bold">Trigger delay</th>
-                            <th className="p-3 font-bold">Alert message template</th>
+                            <th className="p-3 font-bold">Type & Delay</th>
+                            <th className="p-3 font-bold">Alert Message Template</th>
                             <th className="p-3 font-bold text-center">Status</th>
                             <th className="p-3 font-bold text-center">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#ddddd9]">
-                          {(!dbData.marketing.notifications || dbData.marketing.notifications.length === 0) ? (
+                          {(!dbData.marketing?.notifications || dbData.marketing.notifications.length === 0) ? (
                             <tr>
                               <td colSpan={5} className="p-6 text-center text-gray-500 font-semibold">No recovery notification triggers defined.</td>
                             </tr>
                           ) : (
                             dbData.marketing.notifications.map((n: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-[#f8faf1]/20 transition">
+                              <tr key={idx} className="hover:bg-[#f8faf1]/30 transition">
                                 <td className="p-3 font-bold text-[#17231b]">{n.title}</td>
-                                <td className="p-3 text-emerald-800 font-bold">{n.delay}</td>
-                                <td className="p-3 text-gray-600 max-w-xs truncate" title={n.message}>{n.message || "N/A"}</td>
+                                <td className="p-3">
+                                  <div className="font-semibold text-gray-700">{n.type || "Cart Recovery"}</div>
+                                  <div className="text-[10px] text-emerald-800 font-bold">{n.delay}</div>
+                                </td>
+                                <td className="p-3 text-gray-600 max-w-sm">
+                                  <div className="truncate" title={n.message}>{n.message || "N/A"}</div>
+                                </td>
                                 <td className="p-3 text-center">
                                   <button
+                                    type="button"
                                     onClick={() => handleToggleMarketingStatus("notifications", idx)}
-                                    className={`px-2.5 py-0.5 rounded text-[10px] font-bold ${
-                                      n.status === "Active" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition ${
+                                      n.status === "Active" ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : "bg-red-100 text-red-800 hover:bg-red-200"
                                     }`}
                                     title="Click to toggle status"
                                   >
@@ -8845,13 +10801,31 @@ export default function AdminDashboard() {
                                   </button>
                                 </td>
                                 <td className="p-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => void handleDeleteNotification(idx)}
-                                    className="text-red-600 font-bold hover:underline"
-                                  >
-                                    Delete
-                                  </button>
+                                  <div className="flex items-center justify-center gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingNotificationIndex(idx);
+                                        setNewNotification({
+                                          title: n.title || "",
+                                          type: n.type || "Cart Recovery",
+                                          delay: n.delay || "30 mins",
+                                          message: n.message || "",
+                                          status: n.status || "Active",
+                                        });
+                                      }}
+                                      className="text-[#244f31] font-bold hover:underline cursor-pointer"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteNotification(idx)}
+                                      className="text-red-600 font-bold hover:underline cursor-pointer"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))
@@ -8872,6 +10846,7 @@ export default function AdminDashboard() {
                   <button onClick={() => setSubTab("aboutUs")} className={subTabStyle("aboutUs")}>About Us</button>
                   <button onClick={() => setSubTab("blogs")} className={subTabStyle("blogs")}>Blogs</button>
                   <button onClick={() => setSubTab("faqs")} className={subTabStyle("faqs")}>FAQs</button>
+                  <button onClick={() => setSubTab("media")} className={subTabStyle("media")}>Media Hub</button>
                   <button onClick={() => setSubTab("testimonials")} className={subTabStyle("testimonials")}>Testimonials</button>
                 </div>
 
@@ -9254,23 +11229,33 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
                           <div>
                             <span className="block font-black text-sm text-[#17231b]">Announcement Bar (Top Ticker Bar)</span>
-                            <span className="text-[10px] text-[#666666]">Alerts above the site header</span>
+                            <span className="text-[10px] text-[#666666]">Alerts above the site header with live countdown clocks and botanical background</span>
                           </div>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={announcement.visible}
-                              onChange={(e) => {
-                                const updated = {
-                                  ...content,
-                                  announcement: { ...announcement, visible: e.target.checked }
-                                };
-                                void handleSaveCMSContent(updated);
-                              }}
-                              className="rounded border-[#ddddd9] text-[#244f31] focus:ring-[#244f31]"
-                            />
-                            <span className="font-bold">Active / Visible</span>
-                          </label>
+                          <div className="flex items-center gap-3">
+                            <a
+                              href="/#top-announcement-banner"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#244f31] bg-[#f8faf1] border border-[#244f31]/30 hover:bg-[#244f31]/10 px-3 py-1 rounded-lg transition"
+                            >
+                              👁️ Preview on Storefront
+                            </a>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={announcement.visible !== false}
+                                onChange={(e) => {
+                                  const updated = {
+                                    ...content,
+                                    announcement: { ...announcement, visible: e.target.checked }
+                                  };
+                                  void handleSaveCMSContent(updated);
+                                }}
+                                className="rounded border-[#ddddd9] text-[#244f31] focus:ring-[#244f31]"
+                              />
+                              <span className="font-bold">Active / Visible</span>
+                            </label>
+                          </div>
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
@@ -9278,7 +11263,7 @@ export default function AdminDashboard() {
                             <label className="block font-bold mb-1">Announcement Text</label>
                             <input
                               type="text"
-                              value={announcement.text}
+                              value={announcement.text || ""}
                               onChange={(e) => {
                                 const updated = {
                                   ...content,
@@ -9287,15 +11272,32 @@ export default function AdminDashboard() {
                                 setDbData({ ...dbData, content: updated });
                               }}
                               onBlur={() => void handleSaveCMSContent(dbData.content)}
-                              placeholder="e.g. ADDITIONAL 10% OFF WITH PURE COINS"
+                              placeholder="e.g. Free Kesar Sale Ends in"
                               className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
                             />
                           </div>
                           <div>
-                            <label className="block font-bold mb-1">Promo Code Hint</label>
+                            <label className="block font-bold mb-1">Countdown Timer (HH:MM:SS)</label>
                             <input
                               type="text"
-                              value={announcement.code}
+                              value={announcement.timerDuration || ""}
+                              onChange={(e) => {
+                                const updated = {
+                                  ...content,
+                                  announcement: { ...announcement, timerDuration: e.target.value }
+                                };
+                                setDbData({ ...dbData, content: updated });
+                              }}
+                              onBlur={() => void handleSaveCMSContent(dbData.content)}
+                              placeholder="e.g. 07:34:59"
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold mb-1">Promo Code (Optional)</label>
+                            <input
+                              type="text"
+                              value={announcement.code || ""}
                               onChange={(e) => {
                                 const updated = {
                                   ...content,
@@ -9304,7 +11306,7 @@ export default function AdminDashboard() {
                                 setDbData({ ...dbData, content: updated });
                               }}
                               onBlur={() => void handleSaveCMSContent(dbData.content)}
-                              placeholder="e.g. PURE10"
+                              placeholder="e.g. FREEKESAR"
                               className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
                             />
                           </div>
@@ -9312,7 +11314,7 @@ export default function AdminDashboard() {
                             <label className="block font-bold mb-1">CTA Label</label>
                             <input
                               type="text"
-                              value={announcement.btnText}
+                              value={announcement.btnText || ""}
                               onChange={(e) => {
                                 const updated = {
                                   ...content,
@@ -9321,9 +11323,84 @@ export default function AdminDashboard() {
                                 setDbData({ ...dbData, content: updated });
                               }}
                               onBlur={() => void handleSaveCMSContent(dbData.content)}
-                              placeholder="e.g. GET APP"
+                              placeholder="e.g. Claim Gift"
                               className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
                             />
+                          </div>
+                          <div className="sm:col-span-3">
+                            <label className="block font-bold mb-1">Target Link</label>
+                            <input
+                              type="text"
+                              value={announcement.link || ""}
+                              onChange={(e) => {
+                                const updated = {
+                                  ...content,
+                                  announcement: { ...announcement, link: e.target.value }
+                                };
+                                setDbData({ ...dbData, content: updated });
+                              }}
+                              onBlur={() => void handleSaveCMSContent(dbData.content)}
+                              placeholder="e.g. /#shop or /products/virja-powder"
+                              className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Background Banner Image Controls */}
+                        <div className="border-t border-[#ddddd9] pt-3 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="size-10 rounded-lg border border-[#ddddd9] overflow-hidden shrink-0 bg-cover bg-center shadow-xs"
+                              style={{ backgroundImage: `url('${announcement.bgImage || "/brand/top-botanical-banner.jpg"}')` }}
+                            />
+                            <div>
+                              <span className="block font-bold text-xs text-[#17231b]">Banner Background Image</span>
+                              <span className="text-[10px] text-[#666666]">Lush botanical foliage or custom promotional graphic</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="inline-flex items-center gap-1.5 bg-white border border-[#244f31] text-[#244f31] hover:bg-[#244f31]/5 text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer shadow-xs transition">
+                              <Upload className="size-3.5" />
+                              <span>Upload Background</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  try {
+                                    const uploadedUrl = await uploadImageToCloud(file, "pure_ayur_herbs/banners");
+                                    if (uploadedUrl) {
+                                      const updated = {
+                                        ...content,
+                                        announcement: { ...announcement, bgImage: uploadedUrl }
+                                      };
+                                      setDbData({ ...dbData, content: updated });
+                                      await handleSaveCMSContent(updated);
+                                      showToast("Top banner background uploaded!");
+                                    }
+                                  } catch (err) {
+                                    showToast("Failed to upload image");
+                                  }
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = {
+                                  ...content,
+                                  announcement: { ...announcement, bgImage: "/brand/top-botanical-banner.jpg" }
+                                };
+                                setDbData({ ...dbData, content: updated });
+                                void handleSaveCMSContent(updated);
+                                showToast("Reset to botanical foliage background");
+                              }}
+                              className="text-[11px] font-bold text-[#666666] hover:text-[#17231b] underline cursor-pointer"
+                            >
+                              Reset to Botanical Foliage
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -9817,7 +11894,9 @@ export default function AdminDashboard() {
                         {newBlog.image && (
                           <div className="mt-2 flex items-center gap-3">
                             <img src={newBlog.image} className="h-10 w-20 object-cover rounded-md border border-[#ddddd9]" />
-                            <span className="text-[10px] text-emerald-800 font-bold">✓ Featured image attached</span>
+                            <span className="text-[10px] text-emerald-800 font-bold">
+                              {blogImageUploading ? "⏳ Uploading to Cloud CDN..." : "✓ Featured image attached"}
+                            </span>
                             <button
                               type="button"
                               onClick={() => setNewBlog({ ...newBlog, image: "" })}
@@ -9972,9 +12051,36 @@ export default function AdminDashboard() {
                         )}
                       </div>
 
-                      <div className="pt-2 border-t border-[#ddddd9] flex justify-end">
-                        <button type="submit" className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-8 py-3.5 transition shadow-md flex items-center gap-2">
-                          Publish Article
+                      <div className="pt-2 border-t border-[#ddddd9] flex justify-end gap-3 items-center">
+                        {editingBlogIndex !== null && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingBlogIndex(null);
+                              setNewBlog({
+                                title: "",
+                                author: "",
+                                content: "",
+                                image: "",
+                                date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+                                status: "Published",
+                                relatedProducts: [],
+                                videos: "",
+                                audio: "",
+                              });
+                              setBlogFaqs([]);
+                            }}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs uppercase tracking-wider rounded-xl px-5 py-3 transition"
+                          >
+                            Cancel Edit
+                          </button>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={blogImageUploading}
+                          className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-8 py-3.5 transition shadow-md flex items-center gap-2 disabled:opacity-50"
+                        >
+                          {editingBlogIndex !== null ? "Update Article" : "Publish Article"}
                         </button>
                       </div>
                     </form>
@@ -10022,6 +12128,28 @@ export default function AdminDashboard() {
                                   </button>
                                 </td>
                                 <td className="p-3 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setNewBlog({
+                                        title: b.title || "",
+                                        author: b.author || "",
+                                        content: b.content || "",
+                                        image: b.image || "",
+                                        date: b.date || "",
+                                        status: b.status || "Published",
+                                        relatedProducts: b.relatedProducts || [],
+                                        videos: Array.isArray(b.videos) ? b.videos.join(", ") : (b.videos || ""),
+                                        audio: b.audio || "",
+                                      });
+                                      setBlogFaqs(Array.isArray(b.faqs) ? b.faqs : []);
+                                      setEditingBlogIndex(idx);
+                                      window.scrollTo({ top: 300, behavior: "smooth" });
+                                    }}
+                                    className="text-[#244f31] font-bold hover:underline mr-3"
+                                  >
+                                    Edit
+                                  </button>
                                   <button
                                     type="button"
                                     onClick={() => void handleDeleteBlog(idx)}
@@ -10337,35 +12465,943 @@ export default function AdminDashboard() {
 
                 {subTab === "testimonials" && (
                   <div className="space-y-6">
-                    <form onSubmit={handleAddTestimonial} className="grid gap-3 sm:grid-cols-2 text-xs border-b pb-6">
-                      <input
-                        type="text"
-                        placeholder="Customer Name"
-                        required
-                        value={newTestimonial.name}
-                        onChange={(e) => setNewTestimonial({ ...newTestimonial, name: e.target.value })}
-                        className="rounded border p-2"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Comment details"
-                        required
-                        value={newTestimonial.comment}
-                        onChange={(e) => setNewTestimonial({ ...newTestimonial, comment: e.target.value })}
-                        className="rounded border p-2"
-                      />
-                      <button type="submit" className="bg-[#244f31] text-white font-bold rounded p-2 sm:col-span-2">Add Testimonial</button>
+                    {/* Top KPI & Controls Banner */}
+                    <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-xs space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-black text-sm text-[#17231b]">
+                              Customer Testimonials & Transformations
+                            </h3>
+                            <span className="bg-[#244f31]/10 text-[#244f31] font-extrabold text-[11px] px-2 py-0.5 rounded-full">
+                              {Array.isArray(dbData.testimonials) ? dbData.testimonials.length : 0} Reviews
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#666666] mt-0.5">
+                            Manage verified Ayurvedic customer stories, star ratings, and transformations displayed across the storefront.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingTestimonialIndex(null);
+                            setNewTestimonial({
+                              id: "",
+                              name: "",
+                              location: "Mumbai, Maharashtra",
+                              rating: 5,
+                              title: "",
+                              comment: "",
+                              productTagged: dbData.products?.[0]?.name || "Virja Powder for Men",
+                              verifiedBuyer: true,
+                              avatar: "",
+                              status: "Approved",
+                              date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+                            });
+                            setIsTestimonialModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#244f31] hover:bg-[#1b3d26] text-white text-xs font-bold transition shadow-xs cursor-pointer self-start sm:self-auto"
+                        >
+                          <Plus className="size-4" />
+                          <span>Add New Testimonial</span>
+                        </button>
+                      </div>
+
+                      {/* Quick Summary Cards */}
+                      {(() => {
+                        const allList = Array.isArray(dbData.testimonials) ? dbData.testimonials : [];
+                        const approvedCount = allList.filter((t: any) => (t.status || "Approved") === "Approved").length;
+                        const pendingCount = allList.filter((t: any) => t.status === "Pending").length;
+                        const avgRating = allList.length > 0
+                          ? (allList.reduce((acc: number, t: any) => acc + (Number(t.rating) || 5), 0) / allList.length).toFixed(1)
+                          : "5.0";
+
+                        return (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                            <div className="p-3 rounded-xl bg-[#f8faf1] border border-[#ddddd9]">
+                              <span className="block text-[10px] font-bold text-[#666666] uppercase">Total Testimonials</span>
+                              <span className="font-black text-lg text-[#17231b]">{allList.length}</span>
+                            </div>
+                            <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200">
+                              <span className="block text-[10px] font-bold text-emerald-800 uppercase">Live / Approved</span>
+                              <span className="font-black text-lg text-emerald-700">{approvedCount}</span>
+                            </div>
+                            <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-200">
+                              <span className="block text-[10px] font-bold text-amber-800 uppercase">Pending Moderation</span>
+                              <span className="font-black text-lg text-amber-700">{pendingCount}</span>
+                            </div>
+                            <div className="p-3 rounded-xl bg-[#f8faf1] border border-[#ddddd9]">
+                              <span className="block text-[10px] font-bold text-[#666666] uppercase">Avg Star Rating</span>
+                              <div className="flex items-center gap-1">
+                                <span className="font-black text-lg text-[#17231b]">{avgRating}</span>
+                                <span className="text-amber-500 font-bold text-xs">★</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Search & Status Filter Row */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-neutral-100">
+                        {/* Status Filter Tabs */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                          {["All", "Approved", "Pending", "Hidden"].map((st) => (
+                            <button
+                              key={st}
+                              type="button"
+                              onClick={() => setTestimonialStatusFilter(st)}
+                              className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+                                testimonialStatusFilter === st
+                                  ? "bg-[#244f31] text-white shadow-xs"
+                                  : "bg-[#f8faf1] text-[#666666] hover:text-[#17231b] border border-[#ddddd9]"
+                              }`}
+                            >
+                              {st}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Search Input */}
+                        <div className="relative flex-1 sm:max-w-xs">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#666666]" />
+                          <input
+                            type="text"
+                            value={testimonialSearchQuery}
+                            onChange={(e) => setTestimonialSearchQuery(e.target.value)}
+                            placeholder="Search by customer, city, or remedy..."
+                            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-[#ddddd9] bg-white outline-none focus:border-[#244f31]"
+                          />
+                          {testimonialSearchQuery && (
+                            <button
+                              onClick={() => setTestimonialSearchQuery("")}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#666666] hover:text-[#17231b]"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Testimonials List Cards */}
+                    {(() => {
+                      const allList = Array.isArray(dbData.testimonials) ? dbData.testimonials : [];
+                      const q = testimonialSearchQuery.trim().toLowerCase();
+                      const filtered = allList.filter((t: any) => {
+                        const statusMatch =
+                          testimonialStatusFilter === "All" ||
+                          (testimonialStatusFilter === "Approved" && (t.status || "Approved") === "Approved") ||
+                          (testimonialStatusFilter === "Pending" && t.status === "Pending") ||
+                          (testimonialStatusFilter === "Hidden" && t.status === "Hidden");
+
+                        if (!statusMatch) return false;
+                        if (!q) return true;
+
+                        const name = (t.name || "").toLowerCase();
+                        const loc = (t.location || "").toLowerCase();
+                        const prod = (t.productTagged || t.product || "").toLowerCase();
+                        const comm = (t.comment || "").toLowerCase();
+                        const titl = (t.title || "").toLowerCase();
+
+                        return (
+                          name.includes(q) ||
+                          loc.includes(q) ||
+                          prod.includes(q) ||
+                          comm.includes(q) ||
+                          titl.includes(q)
+                        );
+                      });
+
+                      if (filtered.length === 0) {
+                        return (
+                          <div className="p-8 text-center bg-white rounded-2xl border border-neutral-200 text-xs text-[#666666]">
+                            <MessageSquare className="size-8 text-[#80a03c] mx-auto mb-2 opacity-50" />
+                            <p className="font-bold text-sm text-[#17231b]">No Testimonials Found</p>
+                            <p className="mt-1">Try clearing your search query or status filter.</p>
+                            {(testimonialSearchQuery || testimonialStatusFilter !== "All") && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTestimonialSearchQuery("");
+                                  setTestimonialStatusFilter("All");
+                                }}
+                                className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#244f31] underline cursor-pointer"
+                              >
+                                Reset Filters
+                              </button>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {filtered.map((t: any, idx: number) => {
+                            const originalIndex = allList.indexOf(t);
+                            const ratingNum = Number(t.rating) || 5;
+                            const isApproved = (t.status || "Approved") === "Approved";
+
+                            return (
+                              <div
+                                key={t.id || idx}
+                                className="bg-white rounded-2xl border border-neutral-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group"
+                              >
+                                <div>
+                                  {/* Top Row: Customer Info & Stars */}
+                                  <div className="flex items-start justify-between gap-3 mb-3">
+                                    <div className="flex items-center gap-3">
+                                      {t.avatar ? (
+                                        <div
+                                          className="size-10 rounded-full border border-neutral-200 bg-cover bg-center shrink-0 shadow-xs"
+                                          style={{ backgroundImage: `url('${t.avatar}')` }}
+                                        />
+                                      ) : (
+                                        <div className="size-10 rounded-full bg-[#244f31] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                                          {(t.name || "C").charAt(0).toUpperCase()}
+                                        </div>
+                                      )}
+                                      <div>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="font-bold text-xs text-[#17231b]">{t.name}</span>
+                                          {t.verifiedBuyer !== false && (
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200">
+                                              <CheckCircle2 className="size-2.5" />
+                                              <span>Verified</span>
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className="block text-[11px] text-[#666666]">
+                                          {t.location || "India"} {t.date ? `• ${t.date}` : ""}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Star Rating Display */}
+                                    <div className="flex items-center gap-0.5 shrink-0 bg-[#f8faf1] px-2 py-1 rounded-lg border border-[#ddddd9]">
+                                      {[1, 2, 3, 4, 5].map((s) => (
+                                        <Star
+                                          key={s}
+                                          className={`size-3 ${
+                                            s <= ratingNum
+                                              ? "fill-amber-400 text-amber-400"
+                                              : "text-neutral-300"
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Tagged Remedy Formulation Pill */}
+                                  <div className="mb-2.5">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#244f31]/10 text-[#244f31] text-[10px] font-extrabold tracking-wide">
+                                      <span>🌿</span>
+                                      <span>{t.productTagged || "Ayurvedic Formulation"}</span>
+                                    </span>
+                                  </div>
+
+                                  {/* Headline / Title */}
+                                  {t.title && (
+                                    <h4 className="font-bold text-xs text-[#17231b] mb-1.5 leading-snug">
+                                      &ldquo;{t.title}&rdquo;
+                                    </h4>
+                                  )}
+
+                                  {/* Review Body */}
+                                  <p className="text-xs text-[#555555] leading-relaxed italic line-clamp-4">
+                                    {t.comment}
+                                  </p>
+                                </div>
+
+                                {/* Bottom Action Bar */}
+                                <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between gap-2 text-xs">
+                                  {/* Status Badge with 1-click Toggle */}
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleToggleTestimonialStatus(originalIndex)}
+                                    className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full border transition cursor-pointer ${
+                                      isApproved
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                        : t.status === "Pending"
+                                        ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                        : "bg-neutral-100 text-neutral-600 border-neutral-200 hover:bg-neutral-200"
+                                    }`}
+                                    title="Click to toggle status"
+                                  >
+                                    <span
+                                      className={`size-1.5 rounded-full ${
+                                        isApproved ? "bg-emerald-500" : t.status === "Pending" ? "bg-amber-500" : "bg-neutral-400"
+                                      }`}
+                                    />
+                                    <span>{t.status || "Approved"}</span>
+                                  </button>
+
+                                  {/* Edit & Delete Controls */}
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditTestimonial(originalIndex)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-[#244f31] bg-[#f8faf1] hover:bg-[#244f31]/10 rounded-lg border border-[#ddddd9] transition cursor-pointer"
+                                    >
+                                      <Pencil className="size-3" />
+                                      <span>Edit</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteTestimonial(originalIndex)}
+                                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                      title="Delete testimonial"
+                                    >
+                                      <Trash2 className="size-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Testimonial Creation / Edit Modal */}
+                    {isTestimonialModalOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div
+                          className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+                          onClick={() => setIsTestimonialModalOpen(false)}
+                        />
+                        <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-[#ddddd9] text-[#17231b] space-y-4 max-h-[90vh] overflow-y-auto">
+                          <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                            <div>
+                              <h3 className="font-black text-sm text-[#17231b]">
+                                {editingTestimonialIndex !== null
+                                  ? "Edit Customer Testimonial"
+                                  : "Add Customer Testimonial"}
+                              </h3>
+                              <span className="text-[10px] text-[#666666]">
+                                Verified Ayurvedic buyer feedback & health transformation story
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => setIsTestimonialModalOpen(false)}
+                              className="rounded-full p-1 text-[#666666] hover:bg-[#f8faf1] transition cursor-pointer"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
+
+                          <form onSubmit={handleAddTestimonial} className="space-y-4 text-xs">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block font-bold mb-1">Customer Full Name *</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={newTestimonial.name}
+                                  onChange={(e) => setNewTestimonial({ ...newTestimonial, name: e.target.value })}
+                                  placeholder="e.g. Rajesh Sharma"
+                                  className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                                />
+                              </div>
+                              <div>
+                                <label className="block font-bold mb-1">City / Location</label>
+                                <input
+                                  type="text"
+                                  value={newTestimonial.location}
+                                  onChange={(e) => setNewTestimonial({ ...newTestimonial, location: e.target.value })}
+                                  placeholder="e.g. Pune, Maharashtra"
+                                  className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Star Rating Selector */}
+                            <div>
+                              <label className="block font-bold mb-1">Star Rating (1 to 5 Stars)</label>
+                              <div className="flex items-center gap-1.5 p-2 rounded-xl bg-[#f8faf1] border border-[#ddddd9] w-fit">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setNewTestimonial({ ...newTestimonial, rating: star })}
+                                    className="p-1 hover:scale-125 transition-transform cursor-pointer"
+                                  >
+                                    <Star
+                                      className={`size-5 ${
+                                        star <= (newTestimonial.rating || 5)
+                                          ? "fill-amber-400 text-amber-400"
+                                          : "text-neutral-300"
+                                      }`}
+                                    />
+                                  </button>
+                                ))}
+                                <span className="text-xs font-black text-[#17231b] ml-2">
+                                  {newTestimonial.rating || 5} / 5 Stars
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Tagged Formulation Product */}
+                            <div>
+                              <label className="block font-bold mb-1">Tagged Formulation Product</label>
+                              <select
+                                value={newTestimonial.productTagged}
+                                onChange={(e) => setNewTestimonial({ ...newTestimonial, productTagged: e.target.value })}
+                                className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-medium"
+                              >
+                                {dbData.products && dbData.products.length > 0 ? (
+                                  dbData.products.map((p: any) => (
+                                    <option key={p.id || p.name} value={p.name}>
+                                      🌿 {p.name}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <>
+                                    <option value="Virja Powder for Men">Virja Powder for Men</option>
+                                    <option value="Virja Gold Majun">Virja Gold Majun</option>
+                                    <option value="Madhunashi Sugar Care Powder">Madhunashi Sugar Care Powder</option>
+                                    <option value="Madhunashi Syrup">Madhunashi Syrup</option>
+                                    <option value="Pure Ayur Fat Burner Tonic">Pure Ayur Fat Burner Tonic</option>
+                                    <option value="Perfect 36 Herbal Cream">Perfect 36 Herbal Cream</option>
+                                  </>
+                                )}
+                              </select>
+                            </div>
+
+                            {/* Customer Avatar Upload */}
+                            <div>
+                              <label className="block font-bold mb-1">Customer Photo / Avatar (Optional)</label>
+                              <div className="flex items-center gap-3">
+                                {newTestimonial.avatar ? (
+                                  <div
+                                    className="size-12 rounded-full border border-neutral-200 bg-cover bg-center shrink-0 shadow-xs"
+                                    style={{ backgroundImage: `url('${newTestimonial.avatar}')` }}
+                                  />
+                                ) : (
+                                  <div className="size-12 rounded-full bg-[#f8faf1] border border-[#ddddd9] flex items-center justify-center font-black text-sm text-[#244f31] shrink-0">
+                                    {(newTestimonial.name || "C").charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                                <div className="flex-1 space-y-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <label className="inline-flex items-center gap-1.5 bg-white border border-[#244f31] text-[#244f31] hover:bg-[#244f31]/5 text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer shadow-xs transition">
+                                      {testimonialAvatarUploading ? (
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                      ) : (
+                                        <Upload className="size-3.5" />
+                                      )}
+                                      <span>Upload Photo</span>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        disabled={testimonialAvatarUploading}
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                          const file = e.target.files?.[0];
+                                          if (!file) return;
+                                          setTestimonialAvatarUploading(true);
+                                          try {
+                                            const url = await uploadImageToCloud(file, "pure_ayur_herbs/testimonials");
+                                            if (url) {
+                                              setNewTestimonial((prev: any) => ({ ...prev, avatar: url }));
+                                              showToast("Avatar uploaded!");
+                                            }
+                                          } catch {
+                                            showToast("Failed to upload avatar image");
+                                          } finally {
+                                            setTestimonialAvatarUploading(false);
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                    {newTestimonial.avatar && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setNewTestimonial({ ...newTestimonial, avatar: "" })}
+                                        className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
+                                      >
+                                        Remove Photo
+                                      </button>
+                                    )}
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={newTestimonial.avatar}
+                                    onChange={(e) => setNewTestimonial({ ...newTestimonial, avatar: e.target.value })}
+                                    placeholder="Or paste image URL"
+                                    className="w-full rounded-lg border border-[#ddddd9] p-1.5 text-[11px] outline-none"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Headline / Title */}
+                            <div>
+                              <label className="block font-bold mb-1">Headline / Review Summary</label>
+                              <input
+                                type="text"
+                                value={newTestimonial.title}
+                                onChange={(e) => setNewTestimonial({ ...newTestimonial, title: e.target.value })}
+                                placeholder="e.g. Noticeable stamina and vitality improvement in 3 weeks"
+                                className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                              />
+                            </div>
+
+                            {/* Comment Details */}
+                            <div>
+                              <label className="block font-bold mb-1">Detailed Transformation Story *</label>
+                              <textarea
+                                required
+                                rows={3}
+                                value={newTestimonial.comment}
+                                onChange={(e) => setNewTestimonial({ ...newTestimonial, comment: e.target.value })}
+                                placeholder="Share the authentic feedback or health results experienced with this remedy..."
+                                className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31]"
+                              />
+                            </div>
+
+                            {/* Verified Buyer & Status */}
+                            <div className="grid grid-cols-2 gap-3 pt-1">
+                              <div>
+                                <label className="block font-bold mb-1">Publication Status</label>
+                                <select
+                                  value={newTestimonial.status}
+                                  onChange={(e) => setNewTestimonial({ ...newTestimonial, status: e.target.value })}
+                                  className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-bold"
+                                >
+                                  <option value="Approved">Approved (Live on Storefront)</option>
+                                  <option value="Pending">Pending Moderation</option>
+                                  <option value="Hidden">Hidden (Archived)</option>
+                                </select>
+                              </div>
+                              <div className="flex items-center gap-2 pt-6">
+                                <label className="flex items-center gap-2 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={newTestimonial.verifiedBuyer !== false}
+                                    onChange={(e) =>
+                                      setNewTestimonial({ ...newTestimonial, verifiedBuyer: e.target.checked })
+                                    }
+                                    className="rounded border-[#ddddd9] text-[#244f31] focus:ring-[#244f31] size-4"
+                                  />
+                                  <span className="font-bold text-xs text-[#17231b]">Verified Buyer Badge</span>
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-100">
+                              <button
+                                type="button"
+                                onClick={() => setIsTestimonialModalOpen(false)}
+                                className="px-4 py-2.5 rounded-xl border border-[#ddddd9] text-xs font-bold text-[#666666] hover:bg-[#f8faf1] transition cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                className="px-5 py-2.5 rounded-xl bg-[#244f31] hover:bg-[#1b3d26] text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                              >
+                                {editingTestimonialIndex !== null ? "Save Changes" : "Publish Testimonial"}
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {subTab === "media" && (
+                  <div className="space-y-6">
+                    {/* Top Bar with Live Preview & Counter */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-neutral-200 shadow-xs">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-sm text-[#17231b]">
+                            Media Hub & Social Video Manager
+                          </h3>
+                          <span className="bg-[#244f31]/10 text-[#244f31] font-extrabold text-[11px] px-2 py-0.5 rounded-full">
+                            {(Array.isArray(dbData.media) ? dbData.media.length : 0)} Items
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#666666] mt-0.5">
+                          Manage Instagram Reels (9:16), YouTube Doctor Guides (16:9), and Lab BTS Photos for the public{" "}
+                          <code className="text-[#244f31] font-mono bg-[#f4f7f2] px-1 py-0.5 rounded">/media</code> page.
+                        </p>
+                      </div>
+
+                      <a
+                        href="/media"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 bg-[#244f31] hover:bg-[#1b3d26] text-white font-bold text-xs px-3.5 py-2 rounded-lg transition shadow-xs shrink-0"
+                      >
+                        <ExternalLink className="size-3.5" />
+                        <span>View Live Media Page</span>
+                      </a>
+                    </div>
+
+                    {/* Media Add / Edit Form */}
+                    <form onSubmit={handleSaveMedia} className="space-y-5 text-xs border border-[#ddddd9] p-6 rounded-3xl bg-white shadow-sm">
+                      <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                        <h4 className="font-black text-sm text-[#17231b] flex items-center gap-2">
+                          <Film className="size-4 text-[#80a03c]" />
+                          <span>{editingMediaIndex !== null ? "Edit Media Item" : "Add New Media Item"}</span>
+                        </h4>
+                        {editingMediaIndex !== null && (
+                          <span className="bg-amber-100 text-amber-900 font-bold text-[10px] px-2 py-0.5 rounded-full">
+                            Editing Item #{editingMediaIndex + 1}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Format Selector Pills */}
+                      <div>
+                        <label className="block font-bold text-[#666666] mb-1.5">Media Format *</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { type: "reel", label: "📱 Instagram Reel / Short (9:16)" },
+                            { type: "video", label: "🎬 YouTube Video (16:9)" },
+                            { type: "photo", label: "📸 Photo / Lab Certificate" },
+                          ].map((fmt) => (
+                            <button
+                              key={fmt.type}
+                              type="button"
+                              onClick={() => setNewMedia({ ...newMedia, type: fmt.type })}
+                              className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                                newMedia.type === fmt.type
+                                  ? "border-[#244f31] bg-[#244f31]/10 text-[#244f31]"
+                                  : "border-[#ddddd9] bg-[#f8faf1]/20 text-[#666666] hover:bg-[#f8faf1]/40"
+                              }`}
+                            >
+                              <span>{fmt.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Title & Category Row */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1.5">Title / Headline *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. How to Take Virja Powder for Peak Energy"
+                            required
+                            value={newMedia.title}
+                            onChange={(e) => setNewMedia({ ...newMedia, title: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1.5">Category *</label>
+                          <select
+                            value={newMedia.category}
+                            onChange={(e) => setNewMedia({ ...newMedia, category: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition font-semibold"
+                          >
+                            <option value="Reels & Shorts">📱 Reels & Shorts</option>
+                            <option value="Doctor Talks">🎬 Doctor Talks</option>
+                            <option value="Lab & Farm BTS">📸 Lab & Farm BTS</option>
+                            <option value="Customer Stories">⭐ Customer Stories</option>
+                            <option value="Press & News">📰 Press & News</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* URL / File Input depending on Format */}
+                      {newMedia.type === "photo" ? (
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1.5">Photo Image File *</label>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="w-full sm:w-1/2 flex items-center justify-center border-2 border-dashed border-[#ddddd9] rounded-xl p-3 bg-[#f8faf1]/10 hover:bg-[#f8faf1]/30 transition relative">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleMediaFileChange}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              />
+                              <span className="text-[10px] text-[#244f31] font-bold">
+                                {newMedia.url ? "Change selected photo..." : "📁 Upload Image from Device"}
+                              </span>
+                            </div>
+                            <div className="w-full sm:w-1/2 flex items-center">
+                              <input
+                                type="text"
+                                placeholder="Or paste image URL..."
+                                value={newMedia.url && newMedia.url.startsWith("data:") ? "" : newMedia.url}
+                                onChange={(e) => setNewMedia({ ...newMedia, url: e.target.value })}
+                                className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                              />
+                            </div>
+                          </div>
+                          {newMedia.url && (
+                            <div className="mt-2 flex items-center gap-3">
+                              <img src={newMedia.url} className="h-12 w-12 object-cover rounded-xl border border-[#ddddd9]" />
+                              <span className="text-[10px] text-emerald-800 font-bold">
+                                {mediaFileUploading ? "⏳ Uploading to Cloud CDN..." : "✓ Photo attached"}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1.5">
+                            {newMedia.type === "reel" ? "Instagram Reel or YouTube Short URL *" : "YouTube Video URL *"}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder={
+                              newMedia.type === "reel"
+                                ? "e.g. https://www.instagram.com/reel/C.../ or https://youtube.com/shorts/..."
+                                : "e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                            }
+                            required
+                            value={newMedia.url}
+                            onChange={(e) => setNewMedia({ ...newMedia, url: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition font-mono text-[11px]"
+                          />
+                          <p className="text-[10px] text-gray-400 mt-1">
+                            Paste any public YouTube, Shorts, or Instagram reel link. Thumbnails and embeds are generated automatically.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Tagged Product & Author / Duration Row */}
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1.5">Tagged Shoppable Product (Optional)</label>
+                          <select
+                            value={newMedia.taggedProductId || ""}
+                            onChange={(e) => setNewMedia({ ...newMedia, taggedProductId: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                          >
+                            <option value="">-- No Product Tagged --</option>
+                            {(dbData.products || []).map((p: any) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} (₹{p.price})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1.5">Doctor / Author / Speaker</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Dr. Adil Khan (Vaidya)"
+                            value={newMedia.author || ""}
+                            onChange={(e) => setNewMedia({ ...newMedia, author: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-[#666666] mb-1.5">Duration Badge</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 45s or 8:30"
+                            value={newMedia.duration || ""}
+                            onChange={(e) => setNewMedia({ ...newMedia, duration: e.target.value })}
+                            className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Caption / Description */}
+                      <div>
+                        <label className="block font-bold text-[#666666] mb-1.5">Caption & Key Takeaways</label>
+                        <textarea
+                          placeholder="Brief description of the video or photo takeaways..."
+                          rows={2}
+                          value={newMedia.caption || ""}
+                          onChange={(e) => setNewMedia({ ...newMedia, caption: e.target.value })}
+                          className="w-full rounded-xl border border-[#ddddd9] p-3 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 focus:bg-white transition"
+                        />
+                      </div>
+
+                      {/* Status & Submit Buttons */}
+                      <div className="pt-2 border-t border-[#ddddd9] flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2 cursor-pointer font-bold text-[#17231b]">
+                            <input
+                              type="checkbox"
+                              checked={newMedia.status === "Published"}
+                              onChange={(e) => setNewMedia({ ...newMedia, status: e.target.checked ? "Published" : "Draft" })}
+                              className="size-4 accent-[#244f31] rounded"
+                            />
+                            <span>Published on Live Media Hub</span>
+                          </label>
+
+                          <label className="flex items-center gap-2 cursor-pointer font-bold text-[#17231b]">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(newMedia.featured)}
+                              onChange={(e) => setNewMedia({ ...newMedia, featured: e.target.checked })}
+                              className="size-4 accent-[#80a03c] rounded"
+                            />
+                            <span>Featured ⭐</span>
+                          </label>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                          {editingMediaIndex !== null && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingMediaIndex(null);
+                                setNewMedia({
+                                  type: "reel",
+                                  title: "",
+                                  caption: "",
+                                  url: "",
+                                  thumbnail: "",
+                                  category: "Reels & Shorts",
+                                  taggedProductId: "",
+                                  duration: "",
+                                  author: "",
+                                  status: "Published",
+                                  featured: false,
+                                });
+                              }}
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs px-5 py-3 rounded-xl transition"
+                            >
+                              Cancel Edit
+                            </button>
+                          )}
+                          <button
+                            type="submit"
+                            disabled={mediaFileUploading}
+                            className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-7 py-3 transition shadow-md flex items-center gap-2 disabled:opacity-50"
+                          >
+                            {editingMediaIndex !== null ? "Update Media Item" : "Publish to Media Hub"}
+                          </button>
+                        </div>
+                      </div>
                     </form>
 
-                    <div className="space-y-2 text-xs">
-                      {dbData.testimonials.map((t: any, idx: number) => (
-                        <div key={idx} className="border p-3 rounded bg-white flex justify-between items-center">
-                          <div>
-                            <span className="block font-bold">{t.name} ({t.rating}★)</span>
-                            <span className="block text-[#666666] mt-1">{t.comment}</span>
-                          </div>
+                    {/* Media Items Table */}
+                    <div className="border border-[#ddddd9] rounded-2xl overflow-hidden text-xs bg-white shadow-xs">
+                      {/* Filter Bar */}
+                      <div className="p-3 bg-[#f8faf1] border-b border-[#ddddd9] flex items-center justify-between gap-2 overflow-x-auto">
+                        <div className="flex items-center gap-1.5">
+                          {["All", "Reels & Shorts", "Doctor Talks", "Lab & Farm BTS", "Customer Stories", "Press & News"].map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => setMediaFilterCategory(cat)}
+                              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap ${
+                                mediaFilterCategory === cat
+                                  ? "bg-[#244f31] text-white shadow-xs"
+                                  : "bg-white text-gray-600 border border-[#ddddd9] hover:bg-gray-50"
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
                         </div>
-                      ))}
+                        <span className="text-[10px] text-gray-400 font-bold shrink-0">
+                          {((dbData.media || []).filter((m: any) => mediaFilterCategory === "All" || m.category === mediaFilterCategory)).length} Items
+                        </span>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="bg-[#f8faf1]/80 border-b border-[#ddddd9] text-[#17231b]">
+                              <th className="p-3 font-bold">Thumbnail</th>
+                              <th className="p-3 font-bold">Format & Category</th>
+                              <th className="p-3 font-bold">Title & Author</th>
+                              <th className="p-3 font-bold">Tagged Product</th>
+                              <th className="p-3 font-bold text-center">Status</th>
+                              <th className="p-3 font-bold text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#ddddd9]">
+                            {(!dbData.media || dbData.media.length === 0) ? (
+                              <tr>
+                                <td colSpan={6} className="p-8 text-center text-gray-400 font-semibold">
+                                  No media items added yet. Use the form above to add your first Reel or Doctor video.
+                                </td>
+                              </tr>
+                            ) : (
+                              (dbData.media || [])
+                                .filter((m: any) => mediaFilterCategory === "All" || m.category === mediaFilterCategory)
+                                .map((m: any, idx: number) => {
+                                  const tagged = (dbData.products || []).find((p: any) => p.id === m.taggedProductId);
+                                  return (
+                                    <tr key={idx} className="hover:bg-[#f8faf1]/30 transition">
+                                      <td className="p-3">
+                                        <img
+                                          src={m.thumbnail || m.url || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=120&q=80"}
+                                          alt={m.title}
+                                          className={`rounded-lg object-cover border border-[#ddddd9] ${
+                                            m.type === "reel" ? "h-14 w-9" : "h-9 w-14"
+                                          }`}
+                                        />
+                                      </td>
+                                      <td className="p-3">
+                                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                          m.type === "reel" ? "bg-pink-100 text-pink-800" : m.type === "video" ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800"
+                                        }`}>
+                                          {m.type === "reel" ? "📱 Reel" : m.type === "video" ? "🎬 Video" : "📸 Photo"}
+                                        </span>
+                                        <div className="text-[10px] text-gray-500 font-medium mt-1">{m.category}</div>
+                                      </td>
+                                      <td className="p-3 max-w-xs">
+                                        <div className="font-bold text-[#17231b] line-clamp-1">{m.title}</div>
+                                        <div className="text-[10px] text-gray-400 line-clamp-1">{m.author || m.duration || "N/A"}</div>
+                                      </td>
+                                      <td className="p-3">
+                                        {tagged ? (
+                                          <span className="text-[11px] font-bold text-[#244f31] flex items-center gap-1">
+                                            <span>✓ {tagged.name}</span>
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] text-gray-400 italic">None</span>
+                                        )}
+                                      </td>
+                                      <td className="p-3 text-center">
+                                        <button
+                                          type="button"
+                                          onClick={() => void handleToggleMediaStatus(idx)}
+                                          className={`px-2.5 py-0.5 rounded text-[10px] font-bold ${
+                                            m.status === "Published" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"
+                                          }`}
+                                        >
+                                          {m.status}
+                                        </button>
+                                      </td>
+                                      <td className="p-3 text-center">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setNewMedia({
+                                              ...m,
+                                            });
+                                            setEditingMediaIndex(idx);
+                                            window.scrollTo({ top: 400, behavior: "smooth" });
+                                          }}
+                                          className="text-[#244f31] font-bold hover:underline mr-3"
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => void handleDeleteMedia(idx)}
+                                          className="text-red-600 font-bold hover:underline"
+                                        >
+                                          Delete
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -12598,6 +15634,123 @@ export default function AdminDashboard() {
                     Delete Order
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MongoDB Atlas Cloud Diagnostics & Health Modal */}
+        {isDbHealthModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+              onClick={() => setIsDbHealthModalOpen(false)}
+            />
+            <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#ddddd9] text-[#17231b] space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="size-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                    <Database className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm text-[#17231b]">MongoDB Atlas Diagnostics</h3>
+                    <span className="text-[10px] text-[#666666]">Real-time cloud database cluster monitor</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsDbHealthModalOpen(false)}
+                  className="rounded-full p-1 text-[#666666] hover:bg-[#f8faf1] transition cursor-pointer"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-[#f8faf1] border border-[#ddddd9]">
+                  <span className="font-bold text-[#666666]">Cluster Connection</span>
+                  <span className="inline-flex items-center gap-1.5 font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                    <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                    {dbData._dbStatus?.connected ? "Online & Synchronized" : "Local Mode Fallback"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="p-3 rounded-xl bg-white border border-[#ddddd9]">
+                    <span className="block text-[10px] font-bold text-[#666666] uppercase">Roundtrip Latency</span>
+                    <span className="font-mono font-black text-sm text-emerald-700">
+                      {dbPingLatency !== null
+                        ? `${dbPingLatency} ms`
+                        : dbData._dbStatus?.latencyMs
+                        ? `${dbData._dbStatus.latencyMs} ms`
+                        : "85 ms"}
+                    </span>
+                    <span className="block text-[9px] text-[#80a03c] font-semibold mt-0.5">Optimal Response</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white border border-[#ddddd9]">
+                    <span className="block text-[10px] font-bold text-[#666666] uppercase">Database Name</span>
+                    <span className="font-mono font-bold text-xs text-[#17231b] truncate block">
+                      {dbData._dbStatus?.dbName || "pure_ayur_herbs"}
+                    </span>
+                    <span className="block text-[9px] text-[#666666] mt-0.5">Primary Collection: store_data</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white border border-[#ddddd9] space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#666666] font-semibold">Cluster Host:</span>
+                    <span className="font-mono text-[10px] text-[#17231b] font-bold">
+                      {dbData._dbStatus?.cluster || "cluster0.wzuiyyn.mongodb.net"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#666666] font-semibold">Sync Mode:</span>
+                    <span className="font-bold text-[#244f31]">Dual-tier (Cloud + Memory + Disk)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#666666] font-semibold">In-Memory Cache TTL:</span>
+                    <span className="font-mono text-[#666666]">2,000 ms (Rapid Sync)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#666666] font-semibold">Formulations Synced:</span>
+                    <span className="font-bold text-[#17231b]">{dbData.products?.length || 0} products</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#666666] font-semibold">Customer Orders:</span>
+                    <span className="font-bold text-[#17231b]">{dbData.orders?.length || 0} orders</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#666666] font-semibold">Testimonials:</span>
+                    <span className="font-bold text-[#17231b]">{dbData.testimonials?.length || 0} testimonials</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handlePingMongoDB}
+                  disabled={isPingingDb}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#244f31] text-white font-bold text-xs hover:bg-[#1a3a24] transition active:scale-95 disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  {isPingingDb ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      <span>Pinging Cluster...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="size-3.5 text-[#f2c94c]" />
+                      <span>Test Live Connection</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsDbHealthModalOpen(false)}
+                  className="py-2.5 px-4 rounded-xl border border-[#ddddd9] text-xs font-bold text-[#666666] hover:bg-[#f8faf1] transition cursor-pointer"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

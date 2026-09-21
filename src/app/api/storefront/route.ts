@@ -36,11 +36,28 @@ export async function GET(request: Request) {
               author: b.author,
               date: b.date,
               status: b.status,
-              image: b.image && b.image.length < 5000 ? b.image : "/brand/pure-ayur-logo.png",
+              image:
+                b.image && typeof b.image === "string" && b.image.trim().length > 0
+                  ? b.image
+                  : "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
               readTime: b.readTime || "4 min",
               excerpt: b.excerpt || (typeof b.content === "string" ? b.content.slice(0, 150) : ""),
             }))
         : [],
+      media: Array.isArray(db.media)
+        ? db.media.filter((m: any) => m.status === "Published")
+        : [],
+      marketing: {
+        banners: Array.isArray(db.marketing?.banners)
+          ? db.marketing.banners.filter((b: any) => b.status === "Active")
+          : [],
+        popups: Array.isArray(db.marketing?.popups)
+          ? db.marketing.popups.filter((p: any) => p.status === "Active")
+          : [],
+        notifications: Array.isArray(db.marketing?.notifications)
+          ? db.marketing.notifications.filter((n: any) => n.status === "Active")
+          : [],
+      },
       settings: {
         storeName: db.settings?.storeName || "Pure Ayur Herbs Store",
         companyLegalName: db.settings?.companyLegalName || "Pure Ayur Herbs Private Limited",
@@ -59,18 +76,30 @@ export async function GET(request: Request) {
         freeThreshold: db.settings?.shipping?.freeThreshold || 999,
         prepaidDiscount: db.settings?.prepaidDiscount ?? 5,
         flashSaleTimer: db.settings?.flashSaleTimer,
+        coinsSettings: {
+          enabled: db.settings?.coinsSettings?.enabled !== false,
+          coinsPerRupee: Number(db.settings?.coinsSettings?.coinsPerRupee) || 10,
+          maxRedemptionPercent: Number(db.settings?.coinsSettings?.maxRedemptionPercent) || 20,
+          minCoinsToRedeem: Number(db.settings?.coinsSettings?.minCoinsToRedeem) || 10,
+          welcomeBonus: Number(db.settings?.coinsSettings?.welcomeBonus) || 100,
+          orderRewardPercent: Number(db.settings?.coinsSettings?.orderRewardPercent) || 5,
+        },
       },
     };
 
-    // Edge CDN Caching: 60s at Vercel edge to save Origin Transfer quota (served from 100GB Fast Data Transfer instead of 10GB Origin Transfer)
-    const cacheControlHeader = forceFresh
-      ? "no-store, no-cache, must-revalidate, max-age=0"
-      : "public, s-maxage=60, stale-while-revalidate=300";
+    // Edge CDN Caching: in development/localhost, NEVER cache (instant updates).
+    // On production: max-age=0 ensures the user's browser always gets fresh data upon reload,
+    // while s-maxage=30 allows Vercel Edge CDN to serve public visitors without hitting origin.
+    const isDev = process.env.NODE_ENV !== "production" || !process.env.VERCEL;
+    const cacheControlHeader = isDev || forceFresh
+      ? "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
+      : "public, max-age=0, s-maxage=2, stale-while-revalidate=5";
 
     return NextResponse.json(responseData, {
       status: 200,
       headers: {
         "Cache-Control": cacheControlHeader,
+        "Pragma": "no-cache",
       },
     });
   } catch (error) {

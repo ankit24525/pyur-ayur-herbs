@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Phone, MapPin, CheckCircle } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import { products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
 
@@ -85,6 +86,7 @@ export default function ContactUsPage() {
 
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
+      <AnnouncementBar />
       <SiteHeader
         cart={cart}
         onUpdateQuantity={handleUpdateQuantity}

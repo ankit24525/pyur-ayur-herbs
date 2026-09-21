@@ -93,9 +93,11 @@ export async function POST(request: Request) {
 
     const newOrder = {
       id: orderId,
-      customer: name,
-      email: email || "",
-      phone: phone,
+      userId: sessionUser ? sessionUser.id : null,
+      isLoggedInUser: !!sessionUser,
+      customer: name || sessionUser?.name || "Valued Customer",
+      email: email || sessionUser?.email || "",
+      phone: phone || sessionUser?.phone || "",
       altPhone: altPhone || "",
       companyName: companyName || "",
       landmark: landmark || "",
@@ -121,6 +123,8 @@ export async function POST(request: Request) {
       total,
       method: "PhonePe",
       status: "Pending Payment",
+      paymentFailedAlertSent: false,
+      createdAt: new Date().toISOString(),
       date: new Date().toLocaleDateString("en-IN", {
         day: "numeric",
         month: "short",

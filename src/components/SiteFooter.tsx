@@ -48,11 +48,38 @@ export function formatFooterHref(rawUrl?: string, label?: string): string {
     }
   }
 
+  // 1c. If label is Shop All or Shop, always resolve to /#shop (the products catalog on homepage)
+  if (
+    cleanLabel === "shop all" ||
+    cleanLabel === "shop" ||
+    cleanLabel === "shop now" ||
+    cleanLabel === "all products" ||
+    cleanLabel === "shop all products" ||
+    cleanLabel.includes("shop all")
+  ) {
+    if (!raw || raw === "/" || raw === "#") {
+      return "/#shop";
+    }
+  }
+
+  // 1d. If label is Media or Media Hub, always resolve to /media
+  if (
+    cleanLabel === "media" ||
+    cleanLabel === "media hub" ||
+    cleanLabel === "videos" ||
+    cleanLabel.includes("media")
+  ) {
+    if (!raw || raw === "#" || raw === "/" || raw.includes("solution")) {
+      return "/media";
+    }
+  }
+
   // 2. Empty or hash fallback
   if (!raw || raw === "#") {
     if (cleanLabel.includes("about")) return "/about-us";
     if (cleanLabel.includes("faq")) return "/faqs";
     if (cleanLabel.includes("blog")) return "/blog";
+    if (cleanLabel.includes("media")) return "/media";
     if (cleanLabel.includes("contact")) return "/contact-us";
     return "#";
   }
@@ -78,6 +105,10 @@ export function formatFooterHref(rawUrl?: string, label?: string): string {
     return "/faqs";
   }
 
+  if (cleanedSlug.toLowerCase() === "media" || cleanedSlug.toLowerCase() === "media-hub") {
+    return "/media";
+  }
+
   return `/${cleanedSlug}`;
 }
 
@@ -100,6 +131,23 @@ export default function SiteFooter() {
   });
 
   useEffect(() => {
+    const sanitizeFooterLinks = (links: any[]) => {
+      if (!Array.isArray(links)) return links;
+      return links.map((l: any) => {
+        const label = l?.label?.toLowerCase().trim() || "";
+        if (label === "about us" || label === "about") {
+          return { ...l, url: "/about-us" };
+        }
+        if (label === "faqs" || label === "faq" || label === "frequently asked questions") {
+          return { ...l, url: "/faqs" };
+        }
+        if (label === "shop all" || label === "shop" || label.includes("shop all")) {
+          return { ...l, url: "/#shop" };
+        }
+        return l;
+      });
+    };
+
     // Check localStorage cache first for instantaneous rendering
     if (typeof window !== "undefined") {
       try {
@@ -107,17 +155,11 @@ export default function SiteFooter() {
         if (cached.settings) setSettings((prev: any) => ({ ...prev, ...cached.settings }));
         if (cached.content?.footer) {
           const f = { ...cached.content.footer };
+          if (Array.isArray(f.column1Links)) {
+            f.column1Links = sanitizeFooterLinks(f.column1Links);
+          }
           if (Array.isArray(f.column2Links)) {
-            f.column2Links = f.column2Links.map((l: any) => {
-              const label = l?.label?.toLowerCase().trim();
-              if (label === "about us" || label === "about") {
-                return { ...l, url: "/about-us" };
-              }
-              if (label === "faqs" || label === "faq" || label === "frequently asked questions") {
-                return { ...l, url: "/faqs" };
-              }
-              return l;
-            });
+            f.column2Links = sanitizeFooterLinks(f.column2Links);
           }
           setFooterData(f);
         }
@@ -131,17 +173,11 @@ export default function SiteFooter() {
         }
         if (data && data.content?.footer) {
           const f = { ...data.content.footer };
+          if (Array.isArray(f.column1Links)) {
+            f.column1Links = sanitizeFooterLinks(f.column1Links);
+          }
           if (Array.isArray(f.column2Links)) {
-            f.column2Links = f.column2Links.map((l: any) => {
-              const label = l?.label?.toLowerCase().trim();
-              if (label === "about us" || label === "about") {
-                return { ...l, url: "/about-us" };
-              }
-              if (label === "faqs" || label === "faq" || label === "frequently asked questions") {
-                return { ...l, url: "/faqs" };
-              }
-              return l;
-            });
+            f.column2Links = sanitizeFooterLinks(f.column2Links);
           }
           setFooterData(f);
         }
@@ -197,7 +233,7 @@ export default function SiteFooter() {
         { label: "About Us", url: "/about-us" },
         { label: "FAQs", url: "/faqs" },
         { label: "Blog", url: "/blog" },
-        { label: "Media", url: "/solution/gym-and-fitness" },
+        { label: "Media Hub", url: "/media" },
         { label: "Contact Us", url: "/contact-us" },
       ];
 
@@ -227,6 +263,27 @@ export default function SiteFooter() {
       ))}
     </div>
   ) : null;
+
+  const handleFooterLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, label?: string) => {
+    const isShopTarget =
+      href === "/#shop" ||
+      href === "#shop" ||
+      (href === "/" && (label || "").toLowerCase().includes("shop"));
+
+    if (isShopTarget) {
+      if (typeof window !== "undefined") {
+        const shopEl = document.getElementById("shop");
+        if (shopEl) {
+          e.preventDefault();
+          shopEl.scrollIntoView({ behavior: "smooth", block: "start" });
+          window.history.pushState(null, "", "/#shop");
+        } else if (window.location.pathname === "/") {
+          e.preventDefault();
+          window.scrollTo({ top: 400, behavior: "smooth" });
+        }
+      }
+    }
+  };
 
   return (
     <footer className="bg-white text-[#17231b] border-t border-neutral-100 flex flex-col">
@@ -303,13 +360,13 @@ export default function SiteFooter() {
                   const isExternal = /^(https?:|\/\/)/i.test(href);
                   if (isExternal) {
                     return (
-                      <a key={idx} href={href} target="_blank" rel="noopener noreferrer" className="hover:text-[#80a03c] transition">
+                      <a key={idx} href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => handleFooterLinkClick(e, href, link.label)} className="hover:text-[#80a03c] transition">
                         {link.label}
                       </a>
                     );
                   }
                   return (
-                    <Link key={idx} href={href} prefetch={true} className="hover:text-[#80a03c] transition cursor-pointer">
+                    <Link key={idx} href={href} prefetch={true} onClick={(e) => handleFooterLinkClick(e, href, link.label)} className="hover:text-[#80a03c] transition cursor-pointer">
                       {link.label}
                     </Link>
                   );
@@ -330,13 +387,13 @@ export default function SiteFooter() {
                   const isExternal = /^(https?:|\/\/)/i.test(href);
                   if (isExternal) {
                     return (
-                      <a key={idx} href={href} target="_blank" rel="noopener noreferrer" className="hover:text-[#80a03c] transition">
+                      <a key={idx} href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => handleFooterLinkClick(e, href, link.label)} className="hover:text-[#80a03c] transition">
                         {link.label}
                       </a>
                     );
                   }
                   return (
-                    <Link key={idx} href={href} prefetch={true} className="hover:text-[#80a03c] transition cursor-pointer">
+                    <Link key={idx} href={href} prefetch={true} onClick={(e) => handleFooterLinkClick(e, href, link.label)} className="hover:text-[#80a03c] transition cursor-pointer">
                       {link.label}
                     </Link>
                   );

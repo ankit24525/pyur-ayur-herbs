@@ -90,6 +90,19 @@ export default function FaqsPage() {
     };
     window.addEventListener("pyur_storefront_updated", handleUpdate);
 
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "pyur_storefront_cache" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed.faqs)) {
+            const clean = parsed.faqs.filter((f: any) => !isLegacyFaq(f));
+            if (clean.length > 0) setFaqs(clean);
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem("pyur_cart");
@@ -103,6 +116,7 @@ export default function FaqsPage() {
 
     return () => {
       window.removeEventListener("pyur_storefront_updated", handleUpdate);
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 

@@ -1,14 +1,20 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
+import { extractSessionToken, resolveSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    const cookieHeader = request.headers.get("cookie");
+    const sessionToken = extractSessionToken(cookieHeader);
+    const sessionUser = await resolveSession(sessionToken);
+
     const body = await request.json();
     const { name, phone, email, items, cartTotal } = body || {};
 
-    const cleanPhone = (phone || "").replace(/\D/g, "");
+    const effectivePhone = phone || sessionUser?.phone || "";
+    const cleanPhone = effectivePhone.replace(/\D/g, "");
     if (!cleanPhone || cleanPhone.length < 10) {
       return NextResponse.json({ success: false, error: "Valid 10-digit mobile number required." }, { status: 400 });
     }
@@ -32,9 +38,11 @@ export async function POST(request: Request) {
 
     const cartRecord = {
       id: cartId,
+      userId: sessionUser ? sessionUser.id : null,
+      isLoggedInUser: !!sessionUser,
       phone: phone10,
-      name: (name || "Valued Customer").trim(),
-      email: (email || "").trim(),
+      name: (name || sessionUser?.name || "Valued Customer").trim(),
+      email: (email || sessionUser?.email || "").trim(),
       items: items.map((i: any) => ({
         id: i.id || i.product?.id || "prod",
         name: i.name || i.product?.name || "Ayurvedic Remedy",

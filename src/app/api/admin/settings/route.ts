@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       codAbuseThreshold: typeof body.codAbuseThreshold === "number" ? body.codAbuseThreshold : (db.settings.codAbuseThreshold ?? 2),
       maxMonthlyCancellations: typeof body.maxMonthlyCancellations === "number" ? body.maxMonthlyCancellations : (db.settings.maxMonthlyCancellations ?? 3),
       blockedCodPhones: Array.isArray(body.blockedCodPhones) ? body.blockedCodPhones : (db.settings.blockedCodPhones || []),
+      coinsSettings: body.coinsSettings !== undefined ? body.coinsSettings : db.settings.coinsSettings,
     };
 
     const success = await writeDB(db);

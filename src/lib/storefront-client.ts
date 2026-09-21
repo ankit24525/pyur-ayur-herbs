@@ -8,11 +8,39 @@ let cachedStorefrontPromise: Promise<any> | null = null;
 let cachedStorefrontData: any = null;
 let lastFetchTimestamp = 0;
 
-// 30-second in-memory client-side cache TTL
-const IN_MEMORY_TTL = 30 * 1000;
+// 2-second in-memory client-side cache TTL (only for deduplicating simultaneous component mounts on a single page render)
+const IN_MEMORY_TTL = 2 * 1000;
+
+// Real-time cross-tab synchronization listener
+if (typeof window !== "undefined") {
+  try {
+    const channel = new BroadcastChannel("pyur_storefront_sync");
+    channel.onmessage = (event) => {
+      if (event?.data?.type === "SYNC") {
+        invalidateStorefrontCache();
+        try {
+          const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+          cached[event.data.key] = event.data.value;
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+        } catch {}
+        window.dispatchEvent(
+          new CustomEvent("pyur_storefront_updated", {
+            detail: { key: event.data.key, value: event.data.value },
+          })
+        );
+      }
+    };
+  } catch {}
+}
 
 export async function getStorefrontData(forceFresh = false): Promise<any> {
   const now = Date.now();
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+  // On localhost, always ensure fresh data is fetched
+  const shouldForce = forceFresh || isLocalhost;
 
   // 1. Return existing in-memory data if valid
   if (!forceFresh && cachedStorefrontData && now - lastFetchTimestamp < IN_MEMORY_TTL) {
@@ -20,15 +48,16 @@ export async function getStorefrontData(forceFresh = false): Promise<any> {
   }
 
   // 2. Return currently active in-flight network request if one is already running
-  if (!forceFresh && cachedStorefrontPromise) {
+  // Always share in-flight promises across components on the same render to prevent connection flooding
+  if (cachedStorefrontPromise) {
     return cachedStorefrontPromise;
   }
 
   // 3. Initiate single deduplicated fetch
-  const url = forceFresh ? "/api/storefront?fresh=1" : "/api/storefront";
+  const url = shouldForce ? `/api/storefront?fresh=1&_t=${now}` : "/api/storefront";
 
   cachedStorefrontPromise = fetch(url, {
-    cache: forceFresh ? "no-store" : "default",
+    cache: shouldForce ? "no-store" : "default",
   })
     .then(async (response) => {
       if (!response.ok) {
@@ -38,6 +67,11 @@ export async function getStorefrontData(forceFresh = false): Promise<any> {
       cachedStorefrontData = data;
       lastFetchTimestamp = Date.now();
       cachedStorefrontPromise = null;
+      if (typeof window !== "undefined" && data && typeof data === "object") {
+        try {
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
+        } catch {}
+      }
       return data;
     })
     .catch((error) => {

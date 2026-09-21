@@ -124,6 +124,41 @@ export default function CartPage() {
     return acc + (isCoinsActive ? coins * (Number(item.quantity) || 1) : 0);
   }, 0);
 
+  // For logged-in users, automatically sync active cart for WhatsApp recovery
+  useEffect(() => {
+    if (!isLoaded || validCart.length === 0) return;
+
+    const timer = setTimeout(() => {
+      fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.success && data.user && data.user.phone) {
+            fetch("/api/cart/abandoned", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                name: data.user.name || "Valued Customer",
+                phone: data.user.phone,
+                email: data.user.email || "",
+                items: validCart.map((i) => ({
+                  id: i.product.id,
+                  name: i.product.name,
+                  quantity: i.quantity,
+                  price: i.product.price,
+                })),
+                cartTotal: subtotal,
+              }),
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [isLoaded, validCart.length, subtotal]);
+
+
   return (
     <div className="min-h-screen bg-[#f8faf1] text-[#17231b] flex flex-col justify-between">
       <div>

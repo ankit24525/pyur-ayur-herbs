@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, Calendar, User, Clock, ChevronRight } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import { Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
 
@@ -29,6 +30,28 @@ export default function BlogListingPage() {
         setLoading(false);
       });
 
+    // Real-time listener for admin blog updates
+    const handleUpdate = (e: any) => {
+      if (e.detail?.key === "blogs" && Array.isArray(e.detail.value)) {
+        const published = e.detail.value.filter((b: any) => b.status === "Published");
+        setBlogs(published);
+      }
+    };
+    window.addEventListener("pyur_storefront_updated", handleUpdate);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "pyur_storefront_cache" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed.blogs)) {
+            const published = parsed.blogs.filter((b: any) => b.status === "Published");
+            setBlogs(published);
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
     // Load cart from localStorage
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("pyur_cart");
@@ -40,6 +63,11 @@ export default function BlogListingPage() {
         }
       }
     }
+
+    return () => {
+      window.removeEventListener("pyur_storefront_updated", handleUpdate);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   const saveCartState = (newCart: { product: Product; quantity: number }[]) => {
@@ -68,6 +96,7 @@ export default function BlogListingPage() {
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b] flex flex-col justify-between">
       <div>
+        <AnnouncementBar />
         <SiteHeader
           cart={cart}
           onUpdateQuantity={handleUpdateQuantity}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { verifyPhonePePayment } from "@/lib/phonepe";
-import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
+import { sendOrderConfirmationWhatsApp, sendPaymentFailedWhatsApp } from "@/lib/whatsapp-notifications";
 import { pushOrderToShiprocket } from "@/lib/shiprocket";
 
 export const dynamic = "force-dynamic";
@@ -145,8 +145,24 @@ async function handlePaymentCallback(request: Request, isGet: boolean) {
     return NextResponse.json({ success: true, orderId: merchantOrderId, status: "Processing" });
   } else {
     // Payment failed or cancelled
-    if (orderIdx !== -1 && orders[orderIdx].status === "Pending Payment") {
+    if (orderIdx !== -1 && (orders[orderIdx].status === "Pending Payment" || orders[orderIdx].status === "Payment Failed")) {
       orders[orderIdx].status = "Payment Failed";
+
+      // If this was a logged-in user and alert not sent yet, dispatch WhatsApp payment recovery alert
+      const isLoggedUser = orders[orderIdx].isLoggedInUser || orders[orderIdx].userId;
+      if (isLoggedUser && !orders[orderIdx].paymentFailedAlertSent) {
+        try {
+          const waRes = await sendPaymentFailedWhatsApp(orders[orderIdx], { baseUrl: origin });
+          if (waRes.success) {
+            orders[orderIdx].paymentFailedAlertSent = true;
+            orders[orderIdx].paymentFailedAlertSentAt = new Date().toISOString();
+            console.log(`[PhonePe Callback]: Dispatched Payment Recovery WhatsApp to logged-in user for order ${merchantOrderId}`);
+          }
+        } catch (err) {
+          console.error("[PhonePe Callback WhatsApp Alert Error]:", err);
+        }
+      }
+
       db.orders = orders;
       await writeDB(db);
     }

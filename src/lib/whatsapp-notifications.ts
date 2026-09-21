@@ -316,3 +316,111 @@ We are sorry to see you go! If you ever need advice or herbal remedies for your 
   }
 }
 
+/**
+ * 7. Payment Failed / Payment Incomplete WhatsApp Alert (with 1-Click Retry & Switch to COD)
+ */
+export async function sendPaymentFailedWhatsApp(
+  order: any,
+  options?: { baseUrl?: string }
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const rawPhone = order.phone || order.customerPhone || "";
+    const cleanPhone = getCleanPhone(rawPhone);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return { success: false, error: "Invalid recipient phone number." };
+    }
+
+    const orderId = order.id || "PYR-ORD";
+    const name = order.name || order.customer || "Valued Customer";
+    const total = order.total ? `₹${Number(order.total).toLocaleString("en-IN")}` : "₹0";
+    const baseUrl = options?.baseUrl || BASE_URL;
+
+    // Format items list
+    let itemsSummary = "";
+    if (Array.isArray(order.itemsRaw)) {
+      itemsSummary = order.itemsRaw
+        .map((i: any) => `• ${i.name || i.productId || "Remedy"} (Qty: ${i.quantity || 1})`)
+        .join("\n");
+    } else if (typeof order.items === "string") {
+      itemsSummary = `• ${order.items}`;
+    } else {
+      itemsSummary = "• Pure Ayur Herbs Wellness Remedy";
+    }
+
+    const phone10 = cleanPhone.slice(-10);
+    const retryUrl = `${baseUrl}/checkout?retryOrder=${encodeURIComponent(orderId)}`;
+    const switchCodUrl = `${baseUrl}/api/orders/switch-cod?orderId=${encodeURIComponent(orderId)}&token=${encodeURIComponent(phone10)}`;
+
+    const messageText = `⚠️ *PAYMENT INCOMPLETE — PURE AYUR HERBS* 🌿
+
+Namaste ${name}! 🙏
+
+We noticed your online payment of *${total}* for your order (*${orderId}*) could not be completed.
+
+📦 *Items in your order:*
+${itemsSummary}
+
+🛡️ *Don't worry!* Your order and items are safely reserved for the next 2 hours.
+
+👉 *Option 1: Complete Payment Online (UPI / Card / Netbanking)*
+${retryUrl}
+
+💵 *Option 2: Prefer Cash on Delivery (COD)?*
+Tap below to convert to COD with 1-click (Zero advance payment needed):
+${switchCodUrl}
+_(Your parcel will be packed and dispatched today!)_
+
+Need help with dosage or have questions? Simply reply directly to this WhatsApp message!`;
+
+    return await sendWhatsAppTextMessage(cleanPhone, messageText);
+  } catch (error: any) {
+    console.error("[sendPaymentFailedWhatsApp Error]:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 8. Order Return / Replacement Request WhatsApp Notification
+ */
+export async function sendOrderReturnRequestWhatsApp(
+  order: any,
+  details: { reason?: string; resolution?: string; comments?: string }
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const rawPhone = order.phone || order.customerPhone || "";
+    const cleanPhone = getCleanPhone(rawPhone);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return { success: false, error: "Invalid recipient phone number." };
+    }
+
+    const orderId = order.id || "PYR-ORD";
+    const name = order.name || order.customer || "Valued Customer";
+    const resolution = details.resolution || "Replacement";
+    const reason = details.reason || "Customer requested";
+
+    const messageText = `🔄 *RETURN / REPLACEMENT REQUEST RECEIVED* 🌿
+
+Namaste ${name}! 🙏
+
+We have received your request for Order *#${orderId}*.
+
+📋 *Request Type:* ${resolution === "Refund" ? "Full Refund" : "Free Product Replacement"}
+📝 *Reason:* ${reason}
+⏱️ *Status:* Under Review by Care Desk
+
+🛡️ *What Happens Next?*
+Our quality support team will verify your request within 24 business hours. If you have photos of the damaged or defective package, you can simply *attach and send them right here in this chat*!
+
+We are committed to 100% authentic satisfaction with our classical Ayurvedic remedies.
+
+Questions? Reply to this WhatsApp chat anytime!
+*Team Pure Ayur Herbs*`;
+
+    return await sendWhatsAppTextMessage(cleanPhone, messageText);
+  } catch (error: any) {
+    console.error("[sendOrderReturnRequestWhatsApp Error]:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+

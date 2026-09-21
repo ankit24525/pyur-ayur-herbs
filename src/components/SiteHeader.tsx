@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { headerSearchSuggestions, menuLinks, products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
+import GetAppModal from "./GetAppModal";
 
 interface SiteHeaderProps {
   cart?: { product: Product; quantity: number }[];
@@ -190,12 +191,20 @@ export default function SiteHeader({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [appModalOpen, setAppModalOpen] = useState(false);
   const [pincodeModalOpen, setPincodeModalOpen] = useState(false);
   const [pincodeInput, setPincodeInput] = useState("");
   const [verifiedPincode, setVerifiedPincode] = useState<string | null>(null);
   const [trackOrderOpen, setTrackOrderOpen] = useState(false);
   const [orderIdInput, setOrderIdInput] = useState("");
   const [trackedStatus, setTrackedStatus] = useState<string | null>(null);
+
+  // Global listener to open Get App modal from anywhere
+  useEffect(() => {
+    const handleOpenModal = () => setAppModalOpen(true);
+    window.addEventListener("pyur_open_get_app_modal", handleOpenModal);
+    return () => window.removeEventListener("pyur_open_get_app_modal", handleOpenModal);
+  }, []);
 
   const [showToast, setShowToast] = useState(false);
   const [isBouncing, setIsBouncing] = useState(false);
@@ -518,8 +527,11 @@ export default function SiteHeader({
           <div className="flex items-center gap-2 md:gap-3">
             {/* Get App Button */}
             <button
-              onClick={onOpenAppModal}
-              className="hidden rounded-md border border-[#17231b] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#17231b] transition hover:bg-[#244f31] hover:text-white lg:block"
+              onClick={() => {
+                if (onOpenAppModal) onOpenAppModal();
+                setAppModalOpen(true);
+              }}
+              className="hidden rounded-md border border-[#17231b] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#17231b] transition hover:bg-[#244f31] hover:text-white lg:block cursor-pointer"
             >
               GET APP
             </button>
@@ -929,6 +941,23 @@ export default function SiteHeader({
                   {link.label}
                 </a>
               ))}
+
+              {/* Mobile Drawer Get App Button */}
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setAppModalOpen(true);
+                }}
+                className="mt-2 flex items-center justify-between w-full p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/80 text-xs font-bold text-[#128C7E] hover:bg-emerald-100 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span>📱</span>
+                  <span>Get Mobile App</span>
+                </div>
+                <span className="text-[10px] font-black uppercase bg-[#25D366] text-white px-2 py-0.5 rounded-full shadow-xs">
+                  Coming Soon
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -1161,6 +1190,12 @@ export default function SiteHeader({
           </div>
         </div>
       )}
+
+      {/* Get App (Coming Soon) Modal */}
+      <GetAppModal
+        isOpen={appModalOpen}
+        onClose={() => setAppModalOpen(false)}
+      />
     </>
   );
 }

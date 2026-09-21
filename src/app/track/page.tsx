@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import { products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
 
@@ -368,6 +369,7 @@ function TrackOrderContent() {
 
   return (
     <main className="min-h-screen bg-[#f3f4f6] text-[#17231b] flex flex-col">
+      <AnnouncementBar />
       <SiteHeader
         cart={[]}
         onUpdateQuantity={() => {}}

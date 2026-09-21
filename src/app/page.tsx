@@ -13,10 +13,14 @@ import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
 import AboutSection from "@/components/AboutSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import SiteFooter from "@/components/SiteFooter";
+import MarketingBannerStrip from "@/components/MarketingBannerStrip";
+import MarketingPopup from "@/components/MarketingPopup";
+import SocialProofToast from "@/components/SocialProofToast";
 import { StorefrontSkeleton, HeroSkeleton, ConcernFilterSkeleton, ProductRailSkeleton } from "@/components/SkeletonLoader";
 import { products, Product, concerns } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
-import { X, Smartphone, User, CheckCircle2 } from "lucide-react";
+import { X, User, CheckCircle2 } from "lucide-react";
+import GetAppModal from "@/components/GetAppModal";
 
 const getShortName = (name: string) => {
   if (name.includes("Sugar")) return "Sugar";
@@ -40,6 +44,11 @@ export default function Home() {
     heroSlides: [],
     consultationBanner: null,
   });
+  const [marketingData, setMarketingData] = useState<any>({
+    banners: [],
+    popups: [],
+    notifications: [],
+  });
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
 
   // Load real-time database products and layout from /api/storefront + Instant Local Cache
@@ -59,6 +68,9 @@ export default function Home() {
           if (parsed.content) {
             setCmsData(parsed.content);
           }
+          if (parsed.marketing) {
+            setMarketingData(parsed.marketing);
+          }
           setIsDataLoaded(true);
         }
       } catch {}
@@ -76,6 +88,9 @@ export default function Home() {
           }
           if (data && data.content) {
             setCmsData(data.content);
+          }
+          if (data && data.marketing) {
+            setMarketingData(data.marketing);
           }
           setIsDataLoaded(true);
           try {
@@ -103,6 +118,9 @@ export default function Home() {
       if (e?.detail?.key === "content" && e.detail.value) {
         setCmsData(e.detail.value);
       }
+      if (e?.detail?.key === "marketing" && e.detail.value) {
+        setMarketingData(e.detail.value);
+      }
       loadStorefrontData();
     };
 
@@ -113,6 +131,7 @@ export default function Home() {
           if (parsed.content) setCmsData(parsed.content);
           if (parsed.products && Array.isArray(parsed.products)) setCatalog(parsed.products);
           if (parsed.categories && Array.isArray(parsed.categories)) setCategories(parsed.categories);
+          if (parsed.marketing) setMarketingData(parsed.marketing);
         } catch {}
       }
       loadStorefrontData();
@@ -121,9 +140,22 @@ export default function Home() {
     window.addEventListener("pyur_storefront_updated", handleLiveUpdate);
     window.addEventListener("storage", handleStorageChange);
 
+    // Handle initial #shop anchor or hash change
+    const handleHashScroll = () => {
+      if (typeof window !== "undefined" && (window.location.hash === "#shop" || window.location.hash === "#products")) {
+        setTimeout(() => {
+          const el = document.getElementById("shop");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 150);
+      }
+    };
+    handleHashScroll();
+    window.addEventListener("hashchange", handleHashScroll);
+
     return () => {
       window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("hashchange", handleHashScroll);
     };
   }, []);
 
@@ -216,7 +248,11 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
       {/* Top Announcement Ticker Bar */}
-      <AnnouncementBar data={cmsData.announcement} onOpenAppModal={() => setAppModalOpen(true)} />
+      <AnnouncementBar
+        data={cmsData.announcement}
+        marketingBanners={marketingData?.banners}
+        onOpenAppModal={() => setAppModalOpen(true)}
+      />
 
       {/* Main Sticky Header */}
       <SiteHeader
@@ -260,7 +296,7 @@ export default function Home() {
       </div>
 
       {/* Hero Banner Slider Carousel */}
-      <HeroSlider slides={cmsData.heroSlides} />
+      <HeroSlider slides={cmsData.heroSlides} marketingBanners={marketingData?.banners} />
 
       {/* "SELECT CONCERN" Filter Section */}
       <ConcernFilter
@@ -270,7 +306,7 @@ export default function Home() {
       />
 
       {/* Main Shop / Products Section */}
-      <div id="shop">
+      <div id="shop" className="scroll-mt-24">
         {catalog.length === 0 ? (
           <div className="mx-auto max-w-[1440px] px-4 py-16 text-center">
             <div className="mx-auto max-w-md rounded-2xl border border-dashed border-[#ddddd9] bg-white p-8 shadow-xs">
@@ -335,6 +371,9 @@ export default function Home() {
               onBuyNow={handleBuyNow}
             />
 
+            {/* Dynamic Promotional Marketing Banner Strip (Prime Middle Position) */}
+            <MarketingBannerStrip banners={marketingData?.banners} />
+
             {/* 2. Dynamic Rails for every category with active products */}
             {categories.map((cat: any) => {
               const catProducts = catalog.filter(
@@ -357,8 +396,6 @@ export default function Home() {
         )}
       </div>
 
-
-
       {/* 1-on-1 Free Doctor Consultation Banner */}
       <DoctorConsultationBanner data={cmsData.consultationBanner} />
 
@@ -377,50 +414,11 @@ export default function Home() {
       {/* Main Footer */}
       <SiteFooter />
 
-      {/* Get App Modal */}
-      {appModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
-            onClick={() => setAppModalOpen(false)}
-          />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
-            <button
-              onClick={() => setAppModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-[#666666] hover:bg-[#f8faf1]"
-            >
-              <X className="size-5" />
-            </button>
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#244f31] text-white shadow-md mb-4">
-              <Smartphone className="size-8 text-[#f2c94c]" />
-            </div>
-            <h3 className="text-xl font-black text-[#17231b]">Download Pure Ayur App</h3>
-            <p className="mt-2 text-xs text-[#666666]">
-              Get 15% OFF on app-first orders & earn 2X Pure Coins on every purchase!
-            </p>
-            <div className="mt-5 space-y-2">
-              <button
-                onClick={() => {
-                  alert("Redirecting to Google Play Store...");
-                  setAppModalOpen(false);
-                }}
-                className="w-full rounded-xl bg-[#244f31] py-3 text-xs font-bold text-white shadow hover:bg-[#1d3b24]"
-              >
-                DOWNLOAD FOR ANDROID (PLAY STORE)
-              </button>
-              <button
-                onClick={() => {
-                  alert("Redirecting to Apple App Store...");
-                  setAppModalOpen(false);
-                }}
-                className="w-full rounded-xl border border-[#244f31] py-3 text-xs font-bold text-[#244f31] hover:bg-[#eef5df]"
-              >
-                DOWNLOAD FOR iOS (APP STORE)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Get App (Coming Soon) Modal */}
+      <GetAppModal
+        isOpen={appModalOpen}
+        onClose={() => setAppModalOpen(false)}
+      />
 
       {/* Login Modal */}
       {loginModalOpen && (
@@ -468,6 +466,11 @@ export default function Home() {
           </div>
         </div>
       )}
+      {/* Exit-Intent & Promo Marketing Popup */}
+      <MarketingPopup popups={marketingData?.popups} />
+
+      {/* Live Social Proof Purchase Toasts */}
+      <SocialProofToast notifications={marketingData?.notifications} />
     </main>
   );
 }

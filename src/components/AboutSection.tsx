@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Sparkles, ShieldCheck, ArrowRight } from "lucide-react";
@@ -9,12 +10,29 @@ interface AboutSectionProps {
 }
 
 export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
-  const data = cmsAboutUs || {
+  const [clientAboutUs, setClientAboutUs] = useState<any>(null);
+
+  useEffect(() => {
+    if (!cmsAboutUs && typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("pyur_storefront_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed?.content?.aboutUs) {
+            setClientAboutUs(parsed.content.aboutUs);
+          }
+        }
+      } catch {}
+    }
+  }, [cmsAboutUs]);
+
+  const activeAbout = cmsAboutUs || clientAboutUs;
+  const data = activeAbout || {
     badge: "OUR HERITAGE & PHILOSOPHY",
     title: "Rooted in Ancient Ayurveda, Perfected for Modern Living",
     subtitle: "At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom with rigorous clinical purity to bring you 100% natural, potent, and safe Ayurvedic remedies.",
     stats: [
-      { value: "50,000+", label: "Seekers Healed Across India" },
+      { value: "50,000+", label: "50,000+ Customers Served Across India" },
       { value: "100%", label: "Pure Natural Botanicals" },
       { value: "15+", label: "Certified Ayurvedic Vaidyas" },
       { value: "GMP & AYUSH", label: "Certified Manufacturing" }

@@ -217,6 +217,7 @@ export const menuLinks = [
   { label: "Shop All Products", href: "/#shop" },
   { label: "Select Concern", href: "/#concerns" },
   { label: "Blog", href: "/blog" },
+  { label: "Media Hub", href: "/media" },
   { label: "Customer Reviews", href: "/#reviews" },
   { label: "Why Pure Ayur Herbs", href: "/#trust" },
 ];

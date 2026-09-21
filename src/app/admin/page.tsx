@@ -58,8 +58,10 @@ import {
   Key,
   BarChart3,
   Filter,
+  RotateCcw,
 } from "lucide-react";
 import { formatSeoTitle, formatSeoDescription, SITE_URL } from "@/lib/seo-schema";
+import { defaultFaqs } from "@/lib/default-faqs";
 
 // High-efficiency WebP exporter: reduces image byte sizes by 75-85% while retaining crisp clarity
 const exportCanvasAsWebP = (canvas: HTMLCanvasElement, quality = 0.78): string => {
@@ -790,7 +792,7 @@ export default function AdminDashboard() {
     },
     reviews: [],
     blogs: [],
-    faqs: [],
+    faqs: defaultFaqs,
     testimonials: [],
     marketing: { campaigns: [], banners: [], popups: [], notifications: [] },
     content: { announcement: {}, heroSlides: [], consultationBanner: {}, footer: {} },
@@ -1402,9 +1404,24 @@ export default function AdminDashboard() {
             }
           });
 
+          // Filter out any legacy dummy questions from server payload
+          const cleanFaqsFromServer = Array.isArray(data.faqs)
+            ? data.faqs.filter((f: any) => {
+                const q = (f.question || f.q || "").toLowerCase();
+                const a = (f.answer || f.a || "").toLowerCase();
+                return !q.includes("dia free") && !q.includes("take shilajit") && !q.includes("kapiva") && !a.includes("dia free") && !a.includes("kapiva");
+              })
+            : [];
+
+          const resolvedFaqs = cleanFaqsFromServer.length > 0
+            ? cleanFaqsFromServer
+            : (prev.faqs && prev.faqs.length > 0 ? prev.faqs : defaultFaqs);
+
           return {
             ...data,
-            faqs: data.faqs || prev.faqs || [],
+            faqs: (mutations["faqs"] && now - mutations["faqs"].timestamp < 15000)
+              ? mutations["faqs"].value
+              : resolvedFaqs,
             testimonials: data.testimonials || prev.testimonials || [],
             products: mergedProducts,
             leads: (mutations["leads"] && now - mutations["leads"].timestamp < 15000)
@@ -2321,6 +2338,54 @@ export default function AdminDashboard() {
     }
   };
 
+  const saveFaqsAtomic = async (updatedFaqs: any[]) => {
+    try {
+      // 1. Mark mutation timestamp to guard against polling overwrites for 15 seconds
+      recentMutationsRef.current["faqs"] = { timestamp: Date.now(), value: updatedFaqs };
+
+      // 2. Optimistic local state update
+      setDbData((prev: any) => ({ ...prev, faqs: updatedFaqs }));
+
+      // 3. Update localStorage cache & trigger custom event for live tabs
+      if (typeof window !== "undefined") {
+        try {
+          const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+          cached.faqs = updatedFaqs;
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+          localStorage.setItem("pyur_admin_faqs_backup", JSON.stringify(updatedFaqs));
+          window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "faqs", value: updatedFaqs } }));
+        } catch {}
+      }
+
+      // 4. Send atomic API request
+      const res = await fetch(`/api/admin/all?t=${Date.now()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "saveFaqs", data: { faqs: updatedFaqs } }),
+      });
+
+      if (!res.ok) {
+        // Fallback to updateKey
+        await fetch(`/api/admin/all?t=${Date.now()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "updateKey", key: "faqs", value: updatedFaqs }),
+        });
+      }
+      return true;
+    } catch (err) {
+      console.error("Failed to save FAQs:", err);
+      return false;
+    }
+  };
+
+  const handleResetDefaultFaqs = async () => {
+    if (!confirm("Reset all storefront FAQs to the official Pure Ayur Herbs default list?")) return;
+    await saveFaqsAtomic(defaultFaqs);
+    setEditingFaqIndex(null);
+    showToast("Default FAQs restored successfully!");
+  };
+
   const handleAddFaq = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFaq.question.trim() || !newFaq.answer.trim()) {
@@ -2334,7 +2399,7 @@ export default function AdminDashboard() {
     };
     const currentFaqs = Array.isArray(dbData.faqs) ? dbData.faqs : [];
     const updated = [faq, ...currentFaqs];
-    await saveKey("faqs", updated);
+    await saveFaqsAtomic(updated);
     setNewFaq({ question: "", answer: "", category: "Products & Ayurveda" });
     setSubTab("faqs");
     showToast("FAQ added and published to storefront!");
@@ -2344,7 +2409,7 @@ export default function AdminDashboard() {
     if (!confirm("Are you sure you want to delete this FAQ?")) return;
     const currentFaqs = Array.isArray(dbData.faqs) ? [...dbData.faqs] : [];
     currentFaqs.splice(index, 1);
-    await saveKey("faqs", currentFaqs);
+    await saveFaqsAtomic(currentFaqs);
     if (editingFaqIndex === index) {
       setEditingFaqIndex(null);
     }
@@ -2372,7 +2437,7 @@ export default function AdminDashboard() {
       answer: editingFaqData.answer.trim(),
       category: editingFaqData.category?.trim() || "Products & Ayurveda",
     };
-    await saveKey("faqs", currentFaqs);
+    await saveFaqsAtomic(currentFaqs);
     setEditingFaqIndex(null);
     showToast("FAQ updated successfully.");
   };
@@ -2384,7 +2449,7 @@ export default function AdminDashboard() {
     const temp = currentFaqs[index];
     currentFaqs[index] = currentFaqs[targetIndex];
     currentFaqs[targetIndex] = temp;
-    await saveKey("faqs", currentFaqs);
+    await saveFaqsAtomic(currentFaqs);
     showToast("FAQ order updated.");
   };
 
@@ -9993,15 +10058,26 @@ export default function AdminDashboard() {
                         </p>
                       </div>
 
-                      <a
-                        href="/faqs"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1.5 bg-[#244f31] hover:bg-[#1b3d26] text-white font-bold text-xs px-3.5 py-2 rounded-lg transition shadow-xs shrink-0"
-                      >
-                        <ExternalLink className="size-3.5" />
-                        <span>View Live FAQ Page</span>
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleResetDefaultFaqs()}
+                          className="inline-flex items-center justify-center gap-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs px-3 py-2 rounded-lg transition shrink-0"
+                          title="Restore the 12 official Pure Ayur Herbs FAQs"
+                        >
+                          <RotateCcw className="size-3.5 text-neutral-500" />
+                          <span>Restore Defaults</span>
+                        </button>
+                        <a
+                          href="/faqs"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 bg-[#244f31] hover:bg-[#1b3d26] text-white font-bold text-xs px-3.5 py-2 rounded-lg transition shadow-xs shrink-0"
+                        >
+                          <ExternalLink className="size-3.5" />
+                          <span>View Live FAQ Page</span>
+                        </a>
+                      </div>
                     </div>
 
                     {/* Add New FAQ Form */}

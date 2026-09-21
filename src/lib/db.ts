@@ -67,6 +67,21 @@ export function invalidateDBCache() {
 }
 
 import { products as defaultProducts } from "./store";
+import { defaultFaqs } from "./default-faqs";
+
+// Helper to detect legacy / dummy Kapiva FAQs
+function isLegacyFaq(f: any): boolean {
+  if (!f || typeof f !== "object") return true;
+  const q = (f.question || f.q || "").toLowerCase();
+  const a = (f.answer || f.a || "").toLowerCase();
+  return (
+    q.includes("dia free") ||
+    q.includes("take shilajit") ||
+    q.includes("kapiva") ||
+    a.includes("dia free") ||
+    a.includes("kapiva")
+  );
+}
 
 // Ensure all DB data model fields exist with robust fallbacks
 function sanitizeDBData(data: any): DBData {
@@ -76,7 +91,14 @@ function sanitizeDBData(data: any): DBData {
   if (!Array.isArray(data.coupons)) data.coupons = [];
   if (!Array.isArray(data.leads)) data.leads = [];
   if (!Array.isArray(data.blogs)) data.blogs = [];
-  if (!Array.isArray(data.faqs)) data.faqs = [];
+
+  // Filter out any obsolete dummy questions from MongoDB and guarantee default FAQs
+  if (Array.isArray(data.faqs)) {
+    data.faqs = data.faqs.filter((f: any) => !isLegacyFaq(f));
+  }
+  if (!Array.isArray(data.faqs) || data.faqs.length === 0) {
+    data.faqs = defaultFaqs;
+  }
   if (!Array.isArray(data.testimonials)) data.testimonials = [];
   if (!Array.isArray(data.users)) data.users = [];
   if (!Array.isArray(data.reviews)) data.reviews = [];
@@ -273,6 +295,19 @@ export async function readDB(bypassCache = false): Promise<DBData> {
         { _id: "main" as any },
         { $set: { "seo.metaDesc": sanitized.seo.metaDesc, "seo.title": sanitized.seo.title } }
       ).catch(() => {});
+    }
+
+    // Auto-migrate old legacy FAQs in MongoDB
+    const needsFaqMigration =
+      !Array.isArray(cleanData.faqs) ||
+      cleanData.faqs.length === 0 ||
+      cleanData.faqs.some((f: any) => isLegacyFaq(f));
+
+    if (needsFaqMigration) {
+      void db.collection("store_data").updateOne(
+        { _id: "main" as any },
+        { $set: { faqs: sanitized.faqs } }
+      ).catch((err) => console.error("[MongoDB FAQ Migration Error]:", err));
     }
 
     dbMemoryCache = { data: sanitized, timestamp: Date.now() };

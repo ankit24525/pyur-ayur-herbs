@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDB } from "@/lib/db";
 import { products, concerns } from "@/lib/store";
+import { defaultFaqs } from "@/lib/default-faqs";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,21 @@ export async function GET(request: Request) {
 
     const db = await readDB(forceFresh);
 
+    const cleanFaqs = Array.isArray(db.faqs)
+      ? db.faqs.filter((f: any) => {
+          const q = (f?.question || f?.q || "").toLowerCase();
+          const a = (f?.answer || f?.a || "").toLowerCase();
+          return !q.includes("dia free") && !q.includes("take shilajit") && !q.includes("kapiva") && !a.includes("dia free") && !a.includes("kapiva");
+        })
+      : [];
+
     const responseData = {
       products: Array.isArray(db.products) && db.products.length > 0 ? db.products : products,
       categories: Array.isArray(db.categories) && db.categories.length > 0 ? db.categories : concerns,
       content: db.content || { announcement: {}, heroSlides: [], consultationBanner: {} },
       reviews: db.reviews || [],
       testimonials: db.testimonials || [],
-      faqs: Array.isArray(db.faqs) ? db.faqs : [],
+      faqs: cleanFaqs.length > 0 ? cleanFaqs : defaultFaqs,
       blogs: Array.isArray(db.blogs)
         ? db.blogs
             .filter((b: any) => b.status === "Published")

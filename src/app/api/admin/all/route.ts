@@ -81,6 +81,27 @@ export async function POST(request: Request) {
       );
     }
 
+    if (action === "saveFaqs" && data && Array.isArray(data.faqs)) {
+      db.faqs = data.faqs;
+      const success = await writeDB(db);
+      invalidateDBCache();
+      if (!success) {
+        return NextResponse.json(
+          { success: false, error: "Database write failed." },
+          { status: 500, headers: NO_CACHE_HEADERS }
+        );
+      }
+      try {
+        revalidatePath("/faqs", "page");
+        revalidatePath("/faqs", "layout");
+        revalidatePath("/", "layout");
+      } catch {}
+      return NextResponse.json(
+        { success: true, message: "FAQs saved successfully.", faqs: db.faqs },
+        { headers: NO_CACHE_HEADERS }
+      );
+    }
+
     if (action === "saveFooterCMS" && data) {
       const { footer, settings: newSettings } = data;
       if (footer) {

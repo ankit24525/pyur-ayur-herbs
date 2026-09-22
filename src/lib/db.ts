@@ -280,16 +280,20 @@ function sanitizeDBData(data: any): DBData {
       },
     ];
   } else {
-    data.marketing.banners = data.marketing.banners.map((b: any, idx: number) => ({
-      id: b.id || `ban_${idx + 1}`,
-      name: b.name || "100% Certified Ayurvedic Formulations",
-      subtitle: b.subtitle || "Authentic Ayurvedic remedies formulated by certified Vaidyas.",
-      image: b.image || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
-      link: b.link || "/products/virja-powder",
-      ctaText: b.ctaText || "Explore Formulations",
-      placement: b.placement || "Homepage Middle Strip",
-      status: b.status || "Active",
-    }));
+    data.marketing.banners = data.marketing.banners.map((b: any, idx: number) => {
+      const bannerTitle = (b.title || b.name || "100% Certified Ayurvedic Formulations").trim();
+      return {
+        id: b.id || `ban_${idx + 1}`,
+        name: bannerTitle,
+        title: bannerTitle,
+        subtitle: b.subtitle || "Authentic Ayurvedic remedies formulated by certified Vaidyas.",
+        image: b.image || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
+        link: b.link || "/products/virja-powder",
+        ctaText: b.ctaText || "Explore Formulations",
+        placement: b.placement || "Homepage Middle Strip",
+        status: b.status || "Active",
+      };
+    });
   }
 
   if (data.marketing.popups.length === 0) {
@@ -321,7 +325,7 @@ function sanitizeDBData(data: any): DBData {
   }
 
   if (!data.content || typeof data.content !== "object") {
-    data.content = { announcement: {}, heroSlides: [], consultationBanner: {}, footer: {} };
+    data.content = { announcement: {}, heroSlides: [], consultationBanner: {}, footer: {}, aboutUs: {} };
   } else {
     if (!data.content.announcement || Object.keys(data.content.announcement).length === 0 || !data.content.announcement.text) {
       data.content.announcement = {
@@ -347,6 +351,9 @@ function sanitizeDBData(data: any): DBData {
     if (!Array.isArray(data.content.heroSlides)) data.content.heroSlides = [];
     if (!data.content.consultationBanner) data.content.consultationBanner = {};
     if (!data.content.footer) data.content.footer = {};
+    if (!data.content.aboutUs || typeof data.content.aboutUs !== "object") {
+      data.content.aboutUs = {};
+    }
   }
 
   if (!data.seo || typeof data.seo !== "object") {

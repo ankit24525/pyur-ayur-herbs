@@ -82,7 +82,7 @@ export default function AnnouncementBar({
           if (activeTopBanner) {
             setLiveData({
               visible: true,
-              text: activeTopBanner.name || "Special Ayurvedic Offer Ends in",
+              text: activeTopBanner.title || activeTopBanner.name || "Special Ayurvedic Offer Ends in",
               code: activeTopBanner.subtitle?.includes("CODE")
                 ? activeTopBanner.subtitle.split("CODE:")[1]?.trim()
                 : "PURE10",
@@ -123,7 +123,7 @@ export default function AnnouncementBar({
     if (topPropBanner) {
       return {
         visible: true,
-        text: topPropBanner.name || DEFAULT_ANNOUNCEMENT.text,
+        text: topPropBanner.title || topPropBanner.name || DEFAULT_ANNOUNCEMENT.text,
         code: topPropBanner.subtitle || DEFAULT_ANNOUNCEMENT.code,
         btnText: topPropBanner.ctaText || DEFAULT_ANNOUNCEMENT.btnText,
         link: topPropBanner.link || DEFAULT_ANNOUNCEMENT.link,

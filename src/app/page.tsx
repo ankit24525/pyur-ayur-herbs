@@ -140,6 +140,21 @@ export default function Home() {
     window.addEventListener("pyur_storefront_updated", handleLiveUpdate);
     window.addEventListener("storage", handleStorageChange);
 
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel("pyur_storefront_sync");
+      channel.onmessage = (event) => {
+        if (event?.data?.type === "SYNC") {
+          const { key, value } = event.data;
+          if (key === "marketing" && value) setMarketingData(value);
+          if (key === "content" && value) setCmsData(value);
+          if (key === "products" && Array.isArray(value)) setCatalog(value);
+          if (key === "categories" && Array.isArray(value)) setCategories(value);
+          loadStorefrontData();
+        }
+      };
+    } catch {}
+
     // Handle initial #shop anchor or hash change
     const handleHashScroll = () => {
       if (typeof window !== "undefined" && (window.location.hash === "#shop" || window.location.hash === "#products")) {
@@ -156,6 +171,11 @@ export default function Home() {
       window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("hashchange", handleHashScroll);
+      if (channel) {
+        try {
+          channel.close();
+        } catch {}
+      }
     };
   }, []);
 
@@ -372,7 +392,7 @@ export default function Home() {
             />
 
             {/* Dynamic Promotional Marketing Banner Strip (Prime Middle Position) */}
-            <MarketingBannerStrip banners={marketingData?.banners} />
+            <MarketingBannerStrip banners={marketingData?.banners} placement="Homepage Middle Strip" />
 
             {/* 2. Dynamic Rails for every category with active products */}
             {categories.map((cat: any) => {
@@ -395,6 +415,9 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {/* Dynamic Promotional Marketing Banner Strip (Above Consultation placement) */}
+      <MarketingBannerStrip banners={marketingData?.banners} placement="Above Consultation" />
 
       {/* 1-on-1 Free Doctor Consultation Banner */}
       <DoctorConsultationBanner data={cmsData.consultationBanner} />

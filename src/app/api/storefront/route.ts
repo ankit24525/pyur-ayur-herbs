@@ -49,7 +49,16 @@ export async function GET(request: Request) {
         : [],
       marketing: {
         banners: Array.isArray(db.marketing?.banners)
-          ? db.marketing.banners.filter((b: any) => b.status === "Active")
+          ? db.marketing.banners
+              .filter((b: any) => b.status === "Active")
+              .map((b: any) => {
+                const bannerTitle = (b.title || b.name || "").trim();
+                return {
+                  ...b,
+                  name: bannerTitle,
+                  title: bannerTitle,
+                };
+              })
           : [],
         popups: Array.isArray(db.marketing?.popups)
           ? db.marketing.popups.filter((p: any) => p.status === "Active")

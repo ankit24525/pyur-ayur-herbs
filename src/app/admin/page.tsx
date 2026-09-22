@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Sparkles,
   ArrowLeft,
+  ArrowRight,
   DollarSign,
   Ticket,
   BookOpen,
@@ -1284,6 +1285,7 @@ export default function AdminDashboard() {
   const [newBlockedPhone, setNewBlockedPhone] = useState("");
   const [newBanner, setNewBanner] = useState({
     name: "",
+    title: "",
     subtitle: "",
     link: "",
     image: "",
@@ -1526,13 +1528,15 @@ export default function AdminDashboard() {
             collections: (mutations["collections"] && now - mutations["collections"].timestamp < 15000)
               ? mutations["collections"].value
               : (data.collections || prev.collections || []),
-            marketing: {
-              campaigns: [],
-              banners: [],
-              popups: [],
-              notifications: [],
-              ...(data.marketing || {})
-            },
+            marketing: (mutations["marketing"] && now - mutations["marketing"].timestamp < 15000)
+              ? mutations["marketing"].value
+              : {
+                  campaigns: [],
+                  banners: [],
+                  popups: [],
+                  notifications: [],
+                  ...(data.marketing || {})
+                },
             content: (mutations["content"] && now - mutations["content"].timestamp < 15000)
               ? mutations["content"].value
               : ((activeMenuRef.current === "content" && prev?.content) ? prev.content : {
@@ -1662,7 +1666,11 @@ export default function AdminDashboard() {
           try {
             const channel = new BroadcastChannel("pyur_storefront_sync");
             channel.postMessage({ type: "SYNC", key, value, timestamp: Date.now() });
-            channel.close();
+            setTimeout(() => {
+              try {
+                channel.close();
+              } catch {}
+            }, 1000);
           } catch {}
         } catch (storageErr) {
           console.warn("Could not write to localStorage cache:", storageErr);
@@ -2422,13 +2430,15 @@ export default function AdminDashboard() {
   const handleAddBanner = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const bannerTitle = (newBanner.title || newBanner.name || "").trim();
       const bannerItem = {
         id: editingBannerIndex !== null && dbData.marketing.banners[editingBannerIndex]?.id
           ? dbData.marketing.banners[editingBannerIndex].id
           : `ban_${Date.now()}`,
-        name: newBanner.name.trim(),
+        name: bannerTitle,
+        title: bannerTitle,
         subtitle: newBanner.subtitle?.trim() || "",
-        link: newBanner.link.trim() || "#shop",
+        link: newBanner.link?.trim() || "#shop",
         image: newBanner.image?.trim() || "",
         ctaText: newBanner.ctaText?.trim() || "Explore Formulations",
         placement: newBanner.placement || "Homepage Middle Strip",
@@ -2448,6 +2458,7 @@ export default function AdminDashboard() {
       await saveKey("marketing", updated);
       setNewBanner({
         name: "",
+        title: "",
         subtitle: "",
         link: "",
         image: "",
@@ -2472,6 +2483,7 @@ export default function AdminDashboard() {
           setEditingBannerIndex(null);
           setNewBanner({
             name: "",
+            title: "",
             subtitle: "",
             link: "",
             image: "",
@@ -4821,7 +4833,7 @@ export default function AdminDashboard() {
       { value: "15+", label: "Certified Ayurvedic Vaidyas" },
       { value: "GMP & AYUSH", label: "Certified Manufacturing" }
     ];
-    const stats = Array.isArray(about.stats) && about.stats.length === 4 ? about.stats : defaultStats;
+    const stats = Array.isArray(about.stats) && about.stats.length > 0 ? about.stats : defaultStats;
 
     const defaultPillars = [
       {
@@ -4845,7 +4857,7 @@ export default function AdminDashboard() {
         description: "Zero heavy metals, zero steroids, zero parabens, and 100% vegetarian plant extracts for lifelong, side-effect-free wellness."
       }
     ];
-    const pillars = Array.isArray(about.pillars) && about.pillars.length === 4 ? about.pillars : defaultPillars;
+    const pillars = Array.isArray(about.pillars) && about.pillars.length > 0 ? about.pillars : defaultPillars;
 
     const founderName = about.founderName !== undefined ? about.founderName : "Dr. Ananya Sharma (BAMS)";
     const founderTitle = about.founderTitle !== undefined ? about.founderTitle : "Senior Ayurvedic Vaidya & Chief Research Director";
@@ -4858,47 +4870,51 @@ export default function AdminDashboard() {
     const ctaButtonLink = about.ctaButtonLink !== undefined ? about.ctaButtonLink : "/#products";
 
     const updateAboutUsState = (field: string, value: any) => {
-      const current = dbData.content?.aboutUs || {};
-      const updatedAbout = {
-        ...current,
-        badge,
-        title,
-        subtitle,
-        heroImage,
-        storyBadge,
-        storyTitle,
-        storyParagraph1,
-        storyParagraph2,
-        storyImage,
-        missionTitle,
-        missionDesc,
-        visionTitle,
-        visionDesc,
-        stats,
-        pillars,
-        founderName,
-        founderTitle,
-        founderMessage,
-        founderImage,
-        ctaTitle,
-        ctaSubtitle,
-        ctaButtonText,
-        ctaButtonLink,
-        [field]: value
-      };
-
-      setDbData({
-        ...dbData,
-        content: {
-          ...(dbData.content || {}),
+      setDbData((prev: any) => {
+        const prevContent = prev?.content || {};
+        const prevAbout = prevContent.aboutUs || {};
+        const updatedAbout = {
+          badge,
+          title,
+          subtitle,
+          heroImage,
+          storyBadge,
+          storyTitle,
+          storyParagraph1,
+          storyParagraph2,
+          storyImage,
+          missionTitle,
+          missionDesc,
+          visionTitle,
+          visionDesc,
+          stats,
+          pillars,
+          founderName,
+          founderTitle,
+          founderMessage,
+          founderImage,
+          ctaTitle,
+          ctaSubtitle,
+          ctaButtonText,
+          ctaButtonLink,
+          ...prevAbout,
+          [field]: value
+        };
+        const updatedContent = {
+          ...prevContent,
           aboutUs: updatedAbout
-        }
+        };
+        recentMutationsRef.current["content"] = { timestamp: Date.now(), value: updatedContent };
+        return {
+          ...prev,
+          content: updatedContent
+        };
       });
     };
 
     const handleSaveAboutUs = async () => {
+      const currentAbout = dbData.content?.aboutUs || {};
       const finalAbout = {
-        ...(dbData.content?.aboutUs || {}),
         badge,
         title,
         subtitle,
@@ -4922,12 +4938,16 @@ export default function AdminDashboard() {
         ctaSubtitle,
         ctaButtonText,
         ctaButtonLink,
+        ...currentAbout,
       };
 
       const updatedContent = {
         ...(dbData.content || {}),
         aboutUs: finalAbout
       };
+
+      recentMutationsRef.current["content"] = { timestamp: Date.now(), value: updatedContent };
+      setDbData((prev: any) => ({ ...prev, content: updatedContent }));
 
       // 1. Instant 0ms cache & live cross-tab broadcast
       if (typeof window !== "undefined") {
@@ -4940,13 +4960,21 @@ export default function AdminDashboard() {
           try {
             const channel = new BroadcastChannel("pyur_storefront_sync");
             channel.postMessage({ type: "SYNC", key: "content", value: updatedContent, timestamp: Date.now() });
-            channel.close();
+            setTimeout(() => {
+              try {
+                channel.close();
+              } catch {}
+            }, 1000);
           } catch {}
         } catch {}
       }
 
-      await handleSaveCMSContent(updatedContent, true);
-      showToast("✨ About Us content saved and live on /about-us & homepage!");
+      const success = await handleSaveCMSContent(updatedContent, false);
+      if (success) {
+        showToast("✨ About Us content saved and live on /about-us & homepage!");
+      } else {
+        showToast("Notice: Saved locally. Retrying cloud database sync...");
+      }
     };
 
     return (
@@ -5019,6 +5047,104 @@ export default function AdminDashboard() {
             <span>✓ Ensure Footer Links to /about-us</span>
           </button>
         </div>
+
+        {/* Real-Time Live Storefront About Us Preview */}
+        <div className="bg-white border-2 border-[#244f31]/30 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#ddddd9]">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-black text-[#17231b]">Live Storefront About Us Preview</span>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#244f31] font-extrabold text-[10px] tracking-wide border border-emerald-300 flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                Live 0ms Keystroke Feedback
+              </span>
+            </div>
+            <span className="text-[11px] text-[#666666]">Updates instantly as you type in the fields below</span>
+          </div>
+
+          {/* Preview Canvas mimicking Storefront */}
+          <div className="bg-[#f8faf1] rounded-2xl border border-[#ddddd9] p-5 sm:p-7 space-y-6">
+            {/* Header / Hero */}
+            <div className="text-center max-w-2xl mx-auto space-y-2">
+              <span className="inline-block px-3 py-1 rounded-full bg-[#eef5df] text-[#244f31] border border-[#80a03c]/30 text-[10px] font-black uppercase tracking-widest">
+                {badge || "OUR HERITAGE & PHILOSOPHY"}
+              </span>
+              <h3 className="text-lg sm:text-xl font-black text-[#17231b] leading-snug">
+                {title || "Rooted in Ancient Ayurveda, Perfected for Modern Living"}
+              </h3>
+              <p className="text-xs text-[#555555] leading-relaxed">
+                {subtitle || "At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom..."}
+              </p>
+            </div>
+
+            {/* 4 Stats Preview */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+              {stats.slice(0, 4).map((st: any, i: number) => (
+                <div key={i} className="bg-white border border-[#ddddd9] rounded-xl p-2.5 shadow-2xs">
+                  <div className="text-base font-black text-[#244f31]">{st.value || "50,000+"}</div>
+                  <div className="text-[10px] text-[#666666] font-medium truncate">{st.label || "Seekers Healed"}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pillars & Story Preview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Left: Story Image & Vaidya Quote */}
+              <div className="space-y-3">
+                <div className="relative rounded-xl overflow-hidden border border-[#ddddd9] aspect-16/9 bg-neutral-100">
+                  <img
+                    src={storyImage || heroImage || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80"}
+                    alt="Story Preview"
+                    className="size-full object-cover"
+                  />
+                  <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xs text-white p-2 rounded-lg text-[10px]">
+                    <span className="font-bold text-[#80a03c] uppercase block text-[9px]">{storyBadge || "OUR SACRED JOURNEY"}</span>
+                    <span className="font-bold line-clamp-1">{storyTitle || "Classical Heritage Narrative"}</span>
+                  </div>
+                </div>
+
+                {/* Founder quote box */}
+                <div className="bg-[#eef5df]/80 rounded-xl p-3 border border-[#80a03c]/30 flex items-center gap-3">
+                  {founderImage && (
+                    <img
+                      src={founderImage}
+                      alt={founderName}
+                      className="size-10 rounded-full object-cover border-2 border-[#80a03c] shrink-0"
+                    />
+                  )}
+                  <div className="text-[11px] leading-snug">
+                    <p className="italic text-[#244f31] line-clamp-2">&ldquo;{founderMessage}&rdquo;</p>
+                    <div className="font-black text-[#17231b] mt-1 text-[10px]">
+                      {founderName || "Chief Vaidya"} &bull; <span className="font-normal text-[#666666]">{founderTitle || "Ayurvedic Director"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Pillars Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {pillars.slice(0, 4).map((p: any, i: number) => (
+                  <div key={i} className="bg-white rounded-xl border border-[#ddddd9] p-3 shadow-2xs">
+                    <div className="text-lg mb-1">{p.icon || "🌿"}</div>
+                    <div className="font-black text-[#17231b] text-xs leading-tight">{p.title || `Pillar ${i + 1}`}</div>
+                    <div className="text-[10px] text-[#666666] mt-1 line-clamp-2">{p.description || "Botanical purity guarantee"}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom CTA Bar Preview */}
+            <div className="bg-[#244f31] rounded-xl p-3.5 text-white flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+              <div>
+                <div className="font-bold text-xs">{ctaTitle || "Begin Your Natural Healing Journey Today"}</div>
+                <div className="text-[10px] text-emerald-100/80">{ctaSubtitle || "Explore classical remedies"}</div>
+              </div>
+              <span className="px-3 py-1.5 rounded-lg bg-white text-[#244f31] font-bold text-[10px] shrink-0 uppercase tracking-wider">
+                {ctaButtonText || "Shop All Remedies"}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl space-y-4 shadow-2xs">
           <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
             1. Hero Header & Mission Statement
@@ -10054,11 +10180,24 @@ export default function AdminDashboard() {
                 {subTab === "banners" && (
                   <div className="space-y-6">
                     {/* Create / Edit Banner Form */}
-                    <form onSubmit={handleAddBanner} className="space-y-4 text-xs border bg-[#f8faf1]/40 border-[#ddddd9] p-5 rounded-2xl shadow-xs">
+                    <form
+                      id="banner-form"
+                      onSubmit={handleAddBanner}
+                      className={`space-y-4 text-xs border p-5 rounded-2xl shadow-xs transition-all ${
+                        editingBannerIndex !== null
+                          ? "bg-amber-50/60 border-amber-300 ring-2 ring-amber-400/30"
+                          : "bg-[#f8faf1]/40 border-[#ddddd9]"
+                      }`}
+                    >
                       <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
                         <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider flex items-center gap-2">
                           <Megaphone className="size-4 text-[#244f31]" />
-                          <span>{editingBannerIndex !== null ? `Edit Promotional Banner #${editingBannerIndex + 1}` : "Create Home Promotional Banner"}</span>
+                          <span>{editingBannerIndex !== null ? `Editing Promotional Banner #${editingBannerIndex + 1}` : "Create Home Promotional Banner"}</span>
+                          {editingBannerIndex !== null && (
+                            <span className="px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 text-[10px] font-black uppercase">
+                              Edit Mode
+                            </span>
+                          )}
                         </h4>
                         {editingBannerIndex !== null && (
                           <button
@@ -10067,6 +10206,7 @@ export default function AdminDashboard() {
                               setEditingBannerIndex(null);
                               setNewBanner({
                                 name: "",
+                                title: "",
                                 subtitle: "",
                                 link: "",
                                 image: "",
@@ -10089,8 +10229,8 @@ export default function AdminDashboard() {
                             type="text"
                             placeholder="e.g. 100% Ayurvedic Vitality & Sugar Care"
                             required
-                            value={newBanner.name}
-                            onChange={(e) => setNewBanner({ ...newBanner, name: e.target.value })}
+                            value={newBanner.title || newBanner.name}
+                            onChange={(e) => setNewBanner({ ...newBanner, name: e.target.value, title: e.target.value })}
                             className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-medium"
                           />
                         </div>
@@ -10196,24 +10336,95 @@ export default function AdminDashboard() {
                           )}
                         </div>
 
-                        {/* Live Banner Mockup Card */}
-                        {newBanner.image && (
-                          <div className="mt-3 p-3 rounded-xl bg-[#eef5df]/50 border border-[#80a03c]/30 flex items-center gap-4">
-                            <img
-                              src={newBanner.image}
-                              alt="Preview"
-                              className="size-16 rounded-xl object-cover border border-[#ddddd9] shrink-0"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[10px] font-bold text-[#244f31] uppercase">Live Banner Preview</span>
-                              <h5 className="text-xs font-black text-[#17231b] truncate">{newBanner.name || "Banner Headline"}</h5>
-                              <p className="text-[11px] text-[#666666] truncate">{newBanner.subtitle || "Banner subtitle goes here..."}</p>
+                        {/* Always-Visible Live Storefront Banner Preview */}
+                        <div className="mt-4 pt-4 border-t border-[#80a03c]/20 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                              </span>
+                              <span className="text-[11px] font-black uppercase tracking-wider text-[#244f31]">
+                                Live Storefront Banner Preview (Updates in real-time as you type)
+                              </span>
                             </div>
-                            <span className="px-3 py-1 bg-[#f2c94c] text-[#17231b] rounded-lg text-[10px] font-black uppercase shrink-0">
-                              {newBanner.ctaText || "Shop Now"}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded-full bg-[#eef5df] text-[#244f31] font-bold text-[10px] border border-[#80a03c]/30">
+                                📍 {newBanner.placement || "Homepage Middle Strip"}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                                  newBanner.status === "Active"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {newBanner.status || "Active"}
+                              </span>
+                            </div>
                           </div>
-                        )}
+
+                          {/* Authentic 1:1 Storefront Preview Card */}
+                          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#152e1d] via-[#244f31] to-[#2d5f3d] text-white shadow-lg p-5 sm:p-6 transition-all border border-white/15">
+                            {/* Ambient Glows */}
+                            <div className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-[#80a03c]/25 blur-2xl" />
+                            <div className="pointer-events-none absolute -left-16 -bottom-16 size-48 rounded-full bg-[#f2c94c]/15 blur-2xl" />
+
+                            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                              {/* Left Text Content */}
+                              <div className="max-w-xl text-center md:text-left flex-1 min-w-0">
+                                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#f2c94c] backdrop-blur-xs mb-2">
+                                  <Sparkles className="size-3 text-[#f2c94c]" />
+                                  <span>Special Herbal Promotion</span>
+                                </div>
+
+                                <h3 className="text-lg sm:text-xl md:text-2xl font-black tracking-tight text-white leading-tight break-words">
+                                  {newBanner.title || newBanner.name || "100% Certified Ayurvedic Formulations for Peak Vitality"}
+                                </h3>
+
+                                <p className="mt-2 text-xs sm:text-sm text-[#ddddd9] leading-relaxed break-words line-clamp-2">
+                                  {newBanner.subtitle || "Formulated by certified Ayurvedic Vaidyas with pure botanical extracts. Backed by gold-grade AYUSH & GMP certification."}
+                                </p>
+
+                                <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#f2c94c] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#17231b] shadow-md">
+                                    <span>{newBanner.ctaText || "Explore Formulations"}</span>
+                                    <ArrowRight className="size-3.5 text-[#17231b]" />
+                                  </span>
+
+                                  <div className="inline-flex items-center gap-1.5 text-[11px] text-white/80 font-medium">
+                                    <ShieldCheck className="size-3.5 text-[#80a03c]" />
+                                    <span>100% AYUSH & GMP Certified</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Right Hero Graphic */}
+                              <div className="w-full md:w-44 max-w-[220px] shrink-0">
+                                <div className="relative aspect-4/3 sm:aspect-16/10 w-full overflow-hidden rounded-xl border border-white/20 shadow-lg">
+                                  <img
+                                    src={
+                                      newBanner.image?.trim() ||
+                                      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80"
+                                    }
+                                    alt="Live Preview Graphic"
+                                    className="h-full w-full object-cover"
+                                  />
+                                  {!newBanner.image && (
+                                    <div className="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 text-center text-[9px] font-bold text-[#f2c94c]">
+                                      Default Botanical Fallback
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-[10px] text-gray-400 font-medium italic flex items-center justify-between">
+                            <span>💡 Target Redirect: <code className="text-emerald-700 font-mono font-bold">{newBanner.link || "#shop"}</code></span>
+                            <span>Changes reflect live here as you edit</span>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
@@ -10256,8 +10467,17 @@ export default function AdminDashboard() {
                               <td colSpan={5} className="p-6 text-center text-gray-500 font-semibold">No promotional banners configured.</td>
                             </tr>
                           ) : (
-                            dbData.marketing.banners.map((b: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-[#f8faf1]/30 transition">
+                            dbData.marketing.banners.map((b: any, idx: number) => {
+                              const isCurrentlyEditing = editingBannerIndex === idx;
+                              return (
+                              <tr
+                                key={idx}
+                                className={`transition ${
+                                  isCurrentlyEditing
+                                    ? "bg-amber-50/90 border-l-4 border-l-amber-500 font-medium"
+                                    : "hover:bg-[#f8faf1]/30"
+                                }`}
+                              >
                                 <td className="p-3">
                                   {b.image ? (
                                     <img src={b.image} alt="" className="h-10 w-20 rounded-lg object-cover border border-[#ddddd9]" />
@@ -10268,7 +10488,14 @@ export default function AdminDashboard() {
                                   )}
                                 </td>
                                 <td className="p-3">
-                                  <div className="font-black text-[#17231b]">{b.name}</div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-black text-[#17231b]">{b.title || b.name}</span>
+                                    {isCurrentlyEditing && (
+                                      <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 text-[9px] font-black uppercase animate-pulse">
+                                        Editing Now
+                                      </span>
+                                    )}
+                                  </div>
                                   {b.subtitle && (
                                     <div className="text-[11px] text-gray-500 max-w-sm truncate">{b.subtitle}</div>
                                   )}
@@ -10295,8 +10522,10 @@ export default function AdminDashboard() {
                                       type="button"
                                       onClick={() => {
                                         setEditingBannerIndex(idx);
+                                        const bannerHeading = b.title || b.name || "";
                                         setNewBanner({
-                                          name: b.name || "",
+                                          name: bannerHeading,
+                                          title: bannerHeading,
                                           subtitle: b.subtitle || "",
                                           link: b.link || "",
                                           image: b.image || "",
@@ -10304,10 +10533,16 @@ export default function AdminDashboard() {
                                           placement: b.placement || "Homepage Middle Strip",
                                           status: b.status || "Active",
                                         });
+                                        setTimeout(() => {
+                                          const el = document.getElementById("banner-form");
+                                          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                                        }, 50);
                                       }}
-                                      className="text-[#244f31] font-bold hover:underline cursor-pointer"
+                                      className={`font-bold hover:underline cursor-pointer ${
+                                        isCurrentlyEditing ? "text-amber-700 font-black" : "text-[#244f31]"
+                                      }`}
                                     >
-                                      Edit
+                                      {isCurrentlyEditing ? "Editing..." : "Edit"}
                                     </button>
                                     <button
                                       type="button"
@@ -10319,7 +10554,8 @@ export default function AdminDashboard() {
                                   </div>
                                 </td>
                               </tr>
-                            ))
+                              );
+                            })
                           )}
                         </tbody>
                       </table>

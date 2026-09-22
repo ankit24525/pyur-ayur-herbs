@@ -4,16 +4,25 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Sparkles, ShieldCheck, ArrowRight } from "lucide-react";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 interface AboutSectionProps {
   cmsAboutUs?: any;
 }
 
 export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
-  const [clientAboutUs, setClientAboutUs] = useState<any>(null);
+  const [clientAboutUs, setClientAboutUs] = useState<any>(cmsAboutUs || null);
 
+  // Sync prop changes from SSR / parent page
   useEffect(() => {
-    if (!cmsAboutUs && typeof window !== "undefined") {
+    if (cmsAboutUs) {
+      setClientAboutUs(cmsAboutUs);
+    }
+  }, [cmsAboutUs]);
+
+  // Real-time synchronization: local cache, background API fetch, and cross-tab broadcasts
+  useEffect(() => {
+    if (typeof window !== "undefined") {
       try {
         const cached = localStorage.getItem("pyur_storefront_cache");
         if (cached) {
@@ -23,10 +32,58 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
           }
         }
       } catch {}
-    }
-  }, [cmsAboutUs]);
 
-  const activeAbout = cmsAboutUs || clientAboutUs;
+      // Fetch fresh storefront data in background to sync latest from MongoDB
+      getStorefrontData(true)
+        .then((fresh) => {
+          if (fresh?.content?.aboutUs) {
+            setClientAboutUs(fresh.content.aboutUs);
+          }
+        })
+        .catch(() => {});
+    }
+
+    const handleLiveUpdate = (e: any) => {
+      if (e?.detail?.key === "content" && e.detail.value?.aboutUs) {
+        setClientAboutUs(e.detail.value.aboutUs);
+      }
+    };
+    window.addEventListener("pyur_storefront_updated", handleLiveUpdate);
+
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === "pyur_storefront_cache" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed?.content?.aboutUs) {
+            setClientAboutUs(parsed.content.aboutUs);
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorageEvent);
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel("pyur_storefront_sync");
+      channel.onmessage = (event) => {
+        if (event?.data?.type === "SYNC" && event.data.key === "content" && event.data.value?.aboutUs) {
+          setClientAboutUs(event.data.value.aboutUs);
+        }
+      };
+    } catch {}
+
+    return () => {
+      window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
+      window.removeEventListener("storage", handleStorageEvent);
+      if (channel) {
+        try {
+          channel.close();
+        } catch {}
+      }
+    };
+  }, []);
+
+  const activeAbout = clientAboutUs || cmsAboutUs;
   const data = activeAbout || {
     badge: "OUR HERITAGE & PHILOSOPHY",
     title: "Rooted in Ancient Ayurveda, Perfected for Modern Living",

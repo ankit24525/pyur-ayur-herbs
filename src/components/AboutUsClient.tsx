@@ -36,10 +36,17 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [aboutData, setAboutData] = useState<any>(initialAboutData || null);
 
+  // Sync prop changes from SSR
+  useEffect(() => {
+    if (initialAboutData) {
+      setAboutData(initialAboutData);
+    }
+  }, [initialAboutData]);
+
   // Cross-tab real-time sync & background refresh
   useEffect(() => {
-    // If no initial data was provided on server, try local cache or fetch fresh
-    if (!initialAboutData && typeof window !== "undefined") {
+    // 1. Check local cache immediately on client mount
+    if (typeof window !== "undefined") {
       try {
         const cached = localStorage.getItem("pyur_storefront_cache");
         if (cached) {
@@ -49,6 +56,15 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
           }
         }
       } catch {}
+
+      // 2. Fetch fresh storefront data from MongoDB in background
+      getStorefrontData(true)
+        .then((fresh) => {
+          if (fresh?.content?.aboutUs) {
+            setAboutData(fresh.content.aboutUs);
+          }
+        })
+        .catch(() => {});
     }
 
     // Live update listener from Admin CMS
@@ -102,7 +118,7 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
         } catch {}
       }
     };
-  }, [initialAboutData]);
+  }, []);
 
   const saveCartState = (newCart: { product: Product; quantity: number }[]) => {
     setCart(newCart);

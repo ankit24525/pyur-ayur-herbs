@@ -56,7 +56,7 @@ export default function HeroSlider({ slides, marketingBanners }: { slides?: any[
     .map((b: any, idx: number) => ({
       id: b.id || `mkt_slide_${idx}`,
       badge: "Featured Promotion",
-      title: b.name,
+      title: b.title || b.name,
       subtitle: b.subtitle || "100% Certified Ayurvedic Formulations",
       image: b.image || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
       ctaText: b.ctaText || "Explore Formulations",

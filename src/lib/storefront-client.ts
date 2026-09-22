@@ -54,10 +54,13 @@ export async function getStorefrontData(forceFresh = false): Promise<any> {
   }
 
   // 3. Initiate single deduplicated fetch
-  const url = shouldForce ? `/api/storefront?fresh=1&_t=${now}` : "/api/storefront";
+  const url = `/api/storefront?fresh=1&_t=${now}`;
 
   cachedStorefrontPromise = fetch(url, {
-    cache: shouldForce ? "no-store" : "default",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+    },
   })
     .then(async (response) => {
       if (!response.ok) {

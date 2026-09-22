@@ -3,9 +3,11 @@ import AboutUsClient from "@/components/AboutUsClient";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const db = await readDB();
+  const db = await readDB(true);
   const about = db.content?.aboutUs;
   return {
     title: about?.title ? `${about.title} | Pure Ayur Herbs` : "About Us | Pure Ayur Herbs",

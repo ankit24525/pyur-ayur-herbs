@@ -96,19 +96,18 @@ export async function GET(request: Request) {
       },
     };
 
-    // Edge CDN Caching: in development/localhost, NEVER cache (instant updates).
-    // On production: max-age=0 ensures the user's browser always gets fresh data upon reload,
-    // while s-maxage=30 allows Vercel Edge CDN to serve public visitors without hitting origin.
-    const isDev = process.env.NODE_ENV !== "production" || !process.env.VERCEL;
-    const cacheControlHeader = isDev || forceFresh
-      ? "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
-      : "public, max-age=0, s-maxage=2, stale-while-revalidate=5";
+    // Always return fully fresh data - never allow CDN to cache API responses
+    // since storefront-client.ts already adds ?fresh=1&_t=timestamp to bust any possible cache
+    const cacheControlHeader = "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0";
 
     return NextResponse.json(responseData, {
       status: 200,
       headers: {
         "Cache-Control": cacheControlHeader,
         "Pragma": "no-cache",
+        "Surrogate-Control": "no-store",
+        "CDN-Cache-Control": "no-store",
+        "Vercel-CDN-Cache-Control": "no-store",
       },
     });
   } catch (error) {

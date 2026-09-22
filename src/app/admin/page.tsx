@@ -4874,7 +4874,8 @@ export default function AdminDashboard() {
         const prevContent = prev?.content || {};
         const prevAbout = prevContent.aboutUs || {};
         const updatedAbout = {
-          badge,
+          ...prevAbout,      // old saved data first (baseline)
+          badge,             // render-time closure values (reflects latest typing)
           title,
           subtitle,
           heroImage,
@@ -4897,8 +4898,7 @@ export default function AdminDashboard() {
           ctaSubtitle,
           ctaButtonText,
           ctaButtonLink,
-          ...prevAbout,
-          [field]: value
+          [field]: value     // the specific field being edited - always wins
         };
         const updatedContent = {
           ...prevContent,
@@ -4915,7 +4915,8 @@ export default function AdminDashboard() {
     const handleSaveAboutUs = async () => {
       const currentAbout = dbData.content?.aboutUs || {};
       const finalAbout = {
-        badge,
+        ...currentAbout,   // old data FIRST (baseline)
+        badge,             // new values OVERRIDE old ones
         title,
         subtitle,
         heroImage,
@@ -4938,7 +4939,6 @@ export default function AdminDashboard() {
         ctaSubtitle,
         ctaButtonText,
         ctaButtonLink,
-        ...currentAbout,
       };
 
       const updatedContent = {

@@ -67,6 +67,7 @@ export async function POST(request: Request) {
       }
       try {
         revalidatePath("/", "layout");
+        revalidatePath("/", "page");
         revalidatePath("/faqs", "page");
         revalidatePath("/about-us", "page");
         revalidatePath("/products/[slug]", "page");

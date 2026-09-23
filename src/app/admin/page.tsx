@@ -4874,31 +4874,8 @@ export default function AdminDashboard() {
         const prevContent = prev?.content || {};
         const prevAbout = prevContent.aboutUs || {};
         const updatedAbout = {
-          ...prevAbout,      // old saved data first (baseline)
-          badge,             // render-time closure values (reflects latest typing)
-          title,
-          subtitle,
-          heroImage,
-          storyBadge,
-          storyTitle,
-          storyParagraph1,
-          storyParagraph2,
-          storyImage,
-          missionTitle,
-          missionDesc,
-          visionTitle,
-          visionDesc,
-          stats,
-          pillars,
-          founderName,
-          founderTitle,
-          founderMessage,
-          founderImage,
-          ctaTitle,
-          ctaSubtitle,
-          ctaButtonText,
-          ctaButtonLink,
-          [field]: value     // the specific field being edited - always wins
+          ...prevAbout,
+          [field]: value
         };
         const updatedContent = {
           ...prevContent,
@@ -4915,30 +4892,30 @@ export default function AdminDashboard() {
     const handleSaveAboutUs = async () => {
       const currentAbout = dbData.content?.aboutUs || {};
       const finalAbout = {
-        ...currentAbout,   // old data FIRST (baseline)
-        badge,             // new values OVERRIDE old ones
-        title,
-        subtitle,
-        heroImage,
-        storyBadge,
-        storyTitle,
-        storyParagraph1,
-        storyParagraph2,
-        storyImage,
-        missionTitle,
-        missionDesc,
-        visionTitle,
-        visionDesc,
-        stats,
-        pillars,
-        founderName,
-        founderTitle,
-        founderMessage,
-        founderImage,
-        ctaTitle,
-        ctaSubtitle,
-        ctaButtonText,
-        ctaButtonLink,
+        badge: "OUR HERITAGE & PHILOSOPHY",
+        title: "Rooted in Ancient Ayurveda, Perfected for Modern Living",
+        subtitle: "At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom with rigorous clinical purity to bring you 100% natural, potent, and safe Ayurvedic remedies.",
+        heroImage: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80",
+        storyBadge: "OUR SACRED JOURNEY",
+        storyTitle: "Born from Pure Himalayan Forests & Traditional Vaidya Lineage",
+        storyParagraph1: "Pure Ayur Herbs was founded with a single sacred conviction: true healing begins with nature's purest herbs, uncorrupted by chemicals, synthetic fillers, or artificial stimulants. Our journey started deep in the pristine valleys of the Himalayas and the dense botanical sanctuaries of India, where revered Ayurvedic vaidyas have harvested therapeutic herbs for millennia.",
+        storyParagraph2: "Every formula we craft—from our signature Virja Energy Rasayana to Madhunashi Sugar Care—is developed following authentic classical Ayurvedic texts (Charaka Samhita and Sushruta Samhita), enriched with modern testing for zero heavy metals, microbiological purity, and optimal bio-availability.",
+        storyImage: "https://images.unsplash.com/photo-1512290900672-1f02e0ad0ba8?auto=format&fit=crop&w=800&q=80",
+        missionTitle: "Our Sacred Mission",
+        missionDesc: "To restore authentic holistic health and vitality across every Indian household through honest, certified, and uncompromisingly potent Ayurvedic formulations.",
+        visionTitle: "Our Vision",
+        visionDesc: "To become India's most trusted natural wellness sanctuary, empowering seekers to achieve peak physical, mental, and spiritual harmony through Vedic wisdom.",
+        stats: defaultStats,
+        pillars: defaultPillars,
+        founderName: "Dr. Ananya Sharma (BAMS)",
+        founderTitle: "Senior Ayurvedic Vaidya & Chief Research Director",
+        founderMessage: "In a modern world flooded with synthetic quick-fixes, our ancient sages gifted us the science of longevity. Pure Ayur Herbs is our sacred promise to deliver that timeless Vedic wisdom with total honesty, supreme herb purity, and genuine compassion for your well-being.",
+        founderImage: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80",
+        ctaTitle: "Begin Your Natural Healing Journey Today",
+        ctaSubtitle: "Explore our classical Ayurvedic formulations or speak with our certified Vaidyas for free guidance.",
+        ctaButtonText: "Shop All Remedies",
+        ctaButtonLink: "/#products",
+        ...currentAbout, // user edits in state override defaults
       };
 
       const updatedContent = {

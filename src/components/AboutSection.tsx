@@ -114,6 +114,19 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
     { value: "AYUSH", label: "Certified Grade" }
   ];
 
+  const DEFAULT_STORY_IMAGE = "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80";
+  const [imgSrc, setImgSrc] = useState(
+    data.storyImage && data.storyImage.trim() !== "" ? data.storyImage : DEFAULT_STORY_IMAGE
+  );
+
+  useEffect(() => {
+    if (data.storyImage && data.storyImage.trim() !== "") {
+      setImgSrc(data.storyImage);
+    } else {
+      setImgSrc(DEFAULT_STORY_IMAGE);
+    }
+  }, [data.storyImage]);
+
   return (
     <section id="about" className="relative bg-[#f8faf1] py-14 sm:py-20 border-t border-[#ddddd9] overflow-hidden">
       {/* Subtle Background Glow */}
@@ -157,23 +170,28 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
           <div className="lg:col-span-5 relative">
             <div className="relative rounded-3xl overflow-hidden border border-[#ddddd9] shadow-lg aspect-4/3 sm:aspect-5/4">
               <Image
-                src={data.storyImage || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80"}
+                src={imgSrc}
                 alt="Pure Ayur Herbs Ayurvedic Botanical Extraction"
                 width={700}
                 height={550}
                 unoptimized
+                onError={() => {
+                  if (imgSrc !== DEFAULT_STORY_IMAGE) {
+                    setImgSrc(DEFAULT_STORY_IMAGE);
+                  }
+                }}
                 className="size-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 text-white">
                 <span className="inline-block bg-[#80a03c] text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-1">
-                  100% AYUSH CERTIFIED
+                  {data.extractionBadge || "100% AYUSH CERTIFIED"}
                 </span>
                 <h4 className="text-sm sm:text-base font-bold text-white drop-shadow-sm">
-                  Traditional Classical Extraction Process
+                  {data.extractionTitle || "Traditional Classical Extraction Process"}
                 </h4>
                 <p className="text-[11px] text-neutral-200 line-clamp-2">
-                  Preserving vital prana and active herbal bio-compounds without synthetic additives.
+                  {data.extractionDescription || "Preserving vital prana and active herbal bio-compounds without synthetic additives."}
                 </p>
               </div>
             </div>
@@ -184,8 +202,12 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
                 <ShieldCheck className="size-5 text-[#244f31]" />
               </div>
               <div>
-                <div className="text-xs font-black text-[#17231b]">Zero Heavy Metals</div>
-                <div className="text-[10px] text-[#666666]">NABL Lab Tested & Certified Safe</div>
+                <div className="text-xs font-black text-[#17231b]">
+                  {data.guaranteeTitle || "Zero Heavy Metals"}
+                </div>
+                <div className="text-[10px] text-[#666666]">
+                  {data.guaranteeSubtitle || "NABL Lab Tested & Certified Safe"}
+                </div>
               </div>
             </div>
           </div>

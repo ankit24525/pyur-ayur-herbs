@@ -12024,7 +12024,281 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* Section D: Storefront Footer CMS Editor */}
+                      {/* Section D: Our Heritage & Extraction Story (Homepage About Section) */}
+                      {(() => {
+                        const about = content.aboutUs || {};
+                        const aboutBadge = about.badge !== undefined ? about.badge : "OUR HERITAGE & PHILOSOPHY";
+                        const aboutTitle = about.title !== undefined ? about.title : "Rooted in Ancient Ayurveda, Perfected for Modern Living";
+                        const aboutSubtitle = about.subtitle !== undefined ? about.subtitle : "At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom with rigorous clinical purity to bring you 100% natural, potent, and safe Ayurvedic remedies.";
+                        const storyImage = about.storyImage !== undefined ? about.storyImage : "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80";
+                        const extractionBadge = about.extractionBadge !== undefined ? about.extractionBadge : "100% AYUSH CERTIFIED";
+                        const extractionTitle = about.extractionTitle !== undefined ? about.extractionTitle : (about.storyTitle || "Traditional Classical Extraction Process");
+                        const extractionDescription = about.extractionDescription !== undefined ? about.extractionDescription : "Preserving vital prana and active herbal bio-compounds without synthetic additives.";
+                        const guaranteeTitle = about.guaranteeTitle !== undefined ? about.guaranteeTitle : "Zero Heavy Metals";
+                        const guaranteeSubtitle = about.guaranteeSubtitle !== undefined ? about.guaranteeSubtitle : "NABL Lab Tested & Certified Safe";
+
+                        const updateHomepageAboutState = (field: string, val: any) => {
+                          const updatedAbout = {
+                            ...(content.aboutUs || {}),
+                            [field]: val
+                          };
+                          const updatedContent = {
+                            ...content,
+                            aboutUs: updatedAbout
+                          };
+                          setDbData((prev: any) => ({ ...prev, content: updatedContent }));
+                        };
+
+                        return (
+                          <div className="border border-[#ddddd9] p-5 sm:p-6 rounded-2xl bg-white shadow-xs space-y-6">
+                            {/* Header Bar */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#ddddd9] pb-4">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-black text-sm text-[#17231b]">🌿 Our Heritage & Extraction Story (Homepage About Section)</span>
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#244f31] font-bold text-[10px]">
+                                    Live on Homepage
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-[#666666] mt-0.5 block">
+                                  Displayed between Featured Products and the Consultation Banner on the main homepage.
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <a
+                                  href="/#about"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#244f31] bg-[#f8faf1] border border-[#244f31]/30 hover:bg-[#244f31]/10 px-3.5 py-1.5 rounded-xl transition cursor-pointer shadow-2xs"
+                                >
+                                  <span>👁️ Preview Section</span>
+                                  <ExternalLink className="size-3" />
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    await handleSaveCMSContent(dbData.content, true);
+                                    showToast("✨ Our Heritage & Philosophy section saved successfully!");
+                                  }}
+                                  className="px-4 py-1.5 bg-[#244f31] hover:bg-[#1d3b24] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                                >
+                                  Save Changes
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Section Headings */}
+                            <div className="space-y-4 bg-[#f8faf1]/50 p-4 rounded-xl border border-[#ddddd9]">
+                              <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
+                                1. Section Header Texts
+                              </span>
+                              <div className="grid gap-4 sm:grid-cols-3">
+                                <div>
+                                  <label className="block font-bold mb-1">Section Tag / Badge</label>
+                                  <input
+                                    type="text"
+                                    value={aboutBadge}
+                                    onChange={(e) => updateHomepageAboutState("badge", e.target.value)}
+                                    onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                    placeholder="OUR HERITAGE & PHILOSOPHY"
+                                    className="w-full rounded-xl border border-[#ddddd9] p-2 bg-white outline-none focus:border-[#244f31] text-xs font-bold"
+                                  />
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className="block font-bold mb-1">Main Headline</label>
+                                  <input
+                                    type="text"
+                                    value={aboutTitle}
+                                    onChange={(e) => updateHomepageAboutState("title", e.target.value)}
+                                    onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                    placeholder="Rooted in Ancient Ayurveda, Perfected for Modern Living"
+                                    className="w-full rounded-xl border border-[#ddddd9] p-2 bg-white outline-none focus:border-[#244f31] text-xs font-bold"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block font-bold mb-1">Introductory Subtitle</label>
+                                <textarea
+                                  rows={2}
+                                  value={aboutSubtitle}
+                                  onChange={(e) => updateHomepageAboutState("subtitle", e.target.value)}
+                                  onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                  placeholder="At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom..."
+                                  className="w-full rounded-xl border border-[#ddddd9] p-2 bg-white outline-none focus:border-[#244f31] text-xs"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Extraction Story Card & Image (The exact card from user screenshot!) */}
+                            <div className="grid gap-6 lg:grid-cols-12 bg-white p-4 rounded-xl border border-[#ddddd9]">
+                              {/* Left: Inputs */}
+                              <div className="lg:col-span-7 space-y-4">
+                                <span className="block font-black text-xs uppercase tracking-wider text-[#244f31]">
+                                  2. Classical Extraction Card & Image
+                                </span>
+
+                                {/* Image URL & Upload Button */}
+                                <div>
+                                  <label className="block font-bold mb-1">Story & Extraction Photo *</label>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={storyImage}
+                                      onChange={(e) => updateHomepageAboutState("storyImage", e.target.value)}
+                                      onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                      placeholder="https://images.unsplash.com/..."
+                                      className="flex-1 rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 text-xs"
+                                    />
+                                    <label className="px-3.5 py-2 rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-bold text-xs transition cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5">
+                                      <span>Upload</span>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            showToast("Uploading story photo...");
+                                            const url = await uploadImageToCloud(file, "pure_ayur_herbs/about_us");
+                                            if (url) {
+                                              updateHomepageAboutState("storyImage", url);
+                                              const updatedAbout = {
+                                                ...(content.aboutUs || {}),
+                                                storyImage: url
+                                              };
+                                              void handleSaveCMSContent({ ...content, aboutUs: updatedAbout }, true);
+                                              showToast("✨ Story photo uploaded & saved live!");
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 mt-1 block">
+                                    Recommended: JPG, PNG or WEBP (approx. 800x600px).
+                                  </span>
+                                </div>
+
+                                {/* Extraction Card Badges & Texts */}
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  <div>
+                                    <label className="block font-bold mb-1">Overlay Badge</label>
+                                    <input
+                                      type="text"
+                                      value={extractionBadge}
+                                      onChange={(e) => updateHomepageAboutState("extractionBadge", e.target.value)}
+                                      onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                      placeholder="100% AYUSH CERTIFIED"
+                                      className="w-full rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white text-xs font-bold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block font-bold mb-1">Extraction Headline</label>
+                                    <input
+                                      type="text"
+                                      value={extractionTitle}
+                                      onChange={(e) => updateHomepageAboutState("extractionTitle", e.target.value)}
+                                      onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                      placeholder="Traditional Classical Extraction Process"
+                                      className="w-full rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white text-xs font-bold"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block font-bold mb-1">Extraction Description</label>
+                                  <textarea
+                                    rows={2}
+                                    value={extractionDescription}
+                                    onChange={(e) => updateHomepageAboutState("extractionDescription", e.target.value)}
+                                    onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                    placeholder="Preserving vital prana and active herbal bio-compounds without synthetic additives."
+                                    className="w-full rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white text-xs"
+                                  />
+                                </div>
+
+                                {/* Floating Quality Guarantee Seal */}
+                                <div className="bg-[#f8faf1] p-3.5 rounded-xl border border-[#ddddd9] space-y-2">
+                                  <span className="block font-bold text-xs text-[#244f31]">
+                                    🛡️ Floating Quality Guarantee Seal
+                                  </span>
+                                  <div className="grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                      <label className="block font-semibold text-[11px] mb-1">Seal Title</label>
+                                      <input
+                                        type="text"
+                                        value={guaranteeTitle}
+                                        onChange={(e) => updateHomepageAboutState("guaranteeTitle", e.target.value)}
+                                        onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                        placeholder="Zero Heavy Metals"
+                                        className="w-full rounded-lg border border-[#ddddd9] p-1.5 outline-none focus:border-[#244f31] bg-white text-xs font-bold"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block font-semibold text-[11px] mb-1">Seal Subtitle</label>
+                                      <input
+                                        type="text"
+                                        value={guaranteeSubtitle}
+                                        onChange={(e) => updateHomepageAboutState("guaranteeSubtitle", e.target.value)}
+                                        onBlur={() => void handleSaveCMSContent(dbData.content)}
+                                        placeholder="NABL Lab Tested & Certified Safe"
+                                        className="w-full rounded-lg border border-[#ddddd9] p-1.5 outline-none focus:border-[#244f31] bg-white text-xs"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Right: Live Interactive Card Preview */}
+                              <div className="lg:col-span-5 flex flex-col justify-center">
+                                <span className="block font-bold text-[11px] text-gray-500 mb-2">Live Visual Card Preview:</span>
+                                <div className="relative rounded-2xl overflow-hidden border border-[#ddddd9] shadow-md aspect-4/3 bg-gray-100">
+                                  <img
+                                    src={storyImage || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80"}
+                                    alt="Live Extraction Preview"
+                                    onError={(e: any) => {
+                                      e.currentTarget.src = "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80";
+                                    }}
+                                    className="size-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                                  <div className="absolute bottom-3 left-3 right-3 text-white">
+                                    <span className="inline-block bg-[#80a03c] text-white text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full mb-1">
+                                      {extractionBadge || "100% AYUSH CERTIFIED"}
+                                    </span>
+                                    <h4 className="text-xs font-bold text-white drop-shadow-sm leading-snug">
+                                      {extractionTitle || "Traditional Classical Extraction Process"}
+                                    </h4>
+                                    <p className="text-[10px] text-neutral-200 line-clamp-2 mt-0.5">
+                                      {extractionDescription || "Preserving vital prana and active herbal bio-compounds without synthetic additives."}
+                                    </p>
+                                  </div>
+
+                                  {/* Floating Quality Seal in Preview */}
+                                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs border border-[#244f31]/20 rounded-xl p-2 shadow-lg flex items-center gap-2 max-w-[170px]">
+                                    <div className="size-6 rounded-full bg-[#eef5df] flex items-center justify-center text-[#244f31] shrink-0 font-bold">
+                                      <ShieldCheck className="size-3.5 text-[#244f31]" />
+                                    </div>
+                                    <div>
+                                      <div className="text-[10px] font-black text-[#17231b] leading-tight truncate">
+                                        {guaranteeTitle || "Zero Heavy Metals"}
+                                      </div>
+                                      <div className="text-[8px] text-[#666666] leading-tight truncate">
+                                        {guaranteeSubtitle || "NABL Lab Tested"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className="text-[10px] text-center text-gray-400 mt-2">
+                                  Preview reflects changes in real-time as you type or upload.
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Section E: Storefront Footer CMS Editor */}
                       {renderFooterCMSEditor()}
                     </div>
                   );

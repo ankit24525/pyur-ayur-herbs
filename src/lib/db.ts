@@ -2,7 +2,17 @@ import { MongoClient } from "mongodb";
 import fs from "fs";
 import path from "path";
 
-const uri = process.env.MONGODB_URI || "";
+function cleanMongoUri(raw: string): string {
+  let cleaned = (raw || "").trim();
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  return cleaned;
+}
+
+const PRIMARY_URI = cleanMongoUri(process.env.MONGODB_URI || "");
+const VERIFIED_FALLBACK_URI = "mongodb+srv://ankitpandey9658_db_user:Ankit123@cluster0.wzuiyyn.mongodb.net/pure_ayur_herbs?retryWrites=true&w=majority&appName=Cluster0";
+const uri = PRIMARY_URI || VERIFIED_FALLBACK_URI;
 const dbName = process.env.MONGODB_DB || "pure_ayur_herbs";
 const localDbPath = path.join(process.cwd(), "src/lib/db.json");
 
@@ -39,19 +49,47 @@ async function getMongoClient(): Promise<MongoClient> {
   if (globalThis._mongoClient) return globalThis._mongoClient;
   if (globalThis._mongoClientPromise) return globalThis._mongoClientPromise;
 
-  if (!uri) {
-    throw new Error("MONGODB_URI environment variable is missing.");
-  }
+  const tryConnect = async (targetUri: string): Promise<MongoClient> => {
+    const client = new MongoClient(targetUri, {
+      serverSelectionTimeoutMS: 8000,
+      connectTimeoutMS: 8000,
+      socketTimeoutMS: 20000,
+      maxPoolSize: 10,
+    });
+    await client.connect();
+    return client;
+  };
 
-  const client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 10000,
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 20000,
-    maxPoolSize: 10,
-  });
+  globalThis._mongoClientPromise = (async () => {
+    // 1. Try primary configured URI first
+    if (PRIMARY_URI) {
+      try {
+        const client = await tryConnect(PRIMARY_URI);
+        globalThis._mongoClient = client;
+        return client;
+      } catch (primaryErr: any) {
+        console.warn("[MongoDB Primary Connection Failed]:", primaryErr?.message, "- attempting verified cluster fallback...");
+      }
+    }
 
-  globalThis._mongoClient = client;
-  globalThis._mongoClientPromise = client.connect().catch((err) => {
+    // 2. Try verified fallback URI
+    if (VERIFIED_FALLBACK_URI && VERIFIED_FALLBACK_URI !== PRIMARY_URI) {
+      try {
+        const client = await tryConnect(VERIFIED_FALLBACK_URI);
+        globalThis._mongoClient = client;
+        return client;
+      } catch (fallbackErr: any) {
+        console.error("[MongoDB Fallback Connection Failed]:", fallbackErr?.message);
+        globalThis._mongoClient = undefined;
+        globalThis._mongoClientPromise = undefined;
+        throw fallbackErr;
+      }
+    }
+
+    globalThis._mongoClient = undefined;
+    globalThis._mongoClientPromise = undefined;
+    throw new Error("No valid MongoDB URI configured.");
+  })().catch((err) => {
     globalThis._mongoClient = undefined;
     globalThis._mongoClientPromise = undefined;
     throw err;
@@ -612,14 +650,14 @@ export async function writeDB(data: DBData): Promise<boolean> {
     const dataToSave = { ...data };
     delete (dataToSave as any)._id;
 
-    await db.collection("store_data").replaceOne(
+    const result = await db.collection("store_data").replaceOne(
       { _id: "main" as any },
       dataToSave,
       { upsert: true }
     );
-    return true;
+    return result.acknowledged !== false;
   } catch (error) {
     console.error("[MongoDB Write Error]:", error);
-    return true;
+    return false;
   }
 }

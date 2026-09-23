@@ -722,8 +722,8 @@
     "banners": [
       {
         "id": "ban_1",
-        "name": "Monsoon Wellness Hero Banner",
-        "title": "Monsoon Wellness Hero Banner",
+        "name": "100% Certified Ayurvedic Formulations for Peak Vitality",
+        "title": "100% Certified Ayurvedic Formulations for Peak Vitality",
         "subtitle": "Authentic Ayurvedic remedies formulated by certified Vaidyas.",
         "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
         "link": "/solution/sugar-management",
@@ -928,8 +928,8 @@
       "visionDesc": "To become India's most trusted natural wellness sanctuary, empowering seekers to achieve peak physical, mental, and spiritual harmony through Vedic wisdom.",
       "stats": [
         {
-          "value": "50,000+",
-          "label": "50,000+ Customers Served Across India"
+          "value": "1,000+",
+          "label": "Trusted by thousands across India"
         },
         {
           "value": "100%",
@@ -940,7 +940,7 @@
           "label": "Certified Ayurvedic Vaidyas"
         },
         {
-          "value": "GMP & AYUSH",
+          "value": "AYUSH-Licensed & GMP",
           "label": "Certified Manufacturing"
         }
       ],

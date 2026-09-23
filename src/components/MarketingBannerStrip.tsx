@@ -38,18 +38,7 @@ export default function MarketingBannerStrip({
   placement = "Homepage Middle Strip",
 }: MarketingBannerStripProps) {
   const [liveBanners, setLiveBanners] = useState<BannerItem[]>(() => {
-    if (banners && banners.length > 0) return banners;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("pyur_storefront_cache");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.marketing?.banners && Array.isArray(parsed.marketing.banners)) {
-            return parsed.marketing.banners;
-          }
-        }
-      } catch {}
-    }
+    if (Array.isArray(banners) && banners.length > 0) return banners;
     return [];
   });
 
@@ -59,7 +48,7 @@ export default function MarketingBannerStrip({
 
   // Sync with incoming parent prop
   useEffect(() => {
-    if (banners && banners.length > 0) {
+    if (Array.isArray(banners)) {
       setLiveBanners(banners);
     }
   }, [banners]);
@@ -69,30 +58,18 @@ export default function MarketingBannerStrip({
     if (typeof window === "undefined") return;
 
     const handleLiveSync = (e: any) => {
-      if (e?.detail?.key === "marketing" && e?.detail?.value?.banners) {
+      if (e?.detail?.key === "marketing" && Array.isArray(e?.detail?.value?.banners)) {
         setLiveBanners(e.detail.value.banners);
       }
     };
 
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "pyur_storefront_cache" && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (parsed.marketing?.banners && Array.isArray(parsed.marketing.banners)) {
-            setLiveBanners(parsed.marketing.banners);
-          }
-        } catch {}
-      }
-    };
-
     window.addEventListener("pyur_storefront_updated", handleLiveSync);
-    window.addEventListener("storage", handleStorageChange);
 
     let channel: BroadcastChannel | null = null;
     try {
       channel = new BroadcastChannel("pyur_storefront_sync");
       channel.onmessage = (event) => {
-        if (event?.data?.type === "SYNC" && event.data.key === "marketing" && event.data.value?.banners) {
+        if (event?.data?.type === "SYNC" && event.data.key === "marketing" && Array.isArray(event.data.value?.banners)) {
           setLiveBanners(event.data.value.banners);
         }
       };
@@ -100,7 +77,6 @@ export default function MarketingBannerStrip({
 
     return () => {
       window.removeEventListener("pyur_storefront_updated", handleLiveSync);
-      window.removeEventListener("storage", handleStorageChange);
       if (channel) {
         try {
           channel.close();

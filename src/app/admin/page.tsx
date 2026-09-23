@@ -1539,16 +1539,17 @@ export default function AdminDashboard() {
                 },
             content: (mutations["content"] && now - mutations["content"].timestamp < 15000)
               ? mutations["content"].value
-              : ((activeMenuRef.current === "content" && prev?.content) ? prev.content : {
+              : {
                   announcement: {},
                   heroSlides: [],
                   consultationBanner: {},
                   footer: {},
+                  aboutUs: {},
                   ...(data.content || {})
-                }),
+                },
             settings: (mutations["settings"] && now - mutations["settings"].timestamp < 15000)
               ? mutations["settings"].value
-              : ((activeMenuRef.current === "settings" && prev?.settings) ? prev.settings : settings),
+              : (data.settings ? { ...settings, ...(data.settings || {}) } : settings),
             seo: {
               title: "Pure Ayur Herbs | 100% Certified Ayurvedic Formulations - Virja, Madhunashi & Fat Burner",
               metaDesc: "Shop authentic 100% AYUSH Certified Virja Powder & Gold Majun for Men's Stamina, Madhunashi Sugar Management, Fat Burner Tonic, and Perfect 36 Cream. Free Priority Delivery across India.",
@@ -4859,7 +4860,7 @@ export default function AdminDashboard() {
     ];
     const pillars = Array.isArray(about.pillars) && about.pillars.length > 0 ? about.pillars : defaultPillars;
 
-    const founderName = about.founderName !== undefined ? about.founderName : "Dr. Ananya Sharma (BAMS)";
+    const founderName = about.founderName !== undefined ? about.founderName : "Dr. Adil Khan";
     const founderTitle = about.founderTitle !== undefined ? about.founderTitle : "Senior Ayurvedic Vaidya & Chief Research Director";
     const founderMessage = about.founderMessage !== undefined ? about.founderMessage : "In a modern world flooded with synthetic quick-fixes, our ancient sages gifted us the science of longevity. Pure Ayur Herbs is our sacred promise to deliver that timeless Vedic wisdom with total honesty, supreme herb purity, and genuine compassion for your well-being.";
     const founderImage = about.founderImage !== undefined ? about.founderImage : "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80";
@@ -4907,7 +4908,7 @@ export default function AdminDashboard() {
         visionDesc: "To become India's most trusted natural wellness sanctuary, empowering seekers to achieve peak physical, mental, and spiritual harmony through Vedic wisdom.",
         stats: defaultStats,
         pillars: defaultPillars,
-        founderName: "Dr. Ananya Sharma (BAMS)",
+        founderName: "Dr. Adil Khan",
         founderTitle: "Senior Ayurvedic Vaidya & Chief Research Director",
         founderMessage: "In a modern world flooded with synthetic quick-fixes, our ancient sages gifted us the science of longevity. Pure Ayur Herbs is our sacred promise to deliver that timeless Vedic wisdom with total honesty, supreme herb purity, and genuine compassion for your well-being.",
         founderImage: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80",

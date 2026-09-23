@@ -701,6 +701,19 @@
     }
   ],
   "marketing": {
+    "banners": [
+      {
+        "id": "ban_1",
+        "name": "100% Certified Ayurvedic Formulations for Vitality & Energy",
+        "title": "100% Certified Ayurvedic Formulations for Vitality & Energy",
+        "subtitle": "Authentic Ayurvedic remedies formulated by certified Vaidyas.",
+        "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
+        "link": "/solution/sugar-management",
+        "ctaText": "Explore Formulations",
+        "placement": "Homepage Middle Strip",
+        "status": "Active"
+      }
+    ],
     "campaigns": [
       {
         "name": "Independence Day Sale",
@@ -717,19 +730,6 @@
         "revenue": 24000,
         "roas": 2,
         "status": "Paused"
-      }
-    ],
-    "banners": [
-      {
-        "id": "ban_1",
-        "name": "100% Certified Ayurvedic Formulations for Peak Vitality",
-        "title": "100% Certified Ayurvedic Formulations for Peak Vitality",
-        "subtitle": "Authentic Ayurvedic remedies formulated by certified Vaidyas.",
-        "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
-        "link": "/solution/sugar-management",
-        "ctaText": "Explore Formulations",
-        "placement": "Homepage Middle Strip",
-        "status": "Active"
       }
     ],
     "popups": [

@@ -45,19 +45,8 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
 
   // Cross-tab real-time sync & background refresh
   useEffect(() => {
-    // 1. Check local cache immediately on client mount
+    // 1. Fetch fresh storefront data from MongoDB in background
     if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("pyur_storefront_cache");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed?.content?.aboutUs) {
-            setAboutData(parsed.content.aboutUs);
-          }
-        }
-      } catch {}
-
-      // 2. Fetch fresh storefront data from MongoDB in background
       getStorefrontData(true)
         .then((fresh) => {
           if (fresh?.content?.aboutUs) {
@@ -74,18 +63,6 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
       }
     };
     window.addEventListener("pyur_storefront_updated", handleLiveUpdate);
-
-    const handleStorageEvent = (e: StorageEvent) => {
-      if (e.key === "pyur_storefront_cache" && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (parsed?.content?.aboutUs) {
-            setAboutData(parsed.content.aboutUs);
-          }
-        } catch {}
-      }
-    };
-    window.addEventListener("storage", handleStorageEvent);
 
     let channel: BroadcastChannel | null = null;
     try {
@@ -111,7 +88,6 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
 
     return () => {
       window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
-      window.removeEventListener("storage", handleStorageEvent);
       if (channel) {
         try {
           channel.close();

@@ -42,24 +42,25 @@ export async function getStorefrontData(forceFresh = false): Promise<any> {
   // On localhost, always ensure fresh data is fetched
   const shouldForce = forceFresh || isLocalhost;
 
-  // 1. Return existing in-memory data if valid
+  // 1. Return existing in-memory data if valid and not forcing fresh
   if (!forceFresh && cachedStorefrontData && now - lastFetchTimestamp < IN_MEMORY_TTL) {
     return cachedStorefrontData;
   }
 
-  // 2. Return currently active in-flight network request if one is already running
-  // Always share in-flight promises across components on the same render to prevent connection flooding
-  if (cachedStorefrontPromise) {
+  // 2. Return currently active in-flight network request if one is already running and not forcing fresh
+  if (!forceFresh && cachedStorefrontPromise) {
     return cachedStorefrontPromise;
   }
 
-  // 3. Initiate single deduplicated fetch
+  // 3. Initiate fresh fetch
   const url = `/api/storefront?fresh=1&_t=${now}`;
 
-  cachedStorefrontPromise = fetch(url, {
+  const currentPromise = fetch(url, {
     cache: "no-store",
     headers: {
       Accept: "application/json",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
     },
   })
     .then(async (response) => {
@@ -70,23 +71,18 @@ export async function getStorefrontData(forceFresh = false): Promise<any> {
       cachedStorefrontData = data;
       lastFetchTimestamp = Date.now();
       cachedStorefrontPromise = null;
-      if (typeof window !== "undefined" && data && typeof data === "object") {
-        try {
-          localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
-        } catch {}
-      }
       return data;
     })
     .catch((error) => {
       cachedStorefrontPromise = null;
-      // Fallback to existing cache if available even on error
       if (cachedStorefrontData) {
         return cachedStorefrontData;
       }
       throw error;
     });
 
-  return cachedStorefrontPromise;
+  cachedStorefrontPromise = currentPromise;
+  return currentPromise;
 }
 
 /**

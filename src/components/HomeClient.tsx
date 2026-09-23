@@ -93,25 +93,10 @@ export default function HomeClient({
 
   // Load real-time database products and layout from /api/storefront + Instant Local Cache
   useEffect(() => {
-    // 1. Instant cache hydration fallback
+    // Clean up any stale client-side cache so fresh Server Component SSR data is never overwritten
     if (typeof window !== "undefined") {
       try {
-        const cached = localStorage.getItem("pyur_storefront_cache");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.products && Array.isArray(parsed.products) && parsed.products.length > 0) {
-            setCatalog(parsed.products);
-          }
-          if (parsed.categories && Array.isArray(parsed.categories) && parsed.categories.length > 0) {
-            setCategories(parsed.categories);
-          }
-          if (parsed.content) {
-            setCmsData(parsed.content);
-          }
-          if (parsed.marketing) {
-            setMarketingData(parsed.marketing);
-          }
-        }
+        localStorage.removeItem("pyur_storefront_cache");
       } catch {}
     }
 
@@ -132,11 +117,6 @@ export default function HomeClient({
             setMarketingData(data.marketing);
           }
           setIsDataLoaded(true);
-          try {
-            if (data.products && data.products.length > 0) {
-              localStorage.setItem("pyur_storefront_cache", JSON.stringify(data));
-            }
-          } catch {}
         })
         .catch((e) => {
           console.error("Error loading storefront layout:", e);

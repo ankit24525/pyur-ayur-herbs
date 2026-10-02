@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-const PIXEL_ID = "123456789012345";
+const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "2362089077927963";
 
 export function trackMetaEvent(eventName: string, customData?: Record<string, any>) {
   if (typeof window !== "undefined" && window.fbq) {
@@ -68,8 +68,19 @@ export default function MetaPixel() {
   }, []);
 
   return (
-    <Suspense fallback={null}>
-      <PixelTrackerInner />
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <PixelTrackerInner />
+      </Suspense>
+      <noscript>
+        <img
+          height="1"
+          width="1"
+          style={{ display: "none" }}
+          src={`https://www.facebook.com/tr?id=${PIXEL_ID}&ev=PageView&noscript=1`}
+          alt=""
+        />
+      </noscript>
+    </>
   );
 }

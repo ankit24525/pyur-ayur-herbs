@@ -21,6 +21,7 @@ import { products, Product, concerns } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
 import { X, User } from "lucide-react";
 import GetAppModal from "@/components/GetAppModal";
+import { trackMetaEvent } from "@/components/MetaPixel";
 
 const getShortName = (name: string) => {
   if (name.includes("Sugar")) return "Sugar";
@@ -251,6 +252,16 @@ export default function HomeClient({
       nextCart.push({ product, quantity: 1 });
     }
     saveCartState(nextCart);
+
+    try {
+      trackMetaEvent("AddToCart", {
+        content_name: product.name,
+        content_ids: [product.id],
+        content_type: "product",
+        value: product.price,
+        currency: "INR",
+      });
+    } catch {}
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {

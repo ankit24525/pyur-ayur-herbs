@@ -297,6 +297,16 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
       } catch {}
       return updated;
     });
+
+    try {
+      trackMetaEvent("AddToCart", {
+        content_name: prod.name,
+        content_ids: [prod.id],
+        content_type: "product",
+        value: prod.price,
+        currency: "INR",
+      });
+    } catch {}
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {

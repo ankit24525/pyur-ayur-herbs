@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateOTP, saveOTP, sendWhatsAppOTP } from "@/lib/whatsapp-otp";
 import { sendOTPEmail } from "@/lib/email";
+import { getClientIp, checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
@@ -15,6 +16,35 @@ export async function POST(request: Request) {
         { success: false, error: "A valid mobile phone number or email is required." },
         { status: 400 }
       );
+    }
+
+    // Rate Limiting Protection
+    const clientIp = getClientIp(request);
+
+    // 1. IP Limit: Max 10 OTP requests per 10 minutes per IP
+    const ipCheck = checkRateLimit(`otp:ip:${clientIp}`, 10, 600);
+    if (!ipCheck.allowed) {
+      return rateLimitResponse(
+        ipCheck.retryAfterSeconds,
+        "Too many verification requests from this device. Please wait a few minutes."
+      );
+    }
+
+    // 2. Phone Limit: Max 3 OTP requests per 10 minutes, with 30s cooldown between attempts
+    if (cleanPhone) {
+      const phoneCheck = checkRateLimit(`otp:phone:${cleanPhone}`, 3, 600, 30);
+      if (!phoneCheck.allowed) {
+        if (phoneCheck.cooldownRemainingSeconds) {
+          return rateLimitResponse(
+            phoneCheck.cooldownRemainingSeconds,
+            `Please wait ${phoneCheck.cooldownRemainingSeconds} seconds before requesting another code.`
+          );
+        }
+        return rateLimitResponse(
+          phoneCheck.retryAfterSeconds,
+          "Maximum verification attempts reached for this phone number. Please try again in 10 minutes."
+        );
+      }
     }
 
     const otp = generateOTP();

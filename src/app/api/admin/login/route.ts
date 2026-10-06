@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getClientIp, checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,17 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "pureayurherbadmin@24";
 
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+
+    // Brute force protection: Max 5 failed login attempts per 10 minutes per IP
+    const rateCheck = checkRateLimit(`login:ip:${clientIp}`, 5, 600);
+    if (!rateCheck.allowed) {
+      return rateLimitResponse(
+        rateCheck.retryAfterSeconds,
+        `Too many login attempts. Please wait ${rateCheck.retryAfterSeconds} seconds before trying again.`
+      );
+    }
+
     const { username, password } = await request.json();
 
     if (!username || !password) {

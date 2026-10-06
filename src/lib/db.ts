@@ -260,6 +260,28 @@ function sanitizeDBData(data: any): DBData {
   if (!Array.isArray(data.blogs)) data.blogs = [];
   if (!Array.isArray(data.media) || data.media.length === 0) data.media = defaultMedia;
 
+  const defaultProductImageMap: Record<string, string> = {
+    "virja-powder": "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80",
+    "virja-gold-majun": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80",
+    "madhunashi-powder": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=600&q=80",
+    "madhunashi-syp": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+    "fat-burner": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80",
+    "perfect-36-cream": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80",
+  };
+
+  data.products = data.products.map((p: any) => {
+    const fallback = defaultProductImageMap[p.slug] || "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80";
+    const image = (typeof p.image === "string" && !p.image.startsWith("data:") && p.image.length < 500) ? p.image : fallback;
+    const images = Array.isArray(p.images)
+      ? p.images.filter((img: any) => typeof img === "string" && !img.startsWith("data:") && img.length < 500)
+      : [image];
+    return {
+      ...p,
+      image,
+      images: images.length > 0 ? images : [image],
+    };
+  });
+
   // Filter out any obsolete dummy questions from MongoDB and guarantee default FAQs
   if (Array.isArray(data.faqs)) {
     data.faqs = data.faqs.filter((f: any) => !isLegacyFaq(f));
@@ -387,11 +409,33 @@ function sanitizeDBData(data: any): DBData {
       };
     }
     if (!Array.isArray(data.content.heroSlides)) data.content.heroSlides = [];
-    if (!data.content.consultationBanner) data.content.consultationBanner = {};
+    data.content.heroSlides = data.content.heroSlides.map((slide: any) => ({
+      ...slide,
+      image: (typeof slide.image === "string" && !slide.image.startsWith("data:") && slide.image.length < 500)
+        ? slide.image
+        : "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80",
+    }));
+
+    if (!data.content.consultationBanner || typeof data.content.consultationBanner !== "object") {
+      data.content.consultationBanner = {};
+    }
+    if (data.content.consultationBanner.doctorImage?.startsWith("data:") || (data.content.consultationBanner.doctorImage?.length || 0) > 500) {
+      data.content.consultationBanner.doctorImage = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80";
+    }
+
     if (!data.content.footer) data.content.footer = {};
     if (!data.content.aboutUs || typeof data.content.aboutUs !== "object") {
       data.content.aboutUs = {};
     }
+  }
+
+  if (Array.isArray(data.blogs)) {
+    data.blogs = data.blogs.map((b: any) => ({
+      ...b,
+      image: (typeof b.image === "string" && !b.image.startsWith("data:") && b.image.length < 500)
+        ? b.image
+        : "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80",
+    }));
   }
 
   if (!data.seo || typeof data.seo !== "object") {

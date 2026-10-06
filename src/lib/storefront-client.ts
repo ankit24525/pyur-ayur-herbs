@@ -52,17 +52,25 @@ export async function getStorefrontData(forceFresh = false): Promise<any> {
     return cachedStorefrontPromise;
   }
 
-  // 3. Initiate fresh fetch
-  const url = `/api/storefront?fresh=1&_t=${now}`;
+  // 3. Initiate fetch (clean URL allows Vercel Edge CDN caching for public users; only bust cache if explicitly forced)
+  const url = shouldForce ? `/api/storefront?fresh=1&_t=${now}` : "/api/storefront";
 
-  const currentPromise = fetch(url, {
-    cache: "no-store",
-    headers: {
-      Accept: "application/json",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      Pragma: "no-cache",
-    },
-  })
+  const fetchOptions: RequestInit = shouldForce
+    ? {
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      }
+    : {
+        headers: {
+          Accept: "application/json",
+        },
+      };
+
+  const currentPromise = fetch(url, fetchOptions)
     .then(async (response) => {
       if (!response.ok) {
         throw new Error(`Storefront API error (${response.status})`);

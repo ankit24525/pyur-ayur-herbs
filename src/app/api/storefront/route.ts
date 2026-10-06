@@ -20,10 +20,64 @@ export async function GET(request: Request) {
         })
       : [];
 
+    // Safe image sanitizer to guarantee responses never transmit heavy Base64 strings over the public API
+    const sanitizeImage = (url: any, fallback: string): string => {
+      if (typeof url !== "string" || !url || url.startsWith("data:image/") || url.length > 500) {
+        return fallback;
+      }
+      return url;
+    };
+
+    const defaultProductImageMap: Record<string, string> = {
+      "virja-powder": "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80",
+      "virja-gold-majun": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80",
+      "madhunashi-powder": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=600&q=80",
+      "madhunashi-syp": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+      "fat-burner": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80",
+      "perfect-36-cream": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80",
+    };
+
+    const rawProducts = Array.isArray(db.products) && db.products.length > 0 ? db.products : products;
+    const sanitizedProducts = rawProducts.map((p: any) => {
+      const fallback = defaultProductImageMap[p.slug] || "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80";
+      const cleanImage = sanitizeImage(p.image, fallback);
+      const cleanImages = Array.isArray(p.images)
+        ? p.images
+            .map((img: any) => sanitizeImage(img, ""))
+            .filter((img: string) => img.length > 0)
+        : [cleanImage];
+      return {
+        ...p,
+        image: cleanImage,
+        images: cleanImages.length > 0 ? cleanImages : [cleanImage],
+      };
+    });
+
+    const rawContent = db.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
+    const sanitizedContent = {
+      ...rawContent,
+      heroSlides: Array.isArray(rawContent.heroSlides)
+        ? rawContent.heroSlides.map((slide: any) => ({
+            ...slide,
+            image: sanitizeImage(
+              slide.image,
+              "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80"
+            ),
+          }))
+        : [],
+      consultationBanner: {
+        ...(rawContent.consultationBanner || {}),
+        doctorImage: sanitizeImage(
+          rawContent.consultationBanner?.doctorImage,
+          "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80"
+        ),
+      },
+    };
+
     const responseData = {
-      products: Array.isArray(db.products) && db.products.length > 0 ? db.products : products,
+      products: sanitizedProducts,
       categories: Array.isArray(db.categories) && db.categories.length > 0 ? db.categories : concerns,
-      content: db.content || { announcement: {}, heroSlides: [], consultationBanner: {} },
+      content: sanitizedContent,
       reviews: db.reviews || [],
       testimonials: db.testimonials || [],
       faqs: cleanFaqs.length > 0 ? cleanFaqs : defaultFaqs,
@@ -36,10 +90,10 @@ export async function GET(request: Request) {
               author: b.author,
               date: b.date,
               status: b.status,
-              image:
-                b.image && typeof b.image === "string" && b.image.trim().length > 0
-                  ? b.image
-                  : "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
+              image: sanitizeImage(
+                b.image,
+                "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80"
+              ),
               readTime: b.readTime || "4 min",
               excerpt: b.excerpt || (typeof b.content === "string" ? b.content.slice(0, 150) : ""),
             }))
@@ -96,19 +150,26 @@ export async function GET(request: Request) {
       },
     };
 
-    // Always return fully fresh data - never allow CDN to cache API responses
-    // since storefront-client.ts already adds ?fresh=1&_t=timestamp to bust any possible cache
-    const cacheControlHeader = "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0";
+    // Edge CDN Caching: Allow Vercel Edge CDN to cache responses for 60 seconds (with 300s background revalidation)
+    // Only bypass CDN cache when an admin explicitly requests fresh data (?fresh=1)
+    const cacheControlHeader = forceFresh
+      ? "no-store, no-cache, must-revalidate, max-age=0, s-maxage=0"
+      : "public, s-maxage=60, stale-while-revalidate=300";
+
+    const responseHeaders: Record<string, string> = {
+      "Cache-Control": cacheControlHeader,
+      "CDN-Cache-Control": cacheControlHeader,
+      "Vercel-CDN-Cache-Control": cacheControlHeader,
+    };
+
+    if (forceFresh) {
+      responseHeaders["Pragma"] = "no-cache";
+      responseHeaders["Surrogate-Control"] = "no-store";
+    }
 
     return NextResponse.json(responseData, {
       status: 200,
-      headers: {
-        "Cache-Control": cacheControlHeader,
-        "Pragma": "no-cache",
-        "Surrogate-Control": "no-store",
-        "CDN-Cache-Control": "no-store",
-        "Vercel-CDN-Cache-Control": "no-store",
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     console.error("Storefront API Error:", error);

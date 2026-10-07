@@ -10,8 +10,10 @@
       "rating": 5,
       "reviews": 2,
       "badge": "NEW",
-      "image": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=600&q=80",
-      "images": [],
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381364/pure_ayur_herbs/products/kleuwprcuiyj1duvlojh.jpg",
+      "images": [
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381364/pure_ayur_herbs/products/kleuwprcuiyj1duvlojh.jpg"
+      ],
       "ingredients": [
         "Herbal Extract"
       ],
@@ -36,8 +38,10 @@
       "rating": 5,
       "reviews": 0,
       "badge": "NEW",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
-      "images": [],
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381365/pure_ayur_herbs/products/ospkjprkxo1rzsb6ghmy.jpg",
+      "images": [
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381365/pure_ayur_herbs/products/ospkjprkxo1rzsb6ghmy.jpg"
+      ],
       "ingredients": [
         "Herbal Extract"
       ],
@@ -60,8 +64,10 @@
       "rating": 4,
       "reviews": 1,
       "badge": "NEW",
-      "image": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80",
-      "images": [],
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381366/pure_ayur_herbs/products/xemjcovn6mbh6edriszp.jpg",
+      "images": [
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381366/pure_ayur_herbs/products/xemjcovn6mbh6edriszp.jpg"
+      ],
       "ingredients": [
         "Herbal Extract"
       ],
@@ -84,8 +90,10 @@
       "rating": 5,
       "reviews": 0,
       "badge": "NEW",
-      "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80",
-      "images": [],
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381367/pure_ayur_herbs/products/aux22j4iqo4xus6bbja4.jpg",
+      "images": [
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381367/pure_ayur_herbs/products/aux22j4iqo4xus6bbja4.jpg"
+      ],
       "ingredients": [
         "Herbal Extract"
       ],
@@ -110,8 +118,10 @@
       "rating": 5,
       "reviews": 0,
       "badge": "NEW",
-      "image": "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80",
-      "images": [],
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg",
+      "images": [
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg"
+      ],
       "ingredients": [
         "Herbal Extract"
       ],
@@ -134,9 +144,9 @@
       "rating": 5,
       "reviews": 0,
       "badge": "NEW",
-      "image": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381369/pure_ayur_herbs/products/x2yhpnwfcsesqdjjmzll.jpg",
       "images": [
-        "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381370/pure_ayur_herbs/products/i61gzjzqgb1svtwafpix.jpg"
       ],
       "ingredients": [
         "Herbal Extract"
@@ -357,6 +367,53 @@
       "shiprocketShipmentId": 1598934672,
       "shiprocketStatus": "Pushed",
       "awb": "SR-1598934672"
+    },
+    {
+      "id": "PYR-ORD-102420",
+      "userId": null,
+      "isLoggedInUser": false,
+      "customer": "MOHD ARIF",
+      "email": "arifstudio87@gmail.com",
+      "phone": "8791562510",
+      "altPhone": "8273158571",
+      "companyName": "",
+      "landmark": "near shiv mandir",
+      "address": "NH-74, Landmark: near shiv mandir",
+      "rawAddress": "NH-74",
+      "pincode": "262405",
+      "city": "Udham Singh Nagar",
+      "state": "Uttarakhand",
+      "country": "India",
+      "shippingAddress": {
+        "street": "NH-74",
+        "landmark": "near shiv mandir",
+        "companyName": "",
+        "city": "Udham Singh Nagar",
+        "state": "Uttarakhand",
+        "pincode": "262405",
+        "country": "India"
+      },
+      "subtotal": 449,
+      "discount": 22,
+      "couponDiscount": 0,
+      "coinsRedeemed": 0,
+      "total": 476,
+      "method": "PhonePe",
+      "status": "Payment Failed",
+      "paymentFailedAlertSent": false,
+      "createdAt": "2026-09-23T17:18:32.907Z",
+      "date": "23 Sept 2026",
+      "items": "VIRJA GOLD MAJUN x1",
+      "itemsRaw": [
+        {
+          "productId": "prod_1789129223995",
+          "quantity": 1
+        }
+      ],
+      "shiprocketOrderId": 1608145444,
+      "shiprocketShipmentId": 1604361294,
+      "shiprocketStatus": "Pushed",
+      "awb": "SR-1604361294"
     }
   ],
   "coupons": [
@@ -386,6 +443,114 @@
     }
   ],
   "leads": [
+    {
+      "id": "WA-1791083391555",
+      "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSQzA2MURFOUUxODk2QjhBQTQxAA==",
+      "name": "WhatsApp Customer",
+      "phone": "918069087895",
+      "source": "WhatsApp Business Chat",
+      "message": "As there was no query from your side, we are marking this chat as solved. You will now be talking with bot.",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "4/10/2026, 8:39:51 am"
+    },
+    {
+      "id": "WA-1791081574094",
+      "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSNkU5MzE0QTRCRUNENEQ5RkVCAA==",
+      "name": "WhatsApp Customer",
+      "phone": "918069087895",
+      "source": "WhatsApp Business Chat",
+      "message": "Good Morning!\r\nWelcome to Online Legal India.\r\n(Government recognized and ISO Certified)\r\n(Brand Ambassador : Mr. Sourav Ganguly)\r\nThis is Sayantan\r\nHow can I assist you today?",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "4/10/2026, 8:09:34 am"
+    },
+    {
+      "id": "WA-1791081573152",
+      "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSRjVFNTgyRDI2NEQ5Nzg3OTMzAA==",
+      "name": "WhatsApp Customer",
+      "phone": "918069087895",
+      "source": "WhatsApp Business Chat",
+      "message": "You are now communicating with Sayantan Bhattacharyya.",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "4/10/2026, 8:09:33 am"
+    },
+    {
+      "id": "WA-1791080069042",
+      "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSRTJFRjBFQUZBQjc1NzlERDMyAA==",
+      "name": "WhatsApp Customer",
+      "phone": "918069087895",
+      "source": "WhatsApp Business Chat",
+      "message": "Our Live Agent Rajat Srimani, marked the chat as resolved, you are now communicating with bot.",
+      "botReply": "🩺 *Ayurvedic Vaidya & Customer Support Desk*\n\nNamaste WhatsApp Customer! Your request has been marked for priority attention.\n\n👨‍⚕️ Our certified Ayurvedic Vaidya and support team have received your details. A representative will connect with you right here on WhatsApp or via call shortly.\n\n⏰ *Consultation Hours:* Mon – Sat, 10:00 AM – 7:00 PM IST\n📞 *Direct Support Helpline:* +91 72478 24101\n✉️ *Email Desk:* info@pureayurherbs.com\n\nIn the meantime, feel free to describe any specific symptoms or questions you have. We are here to help! 🙏",
+      "intent": "HUMAN_HANDOFF",
+      "status": "Needs Attention",
+      "date": "4/10/2026, 7:44:29 am"
+    },
+    {
+      "id": "WA-1791079949936",
+      "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSMkY2REYyQkIzNkE1QTRFRkVCAA==",
+      "name": "WhatsApp Customer",
+      "phone": "918069087895",
+      "source": "WhatsApp Business Chat",
+      "message": "How can i help you sir?",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "4/10/2026, 7:42:29 am"
+    },
+    {
+      "id": "WA-1791078609793",
+      "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSMDdCRTU3Q0JENUVDODU0RTIwAA==",
+      "name": "WhatsApp Customer",
+      "phone": "918069087895",
+      "source": "WhatsApp Business Chat",
+      "message": "Good Morning!\nWelcome to Online Legal India.\n(Government-recognised and ISO certified)\n(Brand Ambassador : Mr. Sourav Ganguly)\nThis is Rajat\nHow can i help?",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "4/10/2026, 7:20:09 am"
+    },
+    {
+      "id": "WA-1791032175885",
+      "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSOUVGQ0VCNkI4QzRCNERGQUMxAA==",
+      "name": "WhatsApp Customer",
+      "phone": "918069087895",
+      "source": "WhatsApp Business Chat",
+      "message": "Customer sent an attachment or interactive response",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "3/10/2026, 6:26:15 pm"
+    },
+    {
+      "id": "WA-1790235527410",
+      "waMessageId": "wamid.HBgMOTE3NTAwMjExOTYyFQIAEhgUMkE5N0RGNDkxMUEyQzEzRjM0N0UA",
+      "name": "KABEER KHAN",
+      "phone": "917500211962",
+      "source": "WhatsApp Business Chat",
+      "message": "5",
+      "botReply": "🌿 *Pure Ayur Herbs - Available Products & Price List* 🌿\n\nAll formulations are 100% Ministry of AYUSH Certified:\n\n1️⃣ *VIRJA POWDER* (₹1199)\n👉 Energy and Vitality\n🔗 https://www.purreayurherbs.com/products/virja-powder\n\n2️⃣ *VIRJA GOLD MAJUN* (₹449)\n👉 Energy and Vitality\n🔗 https://www.purreayurherbs.com/products/virja-gold-majun\n\n3️⃣ *MADHUNASHI POWDER* (₹1487)\n👉 Sugar Management\n🔗 https://www.purreayurherbs.com/products/madhunashi-powder\n\n4️⃣ *MADHUNASHI SYP* (₹410)\n👉 Sugar Management\n🔗 https://www.purreayurherbs.com/products/madhunashi-syp\n\n5️⃣ *FAT BURNER* (₹499)\n👉 Gym and Fitness\n🔗 https://www.purreayurherbs.com/products/fat-burner\n\n6️⃣ *PERFECT 36 CREAM* (₹598)\n👉 Womens Health\n🔗 https://www.purreayurherbs.com/products/perfect-36-cream\n\n🚚 *Free Priority Shipping Across India | Cash on Delivery (COD) Available*\n🌐 Browse full store: https://www.purreayurherbs.com\n\n_💡 Reply with any product name (e.g. *Virja* or *Madhunashi*) for benefits and dosage!_",
+      "intent": "CATALOG",
+      "status": "AI Resolved",
+      "date": "24/9/2026, 1:08:47 pm"
+    },
+    {
+      "id": "WA-1790235463524",
+      "waMessageId": "wamid.HBgMOTE3NTAwMjExOTYyFQIAEhgUMkE2N0UzNEUzNkQyQkUzMDU0MDgA",
+      "name": "KABEER KHAN",
+      "phone": "917500211962",
+      "source": "WhatsApp Business Chat",
+      "message": "Namaste!",
+      "botReply": "*Namaste KABEER KHAN! 🙏 Welcome to Pure Ayur Herbs.*\n\nI am your 24/7 Ayurvedic Wellness Assistant. How may I assist your health journey today?\n\n1️⃣ Reply *1* to *Track an existing Order*\n2️⃣ Reply *2* to *Cancel an Order* (Instant 1-Click Cancel)\n3️⃣ Reply *3* for *Remedy Recommendations* (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for *Dosage & Usage Instructions*\n5️⃣ Reply *5* for *Full Product Catalog & Prices*\n6️⃣ Reply *6* or *Support* to *Talk with our Ayurvedic Doctor*\n\n_💡 Simply reply with *1*, *2*, *3*, *4*, *5*, *6* or type any health concern in Hindi, English, or Hinglish!_",
+      "intent": "GREETING",
+      "status": "AI Resolved",
+      "date": "24/9/2026, 1:07:43 pm"
+    },
     {
       "id": "WA-1789972514479",
       "waMessageId": "wamid.HBgMOTE5MjU4MzUyNzczFQIAEhgWM0VCMDY3MTEyOTBEMkYwQkVGQUJCNQA=",
@@ -547,20 +712,22 @@
       "title": "Benefits of Pure Himalayan Shilajit Gold Resin",
       "author": "Dr. A. Sharma",
       "date": "10 Aug 2026",
-      "status": "Published"
+      "status": "Published",
+      "image": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80"
     },
     {
       "title": "Ayurvedic Way to Manage Blood Sugar Levels",
       "author": "Dr. V. Joshi",
       "date": "05 Aug 2026",
-      "status": "Published"
+      "status": "Published",
+      "image": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80"
     },
     {
       "id": "madhunashi-healthy-blood-sugar-levels-ke-liye-natural-ayurvedic-support",
       "title": "Madhunashi: Healthy Blood Sugar Levels Ke Liye Natural Ayurvedic Support",
       "author": "Dr ADIL KHAN",
       "content": "मधुनाशी (Madhunashi): Healthy Blood Sugar Levels Ke Liye Ayurvedic Support\nAaj ke busy lifestyle mein khaan-paan aur stress ki wajah se sugar levels ko naturally balance rakhna ek challenge ban gaya hai. Isi zaroorat ko dhyan mein rakhte hue Pure Ayur Herbs leke aaya hai Madhunashi — ek 100% natural powder jo traditional Ayurvedic herbs ke sahi combination se banaya gaya hai.\nMadhunashi Mein Kya Khaas Hai?\nMadhunashi teen powerful ayurvedic ingredients ka blend hai:\nGudmar (Gymnema Sylvestre) — Ayurveda mein iska naam hi \"sugar destroyer\" hai. Yeh herb sadiyon se healthy sugar metabolism ko support karne ke liye use hoti aa rahi hai.\nKarela (Bitter Gourd) — Ghar-ghar mein jaana-pehchana yeh ingredient apne natural bitter compounds ke liye jaana jaata hai, jo sugar levels ko balance rakhne mein madad karte hain.\nJamun (Syzygium Cumini) — Jamun ke beej Ayurveda mein antioxidant support aur healthy sugar levels maintain karne ke liye traditionally use hote hain.\nMadhunashi Kis Tarah Help Karta Hai\nHealthy sugar levels maintain karne mein sahayak\nBody ko natural antioxidant support pradaan karta hai\n100% natural, bina kisi harmful chemical ke\nGMP certified facility mein manufacture kiya gaya\nGluten-free aur daily wellness routine mein aasani se shamil karne yogya\nKaise Use Karein\nMadhunashi powder ko doctor ya Ayurvedic practitioner ki salah anusar apni daily wellness routine mein shamil karein. Behtar results ke liye ise balanced diet aur active lifestyle ke saath lein.\nKyun Chunein Pure Ayur Herbs?\nHum traditional Ayurvedic gyaan ko modern quality standards ke saath jodte hain. Har batch GMP certified environment mein taiyar kiya jaata hai, taaki aapko shuddh aur bharosemand product mile.\nDisclaimer: Yeh product ek Ayurvedic wellness supplement hai aur healthy sugar levels ko naturally support karne ke liye banaya gaya hai. Yeh kisi bhi bimari ka ilaaj, diagnosis ya cure nahi hai. Kripya kisi bhi health condition ke liye apne doctor se salah zaroor lein.",
-      "image": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=800&q=80",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381377/pure_ayur_herbs/blogs/jybjy3n2hjss5dcenskl.png",
       "date": "8 Sept 2026",
       "status": "Published",
       "relatedProducts": [
@@ -816,7 +983,7 @@
         "ctaText": "SHOP NOW",
         "href": "#data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAA",
         "badge": "Traditional Ayurvedic Formula",
-        "image": "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381371/pure_ayur_herbs/banners/bidpzfec1hwxx0rpeznr.jpg",
         "bgColor": "#4a0404"
       },
       {
@@ -828,7 +995,7 @@
         "ctaText": "SHOP NOW",
         "href": "#shop",
         "badge": "100% Natural & GMP Certified",
-        "image": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=1200&q=80",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381372/pure_ayur_herbs/banners/nburc3snato4yevma7uh.jpg",
         "bgColor": "#1d3b24"
       },
       {
@@ -840,7 +1007,7 @@
         "ctaText": "SHOP NOW",
         "href": "#shop",
         "badge": "Ayurvedic Slim Tonic",
-        "image": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381374/pure_ayur_herbs/banners/ykhf8ipolmhyqg8h3hwa.jpg",
         "bgColor": "#78350f"
       }
     ],
@@ -853,7 +1020,7 @@
       "ctaText": " Chat with Doctor",
       "doctorsOnlineText": "Available Now",
       "availableSlotText": "Slots Available",
-      "doctorImage": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80"
+      "doctorImage": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381375/pure_ayur_herbs/banners/mpsfirl1sl3oqebkl9lf.jpg"
     },
     "footer": {
       "companyLegalName": "Pure Ayur Herbs ",
@@ -928,7 +1095,7 @@
       "visionDesc": "To become India's most trusted natural wellness sanctuary, empowering seekers to achieve peak physical, mental, and spiritual harmony through Vedic wisdom.",
       "stats": [
         {
-          "value": "1,000+",
+          "value": "Thousand +",
           "label": "Trusted by thousands across India"
         },
         {
@@ -936,11 +1103,11 @@
           "label": "Pure Natural Botanicals"
         },
         {
-          "value": "15+",
+          "value": "Experienced",
           "label": "Certified Ayurvedic Vaidyas"
         },
         {
-          "value": "AYUSH-Licensed & GMP",
+          "value": "AYUSH-Licensed ",
           "label": "Certified Manufacturing"
         }
       ],
@@ -973,7 +1140,8 @@
       "ctaTitle": "Begin Your Natural Healing Journey Today",
       "ctaSubtitle": "Explore our classical Ayurvedic formulations or speak with our certified Vaidyas for free guidance.",
       "ctaButtonText": "Shop All Remedies",
-      "ctaButtonLink": "/#products"
+      "ctaButtonLink": "/#products",
+      "guaranteeSubtitle": "Lab Tested & Certified Safe"
     }
   },
   "users": [
@@ -1165,6 +1333,20 @@
       "purpose": "checkout",
       "expiresAt": 1789997052905,
       "createdAt": 1789996452905
+    },
+    {
+      "identifier": "8791562510",
+      "otp": "799907",
+      "purpose": "checkout",
+      "expiresAt": 1790217004176,
+      "createdAt": 1790216404176
+    },
+    {
+      "identifier": "arifstudio87@gmail.com",
+      "otp": "799907",
+      "purpose": "checkout",
+      "expiresAt": 1790217006289,
+      "createdAt": 1790216406289
     }
   ],
   "categories": [
@@ -1236,6 +1418,29 @@
     }
   ],
   "abandonedCarts": [
+    {
+      "id": "AC-1790183820938",
+      "userId": null,
+      "isLoggedInUser": false,
+      "phone": "8791562510",
+      "name": "MOHD ARIF",
+      "email": "arifstudio87@gmail.com",
+      "items": [
+        {
+          "id": "1",
+          "name": "Ayurvedic Formulation",
+          "quantity": 1,
+          "price": 999
+        }
+      ],
+      "cartTotal": 999,
+      "status": "Abandoned",
+      "discountCode": "AYUR5",
+      "recoveryMessagesSent": 0,
+      "createdAt": "2026-09-23T17:17:00.938Z",
+      "lastActive": "2026-09-24T02:18:32.152Z",
+      "recoveryUrl": "https://www.purreayurherbs.com/cart"
+    },
     {
       "id": "AC-1789996408507",
       "userId": "1786944000748",
@@ -1400,9 +1605,9 @@
   ],
   "verifiedPhones": [
     {
-      "phone": "6388870437",
-      "verifiedAt": 1789996491729,
-      "expiresAt": 1789998291729
+      "phone": "8791562510",
+      "verifiedAt": 1790183911968,
+      "expiresAt": 1790185711968
     }
   ],
   "media": [

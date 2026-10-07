@@ -659,6 +659,27 @@ export async function readDB(bypassCache = false): Promise<DBData> {
       ).catch((err) => console.error("[MongoDB FAQ Migration Error]:", err));
     }
 
+    // Auto-migrate old Base64 images in MongoDB to lightweight CDN URLs (shrinks MongoDB document from 1.43 MB to ~60 KB)
+    const hasBase64Images =
+      (Array.isArray(cleanData.products) && cleanData.products.some((p: any) => typeof p.image === "string" && p.image.startsWith("data:"))) ||
+      (Array.isArray(cleanData.blogs) && cleanData.blogs.some((b: any) => typeof b.image === "string" && b.image.startsWith("data:"))) ||
+      (Array.isArray(cleanData.content?.heroSlides) && cleanData.content.heroSlides.some((s: any) => typeof s.image === "string" && s.image.startsWith("data:"))) ||
+      (typeof cleanData.content?.consultationBanner?.doctorImage === "string" && cleanData.content.consultationBanner.doctorImage.startsWith("data:"));
+
+    if (hasBase64Images) {
+      void db.collection("store_data").updateOne(
+        { _id: "main" as any },
+        {
+          $set: {
+            products: sanitized.products,
+            blogs: sanitized.blogs,
+            "content.heroSlides": sanitized.content.heroSlides,
+            "content.consultationBanner": sanitized.content.consultationBanner,
+          },
+        }
+      ).catch((err) => console.error("[MongoDB Base64 Migration Error]:", err));
+    }
+
     dbMemoryCache = { data: sanitized, timestamp: Date.now() };
     writeLocalDB(sanitized);
     return sanitized;

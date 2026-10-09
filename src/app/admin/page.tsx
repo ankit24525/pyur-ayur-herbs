@@ -66,6 +66,7 @@ import {
   Upload,
   Tag,
   Send,
+  Printer,
 } from "lucide-react";
 import { formatSeoTitle, formatSeoDescription, SITE_URL } from "@/lib/seo-schema";
 import { defaultFaqs } from "@/lib/default-faqs";
@@ -1179,6 +1180,10 @@ export default function AdminDashboard() {
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [orderPaymentFilter, setOrderPaymentFilter] = useState("All");
   const [pushingSrOrderId, setPushingSrOrderId] = useState<string | null>(null);
+  const [pushingNimbusOrderId, setPushingNimbusOrderId] = useState<string | null>(null);
+  const [togglingLogistics, setTogglingLogistics] = useState(false);
+  const [logisticsDiag, setLogisticsDiag] = useState<any>(null);
+  const [isRunningLogisticsDiag, setIsRunningLogisticsDiag] = useState(false);
 
   const [seoProductFilter, setSeoProductFilter] = useState("");
   const [seoStatusFilter, setSeoStatusFilter] = useState("all");
@@ -1734,6 +1739,104 @@ export default function AdminDashboard() {
       } catch {
         alert("Error deleting order.");
       }
+    }
+  };
+
+  const handleToggleLogisticsPartner = async (newPartner: "nimbuspost" | "shiprocket") => {
+    setTogglingLogistics(true);
+    try {
+      const res = await fetch("/api/admin/logistics-toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partner: newPartner }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`🟢 ${data.message}`);
+        setDbData((prev: any) => ({
+          ...prev,
+          settings: {
+            ...prev.settings,
+            activeLogisticsPartner: newPartner,
+          },
+        }));
+      } else {
+        showToast(`🔴 Failed to switch partner: ${data.error}`);
+      }
+    } catch {
+      showToast("🔴 Network error toggling logistics partner.");
+    } finally {
+      setTogglingLogistics(false);
+    }
+  };
+
+  const handlePushToNimbus = async (orderId: string) => {
+    setPushingNimbusOrderId(orderId);
+    try {
+      const res = await fetch("/api/admin/nimbuspost-push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`🟢 ${data.message}`);
+        setDbData((prev: any) => ({
+          ...prev,
+          orders: (prev.orders || []).map((ord: any) =>
+            ord.id === orderId
+              ? {
+                  ...ord,
+                  nimbusOrderId: data.orderId || ord.nimbusOrderId,
+                  nimbusAwb: data.awb || ord.nimbusAwb,
+                  awb: data.awb || ord.awb,
+                  nimbusCourierName: data.courierName || ord.nimbusCourierName,
+                  nimbusLabelUrl: data.labelUrl || ord.nimbusLabelUrl,
+                  nimbusTrackingUrl: data.trackingUrl || ord.nimbusTrackingUrl,
+                  nimbusStatus: "Booked",
+                  logisticsPartner: "nimbuspost",
+                }
+              : ord
+          ),
+        }));
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setSelectedOrder((prev: any) => ({
+            ...prev,
+            nimbusOrderId: data.orderId || prev.nimbusOrderId,
+            nimbusAwb: data.awb || prev.nimbusAwb,
+            awb: data.awb || prev.awb,
+            nimbusCourierName: data.courierName || prev.nimbusCourierName,
+            nimbusLabelUrl: data.labelUrl || prev.nimbusLabelUrl,
+            nimbusTrackingUrl: data.trackingUrl || prev.nimbusTrackingUrl,
+            nimbusStatus: "Booked",
+            logisticsPartner: "nimbuspost",
+          }));
+        }
+      } else {
+        showToast(`🔴 NimbusPost Error: ${data.error}`);
+      }
+    } catch {
+      showToast("🔴 Network Error pushing order to NimbusPost.");
+    } finally {
+      setPushingNimbusOrderId(null);
+    }
+  };
+
+  const handleRunLogisticsDiagnostic = async () => {
+    setIsRunningLogisticsDiag(true);
+    try {
+      const res = await fetch("/api/admin/logistics-verify");
+      const data = await res.json();
+      if (data.success) {
+        setLogisticsDiag(data);
+        showToast("🟢 Logistics diagnostic check complete!");
+      } else {
+        showToast(`🔴 Diagnostic check failed: ${data.error}`);
+      }
+    } catch {
+      showToast("🔴 Network error running logistics diagnostic.");
+    } finally {
+      setIsRunningLogisticsDiag(false);
     }
   };
 
@@ -6775,49 +6878,36 @@ export default function AdminDashboard() {
 
             {/* 2. Orders Panel (All subTab options: all, Pending, Processing, Shipped, Delivered, Cancelled, Returns & Refunds) */}
             {activeMenu === "orders" && (() => {
-              const filteredOrders = dbData.orders
-                .filter((o: any) => {
-                  // Filter by subTab status
-                  if (subTab !== "all") {
-                    if (subTab === "Pending OTP") {
-                      return o.status === "Pending OTP";
-                    }
-                    if (subTab === "Pending Payment") {
-                      return o.status === "Pending Payment";
-                    }
-                    if (subTab === "Processing") {
-                      return o.status === "Processing" || o.status === "Verified";
-                    }
-                    if (subTab === "Shipped") {
-                      return o.status === "Shipped";
-                    }
-                    if (subTab === "Delivered") {
-                      return o.status === "Delivered";
-                    }
-                    if (subTab === "Cancelled") {
-                      return o.status === "Cancelled";
-                    }
-                    if (subTab === "Returns") {
-                      return o.status === "Return Request" || o.status === "Returned" || o.status === "Refunded";
-                    }
-                    return o.status === subTab;
-                  }
-                  
-                  // Filter by Payment Method
-                  if (orderPaymentFilter !== "All" && o.method !== orderPaymentFilter) return false;
-                  
-                  // Filter by Search Query (ID, Customer Name, Phone, or Items content)
-                  if (orderSearchQuery.trim()) {
-                    const query = orderSearchQuery.toLowerCase();
-                    const matchesId = o.id.toLowerCase().includes(query);
-                    const matchesCustomer = o.customer.toLowerCase().includes(query);
-                    const matchesPhone = (o.phone || "").toLowerCase().includes(query);
-                    const matchesItems = (o.items || "").toLowerCase().includes(query);
-                    return matchesId || matchesCustomer || matchesPhone || matchesItems;
-                  }
-                  
-                  return true;
-                });
+              const validOrderSubTabs = ["all", "Pending OTP", "Pending Payment", "Processing", "Shipped", "Delivered", "Cancelled", "Returns"];
+              const effectiveSubTab = validOrderSubTabs.includes(subTab) ? subTab : "all";
+
+              const filteredOrders = (dbData.orders || []).filter((o: any) => {
+                // 1. Status filter
+                if (effectiveSubTab !== "all") {
+                  if (effectiveSubTab === "Pending OTP" && o.status !== "Pending OTP") return false;
+                  if (effectiveSubTab === "Pending Payment" && o.status !== "Pending Payment" && o.status !== "Payment Failed") return false;
+                  if (effectiveSubTab === "Processing" && o.status !== "Processing" && o.status !== "Verified") return false;
+                  if (effectiveSubTab === "Shipped" && o.status !== "Shipped") return false;
+                  if (effectiveSubTab === "Delivered" && o.status !== "Delivered") return false;
+                  if (effectiveSubTab === "Cancelled" && o.status !== "Cancelled") return false;
+                  if (effectiveSubTab === "Returns" && !["Return Request", "Returned", "Refunded"].includes(o.status)) return false;
+                }
+
+                // 2. Payment Method Filter
+                if (orderPaymentFilter !== "All" && o.method !== orderPaymentFilter) return false;
+
+                // 3. Search Query Filter (ID, Customer Name, Phone, or Items content)
+                if (orderSearchQuery.trim()) {
+                  const query = orderSearchQuery.toLowerCase();
+                  const matchesId = (o.id || "").toLowerCase().includes(query);
+                  const matchesCustomer = (o.customer || "").toLowerCase().includes(query);
+                  const matchesPhone = (o.phone || "").toLowerCase().includes(query);
+                  const matchesItems = (o.items || "").toLowerCase().includes(query);
+                  if (!matchesId && !matchesCustomer && !matchesPhone && !matchesItems) return false;
+                }
+
+                return true;
+              });
 
               return (
                 <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-4">
@@ -6857,8 +6947,43 @@ export default function AdminDashboard() {
                         <option value="COD">COD</option>
                       </select>
                     </div>
-                    <div className="text-[11px] font-bold text-gray-500">
-                      Showing {filteredOrders.length} orders
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* 1-Click Logistics Partner Toggle */}
+                      <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-[#ddddd9]">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Logistics:</span>
+                        <div className="inline-flex rounded-lg border border-[#ddddd9] p-0.5 bg-[#f8faf1]">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleLogisticsPartner("nimbuspost")}
+                            disabled={togglingLogistics}
+                            className={`px-2 py-0.5 text-[10px] font-bold rounded transition cursor-pointer ${
+                              (dbData.settings?.activeLogisticsPartner || "nimbuspost") === "nimbuspost"
+                                ? "bg-[#244f31] text-white shadow-xs"
+                                : "text-gray-600 hover:text-gray-900"
+                            }`}
+                            title="Active Partner: NimbusPost Partner API v2"
+                          >
+                            🌿 NimbusPost
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleLogisticsPartner("shiprocket")}
+                            disabled={togglingLogistics}
+                            className={`px-2 py-0.5 text-[10px] font-bold rounded transition cursor-pointer ${
+                              dbData.settings?.activeLogisticsPartner === "shiprocket"
+                                ? "bg-[#244f31] text-white shadow-xs"
+                                : "text-gray-600 hover:text-gray-900"
+                            }`}
+                            title="Active Partner: Shiprocket API"
+                          >
+                            🚀 Shiprocket
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] font-bold text-gray-500">
+                        Showing {filteredOrders.length} orders
+                      </div>
                     </div>
                   </div>
 
@@ -6951,66 +7076,155 @@ export default function AdminDashboard() {
                                     </>
                                   )}
                                   <span className="text-gray-300">|</span>
-                                  <button
-                                    type="button"
-                                    onClick={async () => {
-                                      setPushingSrOrderId(o.id);
-                                      try {
-                                        const res = await fetch("/api/admin/shiprocket-push", {
-                                          method: "POST",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ orderId: o.id }),
-                                        });
-                                        const data = await res.json();
-                                        if (data.success) {
-                                          showToast(`🟢 ${data.message}`);
-                                          setDbData((prev: any) => ({
-                                            ...prev,
-                                            orders: (prev.orders || []).map((ord: any) =>
-                                              ord.id === o.id
-                                                ? { ...ord, shiprocketOrderId: data.shiprocketOrderId, shiprocketShipmentId: data.shipmentId, shiprocketStatus: "Pushed" }
-                                                : ord
-                                            ),
-                                          }));
-                                        } else {
-                                          showToast(`🔴 Shiprocket Error: ${data.error}`);
+                                  {/* Logistics Fulfillment Badge / Action */}
+                                  {o.nimbusAwb ? (
+                                    <div className="inline-flex items-center gap-1">
+                                      <a
+                                        href={o.nimbusTrackingUrl || `https://track.nimbuspost.com/track/${encodeURIComponent(o.nimbusAwb)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 flex items-center gap-0.5"
+                                        title={`NimbusPost AWB: ${o.nimbusAwb} (${o.nimbusCourierName || "Courier"}) - Click to track`}
+                                      >
+                                        🌿 {o.nimbusCourierName ? o.nimbusCourierName.split(" ")[0] : "Nimbus"} ({o.nimbusAwb.slice(-5)}) ↗
+                                      </a>
+                                      {o.nimbusLabelUrl && (
+                                        <a
+                                          href={o.nimbusLabelUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100 flex items-center gap-0.5"
+                                          title="Print NimbusPost Shipping Label"
+                                        >
+                                          <Printer className="size-2.5" />
+                                          <span>Label</span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  ) : o.shiprocketOrderId && (dbData.settings?.activeLogisticsPartner !== "nimbuspost" || !o.nimbusStatus) ? (
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        setPushingSrOrderId(o.id);
+                                        try {
+                                          const res = await fetch("/api/admin/shiprocket-push", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ orderId: o.id }),
+                                          });
+                                          const data = await res.json();
+                                          if (data.success) {
+                                            showToast(`🟢 ${data.message}`);
+                                            setDbData((prev: any) => ({
+                                              ...prev,
+                                              orders: (prev.orders || []).map((ord: any) =>
+                                                ord.id === o.id
+                                                  ? { ...ord, shiprocketOrderId: data.shiprocketOrderId, shiprocketShipmentId: data.shipmentId, shiprocketStatus: "Pushed" }
+                                                  : ord
+                                              ),
+                                            }));
+                                          } else {
+                                            showToast(`🔴 Shiprocket Error: ${data.error}`);
+                                          }
+                                        } catch {
+                                          showToast("🔴 Network Error pushing order to Shiprocket.");
+                                        } finally {
+                                          setPushingSrOrderId(null);
                                         }
-                                      } catch {
-                                        showToast("🔴 Network Error pushing order to Shiprocket.");
-                                      } finally {
-                                        setPushingSrOrderId(null);
-                                      }
-                                    }}
-                                     disabled={pushingSrOrderId === o.id || o.shiprocketStatus === "Cancelled"}
-                                     className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
-                                       o.shiprocketStatus === "Cancelled"
-                                         ? "bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
-                                         : o.shiprocketStatus === "Failed"
-                                         ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
-                                         : o.shiprocketStatus === "Pushed"
-                                         ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                         : "bg-[#244f31] text-white border-[#244f31] hover:bg-[#1c3e26]"
-                                     }`}
-                                     title={
-                                       o.shiprocketStatus === "Cancelled"
-                                         ? "Shipment cancelled on Shiprocket"
-                                         : o.shiprocketStatus === "Failed"
-                                         ? `Shiprocket Error: ${o.shiprocketError || "Failed"} - Click to retry`
-                                         : o.shiprocketStatus === "Pushed"
-                                         ? `SR Order ID: ${o.shiprocketOrderId || "Pushed"}`
-                                         : "Push Order to Shiprocket"
-                                     }
-                                   >
-                                     {pushingSrOrderId === o.id
-                                       ? "Pushing..."
-                                       : o.shiprocketStatus === "Cancelled"
-                                       ? "❌ Cancelled"
-                                       : o.shiprocketStatus === "Failed"
-                                       ? "⚠️ Retry SR"
-                                       : o.shiprocketStatus === "Pushed"
-                                       ? "📦 Pushed"
-                                       : "🚀 Push SR"}
-                                   </button>
+                                      }}
+                                      disabled={pushingSrOrderId === o.id || o.shiprocketStatus === "Cancelled"}
+                                      className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                        o.shiprocketStatus === "Cancelled"
+                                          ? "bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
+                                          : o.shiprocketStatus === "Failed"
+                                          ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
+                                          : o.shiprocketStatus === "Pushed"
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                          : "bg-[#244f31] text-white border-[#244f31] hover:bg-[#1c3e26]"
+                                      }`}
+                                      title={o.shiprocketStatus === "Pushed" ? `SR ID: ${o.shiprocketOrderId}` : "Shiprocket"}
+                                    >
+                                      {pushingSrOrderId === o.id
+                                        ? "Pushing..."
+                                        : o.shiprocketStatus === "Cancelled"
+                                        ? "❌ Cancelled"
+                                        : o.shiprocketStatus === "Failed"
+                                        ? "⚠️ Retry SR"
+                                        : o.shiprocketStatus === "Pushed"
+                                        ? "📦 SR Pushed"
+                                        : "🚀 Push SR"}
+                                    </button>
+                                  ) : (dbData.settings?.activeLogisticsPartner || "nimbuspost") === "nimbuspost" ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handlePushToNimbus(o.id)}
+                                      disabled={pushingNimbusOrderId === o.id || o.status === "Cancelled"}
+                                      className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                        o.status === "Cancelled"
+                                          ? "bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
+                                          : o.nimbusStatus === "Failed"
+                                          ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
+                                          : "bg-[#244f31] text-white border-[#244f31] hover:bg-[#1c3e26]"
+                                      }`}
+                                      title={o.nimbusStatus === "Failed" ? `Nimbus Error: ${o.nimbusError} - Click to retry` : "Push Order to NimbusPost Partner API v2"}
+                                    >
+                                      {pushingNimbusOrderId === o.id
+                                        ? "Pushing..."
+                                        : o.nimbusStatus === "Failed"
+                                        ? "⚠️ Retry Nimbus"
+                                        : "🌿 Push Nimbus"}
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        setPushingSrOrderId(o.id);
+                                        try {
+                                          const res = await fetch("/api/admin/shiprocket-push", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ orderId: o.id }),
+                                          });
+                                          const data = await res.json();
+                                          if (data.success) {
+                                            showToast(`🟢 ${data.message}`);
+                                            setDbData((prev: any) => ({
+                                              ...prev,
+                                              orders: (prev.orders || []).map((ord: any) =>
+                                                ord.id === o.id
+                                                  ? { ...ord, shiprocketOrderId: data.shiprocketOrderId, shiprocketShipmentId: data.shipmentId, shiprocketStatus: "Pushed" }
+                                                  : ord
+                                              ),
+                                            }));
+                                          } else {
+                                            showToast(`🔴 Shiprocket Error: ${data.error}`);
+                                          }
+                                        } catch {
+                                          showToast("🔴 Network Error pushing order to Shiprocket.");
+                                        } finally {
+                                          setPushingSrOrderId(null);
+                                        }
+                                      }}
+                                      disabled={pushingSrOrderId === o.id || o.shiprocketStatus === "Cancelled"}
+                                      className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                        o.shiprocketStatus === "Cancelled"
+                                          ? "bg-gray-100 text-gray-500 border-gray-300 cursor-not-allowed"
+                                          : o.shiprocketStatus === "Failed"
+                                          ? "bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
+                                          : o.shiprocketStatus === "Pushed"
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                          : "bg-[#244f31] text-white border-[#244f31] hover:bg-[#1c3e26]"
+                                      }`}
+                                    >
+                                      {pushingSrOrderId === o.id
+                                        ? "Pushing..."
+                                        : o.shiprocketStatus === "Failed"
+                                        ? "⚠️ Retry SR"
+                                        : o.shiprocketStatus === "Pushed"
+                                        ? "📦 SR Pushed"
+                                        : "🚀 Push SR"}
+                                    </button>
+                                  )}
                                   <span className="text-gray-300">|</span>
                                   <button
                                     type="button"
@@ -14008,39 +14222,338 @@ export default function AdminDashboard() {
             )}
 
             {/* 9. Shipping Panel */}
-            {activeMenu === "shipping" && (
-              <div className="space-y-6">
-                {/* 1. General Courier & Shipping Rates */}
-                <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b] flex items-center gap-2">
-                    <Truck className="size-4 text-[#80a03c]" />
-                    <span>Courier & Delivery Charges</span>
-                  </h3>
-                  <div className="grid gap-4 sm:grid-cols-2 text-xs">
-                    <div className="border p-4 rounded-xl bg-[#f8faf1]">
-                      <label className="block font-bold text-[#17231b]">Free Delivery Threshold Amount (₹)</label>
-                      <p className="text-[10px] text-[#666666] mt-0.5">Orders above this amount get Free Shipping</p>
-                      <input
-                        type="number"
-                        value={dbData.settings.shipping?.freeThreshold ?? 999}
-                        onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, freeThreshold: parseInt(e.target.value) || 0 })}
-                        className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
-                      />
+            {activeMenu === "shipping" && (() => {
+              const activePartner = dbData.settings?.activeLogisticsPartner || "nimbuspost";
+
+              return (
+                <div className="space-y-6">
+                  {/* 1. Automated Logistics Partner Switcher */}
+                  <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-6">
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#ddddd9] pb-4">
+                      <div>
+                        <h3 className="text-base font-bold text-[#17231b] flex items-center gap-2">
+                          <Truck className="size-5 text-[#244f31]" />
+                          <span>Automated Logistics & Courier Partner</span>
+                        </h3>
+                        <p className="text-xs text-[#666666] mt-0.5">
+                          Toggle between NimbusPost and Shiprocket with 1-click. Active partner automatically handles one-shot booking, AWB generation, and tracking on customer checkout.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-500">Active Engine:</span>
+                        <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-xs">
+                          <span className="size-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                          {activePartner === "nimbuspost" ? "NimbusPost (v2 API)" : "Shiprocket"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="border p-4 rounded-xl bg-[#f8faf1]">
-                      <label className="block font-bold text-[#17231b]">Base Shipping Courier Fee (₹)</label>
-                      <p className="text-[10px] text-[#666666] mt-0.5">Charged when cart is below free delivery threshold</p>
-                      <input
-                        type="number"
-                        value={dbData.settings.shipping?.baseRate ?? 49}
-                        onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, baseRate: parseInt(e.target.value) || 0 })}
-                        className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
-                      />
+
+                    {/* Dual Partner Selection Cards */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {/* NimbusPost Card */}
+                      <div
+                        className={`p-5 rounded-2xl border-2 transition relative flex flex-col justify-between ${
+                          activePartner === "nimbuspost"
+                            ? "border-[#244f31] bg-[#f8faf1] shadow-sm"
+                            : "border-[#ddddd9] bg-white opacity-85 hover:border-gray-400"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">🌿</span>
+                              <div>
+                                <h4 className="font-bold text-sm text-[#17231b]">NimbusPost</h4>
+                                <span className="text-[10px] text-gray-500 font-mono">Partner API v2</span>
+                              </div>
+                            </div>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                                activePartner === "nimbuspost"
+                                  ? "bg-emerald-600 text-white"
+                                  : "bg-gray-100 text-gray-600 border border-gray-300"
+                              }`}
+                            >
+                              {activePartner === "nimbuspost" ? "ACTIVE ROUTE" : "STANDBY"}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-gray-600 mb-4">
+                            One-shot automated booking with multi-courier optimization (Bluedart, Delhivery, Smartr, DTDC). Instant AWB and label generation.
+                          </p>
+
+                          <ul className="text-[11px] text-gray-700 space-y-1.5 mb-5">
+                            <li className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                              <span>One-shot booking via <code className="bg-white px-1 py-0.5 rounded border text-[10px]">POST /v2/shipments</code></span>
+                            </li>
+                            <li className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                              <span>Instant AWB, Label URL & Live Tracking</span>
+                            </li>
+                            <li className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                              <span>Automated WhatsApp shipment dispatch alerts</span>
+                            </li>
+                            <li className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                              <span>Zero admin key entry (secure code & env loading)</span>
+                            </li>
+                          </ul>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleLogisticsPartner("nimbuspost")}
+                          disabled={togglingLogistics || activePartner === "nimbuspost"}
+                          className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                            activePartner === "nimbuspost"
+                              ? "bg-[#244f31] text-white cursor-default"
+                              : "bg-white border-2 border-[#244f31] text-[#244f31] hover:bg-[#244f31] hover:text-white"
+                          }`}
+                        >
+                          {activePartner === "nimbuspost" ? (
+                            <>
+                              <CheckCircle2 className="size-4" />
+                              <span>Currently Active Partner</span>
+                            </>
+                          ) : (
+                            <span>Switch to NimbusPost (1-Click)</span>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Shiprocket Card */}
+                      <div
+                        className={`p-5 rounded-2xl border-2 transition relative flex flex-col justify-between ${
+                          activePartner === "shiprocket"
+                            ? "border-[#244f31] bg-[#f8faf1] shadow-sm"
+                            : "border-[#ddddd9] bg-white opacity-85 hover:border-gray-400"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">🚀</span>
+                              <div>
+                                <h4 className="font-bold text-sm text-[#17231b]">Shiprocket</h4>
+                                <span className="text-[10px] text-gray-500 font-mono">REST API (Token)</span>
+                              </div>
+                            </div>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                                activePartner === "shiprocket"
+                                  ? "bg-emerald-600 text-white"
+                                  : "bg-gray-100 text-gray-600 border border-gray-300"
+                              }`}
+                            >
+                              {activePartner === "shiprocket" ? "ACTIVE ROUTE" : "STANDBY"}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-gray-600 mb-4">
+                            Secondary/legacy logistics partner. Historic orders remain trackable even when NimbusPost is active.
+                          </p>
+
+                          <ul className="text-[11px] text-gray-700 space-y-1.5 mb-5">
+                            <li className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                              <span>Standard token authentication fulfillment</span>
+                            </li>
+                            <li className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                              <span>Preserved for backward compatibility</span>
+                            </li>
+                            <li className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                              <span>Account: imranshah244830@gmail.com</span>
+                            </li>
+                            <li className="flex items-center gap-1.5 font-medium">
+                              <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                              <span>Pickup Location: PURE AYUR HERBS</span>
+                            </li>
+                          </ul>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleLogisticsPartner("shiprocket")}
+                          disabled={togglingLogistics || activePartner === "shiprocket"}
+                          className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                            activePartner === "shiprocket"
+                              ? "bg-[#244f31] text-white cursor-default"
+                              : "bg-white border-2 border-[#244f31] text-[#244f31] hover:bg-[#244f31] hover:text-white"
+                          }`}
+                        >
+                          {activePartner === "shiprocket" ? (
+                            <>
+                              <CheckCircle2 className="size-4" />
+                              <span>Currently Active Partner</span>
+                            </>
+                          ) : (
+                            <span>Switch to Shiprocket (1-Click)</span>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Technical Config Status Card (Read-Only) */}
+                    <div className="bg-[#f8faf1] border border-[#ddddd9] p-4 rounded-xl text-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#17231b] flex items-center gap-1.5">
+                          <Lock className="size-3.5 text-[#244f31]" />
+                          <span>Code & Environment Configuration Status</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          Securely Configured in Code (.env.local)
+                        </span>
+                      </div>
+                      <div className="grid sm:grid-cols-3 gap-2 text-[11px] text-gray-700 font-mono pt-1">
+                        <div className="bg-white p-2.5 rounded-lg border border-[#ddddd9]">
+                          <span className="text-gray-400 block text-[9px] uppercase font-sans font-bold">NimbusPost Base URL</span>
+                          <span className="font-bold text-gray-900 truncate block">https://api-v2.nimbuspost.com</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-lg border border-[#ddddd9]">
+                          <span className="text-gray-400 block text-[9px] uppercase font-sans font-bold">Pickup Warehouse Name</span>
+                          <span className="font-bold text-gray-900 truncate block">PURE AYUR HERBS (Sitarganj)</span>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-lg border border-[#ddddd9]">
+                          <span className="text-gray-400 block text-[9px] uppercase font-sans font-bold">API Key Loading</span>
+                          <span className="font-bold text-emerald-700 truncate block">process.env.NIMBUSPOST_API_KEY</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Phase 3: Live Verification & Webhook Suite */}
+                    <div className="bg-white border border-[#ddddd9] p-5 rounded-2xl shadow-xs space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ddddd9] pb-3">
+                        <div>
+                          <h4 className="font-bold text-sm text-[#17231b] flex items-center gap-2">
+                            <Sparkles className="size-4 text-[#80a03c]" />
+                            <span>Phase 3: Live Verification & Cutover Protection</span>
+                          </h4>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Verify zero-downtime cutover: Existing Shiprocket orders continue tracking safely, while new bookings flow through NimbusPost.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRunLogisticsDiagnostic}
+                          disabled={isRunningLogisticsDiag}
+                          className="px-3 py-2 bg-[#244f31] hover:bg-[#1c3e26] text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                        >
+                          <Zap className="size-3.5" />
+                          <span>{isRunningLogisticsDiag ? "Testing Connection..." : "⚡ Run Live Diagnostic Check"}</span>
+                        </button>
+                      </div>
+
+                      {logisticsDiag && (
+                        <div className="p-4 bg-[#f8faf1] rounded-xl border border-[#ddddd9] space-y-3">
+                          <div className="grid sm:grid-cols-4 gap-3 text-xs">
+                            <div className="bg-white p-3 rounded-xl border border-[#ddddd9]">
+                              <span className="text-gray-400 block text-[9px] uppercase font-bold">NimbusPost Status</span>
+                              <span className={`font-bold flex items-center gap-1 mt-1 ${logisticsDiag.nimbuspost?.connected ? "text-emerald-700" : "text-amber-700"}`}>
+                                {logisticsDiag.nimbuspost?.connected ? "🟢 Connected & Live" : "⚪ Ready for API Keys"}
+                              </span>
+                              {logisticsDiag.nimbuspost?.latencyMs > 0 && (
+                                <span className="text-[10px] text-gray-500 block mt-0.5">{logisticsDiag.nimbuspost.latencyMs}ms latency</span>
+                              )}
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-[#ddddd9]">
+                              <span className="text-gray-400 block text-[9px] uppercase font-bold">Shiprocket Legacy</span>
+                              <span className={`font-bold flex items-center gap-1 mt-1 ${logisticsDiag.shiprocket?.connected ? "text-emerald-700" : "text-gray-700"}`}>
+                                {logisticsDiag.shiprocket?.connected ? "🟢 Connected (Backup)" : "⚪ Preserved"}
+                              </span>
+                              <span className="text-[10px] text-gray-500 block mt-0.5">{logisticsDiag.shiprocket?.historicOrdersCount || 0} historic orders</span>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-[#ddddd9]">
+                              <span className="text-gray-400 block text-[9px] uppercase font-bold">Dual-Tracking Protection</span>
+                              <span className="font-bold text-emerald-700 flex items-center gap-1 mt-1">
+                                🛡️ Zero Downtime Active
+                              </span>
+                              <span className="text-[10px] text-gray-500 block mt-0.5">Existing orders stay on SR</span>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-[#ddddd9]">
+                              <span className="text-gray-400 block text-[9px] uppercase font-bold">Pickup Warehouse</span>
+                              <span className="font-bold text-gray-900 truncate block mt-1">
+                                {logisticsDiag.nimbuspost?.warehouseName || "PURE AYUR HERBS"}
+                              </span>
+                              <span className="text-[10px] text-gray-500 block mt-0.5">Sitarganj 262405</span>
+                            </div>
+                          </div>
+
+                          {logisticsDiag.nimbuspost?.error && (
+                            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-center gap-2">
+                              <AlertCircle className="size-4 shrink-0" />
+                              <span>{logisticsDiag.nimbuspost.error}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Webhook Registration Info */}
+                      <div className="bg-[#f8faf1] border border-[#ddddd9] p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                        <div className="space-y-1 min-w-[260px]">
+                          <span className="font-bold text-[#17231b] flex items-center gap-1 text-xs">
+                            <span>🔗 Real-Time NimbusPost Webhook URL:</span>
+                          </span>
+                          <span className="font-mono text-xs text-emerald-800 bg-white px-2.5 py-1 rounded-md border border-[#ddddd9] inline-block font-semibold">
+                            https://www.purreayurherbs.com/api/nimbuspost/webhook
+                          </span>
+                          <p className="text-[11px] text-gray-500">
+                            Paste this URL in your NimbusPost Dashboard ➔ Settings ➔ Webhooks for real-time tracking scans, NDR handling & automated WhatsApp alerts.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText("https://www.purreayurherbs.com/api/nimbuspost/webhook");
+                            showToast("📋 Webhook URL copied to clipboard!");
+                          }}
+                          className="px-3 py-2 bg-white hover:bg-[#f8faf1] border border-[#ddddd9] text-[#244f31] font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          <Copy className="size-3.5" />
+                          <span>Copy Webhook URL</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. General Courier & Shipping Rates */}
+                  <div className="bg-white border border-[#ddddd9] p-6 rounded-2xl shadow-sm space-y-4">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#17231b] flex items-center gap-2">
+                      <Truck className="size-4 text-[#80a03c]" />
+                      <span>Courier & Delivery Charges</span>
+                    </h3>
+                    <div className="grid gap-4 sm:grid-cols-2 text-xs">
+                      <div className="border p-4 rounded-xl bg-[#f8faf1]">
+                        <label className="block font-bold text-[#17231b]">Free Delivery Threshold Amount (₹)</label>
+                        <p className="text-[10px] text-[#666666] mt-0.5">Orders above this amount get Free Shipping</p>
+                        <input
+                          type="number"
+                          value={dbData.settings.shipping?.freeThreshold ?? 999}
+                          onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, freeThreshold: parseInt(e.target.value) || 0 })}
+                          className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
+                        />
+                      </div>
+                      <div className="border p-4 rounded-xl bg-[#f8faf1]">
+                        <label className="block font-bold text-[#17231b]">Base Shipping Courier Fee (₹)</label>
+                        <p className="text-[10px] text-[#666666] mt-0.5">Charged when cart is below free delivery threshold</p>
+                        <input
+                          type="number"
+                          value={dbData.settings.shipping?.baseRate ?? 49}
+                          onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, baseRate: parseInt(e.target.value) || 0 })}
+                          className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* 10. Analytics Panel */}
             {activeMenu === "analytics" && (() => {
@@ -16005,10 +16518,155 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Shiprocket Logistics Integration */}
-                <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-[#f8faf1]/60">
+                {/* NimbusPost Logistics Integration */}
+                <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-[#f8faf1]/80">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-[#244f31] uppercase tracking-wider text-[10px]">Shiprocket Logistics Status</h4>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">🌿</span>
+                      <h4 className="font-bold text-[#244f31] uppercase tracking-wider text-[10px]">NimbusPost Logistics (v2 API)</h4>
+                    </div>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                        selectedOrder.nimbusStatus === "Cancelled"
+                          ? "bg-gray-100 text-gray-700 border border-gray-300"
+                          : selectedOrder.nimbusStatus === "Failed"
+                          ? "bg-red-100 text-red-800 border border-red-300"
+                          : selectedOrder.nimbusAwb || selectedOrder.nimbusStatus === "Booked"
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : "bg-amber-100 text-amber-800 border border-amber-300"
+                      }`}
+                    >
+                      {selectedOrder.nimbusStatus === "Cancelled"
+                        ? "❌ Cancelled on NimbusPost"
+                        : selectedOrder.nimbusStatus === "Failed"
+                        ? "🔴 Booking Failed"
+                        : selectedOrder.nimbusAwb || selectedOrder.nimbusStatus === "Booked"
+                        ? "🟢 Booked & Courier Assigned"
+                        : "⚪ Not Booked Yet"}
+                    </span>
+                  </div>
+
+                  {selectedOrder.nimbusStatus === "Failed" && selectedOrder.nimbusError && (
+                    <div className="text-[11px] text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200">
+                      <span className="font-bold block">NimbusPost Error:</span>
+                      <span>{selectedOrder.nimbusError}</span>
+                    </div>
+                  )}
+
+                  {selectedOrder.nimbusAwb && (
+                    <div className="text-[11px] text-gray-700 bg-white p-3 rounded-lg border border-[#ddddd9] space-y-2">
+                      <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
+                        <div>Courier: <span className="font-bold text-[#17231b] font-sans">{selectedOrder.nimbusCourierName || "Assigned Partner"}</span></div>
+                        <div>AWB: <span className="font-bold text-[#17231b]">{selectedOrder.nimbusAwb}</span></div>
+                      </div>
+                      {selectedOrder.nimbusOrderId && (
+                        <div className="font-mono text-[10px] text-gray-500">Nimbus Order ID: {selectedOrder.nimbusOrderId}</div>
+                      )}
+                      <div className="pt-1 flex flex-wrap items-center gap-3">
+                        <a
+                          href={selectedOrder.nimbusTrackingUrl || `https://track.nimbuspost.com/track/${encodeURIComponent(selectedOrder.nimbusAwb)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-700 font-bold hover:underline font-sans text-[11px] inline-flex items-center gap-1"
+                        >
+                          <ExternalLink className="size-3" />
+                          <span>Track on NimbusPost ↗</span>
+                        </a>
+                        {selectedOrder.nimbusLabelUrl && (
+                          <a
+                            href={selectedOrder.nimbusLabelUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-700 font-bold hover:underline font-sans text-[11px] inline-flex items-center gap-1"
+                          >
+                            <Printer className="size-3" />
+                            <span>Download Shipping Label PDF ↗</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedOrder.ndrRaised && (
+                    <div className="text-[11px] text-amber-800 bg-amber-50 p-3 rounded-lg border border-amber-300 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold flex items-center gap-1.5">
+                          <AlertTriangle className="size-3.5 text-amber-600" />
+                          <span>Delivery Attempt Failed (NDR #{selectedOrder.ndrCount || 1})</span>
+                        </span>
+                        <span className="text-[10px] bg-amber-200/80 px-2 py-0.5 rounded font-extrabold text-amber-900">
+                          NDR Action Required
+                        </span>
+                      </div>
+                      <div className="text-gray-700">
+                        <span className="font-bold">Courier Reason:</span> {selectedOrder.ndrReason || "Customer unavailable / Re-attempt scheduled"}
+                      </div>
+                      {selectedOrder.phone && (
+                        <div className="pt-1">
+                          <a
+                            href={`https://wa.me/91${(selectedOrder.phone || "").replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(
+                              `Namaste ${selectedOrder.customer || "Ji"}! 🙏 Delivery was attempted for your order #${selectedOrder.id} by ${selectedOrder.nimbusCourierName || "Courier"}, but could not be completed (${selectedOrder.ndrReason || "Customer unavailable"}). Please reply with your preferred re-delivery date/time or updated landmark.`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700"
+                          >
+                            💬 Contact Customer on WhatsApp to Re-schedule
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {Array.isArray(selectedOrder.nimbusScans) && selectedOrder.nimbusScans.length > 0 && (
+                    <div className="bg-white p-3 rounded-lg border border-[#ddddd9] space-y-1.5 text-[11px]">
+                      <span className="font-bold text-[#17231b] block text-[10px] uppercase tracking-wider">
+                        📍 Live NimbusPost Scan History ({selectedOrder.nimbusScans.length} events):
+                      </span>
+                      <div className="max-h-28 overflow-y-auto space-y-1 pr-1 font-mono text-[10px] divide-y divide-gray-100">
+                        {selectedOrder.nimbusScans.map((s: any, idx: number) => (
+                          <div key={idx} className="flex justify-between items-center py-1">
+                            <span className="text-gray-800">
+                              <span className="font-bold uppercase text-emerald-800">{s.status}:</span> {s.message || s.location || ""}
+                            </span>
+                            <span className="text-gray-400 text-[9px] shrink-0 ml-2">
+                              {s.time ? new Date(s.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedOrder.nimbusStatus === "Cancelled" ? (
+                    <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-[11px] text-gray-600 text-center font-medium">
+                      Order shipment was cancelled on NimbusPost.
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handlePushToNimbus(selectedOrder.id)}
+                      disabled={pushingNimbusOrderId === selectedOrder.id || selectedOrder.status === "Cancelled"}
+                      className="w-full py-2.5 bg-[#244f31] hover:bg-[#1c3e26] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      {pushingNimbusOrderId === selectedOrder.id
+                        ? "Booking on NimbusPost API v2..."
+                        : selectedOrder.nimbusAwb
+                        ? "🔄 Re-Book / Update on NimbusPost"
+                        : selectedOrder.nimbusStatus === "Failed"
+                        ? "⚠️ Retry Push to NimbusPost"
+                        : "🌿 Push Order to NimbusPost (Instant Booking)"}
+                    </button>
+                  )}
+                </div>
+
+                {/* Shiprocket Logistics Integration */}
+                <div className="border border-[#ddddd9] p-4 rounded-xl space-y-3 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">🚀</span>
+                      <h4 className="font-bold text-gray-700 uppercase tracking-wider text-[10px]">Shiprocket Logistics (Secondary / Fallback)</h4>
+                    </div>
                     <span
                       className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
                         selectedOrder.shiprocketStatus === "Cancelled"
@@ -16017,7 +16675,7 @@ export default function AdminDashboard() {
                           ? "bg-red-100 text-red-800 border border-red-300"
                           : selectedOrder.shiprocketStatus === "Pushed"
                           ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                          : "bg-amber-100 text-amber-800 border border-amber-300"
+                          : "bg-gray-100 text-gray-600 border border-gray-200"
                       }`}
                     >
                       {selectedOrder.shiprocketStatus === "Cancelled"
@@ -16026,7 +16684,7 @@ export default function AdminDashboard() {
                         ? "🔴 Push Failed"
                         : selectedOrder.shiprocketStatus === "Pushed"
                         ? "🟢 Pushed to Shiprocket"
-                        : "⚪ Not Pushed Yet"}
+                        : "⚪ Not Pushed"}
                     </span>
                   </div>
 
@@ -16038,7 +16696,7 @@ export default function AdminDashboard() {
                   )}
 
                   {selectedOrder.shiprocketOrderId && (
-                    <div className="text-[11px] text-gray-700 bg-white p-2.5 rounded-lg border border-[#ddddd9] space-y-1 font-mono">
+                    <div className="text-[11px] text-gray-700 bg-[#f8faf1] p-2.5 rounded-lg border border-[#ddddd9] space-y-1 font-mono">
                       <div>Shiprocket Order ID: <span className="font-bold text-[#17231b]">{selectedOrder.shiprocketOrderId}</span></div>
                       {selectedOrder.shiprocketShipmentId && (
                         <div>
@@ -16098,8 +16756,8 @@ export default function AdminDashboard() {
                           setPushingSrOrderId(null);
                         }
                       }}
-                      disabled={pushingSrOrderId === selectedOrder.id}
-                      className="w-full py-2.5 bg-[#244f31] hover:bg-[#1c3e26] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                      disabled={pushingSrOrderId === selectedOrder.id || selectedOrder.shiprocketStatus === "Cancelled"}
+                      className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 border border-gray-300 disabled:opacity-50 cursor-pointer"
                     >
                       {pushingSrOrderId === selectedOrder.id
                         ? "Pushing to Shiprocket API..."

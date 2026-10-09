@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
-import { pushOrderToShiprocket } from "@/lib/shiprocket";
+import { pushOrderToLogistics } from "@/lib/logistics";
 import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 
 export const dynamic = "force-dynamic";
@@ -54,11 +54,11 @@ export async function GET(request: Request) {
     db.orders = orders;
     await writeDB(db);
 
-    // Automated Push to Shiprocket
+    // Automated Push to Active Logistics Partner (NimbusPost / Shiprocket)
     try {
-      await pushOrderToShiprocket(order, db);
-    } catch (srErr) {
-      console.error("[Switch-COD Shiprocket Auto-Push Error]:", srErr);
+      await pushOrderToLogistics(order, db);
+    } catch (logisticsErr) {
+      console.error("[Switch-COD Logistics Auto-Push Error]:", logisticsErr);
     }
 
     // Automated WhatsApp Order Confirmation

@@ -217,7 +217,53 @@ Wishing you vibrant health and vitality,
 }
 
 /**
- * 5. Abandoned Cart Recovery WhatsApp Notification
+ * 5. NDR (Non-Delivery Report) Alert & Re-attempt Coordination
+ */
+export async function sendOrderNdrWhatsApp(params: {
+  order: any;
+  reason?: string;
+  courierName?: string;
+}): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const { order, reason, courierName } = params;
+    const rawPhone = order.phone || order.customerPhone || "";
+    const cleanPhone = getCleanPhone(rawPhone);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return { success: false, error: "Invalid recipient phone number." };
+    }
+
+    const orderId = order.id || "PYR-ORD";
+    const name = order.name || order.customer || "Valued Customer";
+    const ndrReason = reason || "Customer unavailable / Address incomplete";
+    const courier = courierName || order.nimbusCourierName || order.courierName || "Courier Partner";
+    const trackingLink = `${BASE_URL}/track?orderId=${encodeURIComponent(orderId)}`;
+
+    const messageText = `⚠️ *DELIVERY ATTEMPT UPDATE — PURE AYUR HERBS* ⚠️
+
+Namaste ${name}! 🙏
+
+Our delivery executive from *${courier}* attempted to deliver your order (*${orderId}*), but the delivery could not be completed.
+
+📌 *Reason:* ${ndrReason}
+
+Don't worry! We have arranged a *Re-Delivery Attempt* for you.
+
+👉 *Please reply to this chat with your preferred delivery day or updated landmark*, or reply *CALL* if you need the delivery agent to contact you beforehand.
+
+🔗 *Live Tracking Link:*
+${trackingLink}
+
+We are committed to delivering your authentic Ayurvedic remedies safely!`;
+
+    return await sendWhatsAppTextMessage(cleanPhone, messageText);
+  } catch (error: any) {
+    console.error("[sendOrderNdrWhatsApp Error]:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 6. Abandoned Cart Recovery WhatsApp Notification
  */
 export async function sendAbandonedCartWhatsApp(params: {
   phone: string;

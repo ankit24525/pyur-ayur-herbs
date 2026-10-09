@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
-import { pushOrderToShiprocket } from "@/lib/shiprocket";
+import { pushOrderToLogistics } from "@/lib/logistics";
 import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 import { checkCustomerFraudStatus } from "@/lib/fraud-prevention";
 import { extractSessionToken, resolveSession } from "@/lib/session";
@@ -172,11 +172,11 @@ export async function POST(request: Request) {
     db.orders.push(newOrder);
     await writeDB(db);
 
-    // Automated Shiprocket Order Auto-Push
+    // Automated Logistics Partner Order Auto-Push (NimbusPost / Shiprocket)
     try {
-      await pushOrderToShiprocket(newOrder, db);
-    } catch (srErr) {
-      console.error("[Shiprocket Auto-Push Exception]:", srErr);
+      await pushOrderToLogistics(newOrder, db);
+    } catch (logisticsErr) {
+      console.error("[Logistics Auto-Push Exception]:", logisticsErr);
     }
 
     // Simulated Server-Side Meta Conversions API (CAPI) trigger

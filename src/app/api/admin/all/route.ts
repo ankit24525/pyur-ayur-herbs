@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB, invalidateDBCache, getDBHealthStatus } from "@/lib/db";
-import { cancelOrderOnShiprocket } from "@/lib/shiprocket";
+import { cancelOrderInLogistics } from "@/lib/logistics";
 import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
@@ -173,9 +173,9 @@ export async function POST(request: Request) {
           db.orders[idx].cancelledBy = "Admin";
           db.orders[idx].cancellationDate = new Date().toISOString();
           try {
-            await cancelOrderOnShiprocket(db.orders[idx], db);
-          } catch (srErr) {
-            console.error("[Admin Update Order Shiprocket Cancel Error]:", srErr);
+            await cancelOrderInLogistics(db.orders[idx], body.cancellationReason || "Cancelled by Admin", db);
+          } catch (logisticsErr) {
+            console.error("[Admin Update Order Logistics Cancel Error]:", logisticsErr);
           }
         }
         const success = await writeDB(db);

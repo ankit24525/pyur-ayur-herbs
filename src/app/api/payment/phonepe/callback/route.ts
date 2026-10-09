@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
 import { verifyPhonePePayment } from "@/lib/phonepe";
 import { sendOrderConfirmationWhatsApp, sendPaymentFailedWhatsApp } from "@/lib/whatsapp-notifications";
-import { pushOrderToShiprocket } from "@/lib/shiprocket";
+import { pushOrderToLogistics } from "@/lib/logistics";
 
 export const dynamic = "force-dynamic";
 
@@ -116,11 +116,11 @@ async function handlePaymentCallback(request: Request, isGet: boolean) {
       db.orders = orders;
       await writeDB(db);
 
-      // Automated Shiprocket Direct Order Push
+      // Automated Logistics Direct Order Auto-Push (NimbusPost / Shiprocket)
       try {
-        await pushOrderToShiprocket(orders[orderIdx], db);
-      } catch (srErr) {
-        console.error("[PhonePe Callback Shiprocket Auto-Push Exception]:", srErr);
+        await pushOrderToLogistics(orders[orderIdx], db);
+      } catch (logisticsErr) {
+        console.error("[PhonePe Callback Logistics Auto-Push Exception]:", logisticsErr);
       }
 
       // Dispatch WhatsApp Order Confirmation

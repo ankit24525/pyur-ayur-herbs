@@ -1,5 +1,6 @@
 import { readDB, writeDB } from "./db";
 import { getShiprocketToken, cancelShiprocketOrder, cancelOrderOnShiprocket, getShiprocketTracking } from "./shiprocket";
+import { cancelOrderInLogistics } from "./logistics";
 import { checkCustomerFraudStatus } from "./fraud-prevention";
 
 export interface OrderLookupResult {
@@ -37,7 +38,9 @@ export async function findOrdersForCustomer(query: string, customerPhone?: strin
           oId.includes(extractedId) ||
           (extractDigits.length >= 4 && oDigits.includes(extractDigits)) ||
           (o.shiprocketOrderId && String(o.shiprocketOrderId).toLowerCase() === extractedId) ||
-          (o.shiprocketShipmentId && String(o.shiprocketShipmentId).toLowerCase() === extractedId)
+          (o.shiprocketShipmentId && String(o.shiprocketShipmentId).toLowerCase() === extractedId) ||
+          (o.nimbusOrderId && String(o.nimbusOrderId).toLowerCase() === extractedId) ||
+          (o.nimbusAwb && String(o.nimbusAwb).toLowerCase() === extractedId)
         );
       });
 
@@ -86,9 +89,23 @@ export async function formatOrderStatusMessage(order: any, customerName?: string
   const state = order.state || "";
   const location = [city, state].filter(Boolean).join(", ") || "India";
 
-  // Check Shiprocket live tracking if available
-  let shiprocketInfo = "";
-  if (order.shiprocketShipmentId) {
+  // Check NimbusPost or Shiprocket live tracking
+  let courierInfo = "";
+  if (order.nimbusAwb) {
+    try {
+      const { getNimbusTracking } = await import("./nimbuspost");
+      const trackRes = await getNimbusTracking(order.nimbusAwb);
+      if (trackRes.success && trackRes.data) {
+        const cStatus = trackRes.data.latest?.shipStatus || trackRes.data.orderStatus || "In Transit";
+        const cCourier = trackRes.data.shipment?.courierName || order.nimbusCourierName || "Express Courier";
+        courierInfo = `\n🚚 *Courier:* ${cCourier}\n📍 *Tracking Status:* ${cStatus}\n🔖 *AWB:* ${order.nimbusAwb}`;
+      } else {
+        courierInfo = `\n🚚 *Courier:* ${order.nimbusCourierName || "NimbusPost Express"}\n🔖 *AWB:* ${order.nimbusAwb}`;
+      }
+    } catch {
+      courierInfo = `\n🚚 *Courier:* ${order.nimbusCourierName || "NimbusPost Express"}\n🔖 *AWB:* ${order.nimbusAwb}`;
+    }
+  } else if (order.shiprocketShipmentId) {
     try {
       const srConfig = db.settings?.shiprocket || {};
       const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL || "imranshah244830@gmail.com";
@@ -98,7 +115,7 @@ export async function formatOrderStatusMessage(order: any, customerName?: string
         if (token) {
           const trackRes = await getShiprocketTracking(order.shiprocketShipmentId, token);
           if (trackRes.success && trackRes.data?.tracking_data?.track_status) {
-            shiprocketInfo = `\n🚚 *Courier Status:* ${trackRes.data.tracking_data.track_status}`;
+            courierInfo = `\n🚚 *Courier Status:* ${trackRes.data.tracking_data.track_status}`;
           }
         }
       }
@@ -137,7 +154,7 @@ Parcel is in transit with the courier. If you wish to cancel, you can simply ref
 
 Namaste ${name}! Here is the latest update on your Pure Ayur Herbs order:
 
-*Status:* ${statusEmoji} ${status}${shiprocketInfo}
+*Status:* ${statusEmoji} ${status}${courierInfo}
 *Date:* ${date}
 *Items:* ${order.items || "Ayurvedic Remedy Pack"}
 *Total Amount:* ${total} (${paymentMethod})
@@ -441,18 +458,19 @@ To cancel this order, please speak with our support desk directly:
       };
     }
 
-    // 4. Pre-dispatch Cancellation via Shiprocket
+    // 4. Pre-dispatch Cancellation via Active Logistics Partner
     try {
-      await cancelOrderOnShiprocket(order, db);
-    } catch (srErr) {
-      console.error("[Shiprocket Cancellation Error in Chatbot]:", srErr);
+      await cancelOrderInLogistics(order, reason || "Cancelled via WhatsApp Chatbot", db);
+    } catch (logErr) {
+      console.error("[Logistics Cancellation Error in Chatbot]:", logErr);
     }
 
     const isPrepaid = order.paymentMethod === "prepaid" || order.method === "Prepaid";
     const cancellationReasonText = reason || "Cancelled via WhatsApp Chatbot";
 
     order.status = "Cancelled";
-    order.shiprocketStatus = "Cancelled";
+    if (order.shiprocketStatus) order.shiprocketStatus = "Cancelled";
+    if (order.nimbusStatus) order.nimbusStatus = "Cancelled";
     order.cancellationReason = cancellationReasonText;
     order.cancellationDate = new Date().toISOString();
     order.cancelledBy = "Customer (WhatsApp)";

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDB, writeDB } from "@/lib/db";
-import { cancelOrderOnShiprocket } from "@/lib/shiprocket";
+import { cancelOrderInLogistics } from "@/lib/logistics";
 import { sendOrderCancellationWhatsApp } from "@/lib/whatsapp-notifications";
 import { checkCustomerFraudStatus } from "@/lib/fraud-prevention";
 
@@ -30,8 +30,10 @@ export async function POST(request: Request) {
       const isNumericMatch = numericQuery.length >= 4 && (orderNumeric === numericQuery || orderIdLower.includes(cleanQuery));
       const isSrOrderMatch = o.shiprocketOrderId && String(o.shiprocketOrderId).trim().toLowerCase() === cleanQuery;
       const isSrShipmentMatch = o.shiprocketShipmentId && String(o.shiprocketShipmentId).trim().toLowerCase() === cleanQuery;
+      const isNimbusOrderMatch = o.nimbusOrderId && String(o.nimbusOrderId).trim().toLowerCase() === cleanQuery;
+      const isNimbusAwbMatch = o.nimbusAwb && String(o.nimbusAwb).trim().toLowerCase() === cleanQuery;
 
-      return isExactMatch || isNumericMatch || isSrOrderMatch || isSrShipmentMatch;
+      return isExactMatch || isNumericMatch || isSrOrderMatch || isSrShipmentMatch || isNimbusOrderMatch || isNimbusAwbMatch;
     });
 
     if (orderIndex === -1) {
@@ -100,9 +102,9 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // 4. Cancel on Shiprocket
-    const srCancelResult = await cancelOrderOnShiprocket(order, db);
-    if (!srCancelResult.success && srCancelResult.alreadyDispatched) {
+    // 4. Cancel on Active Logistics Partner (NimbusPost / Shiprocket)
+    const logCancelResult = await cancelOrderInLogistics(order, reason, db);
+    if (!logCancelResult.success && (logCancelResult as any).alreadyDispatched) {
       return NextResponse.json({
         success: false,
         eligibleForDoorstepRefusal: true,
@@ -116,7 +118,8 @@ export async function POST(request: Request) {
     const cancellationReasonText = reason || "Customer requested cancellation";
 
     order.status = "Cancelled";
-    order.shiprocketStatus = "Cancelled";
+    if (order.shiprocketStatus) order.shiprocketStatus = "Cancelled";
+    if (order.nimbusStatus) order.nimbusStatus = "Cancelled";
     order.cancellationReason = cancellationReasonText;
     order.cancellationComments = comments || "";
     order.cancellationDate = new Date().toISOString();
@@ -140,7 +143,8 @@ export async function POST(request: Request) {
       success: true,
       message: "Your order has been cancelled successfully.",
       order,
-      shiprocketCancelled: srCancelResult.success,
+      logisticsCancelled: logCancelResult.success,
+      shiprocketCancelled: logCancelResult.success,
     });
   } catch (error: any) {
     console.error("[Cancel Order API Error]:", error);

@@ -493,11 +493,18 @@ function sanitizeDBData(data: any): DBData {
         env: "sandbox",
         enabled: true
       },
+      activeLogisticsPartner: "nimbuspost",
       shiprocket: {
         enabled: true,
         email: "imranshah244830@gmail.com",
         password: "@16*APnSzf$&O9oZi#AT2kVISPTvRrqi",
         pickupLocation: "PURE AYUR HERBS",
+      },
+      nimbuspost: {
+        enabled: true,
+        apiKey: process.env.NIMBUSPOST_API_KEY || "",
+        apiSecret: process.env.NIMBUSPOST_API_SECRET || "",
+        warehouseId: process.env.NIMBUSPOST_WAREHOUSE_ID || "PURE AYUR HERBS",
       }
     };
   } else {
@@ -513,6 +520,9 @@ function sanitizeDBData(data: any): DBData {
         linkedin: "",
       };
     }
+    if (!data.settings.activeLogisticsPartner) {
+      data.settings.activeLogisticsPartner = (process.env.ACTIVE_LOGISTICS_PARTNER as any) || "nimbuspost";
+    }
     if (!data.settings.shiprocket || typeof data.settings.shiprocket !== "object") {
       data.settings.shiprocket = {
         enabled: true,
@@ -525,6 +535,26 @@ function sanitizeDBData(data: any): DBData {
       if (!data.settings.shiprocket.email) data.settings.shiprocket.email = "imranshah244830@gmail.com";
       if (!data.settings.shiprocket.password) data.settings.shiprocket.password = "@16*APnSzf$&O9oZi#AT2kVISPTvRrqi";
       if (!data.settings.shiprocket.pickupLocation) data.settings.shiprocket.pickupLocation = "PURE AYUR HERBS";
+    }
+
+    if (!data.settings.nimbuspost || typeof data.settings.nimbuspost !== "object") {
+      data.settings.nimbuspost = {
+        enabled: true,
+        apiKey: process.env.NIMBUSPOST_API_KEY || "",
+        apiSecret: process.env.NIMBUSPOST_API_SECRET || "",
+        warehouseId: process.env.NIMBUSPOST_WAREHOUSE_ID || "PURE AYUR HERBS",
+      };
+    } else {
+      if (data.settings.nimbuspost.enabled === undefined) data.settings.nimbuspost.enabled = true;
+      if (!data.settings.nimbuspost.apiKey && process.env.NIMBUSPOST_API_KEY) {
+        data.settings.nimbuspost.apiKey = process.env.NIMBUSPOST_API_KEY;
+      }
+      if (!data.settings.nimbuspost.apiSecret && process.env.NIMBUSPOST_API_SECRET) {
+        data.settings.nimbuspost.apiSecret = process.env.NIMBUSPOST_API_SECRET;
+      }
+      if (!data.settings.nimbuspost.warehouseId) {
+        data.settings.nimbuspost.warehouseId = process.env.NIMBUSPOST_WAREHOUSE_ID || "PURE AYUR HERBS";
+      }
     }
 
     if (!data.settings.coinsSettings || typeof data.settings.coinsSettings !== "object") {

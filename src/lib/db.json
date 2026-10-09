@@ -85,8 +85,8 @@
       "name": "PERFECT 36 CREAM",
       "slug": "perfect-36-cream",
       "concern": "Womens Health",
-      "price": 598,
-      "compareAt": 799,
+      "price": 499,
+      "compareAt": 599,
       "rating": 5,
       "reviews": 0,
       "badge": "NEW",
@@ -444,6 +444,18 @@
   ],
   "leads": [
     {
+      "id": "WA-1791487700699",
+      "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSOUJDNDA2QkEzOEMxMjdCQzRGAA==",
+      "name": "WhatsApp Customer",
+      "phone": "918069087895",
+      "source": "WhatsApp Business Chat",
+      "message": "Customer sent an attachment or interactive response",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "9/10/2026, 12:58:20 am"
+    },
+    {
       "id": "WA-1791083391555",
       "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSQzA2MURFOUUxODk2QjhBQTQxAA==",
       "name": "WhatsApp Customer",
@@ -670,6 +682,13 @@
       "minCoinsToRedeem": 10,
       "welcomeBonus": 100,
       "orderRewardPercent": 5
+    },
+    "activeLogisticsPartner": "nimbuspost",
+    "nimbuspost": {
+      "enabled": true,
+      "apiKey": "npk_aa1f06c9aebdfbe5",
+      "apiSecret": "X7XeU-4-4Y3B_GznPoKOtCCcEWqi_aC8",
+      "warehouseId": "PURE AYUR HERBS"
     }
   },
   "reviews": [

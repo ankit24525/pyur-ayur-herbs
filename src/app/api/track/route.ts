@@ -30,8 +30,10 @@ export async function GET(request: Request) {
       const isNumericMatch = numericQuery.length >= 4 && (orderNumeric === numericQuery || orderIdLower.includes(cleanQuery));
       const isSrOrderMatch = o.shiprocketOrderId && String(o.shiprocketOrderId).trim().toLowerCase() === cleanQuery;
       const isSrShipmentMatch = o.shiprocketShipmentId && String(o.shiprocketShipmentId).trim().toLowerCase() === cleanQuery;
+      const isNimbusOrderMatch = o.nimbusOrderId && String(o.nimbusOrderId).trim().toLowerCase() === cleanQuery;
+      const isNimbusAwbMatch = o.nimbusAwb && String(o.nimbusAwb).trim().toLowerCase() === cleanQuery;
 
-      return isExactIdMatch || isNumericMatch || isSrOrderMatch || isSrShipmentMatch;
+      return isExactIdMatch || isNumericMatch || isSrOrderMatch || isSrShipmentMatch || isNimbusOrderMatch || isNimbusAwbMatch;
     });
 
     if (!order) {
@@ -48,9 +50,29 @@ export async function GET(request: Request) {
     const isPhoneMatch = !!contact && cleanContact.length >= 4 && (userPhone === cleanContact || userPhone.includes(cleanContact) || cleanContact.includes(userPhone));
     const isAuthorized = isEmailMatch || isPhoneMatch;
 
-    // Check live Shiprocket shipment status if pushed
-    let liveTracking = null;
-    if (order.shiprocketShipmentId) {
+    // Check live tracking from NimbusPost or Shiprocket
+    let liveTracking: any = null;
+    if (order.nimbusAwb) {
+      try {
+        const { getNimbusTracking } = await import("@/lib/nimbuspost");
+        const nimbusRes = await getNimbusTracking(order.nimbusAwb);
+        if (nimbusRes.success && nimbusRes.data) {
+          liveTracking = {
+            provider: "nimbuspost",
+            tracking_data: {
+              track_status: nimbusRes.data.latest?.shipStatus || nimbusRes.data.orderStatus || "In Transit",
+              courier_name: nimbusRes.data.shipment?.courierName || order.nimbusCourierName || "Courier Partner",
+              location: nimbusRes.data.latest?.location,
+              track_url: order.nimbusTrackingUrl || `https://track.nimbuspost.com/track/${order.nimbusAwb}`,
+              events: nimbusRes.data.scans || [],
+            },
+            raw: nimbusRes.data,
+          };
+        }
+      } catch (err) {
+        console.error("[Track Route NimbusPost Fetch Error]:", err);
+      }
+    } else if (order.shiprocketShipmentId) {
       try {
         const srConfig = db.settings?.shiprocket || {};
         const srEmail = srConfig.email || process.env.SHIPROCKET_EMAIL;

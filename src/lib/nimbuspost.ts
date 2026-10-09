@@ -6,9 +6,9 @@
 
 export const NIMBUS_BASE_URL = "https://api-v2.nimbuspost.com";
 
-export const DEFAULT_NIMBUSPOST_API_KEY = process.env.NIMBUSPOST_API_KEY || "";
-export const DEFAULT_NIMBUSPOST_API_SECRET = process.env.NIMBUSPOST_API_SECRET || "";
-export const DEFAULT_NIMBUSPOST_WAREHOUSE_ID = process.env.NIMBUSPOST_WAREHOUSE_ID || "PURE AYUR HERBS";
+export const DEFAULT_NIMBUSPOST_API_KEY = process.env.NIMBUSPOST_API_KEY || "npk_aa1f06c9aebdfbe5";
+export const DEFAULT_NIMBUSPOST_API_SECRET = process.env.NIMBUSPOST_API_SECRET || "X7XeU-4-4Y3B_GznPoKOtCCcEWqi_aC8";
+export const DEFAULT_NIMBUSPOST_WAREHOUSE_ID = process.env.NIMBUSPOST_WAREHOUSE_ID || "3f262abb-df43-4ec8-aec2-0ce27ecf57ca";
 
 export interface NimbusConfig {
   apiKey?: string;

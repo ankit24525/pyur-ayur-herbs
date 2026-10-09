@@ -502,9 +502,9 @@ function sanitizeDBData(data: any): DBData {
       },
       nimbuspost: {
         enabled: true,
-        apiKey: process.env.NIMBUSPOST_API_KEY || "",
-        apiSecret: process.env.NIMBUSPOST_API_SECRET || "",
-        warehouseId: process.env.NIMBUSPOST_WAREHOUSE_ID || "PURE AYUR HERBS",
+        apiKey: process.env.NIMBUSPOST_API_KEY || "npk_aa1f06c9aebdfbe5",
+        apiSecret: process.env.NIMBUSPOST_API_SECRET || "X7XeU-4-4Y3B_GznPoKOtCCcEWqi_aC8",
+        warehouseId: process.env.NIMBUSPOST_WAREHOUSE_ID || "3f262abb-df43-4ec8-aec2-0ce27ecf57ca",
       }
     };
   } else {
@@ -540,20 +540,20 @@ function sanitizeDBData(data: any): DBData {
     if (!data.settings.nimbuspost || typeof data.settings.nimbuspost !== "object") {
       data.settings.nimbuspost = {
         enabled: true,
-        apiKey: process.env.NIMBUSPOST_API_KEY || "",
-        apiSecret: process.env.NIMBUSPOST_API_SECRET || "",
-        warehouseId: process.env.NIMBUSPOST_WAREHOUSE_ID || "PURE AYUR HERBS",
+        apiKey: process.env.NIMBUSPOST_API_KEY || "npk_aa1f06c9aebdfbe5",
+        apiSecret: process.env.NIMBUSPOST_API_SECRET || "X7XeU-4-4Y3B_GznPoKOtCCcEWqi_aC8",
+        warehouseId: process.env.NIMBUSPOST_WAREHOUSE_ID || "3f262abb-df43-4ec8-aec2-0ce27ecf57ca",
       };
     } else {
       if (data.settings.nimbuspost.enabled === undefined) data.settings.nimbuspost.enabled = true;
-      if (!data.settings.nimbuspost.apiKey && process.env.NIMBUSPOST_API_KEY) {
-        data.settings.nimbuspost.apiKey = process.env.NIMBUSPOST_API_KEY;
+      if (!data.settings.nimbuspost.apiKey) {
+        data.settings.nimbuspost.apiKey = process.env.NIMBUSPOST_API_KEY || "npk_aa1f06c9aebdfbe5";
       }
-      if (!data.settings.nimbuspost.apiSecret && process.env.NIMBUSPOST_API_SECRET) {
-        data.settings.nimbuspost.apiSecret = process.env.NIMBUSPOST_API_SECRET;
+      if (!data.settings.nimbuspost.apiSecret) {
+        data.settings.nimbuspost.apiSecret = process.env.NIMBUSPOST_API_SECRET || "X7XeU-4-4Y3B_GznPoKOtCCcEWqi_aC8";
       }
       if (!data.settings.nimbuspost.warehouseId) {
-        data.settings.nimbuspost.warehouseId = process.env.NIMBUSPOST_WAREHOUSE_ID || "PURE AYUR HERBS";
+        data.settings.nimbuspost.warehouseId = process.env.NIMBUSPOST_WAREHOUSE_ID || "3f262abb-df43-4ec8-aec2-0ce27ecf57ca";
       }
     }
 

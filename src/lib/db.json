@@ -417,14 +417,42 @@
     },
     {
       "id": "PYR-ORD-123942",
-      "date": "9 Oct 2026",
       "customer": "Ankit Pandey",
+      "email": "ankitpandey9658@gmail.com",
       "phone": "6388870437",
-      "address": "Kiccha road sitarganj, Sitarganj, Uttarakhand - 262405",
+      "altPhone": "",
+      "companyName": "",
+      "landmark": "",
+      "address": "Kiccha road sitarganj",
+      "rawAddress": "Kiccha road sitarganj",
+      "pincode": "262405",
+      "city": "Sitarganj",
+      "state": "Uttarakhand",
+      "country": "India",
+      "shippingAddress": {
+        "street": "Kiccha road sitarganj",
+        "landmark": "",
+        "companyName": "",
+        "city": "Sitarganj",
+        "state": "Uttarakhand",
+        "pincode": "262405",
+        "country": "India"
+      },
+      "subtotal": 449,
+      "discount": 0,
+      "coinsRedeemed": 0,
       "total": 498,
-      "status": "Verified",
       "method": "COD",
-      "items": "VIRJA GOLD MAJUN x1"
+      "status": "Verified",
+      "date": "9 Oct 2026",
+      "items": "VIRJA GOLD MAJUN x1",
+      "itemsRaw": [
+        {
+          "productId": "prod_1789129223995",
+          "quantity": 1,
+          "price": 449
+        }
+      ]
     }
   ],
   "coupons": [
@@ -454,6 +482,18 @@
     }
   ],
   "leads": [
+    {
+      "id": "WA-1791562721024",
+      "waMessageId": "wamid.HBgMOTE2Mzg4ODcwNDM3FQIAEhggQUNFM0M1RUQ1MUFBQzJGOTJBQzM4NjI2OTAxREFDMzMA",
+      "name": "ankitpandey",
+      "phone": "916388870437",
+      "source": "WhatsApp Business Chat",
+      "message": "Hii",
+      "botReply": "Namaste ankitpandey! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "9/10/2026, 9:48:41 pm"
+    },
     {
       "id": "WA-1791487700699",
       "waMessageId": "wamid.HBgMOTE4MDY5MDg3ODk1FQIAEhgSOUJDNDA2QkEzOEMxMjdCQzRGAA==",
@@ -699,7 +739,7 @@
       "enabled": true,
       "apiKey": "npk_aa1f06c9aebdfbe5",
       "apiSecret": "X7XeU-4-4Y3B_GznPoKOtCCcEWqi_aC8",
-      "warehouseId": "PURE AYUR HERBS"
+      "warehouseId": "3f262abb-df43-4ec8-aec2-0ce27ecf57ca"
     }
   },
   "reviews": [
@@ -1237,6 +1277,17 @@
           "state": "Uttar Pradesh",
           "pincode": "229001",
           "isDefault": false
+        },
+        {
+          "id": "ADR-1791562434712",
+          "name": "Ankit Pandey",
+          "phone": "6388870437",
+          "street": "Kiccha road sitarganj",
+          "landmark": "",
+          "city": "Sitarganj",
+          "state": "Uttarakhand",
+          "pincode": "262405",
+          "isDefault": false
         }
       ]
     },
@@ -1337,13 +1388,6 @@
       "createdAt": 1789716377619
     },
     {
-      "identifier": "ankitpandey9658@gmail.com",
-      "otp": "780772",
-      "purpose": "checkout",
-      "expiresAt": 1789838588305,
-      "createdAt": 1789837988305
-    },
-    {
       "identifier": "7055558899",
       "otp": "837403",
       "purpose": "checkout",
@@ -1377,6 +1421,13 @@
       "purpose": "checkout",
       "expiresAt": 1790217006289,
       "createdAt": 1790216406289
+    },
+    {
+      "identifier": "ankitpandey9658@gmail.com",
+      "otp": "619149",
+      "purpose": "checkout",
+      "expiresAt": 1791562202569,
+      "createdAt": 1791561602569
     }
   ],
   "categories": [
@@ -1448,6 +1499,31 @@
     }
   ],
   "abandonedCarts": [
+    {
+      "id": "AC-1791561600331",
+      "userId": null,
+      "isLoggedInUser": false,
+      "phone": "6388870437",
+      "name": "Ankit Pandey",
+      "email": "ankitpandey9658@gmail.com",
+      "items": [
+        {
+          "id": "prod_1788511912600",
+          "name": "MADHUNASHI SYP",
+          "quantity": 1,
+          "price": 410
+        }
+      ],
+      "cartTotal": 410,
+      "status": "Converted",
+      "discountCode": "AYUR5",
+      "recoveryMessagesSent": 0,
+      "createdAt": "2026-10-09T16:00:00.331Z",
+      "lastActive": "2026-10-09T16:00:00.331Z",
+      "recoveryUrl": "https://www.purreayurherbs.com/cart",
+      "convertedOrderId": "PYR-ORD-631640",
+      "convertedAt": "2026-10-09T16:00:52.413Z"
+    },
     {
       "id": "AC-1790183820938",
       "userId": null,
@@ -1635,9 +1711,9 @@
   ],
   "verifiedPhones": [
     {
-      "phone": "8791562510",
-      "verifiedAt": 1790183911968,
-      "expiresAt": 1790185711968
+      "phone": "6388870437",
+      "verifiedAt": 1791561618017,
+      "expiresAt": 1791563418017
     }
   ],
   "media": [

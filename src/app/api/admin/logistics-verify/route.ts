@@ -12,8 +12,8 @@ export async function GET() {
     const activePartner = getActiveLogisticsPartner(db);
 
     const nimbusConfig = db.settings?.nimbuspost || {};
-    const apiKey = nimbusConfig.apiKey || process.env.NIMBUSPOST_API_KEY || "";
-    const apiSecret = nimbusConfig.apiSecret || process.env.NIMBUSPOST_API_SECRET || "";
+    const apiKey = nimbusConfig.apiKey || process.env.NIMBUSPOST_API_KEY || "npk_aa1f06c9aebdfbe5";
+    const apiSecret = nimbusConfig.apiSecret || process.env.NIMBUSPOST_API_SECRET || "X7XeU-4-4Y3B_GznPoKOtCCcEWqi_aC8";
     const warehouseId = nimbusConfig.warehouseId || process.env.NIMBUSPOST_WAREHOUSE_ID || "PURE AYUR HERBS";
 
     const srConfig = db.settings?.shiprocket || {};

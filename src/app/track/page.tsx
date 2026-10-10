@@ -167,10 +167,17 @@ function TrackOrderContent() {
   // Watch for ?action=cancel in URL and auto-open appropriate modal
   useEffect(() => {
     if (searchParams.get("action") === "cancel" && order) {
-      const st = String(order.status || "").toLowerCase();
-      if (st.includes("shipped") || st.includes("transit") || st.includes("out for delivery")) {
+      const st = `${order.status || ""} ${order.nimbusStatus || ""} ${order.shiprocketStatus || ""}`.toLowerCase();
+      if (
+        st.includes("shipped") ||
+        st.includes("dispatch") ||
+        st.includes("transit") ||
+        st.includes("out for delivery") ||
+        st.includes("ofd") ||
+        st.includes("picked up")
+      ) {
         setDoorstepModalOpen(true);
-      } else if (st !== "cancelled" && !st.includes("delivered")) {
+      } else if (!st.includes("cancel") && !st.includes("delivered")) {
         setCancelModalOpen(true);
       }
     }
@@ -521,17 +528,22 @@ function TrackOrderContent() {
                   <div className="flex flex-wrap items-center gap-2.5">
                     {/* Cancellation / Doorstep Refusal Actions */}
                     {(() => {
-                      const st = String(order.status || "Processing").toLowerCase();
-                      const isCancelled = st === "cancelled" || st.includes("cancel");
+                      const st = `${order.status || "Processing"} ${order.nimbusStatus || ""} ${order.shiprocketStatus || ""}`.toLowerCase();
+                      const isCancelled = st.includes("cancel");
                       const isDelivered = st.includes("delivered");
+                      const liveSt = String(
+                        order.liveTracking?.tracking_data?.shipment_track?.[0]?.current_status || ""
+                      ).toLowerCase();
                       const isDispatched =
                         st.includes("shipped") ||
+                        st.includes("dispatch") ||
                         st.includes("transit") ||
                         st.includes("out for delivery") ||
-                        Boolean(
-                          order.liveTracking?.tracking_data?.shipment_track?.[0]?.current_status?.toUpperCase()?.includes("TRANSIT") ||
-                          order.liveTracking?.tracking_data?.shipment_track?.[0]?.current_status?.toUpperCase()?.includes("SHIPPED")
-                        );
+                        st.includes("ofd") ||
+                        st.includes("picked up") ||
+                        liveSt.includes("shipped") ||
+                        liveSt.includes("transit") ||
+                        liveSt.includes("out for delivery");
 
                       if (isCancelled) return null;
 

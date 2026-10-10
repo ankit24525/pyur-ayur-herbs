@@ -96,14 +96,26 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // 3. Out for delivery or in-transit with courier (Amazon & Flipkart Doorstep Refusal Policy)
-    const isAlreadyInTransit = currentStatus.includes("in transit") || currentStatus.includes("out for delivery");
-    if (isAlreadyInTransit) {
+    // 3. Shipped, In-Transit, or Out for Delivery with courier (Amazon & Flipkart Doorstep Refusal Policy)
+    const nimbusStatusLower = String(order.nimbusStatus || "").toLowerCase();
+    const srStatusLower = String(order.shiprocketStatus || "").toLowerCase();
+    const combinedStatus = `${currentStatus} ${nimbusStatusLower} ${srStatusLower}`;
+
+    const isAlreadyDispatched =
+      combinedStatus.includes("shipped") ||
+      combinedStatus.includes("dispatched") ||
+      combinedStatus.includes("in transit") ||
+      combinedStatus.includes("transit") ||
+      combinedStatus.includes("out for delivery") ||
+      combinedStatus.includes("ofd") ||
+      combinedStatus.includes("picked up");
+
+    if (isAlreadyDispatched) {
       return NextResponse.json({
         success: false,
         eligibleForDoorstepRefusal: true,
         isDispatched: true,
-        error: "Your parcel is already in transit with our courier partner and cannot be cancelled online. Like Amazon and Flipkart, you can simply refuse delivery at your doorstep when the courier executive arrives. The package will be returned to us safely with ₹0 charge or a full refund for prepaid orders.",
+        error: "Your order has already been shipped / is out for delivery with our courier partner and cannot be cancelled online. Like Amazon and Flipkart, you can simply refuse delivery at your doorstep when the courier executive arrives. The package will be returned to us safely with ₹0 charge or a full refund for prepaid orders.",
         order,
       }, { status: 400 });
     }

@@ -233,6 +233,18 @@ function ProfileDashboard() {
     return !isOrderCancelled(order) && !isOrderReturn(order) && !isOrderDelivered(order);
   };
 
+  const isOrderDispatched = (order: any) => {
+    const s = `${order?.status || ""} ${order?.nimbusStatus || ""} ${order?.shiprocketStatus || ""}`.toLowerCase();
+    return (
+      s.includes("shipped") ||
+      s.includes("dispatch") ||
+      s.includes("transit") ||
+      s.includes("out for delivery") ||
+      s.includes("ofd") ||
+      s.includes("picked up")
+    );
+  };
+
   const activeOrdersCount = orders.filter(isOrderActive).length;
   const deliveredOrdersCount = orders.filter(isOrderDelivered).length;
   const cancelledOrdersCount = orders.filter((o) => isOrderCancelled(o) || isOrderReturn(o)).length;
@@ -1093,8 +1105,8 @@ function ProfileDashboard() {
                               Track Package
                             </Link>
 
-                            {/* In-Place Cancel Order for Active Orders */}
-                            {active && (
+                            {/* In-Place Cancel Order only for Unshipped Active Orders */}
+                            {active && !isOrderDispatched(order) && (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -1108,6 +1120,15 @@ function ProfileDashboard() {
                               >
                                 Cancel Order
                               </button>
+                            )}
+
+                            {active && isOrderDispatched(order) && (
+                              <span
+                                title="Orders that are Shipped or Out for Delivery cannot be cancelled online."
+                                className="rounded-xl border border-amber-200 bg-amber-50 text-amber-800 font-bold text-[10px] sm:text-xs py-1.5 px-3 cursor-not-allowed"
+                              >
+                                Dispatched (Cannot Cancel Online)
+                              </span>
                             )}
 
                             {/* In-Place Return / Replace for Delivered Orders */}

@@ -6887,7 +6887,7 @@ export default function AdminDashboard() {
                   if (effectiveSubTab === "Pending OTP" && o.status !== "Pending OTP") return false;
                   if (effectiveSubTab === "Pending Payment" && o.status !== "Pending Payment" && o.status !== "Payment Failed") return false;
                   if (effectiveSubTab === "Processing" && o.status !== "Processing" && o.status !== "Verified") return false;
-                  if (effectiveSubTab === "Shipped" && o.status !== "Shipped") return false;
+                  if (effectiveSubTab === "Shipped" && !["Shipped", "In Transit", "Out for Delivery"].includes(o.status)) return false;
                   if (effectiveSubTab === "Delivered" && o.status !== "Delivered") return false;
                   if (effectiveSubTab === "Cancelled" && o.status !== "Cancelled") return false;
                   if (effectiveSubTab === "Returns" && !["Return Request", "Returned", "Refunded"].includes(o.status)) return false;
@@ -7037,6 +7037,8 @@ export default function AdminDashboard() {
                                   <option value="Processing">Processing</option>
                                   <option value="Verified">Verified</option>
                                   <option value="Shipped">Shipped</option>
+                                  <option value="In Transit">In Transit</option>
+                                  <option value="Out for Delivery">Out for Delivery</option>
                                   <option value="Delivered">Delivered</option>
                                   <option value="Cancelled">Cancelled</option>
                                   <option value="Return Request">Return Request</option>
@@ -16423,6 +16425,8 @@ export default function AdminDashboard() {
                       <option value="Processing">Processing</option>
                       <option value="Verified">Verified</option>
                       <option value="Shipped">Shipped</option>
+                      <option value="In Transit">In Transit</option>
+                      <option value="Out for Delivery">Out for Delivery</option>
                       <option value="Delivered">Delivered</option>
                       <option value="Cancelled">Cancelled</option>
                       <option value="Return Request">Return Request</option>

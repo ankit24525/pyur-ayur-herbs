@@ -405,10 +405,10 @@ export async function cancelCustomerOrder(
       }
     }
 
-    const status = String(order.status || "Processing").toLowerCase();
+    const status = `${order.status || "Processing"} ${order.nimbusStatus || ""} ${order.shiprocketStatus || ""}`.toLowerCase();
 
     // 1. Already Cancelled
-    if (status === "cancelled" || status.includes("cancel")) {
+    if (status.includes("cancel")) {
       return {
         success: false,
         status: "ALREADY_CANCELLED",
@@ -428,7 +428,13 @@ export async function cancelCustomerOrder(
     }
 
     // 3. Shipped / In Transit / Out for Delivery (Amazon/Flipkart Doorstep Refusal)
-    const isDispatched = status.includes("shipped") || status.includes("transit") || status.includes("out for delivery");
+    const isDispatched =
+      status.includes("shipped") ||
+      status.includes("dispatch") ||
+      status.includes("transit") ||
+      status.includes("out for delivery") ||
+      status.includes("ofd") ||
+      status.includes("picked up");
     if (isDispatched) {
       return {
         success: false,

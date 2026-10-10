@@ -386,9 +386,9 @@ _To cancel any specific order above, copy and reply with the command shown below
     }
 
     const order = orderResult.order || orderResult.multiple?.[0];
-    const status = String(order.status || "Processing").toLowerCase();
+    const status = `${order.status || "Processing"} ${order.nimbusStatus || ""} ${order.shiprocketStatus || ""}`.toLowerCase();
 
-    if (status === "cancelled" || status.includes("cancel")) {
+    if (status.includes("cancel")) {
       return {
         replyText: formatAlreadyCancelledMessage(order, profileName),
         intent: "ORDER_CANCELLATION",
@@ -404,7 +404,14 @@ _To cancel any specific order above, copy and reply with the command shown below
       };
     }
 
-    if (status.includes("shipped") || status.includes("transit") || status.includes("out for delivery")) {
+    if (
+      status.includes("shipped") ||
+      status.includes("dispatch") ||
+      status.includes("transit") ||
+      status.includes("out for delivery") ||
+      status.includes("ofd") ||
+      status.includes("picked up")
+    ) {
       return {
         replyText: formatDoorstepRefusalMessage(order, profileName),
         intent: "ORDER_CANCELLATION",

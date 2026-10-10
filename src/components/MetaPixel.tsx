@@ -12,7 +12,21 @@ declare global {
 
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "2362089077927963";
 
+function isAdminContext(pathname?: string | null): boolean {
+  if (pathname && pathname.startsWith("/admin")) return true;
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    const path = window.location.pathname.toLowerCase();
+    if (host.startsWith("admin.") || path.startsWith("/admin")) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function trackMetaEvent(eventName: string, customData?: Record<string, any>) {
+  if (isAdminContext()) return;
+
   if (typeof window !== "undefined" && window.fbq) {
     window.fbq("track", eventName, customData);
     console.log(`[Meta Pixel Client Trigger]: ${eventName}`, customData);
@@ -37,6 +51,7 @@ function PixelTrackerInner() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    if (isAdminContext(pathname)) return;
     trackMetaEvent("PageView");
   }, [pathname, searchParams]);
 
@@ -44,8 +59,10 @@ function PixelTrackerInner() {
 }
 
 export default function MetaPixel() {
+  const pathname = usePathname();
+
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || isAdminContext(pathname)) return;
 
     if (!window.fbq) {
       const n = (window.fbq = function () {
@@ -65,7 +82,11 @@ export default function MetaPixel() {
     }
 
     window.fbq("init", PIXEL_ID);
-  }, []);
+  }, [pathname]);
+
+  if (isAdminContext(pathname)) {
+    return null;
+  }
 
   return (
     <>

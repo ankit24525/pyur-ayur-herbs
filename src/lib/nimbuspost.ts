@@ -342,6 +342,7 @@ export async function pushOrderToNimbusPost(
     const cleanCustomerName = (order.customer || order.name || "Customer").trim();
 
     // Build order items
+    const orderTotalNum = Math.max(Math.round(Number(order.total) || 1), 1);
     let items: NimbusOrderItem[] = [];
     if (Array.isArray(order.itemsRaw) && order.itemsRaw.length > 0) {
       items = order.itemsRaw.map((i: any) => {
@@ -349,7 +350,7 @@ export async function pushOrderToNimbusPost(
         return {
           name: prod ? prod.name : i.name || "Ayurvedic Formulation",
           qty: Number(i.quantity) || 1,
-          price: Math.max(Number(prod?.price || i.price || order.total) || 1, 1),
+          price: Math.max(Math.round(Number(prod?.price || i.price || orderTotalNum) || 1), 1),
           sku: prod?.sku || i.sku || `SKU-${i.productId || order.id}`,
         };
       });
@@ -359,17 +360,36 @@ export async function pushOrderToNimbusPost(
         {
           name: rawName || "Ayurvedic Formulation",
           qty: 1,
-          price: Math.max(Number(order.total) || 1, 1),
+          price: orderTotalNum,
           sku: `SKU-${order.id}`,
         },
       ];
+    }
+
+    // NimbusPost computes order total strictly as sum(item.price * item.qty).
+    // If order.total includes shipping/COD charges (e.g. ₹449 + ₹49 shipping = ₹498),
+    // ensure the item total is at least orderTotalNum so collectable_amount <= order_total.
+    const itemsSum = items.reduce((acc, item) => acc + item.price * item.qty, 0);
+    if (itemsSum < orderTotalNum) {
+      const diff = orderTotalNum - itemsSum;
+      const singleQtyItem = items.find((it) => it.qty === 1);
+      if (singleQtyItem) {
+        singleQtyItem.price += diff;
+      } else {
+        items.push({
+          name: "Shipping & Handling Charges",
+          qty: 1,
+          price: diff,
+          sku: "PAH-SHIPPING",
+        });
+      }
     }
 
     // Determine Payment Mode
     const methodStr = String(order.method || order.paymentMethod || "").trim().toLowerCase();
     const isCod = methodStr.includes("cod") || methodStr.includes("cash");
     const paymentMode: "cod" | "prepaid" = isCod ? "cod" : "prepaid";
-    const collectableAmount = isCod ? Math.max(Number(order.total) || 0, 0) : 0;
+    const collectableAmount = isCod ? orderTotalNum : 0;
 
     // Resolve or match warehouse
     let resolvedWarehouseId = warehouseId;

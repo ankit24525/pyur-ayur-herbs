@@ -14232,30 +14232,67 @@ export default function AdminDashboard() {
                     <Truck className="size-4 text-[#80a03c]" />
                     <span>Courier & Delivery Charges</span>
                   </h3>
-                    <div className="grid gap-4 sm:grid-cols-2 text-xs">
-                      <div className="border p-4 rounded-xl bg-[#f8faf1]">
-                        <label className="block font-bold text-[#17231b]">Free Delivery Threshold Amount (₹)</label>
-                        <p className="text-[10px] text-[#666666] mt-0.5">Orders above this amount get Free Shipping</p>
-                        <input
-                          type="number"
-                          value={dbData.settings.shipping?.freeThreshold ?? 999}
-                          onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, freeThreshold: parseInt(e.target.value) || 0 })}
-                          className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
-                        />
-                      </div>
-                      <div className="border p-4 rounded-xl bg-[#f8faf1]">
-                        <label className="block font-bold text-[#17231b]">Base Shipping Courier Fee (₹)</label>
-                        <p className="text-[10px] text-[#666666] mt-0.5">Charged when cart is below free delivery threshold</p>
-                        <input
-                          type="number"
-                          value={dbData.settings.shipping?.baseRate ?? 49}
-                          onChange={(e) => handleSaveSettings("shipping", { ...dbData.settings.shipping, baseRate: parseInt(e.target.value) || 0 })}
-                          className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
-                        />
-                      </div>
+                  <div className="grid gap-4 sm:grid-cols-2 text-xs">
+                    <div className="border p-4 rounded-xl bg-[#f8faf1]">
+                      <label className="block font-bold text-[#17231b]">Free Delivery Threshold Amount (₹)</label>
+                      <p className="text-[10px] text-[#666666] mt-0.5">Orders above this amount get Free Shipping</p>
+                      <input
+                        type="number"
+                        value={dbData.settings.shipping?.freeThreshold ?? 999}
+                        onChange={(e) =>
+                          setDbData({
+                            ...dbData,
+                            settings: {
+                              ...dbData.settings,
+                              shipping: {
+                                ...dbData.settings.shipping,
+                                freeThreshold: parseInt(e.target.value, 10) || 0,
+                              },
+                            },
+                          })
+                        }
+                        className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
+                      />
+                    </div>
+                    <div className="border p-4 rounded-xl bg-[#f8faf1]">
+                      <label className="block font-bold text-[#17231b]">Base Shipping Courier Fee (₹)</label>
+                      <p className="text-[10px] text-[#666666] mt-0.5">Charged when cart is below free delivery threshold</p>
+                      <input
+                        type="number"
+                        value={dbData.settings.shipping?.baseRate ?? 49}
+                        onChange={(e) =>
+                          setDbData({
+                            ...dbData,
+                            settings: {
+                              ...dbData.settings,
+                              shipping: {
+                                ...dbData.settings.shipping,
+                                baseRate: parseInt(e.target.value, 10) || 0,
+                              },
+                            },
+                          })
+                        }
+                        className="mt-2 w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-bold"
+                      />
                     </div>
                   </div>
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleSaveSettings("shipping", {
+                          ...dbData.settings.shipping,
+                          freeThreshold: dbData.settings.shipping?.freeThreshold ?? 999,
+                          baseRate: dbData.settings.shipping?.baseRate ?? 49,
+                        })
+                      }
+                      className="bg-[#244f31] hover:bg-[#1c3e26] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                    >
+                      Save Shipping Settings
+                    </button>
+                  </div>
                 </div>
+              </div>
             )}
 
             {/* 10. Analytics Panel */}

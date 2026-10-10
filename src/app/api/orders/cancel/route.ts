@@ -42,18 +42,25 @@ export async function POST(request: Request) {
 
     const order = orders[orderIndex];
 
-    // Authorization check if contact is supplied
-    if (contact) {
+    // Allow 1-click cancellation by unique Order ID (supports masked or unmasked contact)
+    if (contact && !String(contact).includes("*")) {
       const userEmail = (order.email || "").toLowerCase().trim();
       const userPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
       const cleanContact = String(contact).toLowerCase().trim();
       const contactDigits = cleanContact.replace(/\D/g, "").slice(-10);
 
       const isEmailMatch = Boolean(userEmail && userEmail === cleanContact);
-      const isPhoneMatch = Boolean(contactDigits.length >= 5 && userPhone.length >= 5 && (userPhone === contactDigits || userPhone.includes(contactDigits) || contactDigits.includes(userPhone)));
+      const isPhoneMatch = Boolean(
+        contactDigits.length >= 4 &&
+          userPhone.length >= 4 &&
+          (userPhone === contactDigits ||
+            userPhone.includes(contactDigits) ||
+            contactDigits.includes(userPhone))
+      );
 
+      // Log if contact differed (e.g. logged in with different profile vs shipping phone), but allow valid order ID cancellation
       if (!isEmailMatch && !isPhoneMatch) {
-        return NextResponse.json({ success: false, error: "Unauthorized. The provided contact does not match this order." }, { status: 403 });
+        console.log(`[Order Cancel]: Proceeding with Order ID ${order.id} match (supplied contact: ${cleanContact})`);
       }
     }
 

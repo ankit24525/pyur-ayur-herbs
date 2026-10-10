@@ -186,7 +186,11 @@ function TrackOrderContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order.id,
-          contact: order.phone || order.email || contactInput || authFormContact,
+          contact:
+            contactInput ||
+            authFormContact ||
+            (!order.phone?.includes("*") ? order.phone : "") ||
+            (!order.email?.includes("*") ? order.email : ""),
           reason: cancelReason,
           comments: cancelComments,
         }),

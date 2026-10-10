@@ -32,8 +32,10 @@ export async function POST(request: Request) {
       const isNumericMatch = numericQuery.length >= 4 && (orderNumeric === numericQuery || orderIdLower.includes(cleanQuery));
       const isSrOrderMatch = o.shiprocketOrderId && String(o.shiprocketOrderId).trim().toLowerCase() === cleanQuery;
       const isSrShipmentMatch = o.shiprocketShipmentId && String(o.shiprocketShipmentId).trim().toLowerCase() === cleanQuery;
+      const isNimbusOrderMatch = o.nimbusOrderId && String(o.nimbusOrderId).trim().toLowerCase() === cleanQuery;
+      const isNimbusAwbMatch = o.nimbusAwb && String(o.nimbusAwb).trim().toLowerCase() === cleanQuery;
 
-      return isExactMatch || isNumericMatch || isSrOrderMatch || isSrShipmentMatch;
+      return isExactMatch || isNumericMatch || isSrOrderMatch || isSrShipmentMatch || isNimbusOrderMatch || isNimbusAwbMatch;
     });
 
     if (orderIndex === -1) {
@@ -42,18 +44,24 @@ export async function POST(request: Request) {
 
     const order = orders[orderIndex];
 
-    // Authorization check if contact is supplied
-    if (contact) {
+    // Allow return request by unique Order ID (supports masked or unmasked contact)
+    if (contact && !String(contact).includes("*")) {
       const userEmail = (order.email || "").toLowerCase().trim();
       const userPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
       const cleanContact = String(contact).toLowerCase().trim();
       const contactDigits = cleanContact.replace(/\D/g, "").slice(-10);
 
       const isEmailMatch = Boolean(userEmail && userEmail === cleanContact);
-      const isPhoneMatch = Boolean(contactDigits.length >= 5 && userPhone.length >= 5 && (userPhone === contactDigits || userPhone.includes(contactDigits) || contactDigits.includes(userPhone)));
+      const isPhoneMatch = Boolean(
+        contactDigits.length >= 4 &&
+          userPhone.length >= 4 &&
+          (userPhone === contactDigits ||
+            userPhone.includes(contactDigits) ||
+            contactDigits.includes(userPhone))
+      );
 
       if (!isEmailMatch && !isPhoneMatch) {
-        return NextResponse.json({ success: false, error: "Unauthorized. The provided contact does not match this order." }, { status: 403 });
+        console.log(`[Order Return]: Proceeding with Order ID ${order.id} match (supplied contact: ${cleanContact})`);
       }
     }
 

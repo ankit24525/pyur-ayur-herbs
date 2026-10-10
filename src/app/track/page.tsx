@@ -64,6 +64,7 @@ function TrackOrderContent() {
   // Order Cancellation States (Amazon & Flipkart System)
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [doorstepModalOpen, setDoorstepModalOpen] = useState(false);
+  const [cancelContactInput, setCancelContactInput] = useState("");
   const [cancelReason, setCancelReason] = useState("Ordered by mistake");
   const [cancelComments, setCancelComments] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -178,6 +179,20 @@ function TrackOrderContent() {
   const handleCancelOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order) return;
+
+    const effectiveContact = (
+      cancelContactInput.trim() ||
+      (!order.phone?.includes("*") ? order.phone : "") ||
+      (!order.email?.includes("*") ? order.email : "") ||
+      contactInput.trim() ||
+      authFormContact.trim()
+    ).trim();
+
+    if (!effectiveContact) {
+      setCancelError("Please enter the 10-digit mobile number or email address used to place this order.");
+      return;
+    }
+
     setCancelLoading(true);
     setCancelError(null);
     try {
@@ -186,11 +201,7 @@ function TrackOrderContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order.id,
-          contact:
-            contactInput ||
-            authFormContact ||
-            (!order.phone?.includes("*") ? order.phone : "") ||
-            (!order.email?.includes("*") ? order.email : ""),
+          contact: effectiveContact,
           reason: cancelReason,
           comments: cancelComments,
         }),
@@ -199,6 +210,7 @@ function TrackOrderContent() {
       const data = await res.json();
       if (res.ok && data.success) {
         setOrder(data.order);
+        setAuthorized(true);
         setCancelModalOpen(false);
         setCancelSuccessMsg(data.message || "Your order has been cancelled successfully.");
       } else {
@@ -926,6 +938,30 @@ function TrackOrderContent() {
             </div>
 
             <form onSubmit={handleCancelOrder} className="space-y-4 text-xs">
+              {!authorized ? (
+                <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-1.5">
+                  <label className="block font-bold text-[#17231b]">
+                    Verify Registered Mobile Number or Email <span className="text-rose-600">*</span>
+                  </label>
+                  <p className="text-[11px] text-gray-600">
+                    For security, please enter the mobile number{order.phone ? ` (ending in ${order.phone.slice(-4)})` : ""} or email used when placing this order.
+                  </p>
+                  <input
+                    type="text"
+                    value={cancelContactInput}
+                    onChange={(e) => setCancelContactInput(e.target.value)}
+                    placeholder="Enter 10-digit mobile number or email"
+                    className="w-full rounded-xl border border-[#ddddd9] bg-white p-2.5 text-xs font-semibold outline-none focus:border-[#244f31]"
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5 flex items-center gap-2 text-[11px] text-emerald-800 font-semibold">
+                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                  <span>Verified via registered contact ({order.phone || order.email})</span>
+                </div>
+              )}
+
               <div>
                 <label className="block font-bold text-gray-700 mb-1.5">
                   Reason for cancellation <span className="text-rose-600">*</span>

@@ -42,26 +42,38 @@ export async function POST(request: Request) {
 
     const order = orders[orderIndex];
 
-    // Allow 1-click cancellation by unique Order ID (supports masked or unmasked contact)
-    if (contact && !String(contact).includes("*")) {
-      const userEmail = (order.email || "").toLowerCase().trim();
-      const userPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
-      const cleanContact = String(contact).toLowerCase().trim();
-      const contactDigits = cleanContact.replace(/\D/g, "").slice(-10);
+    // Mandatory verification: Verify that the submitted phone number or email matches the order
+    const userEmail = (order.email || "").toLowerCase().trim();
+    const userPhone = (order.phone || "").replace(/\D/g, "").slice(-10);
+    const altPhone = (order.altPhone || "").replace(/\D/g, "").slice(-10);
+    const cleanContact = String(contact || "").toLowerCase().trim();
+    const contactDigits = cleanContact.replace(/\D/g, "").slice(-10);
 
-      const isEmailMatch = Boolean(userEmail && userEmail === cleanContact);
-      const isPhoneMatch = Boolean(
-        contactDigits.length >= 4 &&
-          userPhone.length >= 4 &&
-          (userPhone === contactDigits ||
-            userPhone.includes(contactDigits) ||
-            contactDigits.includes(userPhone))
+    if (!cleanContact || cleanContact.includes("*")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Verification required: Please enter the 10-digit mobile number or email address used to place this order.",
+        },
+        { status: 403 }
       );
+    }
 
-      // Log if contact differed (e.g. logged in with different profile vs shipping phone), but allow valid order ID cancellation
-      if (!isEmailMatch && !isPhoneMatch) {
-        console.log(`[Order Cancel]: Proceeding with Order ID ${order.id} match (supplied contact: ${cleanContact})`);
-      }
+    const isEmailMatch = Boolean(userEmail && userEmail === cleanContact);
+    const isPhoneMatch = Boolean(
+      contactDigits.length >= 10 &&
+        ((userPhone.length >= 10 && userPhone === contactDigits) ||
+          (altPhone.length >= 10 && altPhone === contactDigits))
+    );
+
+    if (!isEmailMatch && !isPhoneMatch) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Verification failed: The mobile number or email entered does not match the one used to place this order.",
+        },
+        { status: 403 }
+      );
     }
 
     const currentStatus = String(order.status || "Processing").toLowerCase();

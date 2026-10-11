@@ -8,7 +8,26 @@ import { extractSessionToken, resolveSession } from "@/lib/session";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, phone, address, pincode, city, state, paymentMethod, items, subtotal, email, altPhone, companyName, landmark, coinsRedeemed } = body;
+    const {
+      name,
+      phone,
+      address,
+      pincode,
+      city,
+      state,
+      paymentMethod,
+      items,
+      subtotal,
+      email,
+      altPhone,
+      companyName,
+      landmark,
+      coinsRedeemed,
+      couponDiscount: incomingCouponDiscount,
+      appliedCoupon,
+      saveAsPendingOtp,
+      pendingOrderId,
+    } = body;
 
     // Server-side validation
     if (!name || !phone || !address || !pincode || pincode.length !== 6 || !city || !state || !items || items.length === 0) {
@@ -19,14 +38,14 @@ export async function POST(request: Request) {
     }
 
     const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
-    const db = await readDB();
+    const db = await readDB(true);
 
-    // Check authentication: if guest (no active session), phone MUST be verified via OTP
+    // Check authentication: if guest (no active session) and NOT saving initial Pending OTP record, phone MUST be verified via OTP
     const cookieHeader = request.headers.get("cookie");
     const sessionToken = extractSessionToken(cookieHeader);
     const sessionUser = await resolveSession(sessionToken);
 
-    if (!sessionUser) {
+    if (!sessionUser && !saveAsPendingOtp) {
       const isVerified = (db.verifiedPhones || []).some(
         (v: any) => v.phone === cleanPhone && Date.now() < (v.expiresAt || 0)
       );
@@ -59,12 +78,25 @@ export async function POST(request: Request) {
       }
     }
 
-    const discount = paymentMethod === "prepaid" ? Math.round(subtotal * (db.settings.prepaidDiscount / 100)) : 0;
+    const discount = paymentMethod === "prepaid" ? Math.round(subtotal * ((db.settings?.prepaidDiscount ?? 5) / 100)) : 0;
+    const couponDiscount = parseFloat(incomingCouponDiscount) || 0;
     const coinsDiscount = parseFloat(coinsRedeemed) || 0;
-    const shipping = subtotal >= 999 ? 0 : 49;
-    const total = Math.max(0, subtotal - discount - coinsDiscount + shipping);
+    const freeThreshold = db.settings?.shipping?.freeThreshold ?? 999;
+    const baseRate = db.settings?.shipping?.baseRate ?? 49;
+    const shipping = subtotal >= freeThreshold ? 0 : baseRate;
+    const total = Math.max(0, subtotal - discount - couponDiscount - coinsDiscount + shipping);
 
-    const orderId = `PYR-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    // Check if there is an existing Pending OTP order to update instead of creating a duplicate
+    const existingPendingIdx = (db.orders || []).findIndex((o: any) => {
+      if (pendingOrderId && o.id === pendingOrderId) return true;
+      const oPhone = (o.phone || "").replace(/\D/g, "").slice(-10);
+      return o.status === "Pending OTP" && oPhone === cleanPhone;
+    });
+
+    const orderId =
+      existingPendingIdx !== -1
+        ? db.orders[existingPendingIdx].id
+        : `PYR-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const fullAddress = [
       address,
@@ -72,7 +104,14 @@ export async function POST(request: Request) {
       companyName ? `Company: ${companyName}` : "",
     ].filter(Boolean).join(", ");
 
+    const orderStatus = saveAsPendingOtp
+      ? "Pending OTP"
+      : paymentMethod === "cod"
+      ? "Verified"
+      : "Processing";
+
     const newOrder = {
+      ...(existingPendingIdx !== -1 ? db.orders[existingPendingIdx] : {}),
       id: orderId,
       customer: name,
       email: email || "",
@@ -97,10 +136,16 @@ export async function POST(request: Request) {
       },
       subtotal,
       discount,
+      couponDiscount,
+      appliedCoupon: appliedCoupon || "",
       coinsRedeemed: coinsDiscount,
       total,
       method: paymentMethod === "prepaid" ? "Prepaid" : "COD",
-      status: paymentMethod === "cod" ? "Verified" : "Processing",
+      status: orderStatus,
+      createdAt:
+        existingPendingIdx !== -1 && db.orders[existingPendingIdx].createdAt
+          ? db.orders[existingPendingIdx].createdAt
+          : new Date().toISOString(),
       date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       items: `${items.map((i: any) => {
         const prod = db.products.find((p) => p.id === i.productId);
@@ -169,10 +214,48 @@ export async function POST(request: Request) {
       console.error("[Checkout Guest User Auto-Creation Warning]:", userErr);
     }
 
-    db.orders.push(newOrder);
+    if (existingPendingIdx !== -1) {
+      db.orders[existingPendingIdx] = newOrder;
+    } else {
+      db.orders.push(newOrder);
+    }
+
+    // If saving as Pending OTP before verification, NEVER push to NimbusPost/Shiprocket or fire Purchase events
+    if (saveAsPendingOtp) {
+      await writeDB(db);
+      return NextResponse.json({
+        success: true,
+        pendingOtp: true,
+        orderId,
+        subtotal,
+        discount,
+        shipping,
+        total,
+        message: "Order saved as Pending OTP. Awaiting verification.",
+      });
+    }
+
+    // Mark matching abandoned carts as Converted in database
+    try {
+      if (Array.isArray(db.abandonedCarts)) {
+        db.abandonedCarts.forEach((c: any) => {
+          const cPhone = (c.phone || "").replace(/\D/g, "").slice(-10);
+          if ((cPhone && cPhone === cleanPhone) || (email && c.email === email)) {
+            if (c.status !== "Converted") {
+              c.status = "Converted";
+              c.convertedOrderId = orderId;
+              c.convertedAt = new Date().toISOString();
+            }
+          }
+        });
+      }
+    } catch (acErr) {
+      console.error("[Abandoned Cart Conversion Error]:", acErr);
+    }
+
     await writeDB(db);
 
-    // Automated Logistics Partner Order Auto-Push (NimbusPost / Shiprocket)
+    // Automated Logistics Partner Order Auto-Push (NimbusPost / Shiprocket) - ONLY for verified orders
     try {
       await pushOrderToLogistics(newOrder, db);
     } catch (logisticsErr) {
@@ -199,30 +282,7 @@ export async function POST(request: Request) {
       console.error("[CAPI Server Trigger Failed]:", e);
     }
 
-    // 1. Mark matching abandoned carts as Converted in database
-    try {
-      const db = await readDB();
-      if (Array.isArray(db.abandonedCarts)) {
-        const cleanPhone10 = (phone || "").replace(/\D/g, "").slice(-10);
-        let cartUpdated = false;
-        db.abandonedCarts.forEach((c: any) => {
-          const cPhone = (c.phone || "").replace(/\D/g, "").slice(-10);
-          if ((cPhone && cPhone === cleanPhone10) || (email && c.email === email)) {
-            if (c.status !== "Converted") {
-              c.status = "Converted";
-              c.convertedOrderId = orderId;
-              c.convertedAt = new Date().toISOString();
-              cartUpdated = true;
-            }
-          }
-        });
-        if (cartUpdated) await writeDB(db);
-      }
-    } catch (acErr) {
-      console.error("[Abandoned Cart Conversion Error]:", acErr);
-    }
-
-    // 2. Automated WhatsApp Order Confirmation Notification (Pillar 3)
+    // Automated WhatsApp Order Confirmation Notification (Pillar 3)
     try {
       const waRes = await sendOrderConfirmationWhatsApp(newOrder);
       if (waRes.success) {

@@ -287,6 +287,7 @@ function CheckoutForm() {
   const [otpVerifying, setOtpVerifying] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
   const [otpError, setOtpError] = useState("");
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [orderComplete, setOrderComplete] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
@@ -805,6 +806,39 @@ function CheckoutForm() {
     if (needsVerification) {
       setOtpSending(true);
       setOtpError("");
+      let savedOrderId = pendingOrderId;
+
+      // 1. Immediately save order as "Pending OTP" in Admin Orders so no Meta Ad order is ever lost
+      try {
+        const pendingRes = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            email: userEmail,
+            subtotal,
+            items: [{ productId: product.id, quantity: qty }],
+            appliedCoupon: appliedCoupon?.code,
+            couponDiscount,
+            coinsRedeemed: coinsDiscount,
+            saveAsPendingOtp: true,
+            pendingOrderId: savedOrderId,
+          }),
+        });
+        const pendingData = await pendingRes.json();
+        if (pendingData.success && pendingData.orderId) {
+          savedOrderId = pendingData.orderId;
+          setPendingOrderId(pendingData.orderId);
+        } else if (!pendingData.success && pendingData.error) {
+          alert(pendingData.error);
+          setOtpSending(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Could not pre-save Pending OTP order:", err);
+      }
+
+      // 2. Send WhatsApp OTP & open OTP verification modal
       try {
         const res = await fetch("/api/checkout/send-otp", {
           method: "POST",
@@ -817,10 +851,14 @@ function CheckoutForm() {
           setOtpInput("");
           setOtpModalOpen(true);
         } else {
-          alert(data.error || "Failed to send verification code. Please try again.");
+          setOtpError(data.error || "Could not send WhatsApp OTP automatically. Please click Resend below.");
+          setOtpInput("");
+          setOtpModalOpen(true);
         }
       } catch {
-        alert("Failed to send verification code. Check your internet connection and try again.");
+        setOtpError("Connection issue sending OTP. Please click Resend below.");
+        setOtpInput("");
+        setOtpModalOpen(true);
       } finally {
         setOtpSending(false);
       }
@@ -828,9 +866,9 @@ function CheckoutForm() {
     }
 
     if (formData.paymentMethod === "prepaid") {
-      void processPrepaidPhonePeOrder();
+      void processPrepaidPhonePeOrder(pendingOrderId);
     } else {
-      void processOrder();
+      void processOrder(pendingOrderId);
     }
   };
 
@@ -858,11 +896,11 @@ function CheckoutForm() {
         setOtpInput("");
         setOtpError("");
 
-        // Auto-proceed with corresponding payment method flow
+        // Auto-proceed with corresponding payment method flow, updating the existing Pending OTP order
         if (formData.paymentMethod === "prepaid") {
-          void processPrepaidPhonePeOrder();
+          void processPrepaidPhonePeOrder(pendingOrderId);
         } else {
-          void processOrder();
+          void processOrder(pendingOrderId);
         }
       } else {
         setOtpError(resData.error || "Incorrect verification code. Please try again.");
@@ -897,7 +935,7 @@ function CheckoutForm() {
     }
   };
 
-  const processPrepaidPhonePeOrder = async () => {
+  const processPrepaidPhonePeOrder = async (existingOrderId?: string | null) => {
     setLoading(true);
     try {
       const response = await fetch("/api/payment/phonepe/initiate", {
@@ -911,6 +949,7 @@ function CheckoutForm() {
           appliedCoupon: appliedCoupon?.code,
           couponDiscount,
           coinsRedeemed: coinsDiscount,
+          pendingOrderId: existingOrderId || pendingOrderId,
         }),
       });
       const resData = await response.json();
@@ -926,7 +965,7 @@ function CheckoutForm() {
     }
   };
 
-  const processOrder = async () => {
+  const processOrder = async (existingOrderId?: string | null) => {
     setLoading(true);
     try {
       const response = await fetch("/api/checkout", {
@@ -937,7 +976,10 @@ function CheckoutForm() {
           email: userEmail,
           subtotal,
           items: [{ productId: product.id, quantity: qty }],
+          appliedCoupon: appliedCoupon?.code,
+          couponDiscount,
           coinsRedeemed: coinsDiscount,
+          pendingOrderId: existingOrderId || pendingOrderId,
         }),
       });
       const resData = await response.json();

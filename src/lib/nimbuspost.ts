@@ -295,6 +295,15 @@ export async function pushOrderToNimbusPost(
       return { success: false, error: "Valid order object is required." };
     }
 
+    if (order.status === "Pending OTP") {
+      console.log(`[NimbusPost]: Blocked push for ${order.id} (Order is still in Pending OTP status)`);
+      return {
+        success: false,
+        skipped: true,
+        error: "Order is in 'Pending OTP' status. Please verify the order first before booking on NimbusPost.",
+      };
+    }
+
     const { readDB, writeDB } = await import("@/lib/db");
     const db = dbInstance || (await readDB());
 

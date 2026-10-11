@@ -23,6 +23,16 @@ export async function POST(request: Request) {
 
     const order = db.orders[orderIndex];
 
+    if (order.status === "Pending OTP") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "This order is in 'Pending OTP' status. Please verify the order (change status to 'Verified') before pushing to NimbusPost.",
+        },
+        { status: 400 }
+      );
+    }
+
     const result = await pushOrderToNimbusPost(order, db);
 
     if (result.success) {

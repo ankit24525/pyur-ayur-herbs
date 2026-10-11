@@ -40,6 +40,16 @@ export async function pushOrderToLogistics(
 }> {
   const partner = getActiveLogisticsPartner(dbInstance);
 
+  if (order?.status === "Pending OTP") {
+    console.log(`[Logistics]: Skipped auto-push for ${order.id} because status is Pending OTP.`);
+    return {
+      success: false,
+      partner,
+      skipped: true,
+      error: "Order is in Pending OTP status. Please verify the order before pushing to courier.",
+    };
+  }
+
   if (partner === "nimbuspost") {
     const res = await pushOrderToNimbusPost(order, dbInstance);
     return {

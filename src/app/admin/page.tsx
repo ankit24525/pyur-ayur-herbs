@@ -7029,6 +7029,8 @@ export default function AdminDashboard() {
                                       ? "bg-rose-50 border-rose-300 text-rose-700"
                                       : o.status === "Delivered"
                                       ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                      : o.status === "Pending OTP"
+                                      ? "bg-amber-50 border-amber-300 text-amber-800"
                                       : "border-[#ddddd9] bg-white"
                                   }`}
                                 >
@@ -7061,6 +7063,22 @@ export default function AdminDashboard() {
                                   >
                                     View
                                   </button>
+                                  {o.status === "Pending OTP" && o.phone && (
+                                    <>
+                                      <span className="text-gray-300">|</span>
+                                      <a
+                                        href={`https://wa.me/91${(o.phone || "").replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(
+                                          `Namaste ${o.customer || "Ji"}! 🙏 Thank you for placing your order #${o.id} (${o.items} - ₹${o.total}) on Pure Ayur Herbs. Since your OTP verification was pending, please reply YES to confirm your delivery address: ${o.address || ""}, ${o.city || ""} - ${o.pincode || ""}.`
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
+                                        title="Confirm Pending OTP order with customer on WhatsApp"
+                                      >
+                                        💬 WA Confirm
+                                      </a>
+                                    </>
+                                  )}
                                   {(o.status === "Pending Payment" || o.status === "Payment Failed") && (
                                     <>
                                       <span className="text-gray-300">|</span>
@@ -7079,7 +7097,19 @@ export default function AdminDashboard() {
                                   )}
                                   <span className="text-gray-300">|</span>
                                   {/* Logistics Fulfillment Badge / Action */}
-                                  {o.nimbusAwb ? (
+                                  {o.status === "Pending OTP" ? (
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        await handleUpdateOrderStatus(o.id, "Verified");
+                                        showToast(`🟢 Order ${o.id} marked as Verified! You can now click '🌿 Push Nimbus' to book shipment.`);
+                                      }}
+                                      className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                                      title="Verify this Pending OTP order first. After verifying, you can push it to NimbusPost manually."
+                                    >
+                                      ✅ Verify Order
+                                    </button>
+                                  ) : o.nimbusAwb ? (
                                     <div className="inline-flex items-center gap-1">
                                       <a
                                         href={o.nimbusTrackingUrl || `https://track.nimbuspost.com/track/${encodeURIComponent(o.nimbusAwb)}`}
@@ -16383,6 +16413,23 @@ export default function AdminDashboard() {
                   {selectedOrder.nimbusStatus === "Cancelled" ? (
                     <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-[11px] text-gray-600 text-center font-medium">
                       Order shipment was cancelled on NimbusPost.
+                    </div>
+                  ) : selectedOrder.status === "Pending OTP" ? (
+                    <div className="space-y-2">
+                      <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-900 font-medium">
+                        ⏳ This order is in <b>Pending OTP</b> status and was not pushed to NimbusPost automatically. Please verify the customer first, then push to NimbusPost.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await handleUpdateOrderStatus(selectedOrder.id, "Verified");
+                          setSelectedOrder((prev: any) => ({ ...prev, status: "Verified" }));
+                          showToast(`🟢 Order ${selectedOrder.id} marked as Verified! You can now push it to NimbusPost.`);
+                        }}
+                        className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        ✅ Mark Order as Verified (Enable NimbusPost Push)
+                      </button>
                     </div>
                   ) : (
                     <button

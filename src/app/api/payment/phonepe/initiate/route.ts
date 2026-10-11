@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       landmark,
       couponDiscount: incomingCouponDiscount,
       coinsRedeemed: incomingCoinsRedeemed,
+      pendingOrderId,
     } = body;
 
     // Server-side validation
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
-    const db = await readDB();
+    const db = await readDB(true);
 
     // Check authentication: if guest (no active session), phone MUST be verified via OTP
     const cookieHeader = request.headers.get("cookie");
@@ -83,7 +84,16 @@ export async function POST(request: Request) {
     const shipping = subtotal >= freeThreshold ? 0 : baseRate;
     const total = Math.max(1, Math.round(subtotal - totalDiscount + shipping));
 
-    const orderId = `PYR-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const existingPendingIdx = (db.orders || []).findIndex((o: any) => {
+      if (pendingOrderId && o.id === pendingOrderId) return true;
+      const oPhone = (o.phone || "").replace(/\D/g, "").slice(-10);
+      return o.status === "Pending OTP" && oPhone === cleanPhone;
+    });
+
+    const orderId =
+      existingPendingIdx !== -1
+        ? db.orders[existingPendingIdx].id
+        : `PYR-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const fullAddress = [
       address,
@@ -92,6 +102,7 @@ export async function POST(request: Request) {
     ].filter(Boolean).join(", ");
 
     const newOrder = {
+      ...(existingPendingIdx !== -1 ? db.orders[existingPendingIdx] : {}),
       id: orderId,
       userId: sessionUser ? sessionUser.id : null,
       isLoggedInUser: !!sessionUser,
@@ -124,7 +135,10 @@ export async function POST(request: Request) {
       method: "PhonePe",
       status: "Pending Payment",
       paymentFailedAlertSent: false,
-      createdAt: new Date().toISOString(),
+      createdAt:
+        existingPendingIdx !== -1 && db.orders[existingPendingIdx].createdAt
+          ? db.orders[existingPendingIdx].createdAt
+          : new Date().toISOString(),
       date: new Date().toLocaleDateString("en-IN", {
         day: "numeric",
         month: "short",
@@ -139,7 +153,11 @@ export async function POST(request: Request) {
       itemsRaw: items,
     };
 
-    db.orders.push(newOrder);
+    if (existingPendingIdx !== -1) {
+      db.orders[existingPendingIdx] = newOrder;
+    } else {
+      db.orders.push(newOrder);
+    }
     await writeDB(db);
 
     // Retrieve PhonePe settings

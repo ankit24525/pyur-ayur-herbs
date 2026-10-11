@@ -636,20 +636,6 @@ function writeLocalDB(data: DBData): boolean {
   return written;
 }
 
-function readSeedOrders(): any[] {
-  try {
-    const standardPath = path.join(process.cwd(), "src/lib/db.json");
-    if (fs.existsSync(standardPath)) {
-      const content = fs.readFileSync(standardPath, "utf-8");
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed.orders) && parsed.orders.length > 0) {
-        return parsed.orders;
-      }
-    }
-  } catch {}
-  return [];
-}
-
 export async function readDB(bypassCache = false): Promise<DBData> {
   // 1. Instant return from in-memory cache if valid (< 0.01ms)
   if (!bypassCache && dbMemoryCache && Date.now() - dbMemoryCache.timestamp < CACHE_TTL_MS) {
@@ -680,21 +666,6 @@ export async function readDB(bypassCache = false): Promise<DBData> {
     // Safeguard: Never allow an empty products array from a fresh or stale DB to wipe out existing in-memory products
     if (sanitized.products.length === 0 && dbMemoryCache?.data?.products && dbMemoryCache.data.products.length > 0) {
       sanitized.products = dbMemoryCache.data.products;
-    }
-
-    // Safeguard & Auto-Restore: If MongoDB orders array was accidentally wiped to empty [], restore from memory cache or seed db.json
-    if (!Array.isArray(sanitized.orders) || sanitized.orders.length === 0) {
-      const fallbackOrders =
-        dbMemoryCache?.data?.orders && dbMemoryCache.data.orders.length > 0
-          ? dbMemoryCache.data.orders
-          : readSeedOrders();
-      if (fallbackOrders.length > 0) {
-        sanitized.orders = fallbackOrders;
-        void db.collection("store_data").updateOne(
-          { _id: "main" as any },
-          { $set: { orders: sanitized.orders } }
-        ).catch((err) => console.error("[MongoDB Orders Auto-Restore Error]:", err));
-      }
     }
 
     // Auto-migrate old SEO descriptions in MongoDB
@@ -754,11 +725,6 @@ export async function readDB(bypassCache = false): Promise<DBData> {
 }
 
 export async function writeDB(data: DBData): Promise<boolean> {
-  // Safeguard: Prevent a stale client payload with empty orders: [] from wiping out multiple existing orders
-  if ((!Array.isArray(data.orders) || data.orders.length === 0) && dbMemoryCache?.data?.orders && dbMemoryCache.data.orders.length > 1) {
-    data.orders = dbMemoryCache.data.orders;
-  }
-
   // 1. Always write to memory cache and local filesystem immediately with clean clone
   try {
     dbMemoryCache = { data: JSON.parse(JSON.stringify(data)), timestamp: Date.now() };
@@ -790,4 +756,44 @@ export async function writeDB(data: DBData): Promise<boolean> {
     return false;
   }
 }
+
+export async function deleteOrderFromDB(orderId: string): Promise<boolean> {
+  const cleanId = String(orderId || "").trim();
+  if (!cleanId) return false;
+
+  // 1. Update in-memory cache immediately if present
+  if (dbMemoryCache?.data && Array.isArray(dbMemoryCache.data.orders)) {
+    dbMemoryCache.data.orders = dbMemoryCache.data.orders.filter(
+      (o: any) => String(o?.id || "").trim() !== cleanId
+    );
+    dbMemoryCache.timestamp = Date.now();
+    writeLocalDB(dbMemoryCache.data);
+  } else {
+    const local = readLocalDB();
+    if (Array.isArray(local.orders)) {
+      local.orders = local.orders.filter((o: any) => String(o?.id || "").trim() !== cleanId);
+      writeLocalDB(local);
+    }
+  }
+
+  if (!uri) {
+    return true;
+  }
+
+  // 2. Atomically remove order from MongoDB using $pull so concurrent deletes never race
+  try {
+    const activeClient = await getMongoClient();
+    const db = activeClient.db(dbName);
+    const result = await db.collection("store_data").updateOne(
+      { _id: "main" as any },
+      { $pull: { orders: { id: cleanId } } as any }
+    );
+    invalidateDBCache();
+    return result.acknowledged !== false;
+  } catch (error) {
+    console.error("[MongoDB Delete Order Error]:", error);
+    return false;
+  }
+}
+
 

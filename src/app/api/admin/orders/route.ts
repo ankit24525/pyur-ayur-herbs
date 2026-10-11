@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB } from "@/lib/db";
+import { readDB, writeDB, deleteOrderFromDB } from "@/lib/db";
 import { sendOrderConfirmationWhatsApp } from "@/lib/whatsapp-notifications";
 import { cancelOrderInLogistics } from "@/lib/logistics";
 
@@ -22,7 +22,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { orderId, newStatus } = await request.json();
-    const db = await readDB();
+    const db = await readDB(true);
 
     const orderIndex = db.orders.findIndex((o) => o.id === orderId);
     if (orderIndex === -1) {
@@ -59,3 +59,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const orderId = body.orderId || body.id;
+    if (!orderId) {
+      return NextResponse.json({ success: false, error: "Order ID is required." }, { status: 400 });
+    }
+
+    const success = await deleteOrderFromDB(orderId);
+    if (!success) {
+      return NextResponse.json({ success: false, error: "Failed to delete order from database." }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: "Order deleted permanently." });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+  }
+}
+

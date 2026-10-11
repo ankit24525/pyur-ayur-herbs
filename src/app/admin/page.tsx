@@ -1797,10 +1797,43 @@ export default function AdminDashboard() {
   const handleDeleteOrder = async (orderId: string) => {
     if (confirm("Are you sure you want to delete this order?")) {
       try {
-        const updated = dbData.orders.filter((o: any) => o.id !== orderId);
-        await saveKey("orders", updated);
-        showToast("Order deleted successfully!");
+        const cleanTarget = String(orderId || "").trim();
+        let updated: any[] = [];
+        setDbData((prev: any) => {
+          const currentOrders = Array.isArray(prev.orders) ? prev.orders : [];
+          updated = currentOrders.filter((o: any) => String(o?.id || "").trim() !== cleanTarget);
+          return { ...prev, orders: updated };
+        });
+
+        recentMutationsRef.current["orders"] = { timestamp: Date.now(), value: updated };
+        previousOrdersCountRef.current = updated.length;
         setSelectedOrder(null);
+
+        if (typeof window !== "undefined") {
+          try {
+            const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+            cached.orders = updated;
+            localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+          } catch {}
+        }
+
+        const res = await fetch(`/api/admin/orders?t=${Date.now()}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: cleanTarget }),
+          keepalive: true,
+        });
+
+        if (!res.ok) {
+          await fetch(`/api/admin/all?t=${Date.now()}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "deleteOrder", orderId: cleanTarget }),
+            keepalive: true,
+          });
+        }
+
+        showToast("Order deleted permanently!");
       } catch {
         alert("Error deleting order.");
       }

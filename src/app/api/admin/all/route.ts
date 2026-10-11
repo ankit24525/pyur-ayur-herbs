@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDB, writeDB, invalidateDBCache, getDBHealthStatus } from "@/lib/db";
+import { readDB, writeDB, invalidateDBCache, getDBHealthStatus, deleteOrderFromDB } from "@/lib/db";
 import { cancelOrderInLogistics } from "@/lib/logistics";
 import { revalidatePath } from "next/cache";
 
@@ -52,16 +52,22 @@ export async function POST(request: Request) {
     }
 
     const { action, key, value, data } = body;
+
+    if (action === "deleteOrder" && body.orderId) {
+      const success = await deleteOrderFromDB(body.orderId);
+      if (!success) {
+        return NextResponse.json(
+          { success: false, error: "Database delete failed." },
+          { status: 500, headers: NO_CACHE_HEADERS }
+        );
+      }
+      return NextResponse.json({ success: true, message: "Order deleted permanently." }, { headers: NO_CACHE_HEADERS });
+    }
+
     // Always read fresh from database when performing an admin mutation
     const db = await readDB(true);
 
     if (action === "updateKey" && key && value !== undefined) {
-      if (key === "orders" && Array.isArray(value) && value.length === 0 && Array.isArray(db.orders) && db.orders.length > 1) {
-        return NextResponse.json(
-          { success: false, error: "Cannot wipe all orders at once with an empty array." },
-          { status: 400, headers: NO_CACHE_HEADERS }
-        );
-      }
       (db as any)[key] = value;
       const success = await writeDB(db);
       invalidateDBCache();

@@ -56,6 +56,12 @@ export async function POST(request: Request) {
     const db = await readDB(true);
 
     if (action === "updateKey" && key && value !== undefined) {
+      if (key === "orders" && Array.isArray(value) && value.length === 0 && Array.isArray(db.orders) && db.orders.length > 1) {
+        return NextResponse.json(
+          { success: false, error: "Cannot wipe all orders at once with an empty array." },
+          { status: 400, headers: NO_CACHE_HEADERS }
+        );
+      }
       (db as any)[key] = value;
       const success = await writeDB(db);
       invalidateDBCache();

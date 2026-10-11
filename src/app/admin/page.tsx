@@ -1048,49 +1048,106 @@ export default function AdminDashboard() {
   // Dynamic line chart history calculation based on Time Range, Metric Type, and Product Filter (Shared across Dashboard and Analytics tab)
   const getChartDataHistory = () => {
     const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const MONTH_MAP: Record<string, number> = {
+      jan: 0, january: 0,
+      feb: 1, february: 1,
+      mar: 2, march: 2,
+      apr: 3, april: 3,
+      may: 4,
+      jun: 5, june: 5,
+      jul: 6, july: 6,
+      aug: 7, august: 7,
+      sep: 8, sept: 8, september: 8,
+      oct: 9, october: 9,
+      nov: 10, november: 10,
+      dec: 11, december: 11,
+    };
+
+    const parseRecordDate = (dateStr?: string, createdAt?: string): { day: number; month: number; year: number } | null => {
+      const rawDate = (dateStr || "").trim();
+
+      // 1. Try "D MMM YYYY" or "DD Sept YYYY" (e.g., "19 Sept 2026", "9 Oct 2026")
+      const textMatch = rawDate.match(/^(\d{1,2})\s+([A-Za-z]+)[.,]?\s+(\d{4})/);
+      if (textMatch) {
+        const day = parseInt(textMatch[1], 10);
+        const month = MONTH_MAP[textMatch[2].toLowerCase()];
+        const year = parseInt(textMatch[3], 10);
+        if (!isNaN(day) && month !== undefined && !isNaN(year)) {
+          return { day, month, year };
+        }
+      }
+
+      // 2. Try "D/M/YYYY" (e.g., "10/10/2026, 4:35:57 pm" or "24/9/2026, 1:08:47 pm")
+      const slashMatch = rawDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (slashMatch) {
+        const day = parseInt(slashMatch[1], 10);
+        const month = parseInt(slashMatch[2], 10) - 1;
+        const year = parseInt(slashMatch[3], 10);
+        if (!isNaN(day) && month >= 0 && month <= 11 && !isNaN(year)) {
+          return { day, month, year };
+        }
+      }
+
+      // 3. Try ISO createdAt timestamp
+      if (createdAt) {
+        const iso = new Date(createdAt);
+        if (!isNaN(iso.getTime())) {
+          return { day: iso.getDate(), month: iso.getMonth(), year: iso.getFullYear() };
+        }
+      }
+
+      // 4. Fallback native Date parse
+      if (rawDate) {
+        const parsed = new Date(rawDate);
+        if (!isNaN(parsed.getTime())) {
+          return { day: parsed.getDate(), month: parsed.getMonth(), year: parsed.getFullYear() };
+        }
+      }
+
+      return null;
+    };
+
     let days = 7;
-    let formatOpt: any = { day: "numeric", month: "short" };
-    
     if (graphTimeRange === "30days") {
       days = 30;
     } else if (graphTimeRange === "12months") {
       days = 12;
-      formatOpt = { month: "short" };
     }
 
     const result = [];
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date();
       if (graphTimeRange === "12months") {
+        d.setDate(1);
         d.setMonth(d.getMonth() - i);
       } else {
         d.setDate(d.getDate() - i);
       }
-      
-      const monthLabel = MONTH_NAMES[d.getMonth()];
-      const dateLabel = d.toLocaleDateString("en-IN", formatOpt);
-      const yearVal = d.getFullYear();
-      
+
+      const targetDay = d.getDate();
+      const targetMonth = d.getMonth();
+      const targetYear = d.getFullYear();
+      const monthLabel = MONTH_NAMES[targetMonth];
+      const dateLabel = `${targetDay} ${monthLabel}`;
+
       // Filter orders matching this date bucket
-      const matchedOrders = dbData.orders.filter((o: any) => {
-        const matchDate = o.date || "";
+      const matchedOrders = (dbData.orders || []).filter((o: any) => {
+        const parsed = parseRecordDate(o.date, o.createdAt);
+        if (!parsed) return false;
         if (graphTimeRange === "12months") {
-          return matchDate.toLowerCase().includes(monthLabel.toLowerCase()) && matchDate.includes(String(yearVal));
-        } else {
-          const targetStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-          return matchDate.toLowerCase().includes(targetStr.toLowerCase());
+          return parsed.month === targetMonth && parsed.year === targetYear;
         }
+        return parsed.day === targetDay && parsed.month === targetMonth && parsed.year === targetYear;
       });
 
       // Filter leads matching this date bucket
       const matchedLeads = (dbData.leads || []).filter((l: any) => {
-        const matchDate = l.date || "";
+        const parsed = parseRecordDate(l.date, l.createdAt);
+        if (!parsed) return false;
         if (graphTimeRange === "12months") {
-          return matchDate.toLowerCase().includes(monthLabel.toLowerCase()) && matchDate.includes(String(yearVal));
-        } else {
-          const targetStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-          return matchDate.toLowerCase().includes(targetStr.toLowerCase());
+          return parsed.month === targetMonth && parsed.year === targetYear;
         }
+        return parsed.day === targetDay && parsed.month === targetMonth && parsed.year === targetYear;
       });
 
       // Calculate the specific metric value
@@ -1098,7 +1155,7 @@ export default function AdminDashboard() {
       if (graphMetricType === "overall-sales") {
         val = matchedOrders
           .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
-          .reduce((acc: number, o: any) => acc + o.total, 0);
+          .reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
       } else if (graphMetricType === "product-sales") {
         matchedOrders
           .filter((o: any) => o.status !== "Cancelled" && o.status !== "Pending OTP")
@@ -1110,9 +1167,13 @@ export default function AdminDashboard() {
               if (match) {
                 const name = match[1].trim();
                 const qty = parseInt(match[2]) || 0;
-                
-                const prod = dbData.products.find((p: any) => p.id === graphProductFilter || p.name.toLowerCase().trim() === name.toLowerCase().trim());
-                if (prod && prod.id === graphProductFilter) {
+
+                const prod = dbData.products.find(
+                  (p: any) =>
+                    p.id === graphProductFilter ||
+                    p.name.toLowerCase().trim() === name.toLowerCase().trim()
+                );
+                if (prod && (graphProductFilter === "all" || prod.id === graphProductFilter)) {
                   const price = prod.price || 0;
                   val += price * qty;
                 }
@@ -1122,7 +1183,7 @@ export default function AdminDashboard() {
       } else if (graphMetricType === "overall-views") {
         const ordersCount = matchedOrders.length;
         const leadsCount = matchedLeads.length;
-        val = (ordersCount * 12) + (leadsCount * 8) + (d.getDate() % 5) * 15 + 45;
+        val = ordersCount * 12 + leadsCount * 8 + (d.getDate() % 5) * 15 + 45;
       } else if (graphMetricType === "product-views") {
         let productOrdersCount = 0;
         matchedOrders.forEach((o: any) => {
@@ -1133,21 +1194,25 @@ export default function AdminDashboard() {
             if (match) {
               const name = match[1].trim();
               const qty = parseInt(match[2]) || 0;
-              
-              const prod = dbData.products.find((p: any) => p.id === graphProductFilter || p.name.toLowerCase().trim() === name.toLowerCase().trim());
-              if (prod && prod.id === graphProductFilter) {
+
+              const prod = dbData.products.find(
+                (p: any) =>
+                  p.id === graphProductFilter ||
+                  p.name.toLowerCase().trim() === name.toLowerCase().trim()
+              );
+              if (prod && (graphProductFilter === "all" || prod.id === graphProductFilter)) {
                 productOrdersCount += qty;
               }
             }
           });
         });
-        
+
         const multiplier = graphProductFilter ? (graphProductFilter.charCodeAt(0) % 5) + 3 : 5;
-        val = (productOrdersCount * 8) + (matchedLeads.length * multiplier) + (d.getDate() % 3) * 6 + 10;
+        val = productOrdersCount * 8 + matchedLeads.length * multiplier + (d.getDate() % 3) * 6 + 10;
       } else if (graphMetricType === "cancellations") {
         val = matchedOrders.filter((o: any) => o.status === "Cancelled").length;
       }
-      
+
       result.push({ label: graphTimeRange === "12months" ? monthLabel : dateLabel, val });
     }
     return result;
@@ -6492,9 +6557,9 @@ export default function AdminDashboard() {
 
               const deliveredPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Delivered").length / totalOrdersCount * 100) : 0;
               const processingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Processing" || o.status === "Verified").length / totalOrdersCount * 100) : 0;
-              const shippedPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Shipped").length / totalOrdersCount * 100) : 0;
-              const pendingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Pending Payment" || o.status === "Pending OTP").length / totalOrdersCount * 100) : 0;
-              const cancelledPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => o.status === "Cancelled").length / totalOrdersCount * 100) : 0;
+              const shippedPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => ["Shipped", "In Transit", "Out for Delivery"].includes(o.status)).length / totalOrdersCount * 100) : 0;
+              const pendingPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => ["Pending Payment", "Pending OTP", "Payment Failed"].includes(o.status)).length / totalOrdersCount * 100) : 0;
+              const cancelledPct = hasOrders ? Math.round(dbData.orders.filter((o: any) => ["Cancelled", "Return Request", "Returned", "Refunded"].includes(o.status)).length / totalOrdersCount * 100) : 0;
 
               // Donut segment calculations
               const deliveredSeg = (314.16 * deliveredPct) / 100;
@@ -6611,7 +6676,7 @@ export default function AdminDashboard() {
                              "Performance overview over the last 12 months."}
                           </p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           {/* Metric Selector */}
                           <select
                             value={graphMetricType}
@@ -6684,9 +6749,17 @@ export default function AdminDashboard() {
                             </>
                           )}
 
-                          {/* Dots */}
+                          {/* Dots with hover tooltips */}
                           {pathPoints.map((p, idx) => (
-                            <circle key={idx} cx={p.x} cy={p.y} r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                            <g key={idx} className="group/dot cursor-pointer">
+                              <circle cx={p.x} cy={p.y} r="4.5" fill="#2563eb" stroke="white" strokeWidth="1.5" />
+                              <g className="opacity-0 group-hover/dot:opacity-100 transition duration-150 pointer-events-none">
+                                <rect x={p.x - 32} y={Math.max(4, p.y - 26)} width="64" height="18" rx="4" fill="#18181b" />
+                                <text x={p.x} y={Math.max(16, p.y - 14)} textAnchor="middle" className="text-[8px] font-bold fill-white">
+                                  {formatYLabel(p.sales)}
+                                </text>
+                              </g>
+                            </g>
                           ))}
 
                           {/* Y-axis Labels */}
@@ -6728,15 +6801,19 @@ export default function AdminDashboard() {
                                     strokeDasharray={`${cancelledSeg} 314.16`} strokeDashoffset={cancelledOff} transform="rotate(-90 80 80)" />
                           </svg>
                           <div className="absolute text-center">
-                            <span className="block text-base font-black text-[#17231b] leading-none">{deliveredPct}%</span>
-                            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">Delivered</span>
+                            <span className="block text-base font-black text-[#17231b] leading-none">
+                              {deliveredPct > 0 ? `${deliveredPct}%` : `${processingPct}%`}
+                            </span>
+                            <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest block mt-0.5">
+                              {deliveredPct > 0 ? "Delivered" : "Verified"}
+                            </span>
                           </div>
                         </div>
 
                         {/* Legends */}
                         <div className="col-span-3 text-[11px] font-semibold space-y-2 text-[#666]">
                           <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10b981]" /><span>Delivered ({deliveredPct}%)</span></div>
-                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#3b82f6]" /><span>Processing ({processingPct}%)</span></div>
+                          <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#3b82f6]" /><span>Processing / Verified ({processingPct}%)</span></div>
                           <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#f59e0b]" /><span>Shipped ({shippedPct}%)</span></div>
                           <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#8b5cf6]" /><span>Pending ({pendingPct}%)</span></div>
                           <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#ef4444]" /><span>Cancelled ({cancelledPct}%)</span></div>
@@ -6881,7 +6958,7 @@ export default function AdminDashboard() {
               const validOrderSubTabs = ["all", "Pending OTP", "Pending Payment", "Processing", "Shipped", "Delivered", "Cancelled", "Returns"];
               const effectiveSubTab = validOrderSubTabs.includes(subTab) ? subTab : "all";
 
-              const filteredOrders = (dbData.orders || []).filter((o: any) => {
+              const filteredOrders = [...(dbData.orders || [])].reverse().filter((o: any) => {
                 // 1. Status filter
                 if (effectiveSubTab !== "all") {
                   if (effectiveSubTab === "Pending OTP" && o.status !== "Pending OTP") return false;

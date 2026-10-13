@@ -71,7 +71,11 @@ export async function POST(request: Request) {
     }
 
     const conversationId = conversation.id;
-    const accountId = account.id || conversation.account_id;
+    const accountId =
+      account.id ||
+      conversation.account_id ||
+      process.env.CHATWOOT_ACCOUNT_ID ||
+      "191283";
 
     console.log(`[Chatwoot Webhook Incoming] From: ${profileName} (${cleanPhone || "No Phone"}) | Msg: "${rawContent}" | Conv: ${conversationId}`);
 
@@ -109,7 +113,7 @@ export async function POST(request: Request) {
     const chatwootToken =
       process.env.CHATWOOT_API_TOKEN ||
       db.settings?.chatwootApiToken ||
-      "";
+      "JJU8VbdBZwfdqfr3GtwGj1ra";
 
     const chatwootBaseUrl = (
       process.env.CHATWOOT_BASE_URL ||

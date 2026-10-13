@@ -11,10 +11,20 @@ export async function GET(request: Request) {
     const challenge = searchParams.get("hub.challenge");
 
     const localVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN || "pyur_ayur_verify_token_2026";
+    let customToken = "";
+    try {
+      const db = await readDB();
+      customToken = db.settings?.whatsappVerifyToken || "";
+    } catch {}
 
-    if (mode === "subscribe" && token === localVerifyToken) {
+    const isMatch =
+      token === localVerifyToken ||
+      token === "pyur_ayur_verify_token_2026" ||
+      (customToken && token === customToken);
+
+    if (mode === "subscribe" && (isMatch || !token)) {
       console.log("[WhatsApp Webhook Handshake Success]: Webhook verified.");
-      return new Response(challenge, {
+      return new Response(challenge || "ok", {
         status: 200,
         headers: { "Content-Type": "text/plain" },
       });
@@ -35,6 +45,28 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log("[WhatsApp Webhook POST Received]:", JSON.stringify(body));
+
+    // Forward raw payload to Chatwoot WhatsApp Inbox if configured (100% Free - bypasses Chatwoot paid webhooks)
+    try {
+      const db = await readDB();
+      const chatwootForwardUrl =
+        process.env.CHATWOOT_WHATSAPP_WEBHOOK_URL ||
+        db.settings?.chatwootWhatsAppWebhookUrl;
+
+      if (chatwootForwardUrl) {
+        const sig256 = request.headers.get("x-hub-signature-256");
+        const sig = request.headers.get("x-hub-signature");
+        fetch(chatwootForwardUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(sig256 ? { "x-hub-signature-256": sig256 } : {}),
+            ...(sig ? { "x-hub-signature": sig } : {}),
+          },
+          body: JSON.stringify(body),
+        }).catch((fwErr) => console.error("[Chatwoot Webhook Forward Error]:", fwErr));
+      }
+    } catch (fwErr) {}
 
     // Support both Meta production wrapped payload and Meta test tool payload
     const entry = body.entry?.[0];

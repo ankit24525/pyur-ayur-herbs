@@ -15961,83 +15961,77 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Chatwoot AI Chatbot Integration Section */}
-                    <div className="border border-emerald-200 p-4 rounded-xl bg-emerald-50/50 space-y-3">
+                    <div className="border border-emerald-200 p-4 rounded-xl bg-emerald-50/50 space-y-4">
                       <div className="border-b border-emerald-200/80 pb-2 flex items-center justify-between">
                         <div>
                           <span className="block font-bold text-sm text-emerald-950 flex items-center gap-1.5">
-                            🤖 Chatwoot AI Chatbot Integration
+                            🤖 AI WhatsApp Chatbot & Chatwoot Setup (100% Free)
                           </span>
                           <span className="text-[11px] text-emerald-700">
-                            Connect your Chatwoot WhatsApp Inbox to your website's Ayurvedic AI auto-responder
+                            Avoid Chatwoot Premium costs by using our direct endpoint or free forwarder
                           </span>
                         </div>
                         <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300">
-                          Webhook Ready
+                          100% Free
                         </span>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-neutral-800 mb-1">
-                          1. Webhook URL (Copy & Paste this into Chatwoot → Settings → Integrations → Webhooks)
-                        </label>
+                      <div className="bg-white p-3 rounded-lg border border-emerald-200 space-y-3">
+                        <div className="flex items-start gap-2">
+                          <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">RECOMMENDED</span>
+                          <span className="text-xs font-bold text-emerald-950">Option 1: Direct Meta Webhook (Instant AI Auto-Reply)</span>
+                        </div>
+                        <p className="text-xs text-neutral-600">
+                          In Meta Developer Portal (WhatsApp &gt; Configuration), set your Webhook URL to:
+                        </p>
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
                             readOnly
-                            value="https://www.purreayurherbs.com/api/chatwoot/webhook"
-                            className="w-full rounded border border-neutral-300 bg-white p-2 text-xs font-mono select-all text-neutral-700"
+                            value="https://www.purreayurherbs.com/api/whatsapp"
+                            className="w-full rounded border border-neutral-300 bg-neutral-50 p-2 text-xs font-mono select-all text-neutral-800"
                           />
                           <button
                             type="button"
                             onClick={() => {
-                              navigator.clipboard.writeText("https://www.purreayurherbs.com/api/chatwoot/webhook");
-                              showToast("Chatwoot webhook URL copied to clipboard!");
+                              navigator.clipboard.writeText("https://www.purreayurherbs.com/api/whatsapp");
+                              showToast("Meta Webhook URL copied to clipboard!");
                             }}
                             className="shrink-0 px-3 py-2 text-xs font-semibold rounded bg-emerald-700 text-white hover:bg-emerald-800 transition"
                           >
                             Copy URL
                           </button>
                         </div>
-                        <p className="text-[10px] text-neutral-500 mt-1">
-                          In Chatwoot, check the subscription event: <strong>message_created</strong>.
-                        </p>
-                      </div>
+                        <div className="text-[11px] text-neutral-600 bg-neutral-50 p-2 rounded border border-neutral-200 flex items-center justify-between">
+                          <span><strong>Verify Token:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-neutral-300 font-mono">pyur_ayur_verify_token_2026</code></span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText("pyur_ayur_verify_token_2026");
+                              showToast("Verify Token copied!");
+                            }}
+                            className="text-xs text-emerald-700 hover:underline font-semibold"
+                          >
+                            Copy Token
+                          </button>
+                        </div>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
+                        <div className="pt-2 border-t border-neutral-100">
                           <label className="block text-xs font-bold text-neutral-800 mb-1">
-                            2. Chatwoot Server URL
+                            Optional: Forward incoming messages to Chatwoot (Free Inbox Sync)
                           </label>
                           <input
                             type="url"
-                            value={dbData.settings.chatwootBaseUrl || ""}
+                            value={dbData.settings.chatwootWhatsAppWebhookUrl || ""}
                             onChange={(e) => setDbData({
                               ...dbData,
-                              settings: { ...dbData.settings, chatwootBaseUrl: e.target.value }
+                              settings: { ...dbData.settings, chatwootWhatsAppWebhookUrl: e.target.value }
                             })}
-                            placeholder="https://app.chatwoot.com"
+                            placeholder="e.g. https://app.chatwoot.com/webhooks/whatsapp/..."
                             className="w-full rounded border border-neutral-300 bg-white p-2 text-xs font-mono"
                           />
                           <p className="text-[10px] text-neutral-500 mt-1">
-                            Leave blank or enter <code className="bg-neutral-100 px-1 rounded">https://app.chatwoot.com</code> for cloud.
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-neutral-800 mb-1">
-                            3. Chatwoot User API Access Token
-                          </label>
-                          <input
-                            type="password"
-                            value={dbData.settings.chatwootApiToken || ""}
-                            onChange={(e) => setDbData({
-                              ...dbData,
-                              settings: { ...dbData.settings, chatwootApiToken: e.target.value }
-                            })}
-                            placeholder="Paste your Chatwoot User Access Token"
-                            className="w-full rounded border border-neutral-300 bg-white p-2 text-xs font-mono"
-                          />
-                          <p className="text-[10px] text-neutral-500 mt-1">
-                            Copy from Chatwoot → Profile Settings (bottom-left avatar) → <strong>Access Token</strong>.
+                            Paste the webhook URL that Chatwoot gave you when creating the WhatsApp inbox. Your website will answer with AI AND sync to Chatwoot for free!
                           </p>
                         </div>
                       </div>
@@ -16202,6 +16196,7 @@ export default function AdminDashboard() {
                           whatsappMessage: dbData.settings.whatsappMessage || "",
                           chatwootBaseUrl: dbData.settings.chatwootBaseUrl || "",
                           chatwootApiToken: dbData.settings.chatwootApiToken || "",
+                          chatwootWhatsAppWebhookUrl: dbData.settings.chatwootWhatsAppWebhookUrl || "",
                           companyLegalName: dbData.settings.companyLegalName || "",
                           registeredAddress: dbData.settings.registeredAddress || "",
                           gstin: dbData.settings.gstin || "",

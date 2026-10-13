@@ -40,6 +40,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ acknowledged: true, message: "Ignored agent message" });
     }
 
+    // Extract conversation details
+    const conversation = payload.conversation || {};
+    const conversationId = conversation.id;
+    const account = payload.account || {};
+
+    // SMART HUMAN TAKEOVER: If a human agent/admin has assigned this conversation or is actively managing it, let the human talk!
+    if (conversation.assignee_id || conversation.assignee) {
+      console.log(`[Chatwoot Webhook] Conversation ${conversationId} is assigned to human agent (${conversation.assignee_id || "assigned"}). Bot stepping back.`);
+      return NextResponse.json({ acknowledged: true, message: "Human agent active, bot silenced" });
+    }
+
     const messageId = payload.id;
     if (messageId && processedMessageIds.has(messageId)) {
       return NextResponse.json({ acknowledged: true, message: "Already processed" });
@@ -60,8 +71,6 @@ export async function POST(request: Request) {
 
     // Extract sender details
     const sender = payload.sender || {};
-    const conversation = payload.conversation || {};
-    const account = payload.account || {};
 
     const profileName = sender.name || conversation.meta?.sender?.name || "Customer";
     const rawPhone = sender.phone_number || conversation.meta?.sender?.phone_number || "";
@@ -70,7 +79,6 @@ export async function POST(request: Request) {
       cleanPhone = "91" + cleanPhone;
     }
 
-    const conversationId = conversation.id;
     const accountId =
       account.id ||
       conversation.account_id ||

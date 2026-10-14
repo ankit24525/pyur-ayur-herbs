@@ -4,7 +4,7 @@ import { readDB, writeDB } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
-    const { phone, email, otp } = await request.json();
+    const { phone, email, otp, orderId } = await request.json();
 
     if (!otp) {
       return NextResponse.json(
@@ -24,6 +24,45 @@ export async function POST(request: Request) {
     }
 
     let lastError = "";
+
+    // Helper to confirm order in db.orders and push to logistics
+    const confirmOrderInDB = async (db: any) => {
+      let confirmedOrder: any = null;
+      if (Array.isArray(db.orders)) {
+        const orderIdx = db.orders.findIndex((o: any) => {
+          if (orderId && o.id === orderId) return true;
+          const oPhone = (o.phone || "").replace(/\D/g, "").slice(-10);
+          return (
+            (cleanPhone && oPhone === cleanPhone) &&
+            (o.status === "Pending OTP" || o.codVerified === false)
+          );
+        });
+
+        if (orderIdx !== -1) {
+          db.orders[orderIdx].status = "Processing";
+          db.orders[orderIdx].codVerified = true;
+          db.orders[orderIdx].verifiedAt = new Date().toISOString();
+          confirmedOrder = db.orders[orderIdx];
+        }
+      }
+      return confirmedOrder;
+    };
+
+    const triggerPostVerificationServices = async (order: any, db: any) => {
+      if (!order) return;
+      try {
+        const { pushOrderToLogistics } = await import("@/lib/logistics");
+        await pushOrderToLogistics(order, db);
+      } catch (logErr) {
+        console.error("[Post-OTP Logistics Push Warning]:", logErr);
+      }
+      try {
+        const { sendOrderConfirmationWhatsApp } = await import("@/lib/whatsapp-notifications");
+        await sendOrderConfirmationWhatsApp(order);
+      } catch (waErr) {
+        console.error("[Post-OTP WhatsApp Confirmation Warning]:", waErr);
+      }
+    };
 
     // 1. Try verifying via WhatsApp OTP (phone)
     if (cleanPhone) {
@@ -46,12 +85,19 @@ export async function POST(request: Request) {
           verifiedAt: now,
           expiresAt: now + 30 * 60 * 1000, // 30 mins
         });
+
+        const confirmedOrder = await confirmOrderInDB(db);
         await writeDB(db);
+
+        if (confirmedOrder) {
+          await triggerPostVerificationServices(confirmedOrder, db);
+        }
 
         return NextResponse.json({
           success: true,
           verified: true,
           phone: cleanPhone,
+          orderId: confirmedOrder?.id || orderId,
           message: "Order mobile number verified successfully via WhatsApp.",
         });
       } else if (waVerify.error) {
@@ -81,13 +127,20 @@ export async function POST(request: Request) {
             verifiedAt: now,
             expiresAt: now + 30 * 60 * 1000,
           });
-          await writeDB(db);
+        }
+
+        const confirmedOrder = await confirmOrderInDB(db);
+        await writeDB(db);
+
+        if (confirmedOrder) {
+          await triggerPostVerificationServices(confirmedOrder, db);
         }
 
         return NextResponse.json({
           success: true,
           verified: true,
           phone: cleanPhone,
+          orderId: confirmedOrder?.id || orderId,
           message: "Order verified successfully.",
         });
       } else if (emailVerify.error && !lastError) {
@@ -111,11 +164,19 @@ export async function POST(request: Request) {
             expiresAt: now + 30 * 60 * 1000,
           });
         }
+
+        const confirmedOrder = await confirmOrderInDB(db);
         await writeDB(db);
+
+        if (confirmedOrder) {
+          await triggerPostVerificationServices(confirmedOrder, db);
+        }
+
         return NextResponse.json({
           success: true,
           verified: true,
           phone: cleanPhone,
+          orderId: confirmedOrder?.id || orderId,
           message: "Order verified successfully.",
         });
       }

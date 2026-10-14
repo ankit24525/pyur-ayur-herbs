@@ -45,25 +45,19 @@ export async function POST(request: Request) {
     const sessionToken = extractSessionToken(cookieHeader);
     const sessionUser = await resolveSession(sessionToken);
 
-    if (!sessionUser && !saveAsPendingOtp) {
-      const isVerified = (db.verifiedPhones || []).some(
+    // Check if phone was already verified in session or verified list
+    const isPhoneAlreadyVerified =
+      (sessionUser && (sessionUser.phone || "").replace(/\D/g, "").slice(-10) === cleanPhone) ||
+      (db.verifiedPhones || []).some(
         (v: any) => v.phone === cleanPhone && Date.now() < (v.expiresAt || 0)
       );
 
-      if (!isVerified) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Mobile number verification required. Please verify your phone number via OTP to place your order.",
-            requiresOtp: true,
-          },
-          { status: 400 }
-        );
-      }
-    }
+    const isCod = paymentMethod === "cod";
+    const isCodPending = isCod && !isPhoneAlreadyVerified;
+    const codVerified = isCod ? isPhoneAlreadyVerified : true;
 
     // COD Abuse & Fraud Prevention Check (Amazon & Flipkart Policy)
-    if (paymentMethod === "cod") {
+    if (isCod) {
       const fraudStatus = await checkCustomerFraudStatus(phone);
       if (fraudStatus.isCodBlocked) {
         return NextResponse.json(
@@ -75,6 +69,20 @@ export async function POST(request: Request) {
           },
           { status: 400 }
         );
+      }
+    }
+
+    // Auto-generate and dispatch WhatsApp OTP for unverified COD orders
+    if (isCodPending) {
+      try {
+        const { generateOTP, saveOTP, sendWhatsAppOTP } = await import("@/lib/whatsapp-otp");
+        const otp = generateOTP();
+        await saveOTP(cleanPhone, otp, "cod", 15);
+        void sendWhatsAppOTP(cleanPhone, otp, "cod").catch((err) =>
+          console.error("[Auto WhatsApp COD OTP Error]:", err)
+        );
+      } catch (otpErr) {
+        console.error("[Generate COD OTP Exception]:", otpErr);
       }
     }
 
@@ -104,9 +112,9 @@ export async function POST(request: Request) {
       companyName ? `Company: ${companyName}` : "",
     ].filter(Boolean).join(", ");
 
-    const orderStatus = saveAsPendingOtp
+    const orderStatus = saveAsPendingOtp || isCodPending
       ? "Pending OTP"
-      : paymentMethod === "cod"
+      : isCod
       ? "Verified"
       : "Processing";
 
@@ -142,6 +150,7 @@ export async function POST(request: Request) {
       total,
       method: paymentMethod === "prepaid" ? "Prepaid" : "COD",
       status: orderStatus,
+      codVerified,
       createdAt:
         existingPendingIdx !== -1 && db.orders[existingPendingIdx].createdAt
           ? db.orders[existingPendingIdx].createdAt
@@ -149,7 +158,8 @@ export async function POST(request: Request) {
       date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       items: `${items.map((i: any) => {
         const prod = db.products.find((p) => p.id === i.productId);
-        return `${prod ? prod.name : "Remedy"} x${i.quantity}`;
+        const itemName = i.name || (prod ? prod.name : "Remedy");
+        return `${itemName} x${i.quantity}`;
       }).join(", ")}`,
       itemsRaw: items,
     };
@@ -256,10 +266,24 @@ export async function POST(request: Request) {
     await writeDB(db);
 
     // Automated Logistics Partner Order Auto-Push (NimbusPost / Shiprocket) - ONLY for verified orders
-    try {
-      await pushOrderToLogistics(newOrder, db);
-    } catch (logisticsErr) {
-      console.error("[Logistics Auto-Push Exception]:", logisticsErr);
+    if (orderStatus !== "Pending OTP") {
+      try {
+        await pushOrderToLogistics(newOrder, db);
+      } catch (logisticsErr) {
+        console.error("[Logistics Auto-Push Exception]:", logisticsErr);
+      }
+
+      // Automated WhatsApp Order Confirmation Notification (Pillar 3)
+      try {
+        const waRes = await sendOrderConfirmationWhatsApp(newOrder);
+        if (waRes.success) {
+          console.log(`[WhatsApp Order Confirmation Dispatched]: Order ${orderId} sent to ${phone}`);
+        } else {
+          console.warn(`[WhatsApp Order Confirmation Warning]:`, waRes.error);
+        }
+      } catch (waErr) {
+        console.error("[WhatsApp Confirmation Exception]:", waErr);
+      }
     }
 
     // Simulated Server-Side Meta Conversions API (CAPI) trigger
@@ -282,18 +306,6 @@ export async function POST(request: Request) {
       console.error("[CAPI Server Trigger Failed]:", e);
     }
 
-    // Automated WhatsApp Order Confirmation Notification (Pillar 3)
-    try {
-      const waRes = await sendOrderConfirmationWhatsApp(newOrder);
-      if (waRes.success) {
-        console.log(`[WhatsApp Order Confirmation Dispatched]: Order ${orderId} sent to ${phone}`);
-      } else {
-        console.warn(`[WhatsApp Order Confirmation Warning]:`, waRes.error);
-      }
-    } catch (waErr) {
-      console.error("[WhatsApp Confirmation Exception]:", waErr);
-    }
-
     return NextResponse.json({
       success: true,
       orderId,
@@ -301,7 +313,13 @@ export async function POST(request: Request) {
       discount,
       shipping,
       total,
-      message: "Order placed successfully!",
+      method: paymentMethod === "prepaid" ? "Prepaid" : "COD",
+      codVerified,
+      requiresCodOtp: isCodPending,
+      phone: cleanPhone,
+      message: isCodPending
+        ? "Order recorded successfully! Please verify WhatsApp OTP on confirmation screen."
+        : "Order placed successfully!",
     });
   } catch (error) {
     return NextResponse.json(

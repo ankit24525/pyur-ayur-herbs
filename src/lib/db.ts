@@ -255,7 +255,15 @@ function sanitizeDBData(data: any): DBData {
   if (!data || typeof data !== "object") data = {};
   if (!Array.isArray(data.products) || data.products.length === 0) data.products = defaultProducts;
   if (!Array.isArray(data.orders)) data.orders = [];
-  if (!Array.isArray(data.coupons)) data.coupons = [];
+  if (!Array.isArray(data.coupons) || data.coupons.length === 0) {
+    data.coupons = [
+      { code: "PYUR10", type: "Percentage", value: "10", status: "Active", minCartValue: 0, applicableType: "All", applicableValue: "", used: 142 },
+      { code: "PREPAID5", type: "Percentage", value: "5", status: "Active", minCartValue: 0, applicableType: "All", applicableValue: "", used: 64 },
+      { code: "AYUR100", type: "Flat", value: "100", status: "Active", minCartValue: 999, applicableType: "All", applicableValue: "", used: 89 },
+      { code: "PURE99", type: "Flat", value: "99", status: "Active", minCartValue: 400, applicableType: "All", applicableValue: "", used: 35 },
+      { code: "FREESHIP", type: "Free Shipping", value: "0", status: "Active", minCartValue: 0, applicableType: "All", applicableValue: "", used: 84 },
+    ];
+  }
   if (!Array.isArray(data.leads)) data.leads = [];
   if (!Array.isArray(data.blogs)) data.blogs = [];
   if (!Array.isArray(data.media) || data.media.length === 0) data.media = defaultMedia;

@@ -50,27 +50,10 @@ export async function POST(request: Request) {
     const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
     const db = await readDB(true);
 
-    // Check authentication: if guest (no active session), phone MUST be verified via OTP
+    // Prepaid orders proceed directly without OTP verification (Payment serves as verification)
     const cookieHeader = request.headers.get("cookie");
     const sessionToken = extractSessionToken(cookieHeader);
     const sessionUser = await resolveSession(sessionToken);
-
-    if (!sessionUser) {
-      const isVerified = (db.verifiedPhones || []).some(
-        (v: any) => v.phone === cleanPhone && Date.now() < (v.expiresAt || 0)
-      );
-
-      if (!isVerified) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Mobile number verification required. Please verify your phone number via OTP before proceeding to payment.",
-            requiresOtp: true,
-          },
-          { status: 400 }
-        );
-      }
-    }
 
     // Compute order price values
     const prepaidDiscountPercent = db.settings?.prepaidDiscount ?? 5;
@@ -147,7 +130,8 @@ export async function POST(request: Request) {
       items: `${items
         .map((i: any) => {
           const prod = db.products.find((p) => p.id === i.productId);
-          return `${prod ? prod.name : "Remedy"} x${i.quantity}`;
+          const itemName = i.name || (prod ? prod.name : "Remedy");
+          return `${itemName} x${i.quantity}`;
         })
         .join(", ")}`,
       itemsRaw: items,

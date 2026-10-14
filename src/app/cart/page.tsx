@@ -380,7 +380,12 @@ export default function CartPage() {
                   <button
                     onClick={() => {
                       if (validCart.length > 0 && validCart[0].product?.id) {
-                        window.location.href = `/checkout?productId=${validCart[0].product.id}&quantity=${validCart[0].quantity || 1}`;
+                        const p = validCart[0].product;
+                        const q = validCart[0].quantity || 1;
+                        const priceParam = p.price ? `&price=${p.price}` : "";
+                        const nameParam = p.name ? `&variantName=${encodeURIComponent(p.name)}` : "";
+                        const imgParam = p.image ? `&variantImage=${encodeURIComponent(p.image)}` : "";
+                        window.location.href = `/checkout?productId=${encodeURIComponent(p.id)}&quantity=${q}${priceParam}${nameParam}${imgParam}`;
                       }
                     }}
                     className="mt-5 w-full rounded-xl bg-[#244f31] py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-lg transition hover:bg-[#1b3b24]"

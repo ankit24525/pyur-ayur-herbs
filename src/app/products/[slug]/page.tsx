@@ -1,6 +1,6 @@
 import { readDB } from "@/lib/db";
 import { products as defaultStoreProducts } from "@/lib/store";
-import { productDetails } from "@/lib/product-detail-data";
+import { productDetails, getEnrichedProductData } from "@/lib/product-detail-data";
 import { ProductDetailView } from "@/components/ProductDetailView";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -167,52 +167,23 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ? Number((allCustomerReviews.reduce((sum: number, rev: any) => sum + (Number(rev.rating) || 5), 0) / allCustomerReviews.length).toFixed(1))
       : (Number(matchedProduct.rating) || 5.0);
 
+    const enriched = getEnrichedProductData(
+      {
+        ...matchedProduct,
+        price,
+        mrp,
+        badge,
+        image,
+        customerReviews: allCustomerReviews,
+      },
+      normalizedSlug
+    );
+
     const detailProduct = {
-      id: String(matchedProduct.id || "1"),
-      slug: matchedProduct.slug || normalizedSlug,
-      name: matchedProduct.name || "Ayurvedic Product",
-      category: matchedProduct.concern || matchedProduct.category || "Ayurvedic Remedies",
-      concernSlug: (matchedProduct.concern || matchedProduct.category || "ayurvedic-remedies").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      image,
-      gallery: matchedProduct.images && matchedProduct.images.length > 0 ? [image, ...matchedProduct.images] : (matchedProduct.gallery || [image]),
+      ...enriched,
       rating: dynamicRating,
       reviews: dynamicReviewsCount,
-      price,
-      mrp,
-      discount: badge,
-      coins: matchedProduct.showCoins === false
-        ? 0
-        : (matchedProduct.coinsEarned !== undefined ? Number(matchedProduct.coinsEarned) : (Number(matchedProduct.coins) || Math.round(price * 0.05))),
-      showCoins: matchedProduct.showCoins !== false && (
-        matchedProduct.coinsEarned !== undefined ? Number(matchedProduct.coinsEarned) > 0 : true
-      ),
-      tag: matchedProduct.tag || "100% Certified Ayurvedic",
-      description: matchedProduct.description || "Authentic Ayurvedic formula formulated with potent natural herbs.",
-      inStock: matchedProduct.inStock !== false,
-      variants: matchedProduct.variants && matchedProduct.variants.length > 0 ? matchedProduct.variants : [
-        {
-          id: `${matchedProduct.id || "1"}-single`,
-          name: "Standard Pack",
-          price,
-          mrp,
-          discount: badge,
-          inStock: matchedProduct.inStock !== false,
-        }
-      ],
-      benefits: matchedProduct.benefits || [
-        { title: "Natural Formulation", desc: "Crafted with 100% pure herbal extracts.", icon: "🌿" },
-        { title: "Vaidya Approved", desc: "Backed by traditional Ayurvedic research.", icon: "🛡️" }
-      ],
-      ingredients: Array.isArray(matchedProduct.ingredients)
-        ? matchedProduct.ingredients.map((item: any) =>
-            typeof item === "string" ? { name: item, description: "Authentic Ayurvedic herb extract." } : item
-          )
-        : [{ name: "Natural Herbal Blend", description: "Potent Ayurvedic ingredients." }],
-      dosageSteps: matchedProduct.dosageSteps || [
-        { step: 1, title: "Usage", description: "Consume daily as directed by your Ayurvedic physician.", icon: "🥛" }
-      ],
       customerReviews: allCustomerReviews,
-      faqs: matchedProduct.faqs || []
     };
 
     const productSchema = generateProductSchema({
@@ -261,7 +232,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
           />
         )}
-        <ProductDetailView key={detailProduct.slug} product={detailProduct} />
+        <ProductDetailView
+          key={detailProduct.slug}
+          product={detailProduct}
+          coupons={Array.isArray(db.coupons) ? db.coupons : []}
+          settings={db.settings || {}}
+        />
       </>
     );
   }

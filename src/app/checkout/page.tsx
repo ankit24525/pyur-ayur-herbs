@@ -27,6 +27,7 @@ import {
   LogIn,
   LogOut,
   UserPlus,
+  Clock,
 } from "lucide-react";
 import { products, Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
@@ -65,10 +66,6 @@ function CheckoutForm() {
 
   // Guest Phone Verification State
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
-  const [guestOtpDrawerOpen, setGuestOtpDrawerOpen] = useState(false);
-  const [guestOtpInput, setGuestOtpInput] = useState("");
-  const [guestOtpLoading, setGuestOtpLoading] = useState(false);
-  const [guestOtpError, setGuestOtpError] = useState("");
 
   // Check authentication status without forced redirection
   const checkAuthStatus = async () => {
@@ -142,17 +139,22 @@ function CheckoutForm() {
     }
   }, [successParam, orderIdParam, errorParam]);
 
+  const parsedUrlPrice = priceParam ? parseFloat(priceParam) : NaN;
+  const initialPrice = !isNaN(parsedUrlPrice) && parsedUrlPrice > 0 ? parsedUrlPrice : 999;
+  const initialMrp = Math.round(initialPrice * 1.25);
+  const initialName = variantNameParam ? `Ayurvedic Remedy (${variantNameParam})` : "Ayurvedic Formulation";
+
   const fallbackProd: Product = {
     id: prodId || "1",
-    name: "Ayurvedic Formulation",
+    name: initialName,
     slug: "ayurvedic-formulation",
     concern: "Ayurveda",
-    price: 999,
-    compareAt: 1199,
+    price: initialPrice,
+    compareAt: initialMrp,
     rating: 5.0,
     reviews: 1,
     badge: "100% PURE",
-    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80",
+    image: variantImageParam || "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=80",
     ingredients: ["Natural Herbs"],
     description: "Ayurvedic wellness remedy.",
     coinsEarned: 50,
@@ -214,36 +216,87 @@ function CheckoutForm() {
       .then((data) => {
         if (data && data.products && data.products.length > 0) {
           setCatalog(data.products);
-          const found = data.products.find((p: any) => p.id === prodId || p.slug === prodId);
+          const found = data.products.find(
+            (p: any) => p.id === prodId || p.slug === prodId || (prodId && prodId.startsWith(p.id))
+          );
           if (found) {
-            if (variantIdParam && Array.isArray(found.variants)) {
-              const matchedVar = found.variants.find((v: any) => v.id === variantIdParam);
-              if (matchedVar) {
-                const varPrice = Number(matchedVar.price) || (priceParam ? parseFloat(priceParam) : found.price);
-                const varMrp = Number(matchedVar.mrp || matchedVar.compareAt) || Math.round(varPrice * 1.25);
-                const varName = matchedVar.name || matchedVar.value || variantNameParam || "";
-                setProduct({
-                  ...found,
-                  price: varPrice,
-                  compareAt: varMrp,
-                  image: matchedVar.image || variantImageParam || found.image,
-                  name: varName && !found.name.includes(varName) ? `${found.name} (${varName})` : found.name,
-                });
-                return;
-              }
-            } else if (priceParam) {
-              const parsedP = parseFloat(priceParam);
-              if (!isNaN(parsedP) && parsedP > 0) {
-                setProduct({
-                  ...found,
-                  price: parsedP,
-                  image: variantImageParam || found.image,
-                  name: variantNameParam && !found.name.includes(variantNameParam) ? `${found.name} (${variantNameParam})` : found.name,
-                });
-                return;
-              }
+            // 1. Check if variants exist in database and match variantIdParam
+            let matchedVar: any = null;
+            if (variantIdParam && Array.isArray(found.variants) && found.variants.length > 0) {
+              matchedVar = found.variants.find((v: any) => v.id === variantIdParam);
             }
-            setProduct(found);
+
+            if (matchedVar) {
+              const varPrice = Number(matchedVar.price) || (priceParam ? parseFloat(priceParam) : found.price);
+              const varMrp = Number(matchedVar.mrp || matchedVar.compareAt) || Math.round(varPrice * 1.25);
+              const varName = matchedVar.name || matchedVar.value || variantNameParam || "";
+              setProduct({
+                ...found,
+                price: varPrice,
+                compareAt: varMrp,
+                image: matchedVar.image || variantImageParam || found.image,
+                name: varName && !found.name.includes(varName) ? `${found.name} (${varName})` : found.name,
+              });
+              return;
+            }
+
+            // 2. Dynamic pack bundle or URL price/variant parameter handling
+            const parsedP = priceParam ? parseFloat(priceParam) : NaN;
+            const hasValidPrice = !isNaN(parsedP) && parsedP > 0;
+
+            const isPack2 =
+              variantIdParam?.endsWith("-pack2") ||
+              variantNameParam?.toLowerCase().includes("pack of 2") ||
+              variantNameParam?.toLowerCase().includes("2 pack");
+            const isPack3 =
+              variantIdParam?.endsWith("-pack3") ||
+              variantNameParam?.toLowerCase().includes("pack of 3") ||
+              variantNameParam?.toLowerCase().includes("3 pack");
+            const isPack1 =
+              variantIdParam?.endsWith("-pack1") ||
+              variantNameParam?.toLowerCase().includes("pack of 1") ||
+              variantNameParam?.toLowerCase().includes("1 pack");
+
+            let packLabel = variantNameParam || "";
+            if (!packLabel) {
+              if (isPack2) packLabel = "Pack of 2";
+              else if (isPack3) packLabel = "Pack of 3";
+              else if (isPack1) packLabel = "1 Pack";
+            }
+
+            let finalPrice = found.price;
+            let finalMrp = Number(found.compareAt || found.mrp) || Math.round(found.price * 1.25);
+
+            if (hasValidPrice) {
+              finalPrice = parsedP;
+              if (isPack2) {
+                finalMrp = finalMrp * 2;
+              } else if (isPack3) {
+                finalMrp = finalMrp * 3;
+              } else {
+                finalMrp = Math.max(finalMrp, Math.round(parsedP * 1.25));
+              }
+            } else if (isPack2) {
+              finalPrice = Math.round(found.price * 2 * 0.85);
+              finalMrp = finalMrp * 2;
+            } else if (isPack3) {
+              finalPrice = Math.round(found.price * 3 * 0.75);
+              finalMrp = finalMrp * 3;
+            }
+
+            const finalName =
+              packLabel && !found.name.includes(packLabel)
+                ? `${found.name} (${packLabel})`
+                : found.name;
+
+            setProduct({
+              ...found,
+              price: finalPrice,
+              compareAt: finalMrp,
+              image: variantImageParam || found.image,
+              name: finalName,
+            });
+            return;
           }
         }
       })
@@ -282,16 +335,43 @@ function CheckoutForm() {
     }
   }, [formData.phone, formData.name, userEmail, product, qty, subtotal]);
 
-  const [otpModalOpen, setOtpModalOpen] = useState(false);
-  const [otpInput, setOtpInput] = useState("");
-  const [otpVerifying, setOtpVerifying] = useState(false);
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpError, setOtpError] = useState("");
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [orderComplete, setOrderComplete] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
+
+  // Thank You Page COD WhatsApp OTP Verification State
+  const [codOtpInput, setCodOtpInput] = useState("");
+  const [codOtpVerifying, setCodOtpVerifying] = useState(false);
+  const [codOtpSending, setCodOtpSending] = useState(false);
+  const [codOtpError, setCodOtpError] = useState("");
+  const [codVerified, setCodVerified] = useState(false);
+  const [codResendTimer, setCodResendTimer] = useState(30);
+  const [canResendCod, setCanResendCod] = useState(false);
+
+  // Auto countdown for COD OTP resend
+  useEffect(() => {
+    if (
+      orderComplete &&
+      (orderComplete.method === "COD" || formData.paymentMethod === "cod") &&
+      !codVerified &&
+      orderComplete.codVerified !== true
+    ) {
+      if (codResendTimer > 0) {
+        const timer = setTimeout(() => {
+          setCodResendTimer((prev) => {
+            if (prev <= 1) {
+              setCanResendCod(true);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [orderComplete, codVerified, codResendTimer, formData.paymentMethod]);
 
   // In-Checkout WhatsApp OTP send
   const handleSendInCheckoutWhatsAppOtp = async (e?: React.FormEvent) => {
@@ -510,68 +590,6 @@ function CheckoutForm() {
     } catch {}
   };
 
-  // Guest inline phone verification
-  const handleSendGuestPhoneOtp = async () => {
-    const clean = formData.phone.replace(/\D/g, "").slice(-10);
-    if (clean.length !== 10) {
-      alert("Please enter a valid 10-digit mobile number first.");
-      return;
-    }
-    setGuestOtpLoading(true);
-    setGuestOtpError("");
-    try {
-      const res = await fetch("/api/checkout/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: clean, email: userEmail }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setGuestOtpDrawerOpen(true);
-      } else {
-        alert(data.error || "Failed to send WhatsApp verification code.");
-      }
-    } catch {
-      alert("Failed to send OTP. Please check your internet connection.");
-    } finally {
-      setGuestOtpLoading(false);
-    }
-  };
-
-  const handleVerifyGuestPhoneOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = formData.phone.replace(/\D/g, "").slice(-10);
-    if (guestOtpInput.trim().length !== 6) {
-      setGuestOtpError("Please enter the 6-digit code.");
-      return;
-    }
-    setGuestOtpLoading(true);
-    setGuestOtpError("");
-    try {
-      const res = await fetch("/api/checkout/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: clean,
-          otp: guestOtpInput.trim(),
-          email: userEmail,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.verified) {
-        setIsPhoneVerified(true);
-        setGuestOtpDrawerOpen(false);
-        setGuestOtpInput("");
-        setGuestOtpError("");
-      } else {
-        setGuestOtpError(data.error || "Incorrect verification code.");
-      }
-    } catch {
-      setGuestOtpError("Verification failed. Please try again.");
-    } finally {
-      setGuestOtpLoading(false);
-    }
-  };
 
   // Select Saved Address
   const selectSavedAddress = (addr: any) => {
@@ -644,6 +662,45 @@ function CheckoutForm() {
       setCouponError("Error checking coupon code.");
     }
   };
+
+  // Auto-apply coupon from URL query param (?coupon=...) or stored session
+  useEffect(() => {
+    const couponParam = searchParams.get("coupon");
+    const storedCoupon = typeof window !== "undefined" ? localStorage.getItem("pyur_applied_coupon") : null;
+    const targetCode = (couponParam || storedCoupon || "").trim();
+
+    if (!targetCode || appliedCoupon) return;
+
+    let isCancelled = false;
+    fetch("/api/admin/coupons")
+      .then((res) => res.json())
+      .then((data) => {
+        if (isCancelled) return;
+        const match = data.coupons?.find(
+          (c: any) => c.code === targetCode.toUpperCase() && c.status === "Active"
+        );
+        if (match) {
+          if (match.minCartValue && subtotal < parseFloat(match.minCartValue)) {
+            return;
+          }
+          if (match.applicableType === "Category" && match.applicableValue && product.concern !== match.applicableValue) {
+            return;
+          }
+          if (match.applicableType === "Product" && match.applicableValue && String(product.id) !== String(match.applicableValue)) {
+            return;
+          }
+
+          setCouponCode(match.code);
+          setAppliedCoupon(match);
+          setCouponError("");
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [searchParams, subtotal, product, appliedCoupon]);
 
   useEffect(() => {
     if (appliedCoupon) {
@@ -798,73 +855,6 @@ function CheckoutForm() {
       return;
     }
 
-    // MANDATORY OTP VERIFICATION FOR GUEST BUYERS (Without login & signup)
-    // Also required if COD has settings.codOtpEnabled enabled
-    const isGuest = !currentUser;
-    const needsVerification = (isGuest && !isPhoneVerified) || (formData.paymentMethod === "cod" && settings.codOtpEnabled && !isPhoneVerified);
-
-    if (needsVerification) {
-      setOtpSending(true);
-      setOtpError("");
-      let savedOrderId = pendingOrderId;
-
-      // 1. Immediately save order as "Pending OTP" in Admin Orders so no Meta Ad order is ever lost
-      try {
-        const pendingRes = await fetch("/api/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...formData,
-            email: userEmail,
-            subtotal,
-            items: [{ productId: product.id, quantity: qty }],
-            appliedCoupon: appliedCoupon?.code,
-            couponDiscount,
-            coinsRedeemed: coinsDiscount,
-            saveAsPendingOtp: true,
-            pendingOrderId: savedOrderId,
-          }),
-        });
-        const pendingData = await pendingRes.json();
-        if (pendingData.success && pendingData.orderId) {
-          savedOrderId = pendingData.orderId;
-          setPendingOrderId(pendingData.orderId);
-        } else if (!pendingData.success && pendingData.error) {
-          alert(pendingData.error);
-          setOtpSending(false);
-          return;
-        }
-      } catch (err) {
-        console.warn("Could not pre-save Pending OTP order:", err);
-      }
-
-      // 2. Send WhatsApp OTP & open OTP verification modal
-      try {
-        const res = await fetch("/api/checkout/send-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: cleanPhone, email: userEmail }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setOtpError("");
-          setOtpInput("");
-          setOtpModalOpen(true);
-        } else {
-          setOtpError(data.error || "Could not send WhatsApp OTP automatically. Please click Resend below.");
-          setOtpInput("");
-          setOtpModalOpen(true);
-        }
-      } catch {
-        setOtpError("Connection issue sending OTP. Please click Resend below.");
-        setOtpInput("");
-        setOtpModalOpen(true);
-      } finally {
-        setOtpSending(false);
-      }
-      return;
-    }
-
     if (formData.paymentMethod === "prepaid") {
       void processPrepaidPhonePeOrder(pendingOrderId);
     } else {
@@ -872,66 +862,65 @@ function CheckoutForm() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setOtpError("");
-    const cleanPhone = formData.phone.replace(/\D/g, "").slice(-10);
+  const handleVerifyCodOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setCodOtpError("");
+    const cleanPhone = (orderComplete?.phone || formData.phone || "").replace(/\D/g, "").slice(-10);
+    const targetOrderId = orderComplete?.orderId;
 
-    if (otpInput.trim().length !== 6) {
-      setOtpError("Please enter the 6-digit verification code.");
+    if (codOtpInput.trim().length !== 6) {
+      setCodOtpError("Please enter the 6-digit verification code sent to your WhatsApp.");
       return;
     }
 
-    setOtpVerifying(true);
+    setCodOtpVerifying(true);
     try {
       const response = await fetch("/api/checkout/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanPhone, email: userEmail, otp: otpInput.trim() }),
+        body: JSON.stringify({
+          phone: cleanPhone,
+          email: userEmail,
+          otp: codOtpInput.trim(),
+          orderId: targetOrderId,
+        }),
       });
       const resData = await response.json();
       if (resData.success && resData.verified) {
-        setIsPhoneVerified(true);
-        setOtpModalOpen(false);
-        setOtpInput("");
-        setOtpError("");
-
-        // Auto-proceed with corresponding payment method flow, updating the existing Pending OTP order
-        if (formData.paymentMethod === "prepaid") {
-          void processPrepaidPhonePeOrder(pendingOrderId);
-        } else {
-          void processOrder(pendingOrderId);
-        }
+        setCodVerified(true);
+        setCodOtpError("");
       } else {
-        setOtpError(resData.error || "Incorrect verification code. Please try again.");
+        setCodOtpError(resData.error || "Incorrect verification code. Please check WhatsApp and try again.");
       }
     } catch {
-      setOtpError("Connection error. Please try again.");
+      setCodOtpError("Connection error while verifying. Please check your internet connection.");
     } finally {
-      setOtpVerifying(false);
+      setCodOtpVerifying(false);
     }
   };
 
-  const handleResendOtp = async () => {
-    const cleanPhone = formData.phone.replace(/\D/g, "").slice(-10);
-    setOtpSending(true);
-    setOtpError("");
+  const handleResendCodOtp = async () => {
+    if (!canResendCod && codResendTimer > 0) return;
+    const cleanPhone = (orderComplete?.phone || formData.phone || "").replace(/\D/g, "").slice(-10);
+    setCodOtpSending(true);
+    setCodOtpError("");
     try {
       const res = await fetch("/api/checkout/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanPhone, email: userEmail }),
+        body: JSON.stringify({ phone: cleanPhone, email: userEmail, purpose: "cod" }),
       });
       const data = await res.json();
       if (data.success) {
-        alert("A fresh 6-digit OTP has been sent to your WhatsApp.");
+        setCodResendTimer(30);
+        setCanResendCod(false);
       } else {
-        setOtpError(data.error || "Failed to resend code.");
+        setCodOtpError(data.error || "Failed to resend code.");
       }
     } catch {
-      setOtpError("Network error. Could not resend code.");
+      setCodOtpError("Network error. Could not resend code.");
     } finally {
-      setOtpSending(false);
+      setCodOtpSending(false);
     }
   };
 
@@ -945,7 +934,7 @@ function CheckoutForm() {
           ...formData,
           email: userEmail,
           subtotal,
-          items: [{ productId: product.id, quantity: qty }],
+          items: [{ productId: product.id, quantity: qty, name: product.name, price: product.price }],
           appliedCoupon: appliedCoupon?.code,
           couponDiscount,
           coinsRedeemed: coinsDiscount,
@@ -975,7 +964,7 @@ function CheckoutForm() {
           ...formData,
           email: userEmail,
           subtotal,
-          items: [{ productId: product.id, quantity: qty }],
+          items: [{ productId: product.id, quantity: qty, name: product.name, price: product.price }],
           appliedCoupon: appliedCoupon?.code,
           couponDiscount,
           coinsRedeemed: coinsDiscount,
@@ -985,6 +974,9 @@ function CheckoutForm() {
       const resData = await response.json();
       if (resData.success) {
         setOrderComplete(resData);
+        if (resData.codVerified) {
+          setCodVerified(true);
+        }
         // Fire client-side Meta ads Purchase event
         trackMetaEvent("Purchase", {
           content_ids: [product.id],
@@ -1012,23 +1004,170 @@ function CheckoutForm() {
   }
 
   if (orderComplete) {
+    const isCod = orderComplete.method === "COD" || formData.paymentMethod === "cod";
+    const isOrderCodVerified = codVerified || orderComplete.codVerified === true;
+    const cleanPhone = (orderComplete?.phone || formData.phone || "").replace(/\D/g, "").slice(-10);
+    const orderTotal = orderComplete.total ?? total;
+
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center p-6 bg-white rounded-2xl border border-[#ddddd9]">
-        <CheckCircle2 className="size-16 text-[#80a03c]" />
-        <h2 className="mt-4 text-2xl font-black text-[#17231b]">Order Confirmed Successfully!</h2>
-        <p className="mt-2 text-sm text-[#244f31] font-bold">
-          Order ID: {orderComplete.orderId}
-        </p>
-        <p className="mt-1 text-xs text-[#666666] max-w-md">
-          Thank you for choosing Pure Ayur Herbs. We have received your order details and started preparing your package. A tracking link will be sent to <b>{formData.phone}</b> shortly.
-        </p>
-        <div className="mt-6 flex flex-col gap-3 min-w-[200px]">
-          <Link
-            href="/"
-            className="rounded-xl bg-[#244f31] py-3 text-xs font-bold text-white transition hover:bg-[#1d3b24]"
-          >
-            CONTINUE SHOPPING
-          </Link>
+      <div className="mx-auto max-w-xl py-4 sm:py-8">
+        <div className="bg-white rounded-3xl border border-[#ddddd9] p-6 sm:p-8 shadow-sm text-center">
+          {isCod && !isOrderCodVerified ? (
+            <div>
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-700 mb-4 animate-pulse">
+                <Clock className="size-8" />
+              </div>
+              <span className="inline-block text-[11px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full mb-2">
+                Order Received • 1 Final Step
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-[#17231b]">Confirm Cash on Delivery</h2>
+              <p className="mt-2 text-xs sm:text-sm text-gray-600">
+                Order ID: <b className="text-[#244f31]">#{orderComplete.orderId}</b>
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Amount payable on delivery: <b className="text-[#17231b]">₹{orderTotal}</b> (COD)
+              </p>
+
+              {/* COD Verification Card */}
+              <div className="mt-6 rounded-2xl bg-[#f0fdf4] border-2 border-dashed border-[#86efac] p-5 text-left">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xs">
+                    <MessageSquare className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-emerald-950">
+                      Enter 6-digit WhatsApp OTP to Confirm Dispatch
+                    </h3>
+                    <p className="mt-1 text-xs text-emerald-800 leading-relaxed">
+                      We have sent a 6-digit verification code to your WhatsApp on <b className="text-emerald-950">+91 {cleanPhone}</b>. Please enter the OTP to confirm your delivery address and schedule priority dispatch.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleVerifyCodOtp} className="mt-5 space-y-3">
+                  <div>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      autoFocus
+                      required
+                      value={codOtpInput}
+                      onChange={(e) => setCodOtpInput(e.target.value.replace(/\D/g, ""))}
+                      placeholder="• • • • • •"
+                      className="w-full text-center tracking-[0.35em] text-2xl font-black rounded-xl border-2 border-emerald-400 bg-white px-4 py-3 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200 text-gray-900 shadow-xs transition"
+                    />
+                  </div>
+
+                  {codOtpError && (
+                    <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
+                      <AlertCircle className="size-4 shrink-0 text-red-500" />
+                      <span>{codOtpError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={codOtpVerifying || codOtpInput.trim().length !== 6}
+                    className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] py-3.5 text-xs font-black tracking-widest text-white shadow-md transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {codOtpVerifying ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        <span>VERIFYING COD ORDER...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="size-4" />
+                        <span>VERIFY & CONFIRM COD DELIVERY</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <div className="mt-4 flex items-center justify-between text-xs pt-3 border-t border-emerald-200/60">
+                  <span className="text-gray-500 text-[11px]">Didn&apos;t receive the WhatsApp message?</span>
+                  <button
+                    type="button"
+                    onClick={handleResendCodOtp}
+                    disabled={!canResendCod || codOtpSending}
+                    className="font-bold text-[#244f31] hover:underline disabled:opacity-50 disabled:no-underline text-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    {codOtpSending ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : canResendCod ? (
+                      "Resend Code via WhatsApp"
+                    ) : (
+                      `Resend in ${codResendTimer}s`
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Order Info Saved Notice */}
+              <div className="mt-5 p-3 rounded-xl bg-[#f8faf1] border border-[#ddddd9] text-left">
+                <p className="text-[11px] text-gray-600">
+                  ℹ️ <b>Your order details have been recorded in our system.</b> If you are facing any difficulty with OTP verification, our team will call or message you on <b>+91 {cleanPhone}</b> before dispatching your package.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 mb-4">
+                <CheckCircle2 className="size-10 text-[#80a03c]" />
+              </div>
+              <span className="inline-block text-[11px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full mb-2">
+                {isCod ? "✓ Cash on Delivery Confirmed" : "✓ Payment & Order Confirmed"}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-[#17231b]">Order Confirmed Successfully!</h2>
+              <p className="mt-2 text-sm text-[#244f31] font-bold">
+                Order ID: #{orderComplete.orderId}
+              </p>
+              <p className="mt-2 text-xs sm:text-sm text-[#666666] max-w-md mx-auto leading-relaxed">
+                Thank you for choosing Pure Ayur Herbs. We have received your order details and scheduled priority packaging. Live tracking updates will be sent to <b>+91 {cleanPhone}</b> on WhatsApp.
+              </p>
+
+              {/* Delivery Details Pill */}
+              <div className="mt-5 p-4 rounded-2xl bg-[#f8faf1] border border-[#ddddd9] text-left text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Customer:</span>
+                  <span className="font-bold text-[#17231b]">{formData.name || "Customer"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Mobile:</span>
+                  <span className="font-bold text-[#17231b]">+91 {cleanPhone}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Payment:</span>
+                  <span className="font-bold text-[#244f31]">
+                    {isCod ? `Cash on Delivery (₹${orderTotal})` : `Prepaid Online (₹${orderTotal})`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Shipping:</span>
+                  <span className="font-bold text-[#17231b]">{formData.city}, {formData.state} ({formData.pincode})</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/"
+              className="rounded-xl bg-[#244f31] py-3.5 px-6 text-xs font-bold text-white transition hover:bg-[#1d3b24] shadow-xs text-center"
+            >
+              CONTINUE SHOPPING
+            </Link>
+            <a
+              href={`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(`Hi Pure Ayur Herbs team, I have a query about my Order #${orderComplete.orderId}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 py-3.5 px-6 text-xs font-bold text-emerald-900 transition flex items-center justify-center gap-2"
+            >
+              <MessageSquare className="size-4 text-[#25D366]" />
+              <span>Contact Support on WhatsApp</span>
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -1217,29 +1356,6 @@ function CheckoutForm() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-bold text-[#17231b]">Mobile Number</label>
-                {isPhoneVerified ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
-                    <Check className="size-3" /> Phone Verified
-                  </span>
-                ) : formData.phone.length === 10 ? (
-                  <button
-                    type="button"
-                    onClick={handleSendGuestPhoneOtp}
-                    disabled={guestOtpLoading}
-                    className="text-[10px] font-bold text-[#244f31] bg-[#eaf4ec] hover:bg-[#d8edd9] px-2.5 py-0.5 rounded-full transition flex items-center gap-1 border border-[#86efac]/60"
-                  >
-                    {guestOtpLoading ? (
-                      <Loader2 className="size-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="size-3 text-[#244f31]" />
-                    )}
-                    <span>Verify via OTP</span>
-                  </button>
-                ) : (
-                  <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                    OTP Required
-                  </span>
-                )}
               </div>
               <div className="flex rounded-xl border border-[#ddddd9] bg-white overflow-hidden focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31] transition">
                 <span className="bg-[#f1f5f9] text-[#64748b] text-xs font-bold px-3 py-2.5 flex items-center border-r border-[#e2e8f0] select-none shrink-0">
@@ -1254,10 +1370,6 @@ function CheckoutForm() {
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "");
                     setFormData({ ...formData, phone: val });
-                    if (val !== formData.phone) {
-                      setIsPhoneVerified(false);
-                      setGuestOtpDrawerOpen(false);
-                    }
                   }}
                   placeholder="xxxxxxxxxx"
                   className="flex-1 px-3.5 py-2.5 text-xs outline-none bg-transparent text-[#17231b] min-w-0"
@@ -1271,64 +1383,10 @@ function CheckoutForm() {
                   {maskPhone ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
-
-              {/* Inline Guest Phone OTP Drawer */}
-              {guestOtpDrawerOpen && !isPhoneVerified && (
-                <div className="mt-2.5 p-3 rounded-xl bg-[#f0fdf4] border border-[#86efac] animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] font-bold text-emerald-900 flex items-center gap-1">
-                      <MessageSquare className="size-3 text-emerald-600" />
-                      Enter 6-digit WhatsApp OTP
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setGuestOtpDrawerOpen(false)}
-                      className="text-gray-400 hover:text-gray-600 text-xs"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </div>
-                  {guestOtpError && (
-                    <p className="text-[10px] text-red-600 font-bold mb-1.5">{guestOtpError}</p>
-                  )}
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={guestOtpInput}
-                      onChange={(e) => setGuestOtpInput(e.target.value.replace(/\D/g, ""))}
-                      placeholder="6-digit OTP"
-                      className="flex-1 tracking-widest text-center font-black text-sm px-3 py-1.5 bg-white border border-[#86efac] rounded-lg outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleVerifyGuestPhoneOtp}
-                      disabled={guestOtpLoading || guestOtpInput.length !== 6}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition disabled:opacity-50 flex items-center gap-1"
-                    >
-                      {guestOtpLoading ? <Loader2 className="size-3 animate-spin" /> : "Verify"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Row 2: Email (Optional) */}
-            <div>
-              <label className="block text-xs font-bold text-[#17231b] mb-1.5">
-                Email <span className="text-gray-400 font-normal text-[11px]">(Optional)</span>
-              </label>
-              <input
-                type="email"
-                value={userEmail}
-                onChange={(e) => setUserEmail(e.target.value)}
-                placeholder="Enter email address"
-                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs text-[#17231b] outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] bg-white transition"
-              />
             </div>
 
             {/* Row 2: Alternate Contact Number (Optional) */}
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-[#17231b] mb-1.5">
                 Alternate Contact Number <span className="text-gray-400 font-normal text-[11px]">(Optional)</span>
               </label>
@@ -1346,21 +1404,6 @@ function CheckoutForm() {
                 />
               </div>
             </div>
-
-            {/* Row 3: Company Name (Optional) */}
-            <div>
-              <label className="block text-xs font-bold text-[#17231b] mb-1.5">
-                Company Name <span className="text-gray-400 font-normal text-[11px]">(Optional)</span>
-              </label>
-              <input
-                type="text"
-                value={formData.companyName}
-                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                placeholder="Enter company name"
-                className="w-full rounded-xl border border-[#ddddd9] px-3.5 py-2.5 text-xs text-[#17231b] outline-none focus:border-[#244f31] focus:ring-1 focus:ring-[#244f31] bg-white transition"
-              />
-            </div>
-            <div className="hidden sm:block"></div>
 
             {/* Row 4: Complete Address */}
             <div className="sm:col-span-2">
@@ -1614,9 +1657,25 @@ function CheckoutForm() {
           </form>
           {couponError && <p className="mt-1 text-[10px] text-red-500 font-bold">{couponError}</p>}
           {appliedCoupon && (
-            <p className="mt-1 text-[10px] text-emerald-600 font-bold">
-              🎉 Coupon {appliedCoupon.code} applied!
-            </p>
+            <div className="mt-2 flex items-center justify-between rounded-lg bg-[#eef5df] border border-emerald-300 p-2 text-xs text-[#244f31]">
+              <div className="flex items-center gap-1 font-bold">
+                <span>🎉</span>
+                <span>Coupon <b>{appliedCoupon.code}</b> applied! (-₹{couponDiscount})</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setAppliedCoupon(null);
+                  setCouponCode("");
+                  if (typeof window !== "undefined") {
+                    localStorage.removeItem("pyur_applied_coupon");
+                  }
+                }}
+                className="text-red-600 hover:text-red-800 text-[10px] font-black uppercase underline ml-2 cursor-pointer"
+              >
+                Remove
+              </button>
+            </div>
           )}
 
           <div className="mt-4 space-y-2.5 border-b border-[#ddddd9] pb-4 text-xs text-[#666666]">
@@ -1682,72 +1741,6 @@ function CheckoutForm() {
         </div>
       </div>
 
-      {/* WhatsApp / SMS Order Verification Dialog Modal */}
-      {otpModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setOtpModalOpen(false)} />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <button
-              onClick={() => setOtpModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-[#666666] hover:bg-[#f8faf1]"
-            >
-              <X className="size-5" />
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366]/15 text-[#25D366]">
-                <MessageSquare className="size-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-[#17231b]">
-                  {formData.paymentMethod === "prepaid" ? "Verify Mobile to Pay" : "Verify Mobile to Confirm"}
-                </h3>
-                <span className="text-[10px] font-bold text-[#25D366] uppercase tracking-wider">Instant Verification</span>
-              </div>
-            </div>
-            <p className="mt-2 text-xs text-[#666666] leading-relaxed">
-              We have sent a 6-digit verification code to{" "}
-              <b className="text-[#17231b]">
-                {formData.phone ? `+91 ${formData.phone.replace(/\D/g, "").slice(-10)}` : userEmail}
-              </b>{" "}
-              via WhatsApp to verify your number and confirm your {formData.paymentMethod === "prepaid" ? "prepaid order" : "order"}.
-            </p>
-            {otpError && <p className="mt-2 text-xs text-red-500 font-bold text-center bg-red-50 p-2 rounded-lg">{otpError}</p>}
-            <form onSubmit={handleVerifyOtp} className="mt-4 space-y-4">
-              <input
-                type="text"
-                maxLength={6}
-                required
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
-                placeholder="Enter 6-digit OTP"
-                className="w-full text-center tracking-[0.3em] text-xl font-black rounded-xl border-2 border-[#ddddd9] px-3 py-3 outline-none focus:border-[#25D366] transition"
-                autoFocus
-              />
-              <button
-                type="submit"
-                disabled={otpVerifying || otpInput.trim().length !== 6}
-                className="w-full rounded-xl bg-[#25D366] py-3 text-xs font-black tracking-widest text-white shadow-md hover:bg-[#20ba5a] transition disabled:opacity-50"
-              >
-                {otpVerifying
-                  ? "VERIFYING..."
-                  : formData.paymentMethod === "prepaid"
-                  ? "VERIFY & PROCEED TO PAYMENT"
-                  : "VERIFY & CONFIRM ORDER"}
-              </button>
-            </form>
-            <div className="mt-3 text-center">
-              <button
-                type="button"
-                disabled={otpSending}
-                onClick={handleResendOtp}
-                className="text-[11px] font-semibold text-[#666666] hover:text-[#244f31] underline"
-              >
-                {otpSending ? "Sending new code..." : "Didn't receive code? Resend on WhatsApp"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* In-Checkout Dual-Mode Login / Sign-In Modal */}
       {inCheckoutLoginOpen && (

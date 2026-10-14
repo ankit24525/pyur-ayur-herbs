@@ -1107,7 +1107,12 @@ export default function SiteHeader({
                 <button
                   onClick={() => {
                     if (validCartItems.length > 0 && validCartItems[0].product?.id) {
-                      window.location.href = `/checkout?productId=${validCartItems[0].product.id}&quantity=${validCartItems[0].quantity || 1}`;
+                      const p = validCartItems[0].product;
+                      const q = validCartItems[0].quantity || 1;
+                      const priceParam = p.price ? `&price=${p.price}` : "";
+                      const nameParam = p.name ? `&variantName=${encodeURIComponent(p.name)}` : "";
+                      const imgParam = p.image ? `&variantImage=${encodeURIComponent(p.image)}` : "";
+                      window.location.href = `/checkout?productId=${encodeURIComponent(p.id)}&quantity=${q}${priceParam}${nameParam}${imgParam}`;
                     } else {
                       setCartOpen(false);
                     }

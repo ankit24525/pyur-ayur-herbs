@@ -2,7 +2,7 @@
   "products": [
     {
       "id": "prod_1788511819071",
-      "name": "MADHUNASHI POWDER",
+      "name": "MADHUNASHI POWDER- Helps Manage Sugar level(मधुनाशी पाउडर - ब्लड शुगर के स्तर को नियंत्रित करने में सहायक)",
       "slug": "madhunashi-powder",
       "concern": "Sugar Management",
       "price": 1487,
@@ -18,19 +18,19 @@
         "Herbal Extract"
       ],
       "description": "Madhunashi – a 100% natural Ayurvedic blend of Gudmar (Gymnema Sylvestre), Karela, and Jamun, crafted to support healthy blood sugar levels and provide antioxidant support. GMP certified, gluten-free, and made with premium botanicals.\n100% Natural botanical formula\nGMP Certified & Gluten-Free\nSupports healthy blood sugar levels\nProvides antioxidant support\nNet Wt: 200g",
-      "coinsEarned": 74,
+      "coinsEarned": 100,
       "deliveryDays": "3 - 5 Days",
       "inStock": true,
       "sku": "PAH-MADHUNASHI-POWDER--412",
       "stockQty": 50,
       "lowStockThreshold": 10,
-      "showCoins": false,
+      "showCoins": true,
       "hasVariants": false,
       "variants": []
     },
     {
       "id": "prod_1788511912600",
-      "name": "MADHUNASHI SYP",
+      "name": "MADHUNASHI SYP-Helps Manage Sugar Levels",
       "slug": "madhunashi-syp",
       "concern": "Sugar Management",
       "price": 410,
@@ -52,11 +52,13 @@
       "sku": "PAH-MADHUNASHI-SYP--169",
       "stockQty": 50,
       "lowStockThreshold": 10,
-      "showCoins": false
+      "showCoins": false,
+      "hasVariants": false,
+      "variants": []
     },
     {
       "id": "prod_1788511960374",
-      "name": "FAT BURNER",
+      "name": "FAT BURNER-Metabolism Support Juice",
       "slug": "fat-burner",
       "concern": "Gym and Fitness",
       "price": 499,
@@ -72,13 +74,15 @@
         "Herbal Extract"
       ],
       "description": "Fat Burn Juice – an Ayurvedic slim tonic with Amla, Curry Leaves, and Ginger to naturally support metabolism, detox, and energy. 500ml, GMP certified, 100% Ayurvedic.This slim tonic is designed to work on four key wellness pillars — Metabolism, Detox, Energy, and Weight Management Support — helping your body burn naturally when paired with a balanced diet and regular activity.\nKey Highlights:\nMetabolism, Detox & Energy Support\n100% Ayurvedic Formula\nGMP Certified\nNet Volume: 500ml\nBest results with balanced diet & regular activity",
-      "coinsEarned": 25,
+      "coinsEarned": 50,
       "deliveryDays": "3 - 5 Days",
       "inStock": true,
       "sku": "PAH-FAT-BURNER-183",
       "stockQty": 50,
       "lowStockThreshold": 10,
-      "showCoins": false
+      "showCoins": true,
+      "hasVariants": false,
+      "variants": []
     },
     {
       "id": "prod_1788512010828",
@@ -110,7 +114,7 @@
     },
     {
       "id": "prod_1788947560528",
-      "name": "VIRJA POWDER",
+      "name": "VIRJA POWDER-Ultimate MEN'S Power& Vitality blend",
       "slug": "virja-powder",
       "concern": "Energy and Vitality",
       "price": 1199,
@@ -132,7 +136,9 @@
       "inStock": true,
       "sku": "PAH-VIRJA-POWDER-940",
       "stockQty": 50,
-      "lowStockThreshold": 10
+      "lowStockThreshold": 10,
+      "hasVariants": false,
+      "variants": []
     },
     {
       "id": "prod_1789129223995",
@@ -163,475 +169,75 @@
   ],
   "orders": [
     {
-      "id": "PYR-ORD-146050",
-      "customer": "Ankit Pandey",
-      "email": "ankitpandey6624@gmail.com",
-      "phone": "6388870437",
-      "address": "mama",
-      "pincode": "247662",
-      "city": "Saharanpur",
-      "state": "Uttar Pradesh",
-      "total": 459,
-      "method": "COD",
-      "status": "Cancelled",
-      "createdAt": "2026-09-16T10:30:00.000Z",
-      "date": "16 Sept 2026",
-      "items": "MADHUNASHI SYP x1",
-      "shiprocketOrderId": 1591802116,
-      "shiprocketShipmentId": 1588018504,
-      "shiprocketStatus": "Pushed",
-      "cancellationReason": "Cancelled by Admin",
-      "cancellationDate": "2026-09-21T08:02:52.576Z",
-      "cancelledBy": "Admin",
-      "refundStatus": "Not Applicable (Cash on Delivery - ₹0)",
-      "awb": "SR-1588018504"
-    },
-    {
-      "id": "PYR-ORD-404873",
-      "customer": "Customer 9800",
-      "email": "9756349800@pureayurherbs.com",
-      "phone": "9756349800",
-      "address": "Kiccha road sitarganj",
-      "pincode": "262405",
-      "city": "Udham Singh Nagar",
-      "state": "Uttarakhand",
-      "total": 498,
-      "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-09-18T07:26:30.850Z",
-      "date": "18 Sept 2026",
-      "items": "VIRJA GOLD MAJUN x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1789129223995",
-          "quantity": 1,
-          "price": 449
-        }
-      ],
-      "shiprocketOrderId": 1595138647,
-      "shiprocketShipmentId": 1591354925,
-      "shiprocketStatus": "Pushed"
-    },
-    {
-      "id": "PYR-ORD-215426",
-      "customer": "Ankit Pandey",
-      "email": "ankitpandey9658@gmail.com",
-      "phone": "6388870437",
+      "id": "PYR-ORD-413977",
+      "customer": "Imran khan",
+      "email": "",
+      "phone": "9917246200",
       "altPhone": "",
       "companyName": "",
-      "landmark": "indra garden ",
-      "address": "mama, Landmark: indra garden ",
-      "rawAddress": "mama",
-      "pincode": "247662",
-      "city": "Saharanpur",
-      "state": "Uttar Pradesh",
-      "country": "India",
-      "shippingAddress": {
-        "street": "mama",
-        "landmark": "indra garden ",
-        "companyName": "",
-        "city": "Saharanpur",
-        "state": "Uttar Pradesh",
-        "pincode": "247662",
-        "country": "India"
-      },
-      "subtotal": 410,
-      "discount": 0,
-      "coinsRedeemed": 0,
-      "total": 459,
-      "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-09-19T17:13:57.788Z",
-      "date": "19 Sept 2026",
-      "items": "MADHUNASHI SYP x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1788511912600",
-          "quantity": 1,
-          "price": 410
-        }
-      ],
-      "shiprocketOrderId": 1598705269,
-      "shiprocketShipmentId": 1594921436,
-      "shiprocketStatus": "Pushed",
-      "awb": "SR-1594921436"
-    },
-    {
-      "id": "PYR-ORD-266460",
-      "customer": "rohan",
-      "email": "zentroviaitsolutions@gmail.com",
-      "phone": "9058902068",
-      "altPhone": "",
-      "companyName": "Zentroviitsolutions",
-      "landmark": "",
-      "address": "word no.3 sitarganj uttrakhand india, Company: Zentroviitsolutions",
-      "rawAddress": "word no.3 sitarganj uttrakhand india",
+      "landmark": "Near priyas hospital",
+      "address": "Babanpuri SITARGANJ, Landmark: Near priyas hospital",
+      "rawAddress": "Babanpuri SITARGANJ",
       "pincode": "262405",
-      "city": "Sitarganj",
-      "state": "uttrakhand",
-      "country": "India",
-      "shippingAddress": {
-        "street": "word no.3 sitarganj uttrakhand india",
-        "landmark": "",
-        "companyName": "Zentroviitsolutions",
-        "city": "Sitarganj",
-        "state": "uttrakhand",
-        "pincode": "262405",
-        "country": "India"
-      },
-      "subtotal": 499,
-      "discount": 25,
-      "couponDiscount": 0,
-      "coinsRedeemed": 99,
-      "total": 424,
-      "method": "PhonePe",
-      "status": "Payment Failed",
-      "createdAt": "2026-09-19T18:40:00.000Z",
-      "date": "19 Sept 2026",
-      "items": "FAT BURNER x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1788511960374",
-          "quantity": 1,
-          "price": 499
-        }
-      ]
-    },
-    {
-      "id": "PYR-ORD-393629",
-      "customer": "rohan",
-      "email": "9058902068@pureayurherbs.com",
-      "phone": "9058902068",
-      "altPhone": "",
-      "companyName": "",
-      "landmark": "",
-      "address": "000",
-      "rawAddress": "000",
-      "pincode": "262405",
-      "city": "Udham Singh Nagar",
+      "city": "SITARGANJ",
       "state": "Uttarakhand",
       "country": "India",
       "shippingAddress": {
-        "street": "000",
-        "landmark": "",
+        "street": "Babanpuri SITARGANJ",
+        "landmark": "Near priyas hospital",
         "companyName": "",
-        "city": "Udham Singh Nagar",
-        "state": "Uttarakhand",
-        "pincode": "262405",
-        "country": "India"
-      },
-      "subtotal": 999,
-      "discount": 0,
-      "coinsRedeemed": 0,
-      "total": 999,
-      "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-09-19T18:52:04.905Z",
-      "date": "19 Sept 2026",
-      "items": "MADHUNASHI POWDER x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1788511819071",
-          "quantity": 1,
-          "price": 999
-        }
-      ]
-    },
-    {
-      "id": "PYR-ORD-699745",
-      "customer": "rahul",
-      "email": "xyz@gmail.com",
-      "phone": "7055902068",
-      "altPhone": "4578210369",
-      "companyName": "",
-      "landmark": "gfhdt",
-      "address": "0000, Landmark: gfhdt",
-      "rawAddress": "0000",
-      "pincode": "262405",
-      "city": "Sitarganj",
-      "state": "Uttarakhand",
-      "country": "India",
-      "shippingAddress": {
-        "street": "0000",
-        "landmark": "gfhdt",
-        "companyName": "",
-        "city": "Sitarganj",
-        "state": "Uttarakhand",
-        "pincode": "262405",
-        "country": "India"
-      },
-      "subtotal": 1487,
-      "discount": 0,
-      "coinsRedeemed": 0,
-      "total": 1487,
-      "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-09-20T04:48:27.826Z",
-      "date": "20 Sept 2026",
-      "items": "MADHUNASHI POWDER x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1788511819071",
-          "quantity": 1,
-          "price": 1487
-        }
-      ],
-      "shiprocketOrderId": 1599284033,
-      "shiprocketShipmentId": 1595500174,
-      "shiprocketStatus": "Pushed",
-      "awb": "SR-1595500174"
-    },
-    {
-      "id": "PYR-ORD-680790",
-      "customer": "Ankit Pandey",
-      "email": "ankitpandey6624@gmail.com",
-      "phone": "6388870437",
-      "altPhone": "",
-      "companyName": "",
-      "landmark": "",
-      "address": "mama",
-      "rawAddress": "mama",
-      "pincode": "229001",
-      "city": "Raebareli",
-      "state": "Uttar Pradesh",
-      "country": "India",
-      "shippingAddress": {
-        "street": "mama",
-        "landmark": "",
-        "companyName": "",
-        "city": "Raebareli",
-        "state": "Uttar Pradesh",
-        "pincode": "229001",
-        "country": "India"
-      },
-      "subtotal": 410,
-      "discount": 0,
-      "coinsRedeemed": 0,
-      "total": 459,
-      "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-09-21T13:15:11.349Z",
-      "date": "21 Sept 2026",
-      "items": "MADHUNASHI SYP x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1788511912600",
-          "quantity": 1,
-          "price": 410
-        }
-      ],
-      "shiprocketOrderId": 1602718617,
-      "shiprocketShipmentId": 1598934672,
-      "shiprocketStatus": "Pushed",
-      "awb": "SR-1598934672"
-    },
-    {
-      "id": "PYR-ORD-102420",
-      "userId": null,
-      "isLoggedInUser": false,
-      "customer": "MOHD ARIF",
-      "email": "arifstudio87@gmail.com",
-      "phone": "8791562510",
-      "altPhone": "8273158571",
-      "companyName": "",
-      "landmark": "near shiv mandir",
-      "address": "NH-74, Landmark: near shiv mandir",
-      "rawAddress": "NH-74",
-      "pincode": "262405",
-      "city": "Udham Singh Nagar",
-      "state": "Uttarakhand",
-      "country": "India",
-      "shippingAddress": {
-        "street": "NH-74",
-        "landmark": "near shiv mandir",
-        "companyName": "",
-        "city": "Udham Singh Nagar",
-        "state": "Uttarakhand",
-        "pincode": "262405",
-        "country": "India"
-      },
-      "subtotal": 449,
-      "discount": 22,
-      "couponDiscount": 0,
-      "coinsRedeemed": 0,
-      "total": 476,
-      "method": "PhonePe",
-      "status": "Payment Failed",
-      "paymentFailedAlertSent": false,
-      "createdAt": "2026-09-23T17:18:32.907Z",
-      "date": "23 Sept 2026",
-      "items": "VIRJA GOLD MAJUN x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1789129223995",
-          "quantity": 1,
-          "price": 449
-        }
-      ],
-      "shiprocketOrderId": 1608145444,
-      "shiprocketShipmentId": 1604361294,
-      "shiprocketStatus": "Pushed",
-      "awb": "SR-1604361294"
-    },
-    {
-      "id": "PYR-ORD-123942",
-      "customer": "Ankit Pandey",
-      "email": "ankitpandey9658@gmail.com",
-      "phone": "6388870437",
-      "altPhone": "",
-      "companyName": "",
-      "landmark": "",
-      "address": "Kiccha road sitarganj",
-      "rawAddress": "Kiccha road sitarganj",
-      "pincode": "262405",
-      "city": "Sitarganj",
-      "state": "Uttarakhand",
-      "country": "India",
-      "shippingAddress": {
-        "street": "Kiccha road sitarganj",
-        "landmark": "",
-        "companyName": "",
-        "city": "Sitarganj",
-        "state": "Uttarakhand",
-        "pincode": "262405",
-        "country": "India"
-      },
-      "subtotal": 449,
-      "discount": 0,
-      "coinsRedeemed": 0,
-      "total": 498,
-      "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-10-09T14:20:00.000Z",
-      "date": "9 Oct 2026",
-      "items": "VIRJA GOLD MAJUN x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1789129223995",
-          "quantity": 1,
-          "price": 449
-        }
-      ]
-    },
-    {
-      "id": "PYR-ORD-631640",
-      "customer": "Ankit Pandey",
-      "email": "ankitpandey9658@gmail.com",
-      "phone": "6388870437",
-      "altPhone": "",
-      "companyName": "",
-      "landmark": "",
-      "address": "Kiccha road sitarganj",
-      "rawAddress": "Kiccha road sitarganj",
-      "pincode": "262405",
-      "city": "Sitarganj",
-      "state": "Uttarakhand",
-      "country": "India",
-      "shippingAddress": {
-        "street": "Kiccha road sitarganj",
-        "landmark": "",
-        "companyName": "",
-        "city": "Sitarganj",
-        "state": "Uttarakhand",
-        "pincode": "262405",
-        "country": "India"
-      },
-      "subtotal": 410,
-      "discount": 0,
-      "coinsRedeemed": 0,
-      "total": 459,
-      "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-10-09T16:00:52.413Z",
-      "date": "9 Oct 2026",
-      "items": "MADHUNASHI SYP x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1788511912600",
-          "quantity": 1,
-          "price": 410
-        }
-      ]
-    },
-    {
-      "id": "PYR-ORD-543139",
-      "customer": "Ankit Pandey",
-      "email": "ankitpandey9658@gmail.com",
-      "phone": "6388870437",
-      "altPhone": "",
-      "companyName": "",
-      "landmark": "",
-      "address": "Mahanandpur, Indra garden ,Mama chauraha ,Raebareli",
-      "rawAddress": "Mahanandpur, Indra garden ,Mama chauraha ,Raebareli",
-      "pincode": "229001",
-      "city": "Raebareli",
-      "state": "Uttar Pradesh",
-      "country": "India",
-      "shippingAddress": {
-        "street": "Mahanandpur, Indra garden ,Mama chauraha ,Raebareli",
-        "landmark": "",
-        "companyName": "",
-        "city": "Raebareli",
-        "state": "Uttar Pradesh",
-        "pincode": "229001",
-        "country": "India"
-      },
-      "subtotal": 449,
-      "discount": 0,
-      "coinsRedeemed": 0,
-      "total": 498,
-      "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-10-10T11:35:03.747Z",
-      "date": "10 Oct 2026",
-      "items": "VIRJA GOLD MAJUN x1",
-      "itemsRaw": [
-        {
-          "productId": "prod_1789129223995",
-          "quantity": 1,
-          "price": 449
-        }
-      ]
-    },
-    {
-      "id": "PYR-ORD-914714",
-      "customer": "Imran Shah",
-      "email": "9756349800@pureayurherbs.com",
-      "phone": "9756349800",
-      "altPhone": "",
-      "companyName": "",
-      "landmark": "Near inter college",
-      "address": "Sitarganj, Landmark: Near inter college",
-      "rawAddress": "Sitarganj",
-      "pincode": "262405",
-      "city": "Udham Singh Nagar",
-      "state": "Uttarakhand",
-      "country": "India",
-      "shippingAddress": {
-        "street": "Sitarganj",
-        "landmark": "Near inter college",
-        "companyName": "",
-        "city": "Udham Singh Nagar",
+        "city": "SITARGANJ",
         "state": "Uttarakhand",
         "pincode": "262405",
         "country": "India"
       },
       "subtotal": 1199,
       "discount": 0,
+      "couponDiscount": 0,
+      "appliedCoupon": "",
       "coinsRedeemed": 0,
       "total": 1199,
       "method": "COD",
-      "status": "Verified",
-      "createdAt": "2026-10-10T18:11:54.714Z",
-      "date": "10 Oct 2026",
+      "status": "Delivered",
+      "createdAt": "2026-10-11T15:14:42.834Z",
+      "date": "11 Oct 2026",
       "items": "VIRJA POWDER x1",
       "itemsRaw": [
         {
           "productId": "prod_1788947560528",
-          "quantity": 1,
-          "price": 1199
+          "quantity": 1
         }
-      ]
+      ],
+      "nimbusOrderId": "8fdc6e40-797e-4c0e-ab2d-4da3f8d90939",
+      "nimbusAwb": "374269374203",
+      "awb": "374269374203",
+      "nimbusCourierName": "Amazon Surface_Stressed",
+      "nimbusLabelUrl": "https://nimubs-assets.s3.ap-south-1.amazonaws.com/ats_labels/374269374203.pdf",
+      "nimbusTrackingUrl": "https://app.nimbuspost.com/track/y9Js2Rtd7Z/374269374203",
+      "nimbusStatus": "cancelled",
+      "logisticsPartner": "nimbuspost",
+      "nimbusScans": [
+        {
+          "status": "shipped",
+          "location": "",
+          "time": "2026-10-11 15:15:00",
+          "message": "shipped"
+        },
+        {
+          "status": "pending pickup",
+          "location": "",
+          "time": "2026-10-11 15:15:02",
+          "message": "ReadyForReceive"
+        },
+        {
+          "status": "cancelled",
+          "location": "",
+          "time": "2026-10-14 17:34:05",
+          "message": "cancelled"
+        }
+      ],
+      "updatedAt": "2026-10-14T17:34:06.287Z",
+      "nimbusError": "Order ID 'PYR-ORD-413977' already exists on channel 'Mohd Imran'. Use a different Order ID or pick a different channel."
     }
   ],
   "coupons": [
@@ -661,6 +267,114 @@
     }
   ],
   "leads": [
+    {
+      "id": "CW-1791965202915",
+      "waMessageId": "cw-921052059",
+      "name": "+918069087895",
+      "phone": "918069087895",
+      "source": "Chatwoot Live Chat",
+      "message": "This message is unavailable.",
+      "botReply": "Namaste +918069087895! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "14/10/2026, 1:36:42 pm"
+    },
+    {
+      "id": "CW-1791952729215",
+      "waMessageId": "cw-920787182",
+      "name": "Arix Editor",
+      "phone": "919636190798",
+      "source": "Chatwoot Live Chat",
+      "message": "हम प्रमोशन वीडियो बनाते है\nक्या कुछ वीडियो भेजूं, अगर आप देखना और बनवाना चाहते हैं तो?",
+      "botReply": "Namaste Arix Editor! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "14/10/2026, 10:08:49 am"
+    },
+    {
+      "id": "CW-1791907077176",
+      "waMessageId": "cw-919567736",
+      "name": "Devaramkumawat112233@gmai",
+      "phone": "919982568533",
+      "source": "Chatwoot Live Chat",
+      "message": "Ketan.ke.h",
+      "botReply": "Namaste Devaramkumawat112233@gmai! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "13/10/2026, 9:27:57 pm"
+    },
+    {
+      "id": "CW-1791907030419",
+      "waMessageId": "cw-919565816",
+      "name": "Devaramkumawat112233@gmai",
+      "phone": "919982568533",
+      "source": "Chatwoot Live Chat",
+      "message": "Hello! Can I get more info on this?",
+      "botReply": "*Namaste Devaramkumawat112233@gmai! 🙏 Welcome to Pure Ayur Herbs.*\n\nI am your 24/7 Ayurvedic Wellness Assistant. How may I assist your health journey today?\n\n1️⃣ Reply *1* to *Track an existing Order*\n2️⃣ Reply *2* to *Cancel an Order* (Instant 1-Click Cancel)\n3️⃣ Reply *3* for *Remedy Recommendations* (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for *Dosage & Usage Instructions*\n5️⃣ Reply *5* for *Full Product Catalog & Prices*\n6️⃣ Reply *6* or *Support* to *Talk with our Ayurvedic Doctor*\n\n_💡 Simply reply with *1*, *2*, *3*, *4*, *5*, *6* or type any health concern in Hindi, English, or Hinglish!_",
+      "intent": "GREETING",
+      "status": "AI Resolved",
+      "date": "13/10/2026, 9:27:10 pm"
+    },
+    {
+      "id": "CW-1791898563936",
+      "waMessageId": "cw-919180109",
+      "name": "ankitpandey",
+      "phone": "916388870437",
+      "source": "Chatwoot Live Chat",
+      "message": "hii",
+      "botReply": "Namaste ankitpandey! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "13/10/2026, 7:06:03 pm"
+    },
+    {
+      "id": "WA-1791815409622",
+      "waMessageId": "wamid.HBgMOTE3NDI4MjU5NzQwFQIAEhgSRDM2M0UyNTBGRDIzNkU3MUNCAA==",
+      "name": "WhatsApp Customer",
+      "phone": "917428259740",
+      "source": "WhatsApp Business Chat",
+      "message": "Customer sent an attachment or interactive response",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "12/10/2026, 8:00:09 pm"
+    },
+    {
+      "id": "WA-1791630357454",
+      "waMessageId": "wamid.HBgMOTE3NDI4MjU5NzQwFQIAEhgSMEY1QUQzRTFFQjgwMjIyODRDAA==",
+      "name": "WhatsApp Customer",
+      "phone": "917428259740",
+      "source": "WhatsApp Business Chat",
+      "message": "Customer sent an attachment or interactive response",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "10/10/2026, 4:35:57 pm"
+    },
+    {
+      "id": "WA-1791622624094",
+      "waMessageId": "wamid.HBgMOTExMjQ0OTY0NjI4FQIAEhgSOUE4Qzc0NEE2MjUxNTcyRjc1AA==",
+      "name": "WhatsApp Customer",
+      "phone": "911244964628",
+      "source": "WhatsApp Business Chat",
+      "message": "Customer sent an attachment or interactive response",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "10/10/2026, 2:27:04 pm"
+    },
+    {
+      "id": "WA-1791622573988",
+      "waMessageId": "wamid.HBgMOTExMjQ0OTY0NjI4FQIAEhgSMUVCRjgwMEZDMTk1N0FBQTJFAA==",
+      "name": "WhatsApp Customer",
+      "phone": "911244964628",
+      "source": "WhatsApp Business Chat",
+      "message": "Customer sent an attachment or interactive response",
+      "botReply": "Namaste WhatsApp Customer! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "10/10/2026, 2:26:13 pm"
+    },
     {
       "id": "WA-1791562721024",
       "waMessageId": "wamid.HBgMOTE2Mzg4ODcwNDM3FQIAEhggQUNFM0M1RUQ1MUFBQzJGOTJBQzM4NjI2OTAxREFDMzMA",
@@ -863,8 +577,8 @@
     "prepaidDiscount": 5,
     "taxRate": 18,
     "shipping": {
-      "freeThreshold": null,
-      "baseRate": null,
+      "freeThreshold": 990,
+      "baseRate": 49,
       "partners": []
     },
     "email": {
@@ -920,9 +634,9 @@
       "apiSecret": "X7XeU-4-4Y3B_GznPoKOtCCcEWqi_aC8",
       "warehouseId": "3f262abb-df43-4ec8-aec2-0ce27ecf57ca"
     },
-    "chatwootBaseUrl": "https://app.chatwoot.com",
-    "chatwootApiToken": "JJU8VbdBZwfdqfr3GtwGj1ra",
     "chatwootAccountId": "191283",
+    "chatwootApiToken": "JJU8VbdBZwfdqfr3GtwGj1ra",
+    "chatwootBaseUrl": "https://app.chatwoot.com",
     "chatwootWebhookSecret": "xJdcB34uCfHSdpaxXoAHPBqF"
   },
   "reviews": [
@@ -1219,8 +933,8 @@
   "content": {
     "announcement": {
       "visible": true,
-      "text": "Free Kesar Sale Ends in",
-      "code": "FREEKESAR",
+      "text": "BUY MADNUNASHI POWDER GET SYRUP FREE",
+      "code": "FREE MADHUNASHI",
       "btnText": "Claim Gift",
       "link": "/#shop",
       "bgImage": "/brand/top-botanical-banner.jpg",
@@ -1471,6 +1185,17 @@
           "state": "Uttarakhand",
           "pincode": "262405",
           "isDefault": false
+        },
+        {
+          "id": "ADR-1791632101884",
+          "name": "Ankit Pandey",
+          "phone": "6388870437",
+          "street": "Mahanandpur, Indra garden ,Mama chauraha ,Raebareli",
+          "landmark": "",
+          "city": "Raebareli",
+          "state": "Uttar Pradesh",
+          "pincode": "229001",
+          "isDefault": false
         }
       ]
     },
@@ -1496,7 +1221,42 @@
       "phone": "9756349800",
       "email": "9756349800@pureayurherbs.com",
       "role": "Customer",
-      "createdAt": "2026-09-18T07:25:32.363Z"
+      "createdAt": "2026-09-18T07:25:32.363Z",
+      "savedAddresses": [
+        {
+          "id": "ADR-1791655459409",
+          "name": "Imran shah",
+          "phone": "9756349800",
+          "street": "Near inter college firojpur",
+          "landmark": "Near intee collge",
+          "city": "Udham Singh Nagar",
+          "state": "Uttarakhand",
+          "pincode": "263148",
+          "isDefault": true
+        },
+        {
+          "id": "ADR-1791655914714",
+          "name": "Imran Shah",
+          "phone": "9756349800",
+          "street": "Sitarganj",
+          "landmark": "Near inter college",
+          "city": "Udham Singh Nagar",
+          "state": "Uttarakhand",
+          "pincode": "262405",
+          "isDefault": false
+        },
+        {
+          "id": "ADR-1791699207375",
+          "name": "Imran shah ",
+          "phone": "9756349800",
+          "street": "Near bank of baroda",
+          "landmark": "Sitarganj",
+          "city": "Udham Singh Nagar",
+          "state": "Uttarakhand",
+          "pincode": "262405",
+          "isDefault": false
+        }
+      ]
     },
     {
       "id": "USR-1789811357622-8242",
@@ -1555,6 +1315,27 @@
       ],
       "role": "Customer",
       "createdAt": "2026-09-20T04:48:25.481Z"
+    },
+    {
+      "id": "USR-1791731682837-8367",
+      "name": "Imran khan",
+      "phone": "9917246200",
+      "email": "9917246200@pureayurherbs.com",
+      "savedAddresses": [
+        {
+          "id": "ADR-1791731682837",
+          "name": "Imran khan",
+          "phone": "9917246200",
+          "street": "Babanpuri SITARGANJ",
+          "landmark": "Near priyas hospital",
+          "city": "SITARGANJ",
+          "state": "Uttarakhand",
+          "pincode": "262405",
+          "isDefault": true
+        }
+      ],
+      "role": "Customer",
+      "createdAt": "2026-10-11T15:14:42.837Z"
     }
   ],
   "otps": [
@@ -1607,10 +1388,10 @@
     },
     {
       "identifier": "ankitpandey9658@gmail.com",
-      "otp": "619149",
+      "otp": "761617",
       "purpose": "checkout",
-      "expiresAt": 1791562202569,
-      "createdAt": 1791561602569
+      "expiresAt": 1791632672400,
+      "createdAt": 1791632072400
     }
   ],
   "categories": [
@@ -1682,6 +1463,104 @@
     }
   ],
   "abandonedCarts": [
+    {
+      "id": "AC-1791989903240",
+      "userId": null,
+      "isLoggedInUser": false,
+      "phone": "6388870437",
+      "name": "Ankit Pandey",
+      "email": "ankitpandey9658@gmail.com",
+      "items": [
+        {
+          "id": "prod_1788511960374",
+          "name": "FAT BURNER-Metabolism Support Juice",
+          "quantity": 1,
+          "price": 499
+        }
+      ],
+      "cartTotal": 499,
+      "status": "Converted",
+      "discountCode": "AYUR5",
+      "recoveryMessagesSent": 0,
+      "createdAt": "2026-10-14T14:58:23.240Z",
+      "lastActive": "2026-10-14T14:58:23.240Z",
+      "recoveryUrl": "https://www.purreayurherbs.com/cart",
+      "convertedOrderId": "PYR-ORD-943914",
+      "convertedAt": "2026-10-14T14:58:24.666Z"
+    },
+    {
+      "id": "AC-1791731567546",
+      "userId": null,
+      "isLoggedInUser": false,
+      "phone": "9917246200",
+      "name": "Imran khan",
+      "email": "",
+      "items": [
+        {
+          "id": "prod_1788947560528",
+          "name": "VIRJA POWDER",
+          "quantity": 1,
+          "price": 1199
+        }
+      ],
+      "cartTotal": 1199,
+      "status": "Converted",
+      "discountCode": "AYUR5",
+      "recoveryMessagesSent": 0,
+      "createdAt": "2026-10-11T15:12:47.546Z",
+      "lastActive": "2026-10-11T15:12:47.546Z",
+      "recoveryUrl": "https://www.purreayurherbs.com/cart",
+      "convertedOrderId": "PYR-ORD-413977",
+      "convertedAt": "2026-10-11T15:14:55.950Z"
+    },
+    {
+      "id": "AC-1791655355524",
+      "userId": null,
+      "isLoggedInUser": false,
+      "phone": "9756349800",
+      "name": "Imran shah",
+      "email": "",
+      "items": [
+        {
+          "id": "prod_1788511819071",
+          "name": "MADHUNASHI POWDER",
+          "quantity": 1,
+          "price": 1487
+        }
+      ],
+      "cartTotal": 1487,
+      "status": "Abandoned",
+      "discountCode": "AYUR5",
+      "recoveryMessagesSent": 0,
+      "createdAt": "2026-10-10T18:02:35.524Z",
+      "lastActive": "2026-10-11T06:11:54.659Z",
+      "recoveryUrl": "https://www.purreayurherbs.com/cart"
+    },
+    {
+      "id": "AC-1791630270431",
+      "userId": null,
+      "isLoggedInUser": false,
+      "phone": "6388870437",
+      "name": "Ankit Pandey",
+      "email": "ankitpandey9658@gmail.com",
+      "items": [
+        {
+          "id": "prod_1789129223995",
+          "name": "VIRJA GOLD MAJUN",
+          "quantity": 1,
+          "price": 449
+        }
+      ],
+      "cartTotal": 449,
+      "status": "Converted",
+      "discountCode": "AYUR5",
+      "recoveryMessagesSent": 0,
+      "createdAt": "2026-10-10T11:04:30.431Z",
+      "lastActive": "2026-10-10T11:34:29.674Z",
+      "recoveryUrl": "https://www.purreayurherbs.com/cart",
+      "convertedOrderId": "PYR-ORD-543139",
+      "convertedAt": "2026-10-10T11:35:03.747Z"
+    },
     {
       "id": "AC-1791561600331",
       "userId": null,
@@ -1894,9 +1773,9 @@
   ],
   "verifiedPhones": [
     {
-      "phone": "6388870437",
-      "verifiedAt": 1791561618017,
-      "expiresAt": 1791563418017
+      "phone": "9917246200",
+      "verifiedAt": 1791731695112,
+      "expiresAt": 1791733495112
     }
   ],
   "media": [

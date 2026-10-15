@@ -26,7 +26,6 @@ import {
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import AnnouncementBar from "@/components/AnnouncementBar";
-import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
 import { MediaItem, defaultMedia } from "@/lib/default-media";
@@ -704,7 +703,6 @@ export default function MediaHubPage() {
         )}
       </div>
 
-      <WhatsAppWidget />
       <SiteFooter />
     </main>
   );

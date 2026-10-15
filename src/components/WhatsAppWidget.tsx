@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { X, CheckCheck, Sparkles, MessageCircle } from "lucide-react";
 import { getStorefrontData } from "@/lib/storefront-client";
 
 export default function WhatsAppWidget() {
+  const pathname = usePathname();
   const [whatsappNumber, setWhatsappNumber] = useState("917247824101");
   const [whatsappMessage, setWhatsappMessage] = useState("नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     getStorefrontData()
@@ -20,6 +23,45 @@ export default function WhatsAppWidget() {
       })
       .catch((e) => console.error("Error loading WhatsApp widget config:", e));
   }, []);
+
+  // Monitor scroll position so widget lifts above desktop sticky purchase bar
+  useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window !== "undefined") {
+        setIsScrolled(window.scrollY > 380);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const isProductPage = Boolean(
+    pathname &&
+      (pathname.startsWith("/products") ||
+        pathname.startsWith("/product") ||
+        pathname.startsWith("/solution"))
+  );
+  const isCheckoutPage = pathname === "/checkout";
+  const isAdminPage = pathname?.startsWith("/admin");
+
+  if (isAdminPage) {
+    return null;
+  }
+
+  // Dynamic positioning so widget NEVER covers sticky BUY NOW / COMPLETE PURCHASE buttons:
+  // - On product pages: mobile action bar is at bottom-3 (~68px height). Widget sits at bottom-[5.25rem] (84px).
+  //   On desktop: when scrolled, sticky bar is at bottom-0 (~72px height). Widget lifts smoothly to lg:bottom-24 (96px).
+  // - On checkout: mobile has complete purchase bar. Widget sits at bottom-20.
+  // - On general pages: default bottom-5 right-4 sm:bottom-6 sm:right-6.
+  let positionClass = "bottom-5 right-4 sm:bottom-6 sm:right-6";
+  if (isProductPage) {
+    positionClass = isScrolled
+      ? "bottom-[5.25rem] right-4 lg:bottom-24 lg:right-6"
+      : "bottom-[5.25rem] right-4 lg:bottom-6 lg:right-6";
+  } else if (isCheckoutPage) {
+    positionClass = "bottom-20 right-4 sm:bottom-6 sm:right-6";
+  }
 
   let cleanNumber = whatsappNumber.replace(/\D/g, "");
   if (cleanNumber.length === 10) {
@@ -60,7 +102,9 @@ export default function WhatsAppWidget() {
   );
 
   return (
-    <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
+    <div
+      className={`fixed z-50 flex flex-col items-end transition-all duration-300 ease-in-out ${positionClass}`}
+    >
       {/* Interactive WhatsApp Business Drawer */}
       {isOpen && (
         <div className="mb-4 w-[calc(100vw-2rem)] max-w-[360px] bg-white rounded-3xl border border-neutral-200/80 shadow-[0_16px_48px_rgba(0,0,0,0.22)] overflow-hidden animate-in slide-in-from-bottom-5 zoom-in-95 duration-200 origin-bottom-right">

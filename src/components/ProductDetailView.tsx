@@ -201,7 +201,7 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
   useEffect(() => {
     const handleScroll = () => {
       if (typeof window !== "undefined") {
-        if (window.scrollY > 420) {
+        if (window.scrollY > 380) {
           setShowStickyBar(true);
         } else {
           setShowStickyBar(false);

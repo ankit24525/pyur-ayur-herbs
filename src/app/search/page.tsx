@@ -8,7 +8,6 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import SiteHeader from "@/components/SiteHeader";
 import ProductCard from "@/components/ProductCard";
 import SiteFooter from "@/components/SiteFooter";
-import WhatsAppWidget from "@/components/WhatsAppWidget";
 import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
 import { Product } from "@/lib/store";
 import { getStorefrontData } from "@/lib/storefront-client";
@@ -357,7 +356,6 @@ function SearchContent() {
       </main>
 
       <SiteFooter />
-      <WhatsAppWidget />
       <AyurvedicQuizModal onAddToCart={handleAddToCart} />
     </div>
   );

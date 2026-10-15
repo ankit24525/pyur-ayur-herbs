@@ -55,13 +55,13 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
       <div className="flex flex-1 flex-col p-3 md:p-4">
         {/* Title */}
         <a href={`/products/${product.slug}`} className="hover:text-[#244f31]">
-          <h3 className="line-clamp-2 min-h-[2.5rem] text-xs font-bold leading-tight text-[#17231b] md:text-sm">
+          <h3 className="line-clamp-2 min-h-[2.5rem] md:min-h-[2.75rem] text-xs font-bold leading-tight text-[#17231b] md:text-sm">
             {product.name}
           </h3>
         </a>
 
         {/* Pricing Row */}
-        <div className="mt-2.5 flex items-baseline gap-2">
+        <div className="mt-2 flex items-baseline gap-2">
           <span className="text-base font-black text-[#17231b] md:text-xl">
             ₹{product.price}
           </span>
@@ -70,41 +70,50 @@ export default function ProductCard({ product, onAddToCart, onBuyNow }: ProductC
           </span>
         </div>
 
-        {/* Pure Coins Pill (Only shown if coins are enabled and > 0) */}
-        {product.showCoins !== false && Number(product.coinsEarned || 0) > 0 && (
-          <div className="mt-2.5 inline-flex w-fit items-center gap-1 rounded-full bg-[#eef5df] px-2.5 py-1 text-[11px] font-bold text-[#244f31]">
-            <span>Earn</span>
-            <span className="flex size-4 items-center justify-center rounded-full bg-[#f2c94c] text-[10px] text-black">
-              🪙
-            </span>
-            <span>{product.coinsEarned} Coins</span>
-          </div>
-        )}
+        {/* Feature / Pure Coins Pill (Always balanced height across all cards) */}
+        <div className="mt-2">
+          {product.showCoins !== false && Number(product.coinsEarned || 0) > 0 ? (
+            <div className="inline-flex w-fit items-center gap-1 rounded-full bg-[#eef5df] px-2.5 py-0.5 text-[11px] font-bold text-[#244f31]">
+              <span>Earn</span>
+              <span className="flex size-4 items-center justify-center rounded-full bg-[#f2c94c] text-[10px] text-black">
+                🪙
+              </span>
+              <span>{product.coinsEarned} Coins</span>
+            </div>
+          ) : (
+            <div className="inline-flex w-fit items-center gap-1 rounded-full bg-[#eef5df]/70 px-2.5 py-0.5 text-[11px] font-bold text-[#244f31]">
+              <span>🌿</span>
+              <span>100% Ayurvedic</span>
+            </div>
+          )}
+        </div>
 
         {/* Delivery ETA Tag */}
         <div className="mt-2 flex items-center gap-1.5 rounded bg-[#f8faf1] px-2 py-1 text-[10px] font-medium text-[#666666]">
           <Truck className="size-3 text-[#80a03c]" />
-          <span>Delivered by {product.deliveryDays}</span>
+          <span>Delivered by {product.deliveryDays || "3 - 5 Days"}</span>
         </div>
 
-        {/* Bottom Dual Action Bar */}
-        <div className="mt-4 flex h-10 w-full overflow-hidden rounded-lg border border-[#244f31]">
-          {/* Quick Add Cart Icon Button */}
-          <button
-            onClick={() => onAddToCart(product)}
-            className="flex w-1/4 items-center justify-center bg-[#17231b] text-white transition hover:bg-[#244f31]"
-            title="Add to Cart"
-          >
-            <ShoppingBag className="size-4" />
-          </button>
+        {/* Bottom Dual Action Bar: mt-auto locks all buttons in a perfect horizontal line */}
+        <div className="mt-auto pt-3">
+          <div className="flex h-10 w-full overflow-hidden rounded-lg border border-[#244f31]">
+            {/* Quick Add Cart Icon Button */}
+            <button
+              onClick={() => onAddToCart(product)}
+              className="flex w-1/4 items-center justify-center bg-[#17231b] text-white transition hover:bg-[#244f31] cursor-pointer"
+              title="Add to Cart"
+            >
+              <ShoppingBag className="size-4" />
+            </button>
 
-          {/* BUY NOW Primary Button */}
-          <button
-            onClick={() => onBuyNow(product)}
-            className="flex flex-1 items-center justify-center bg-[#244f31] text-xs font-black tracking-widest text-white transition hover:bg-[#1d3b24]"
-          >
-            BUY NOW
-          </button>
+            {/* BUY NOW Primary Button */}
+            <button
+              onClick={() => onBuyNow(product)}
+              className="flex flex-1 items-center justify-center bg-[#244f31] text-xs font-black tracking-widest text-white transition hover:bg-[#1d3b24] cursor-pointer"
+            >
+              BUY NOW
+            </button>
+          </div>
         </div>
       </div>
     </article>

@@ -1464,6 +1464,29 @@
   ],
   "abandonedCarts": [
     {
+      "id": "AC-1792036838855",
+      "userId": null,
+      "isLoggedInUser": false,
+      "phone": "6388870437",
+      "name": "Pandey",
+      "email": "ankitpandey9658@gmail.com",
+      "items": [
+        {
+          "id": "prod_1788511912600",
+          "name": "MADHUNASHI SYP-Helps Manage Sugar Levels (1 Pack)",
+          "quantity": 1,
+          "price": 410
+        }
+      ],
+      "cartTotal": 410,
+      "status": "Abandoned",
+      "discountCode": "AYUR5",
+      "recoveryMessagesSent": 0,
+      "createdAt": "2026-10-15T04:00:38.855Z",
+      "lastActive": "2026-10-15T04:00:38.855Z",
+      "recoveryUrl": "https://www.purreayurherbs.com/cart"
+    },
+    {
       "id": "AC-1791989903240",
       "userId": null,
       "isLoggedInUser": false,

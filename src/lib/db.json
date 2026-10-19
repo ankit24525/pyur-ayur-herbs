@@ -5,14 +5,14 @@
       "name": "MADHUNASHI POWDER- Helps Manage Sugar level(मधुनाशी पाउडर - ब्लड शुगर के स्तर को नियंत्रित करने में सहायक)",
       "slug": "madhunashi-powder",
       "concern": "Sugar Management",
-      "price": 1487,
+      "price": 769,
       "compareAt": 2199,
       "rating": 5,
       "reviews": 2,
       "badge": "NEW",
       "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381364/pure_ayur_herbs/products/kleuwprcuiyj1duvlojh.jpg",
       "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381364/pure_ayur_herbs/products/kleuwprcuiyj1duvlojh.jpg"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792131126/pure_ayur_herbs/products/gtmuedejuiatouj2sawf.webp"
       ],
       "ingredients": [
         "Herbal Extract"
@@ -33,7 +33,7 @@
       "name": "MADHUNASHI SYP-Helps Manage Sugar Levels",
       "slug": "madhunashi-syp",
       "concern": "Sugar Management",
-      "price": 410,
+      "price": 349,
       "compareAt": 499,
       "rating": 5,
       "reviews": 0,
@@ -61,7 +61,7 @@
       "name": "FAT BURNER-Metabolism Support Juice",
       "slug": "fat-burner",
       "concern": "Gym and Fitness",
-      "price": 499,
+      "price": 399,
       "compareAt": 599,
       "rating": 4,
       "reviews": 1,
@@ -117,7 +117,7 @@
       "name": "VIRJA POWDER-Ultimate MEN'S Power& Vitality blend",
       "slug": "virja-powder",
       "concern": "Energy and Vitality",
-      "price": 1199,
+      "price": 899,
       "compareAt": 1499,
       "rating": 5,
       "reviews": 0,
@@ -145,7 +145,7 @@
       "name": "VIRJA GOLD MAJUN",
       "slug": "virja-gold-majun",
       "concern": "Energy and Vitality",
-      "price": 449,
+      "price": 399,
       "compareAt": 499,
       "rating": 5,
       "reviews": 0,
@@ -164,7 +164,9 @@
       "inStock": true,
       "sku": "PAH-VIRJA-GOLD-MAJUN-303",
       "stockQty": 50,
-      "lowStockThreshold": 10
+      "lowStockThreshold": 10,
+      "hasVariants": false,
+      "variants": []
     }
   ],
   "orders": [
@@ -211,7 +213,7 @@
       "nimbusOrderId": "8fdc6e40-797e-4c0e-ab2d-4da3f8d90939",
       "nimbusAwb": "374269374203",
       "awb": "374269374203",
-      "nimbusCourierName": "Amazon Surface_Stressed",
+      "nimbusCourierName": "amazon",
       "nimbusLabelUrl": "https://nimubs-assets.s3.ap-south-1.amazonaws.com/ats_labels/374269374203.pdf",
       "nimbusTrackingUrl": "https://app.nimbuspost.com/track/y9Js2Rtd7Z/374269374203",
       "nimbusStatus": "cancelled",
@@ -234,9 +236,15 @@
           "location": "",
           "time": "2026-10-14 17:34:05",
           "message": "cancelled"
+        },
+        {
+          "status": "cancelled",
+          "location": "",
+          "time": "2026-10-14 17:34:04",
+          "message": "PickupCancelled"
         }
       ],
-      "updatedAt": "2026-10-14T17:34:06.287Z",
+      "updatedAt": "2026-10-15T06:09:40.635Z",
       "nimbusError": "Order ID 'PYR-ORD-413977' already exists on channel 'Mohd Imran'. Use a different Order ID or pick a different channel."
     }
   ],
@@ -246,14 +254,30 @@
       "type": "Percentage",
       "value": "10",
       "status": "Active",
+      "minCartValue": 0,
+      "applicableType": "All",
+      "applicableValue": "",
       "used": 142
     },
     {
-      "code": "FREESHIP",
-      "type": "Free Shipping",
-      "value": "0",
+      "code": "PREPAID5",
+      "type": "Percentage",
+      "value": "5",
       "status": "Active",
-      "used": 84
+      "minCartValue": 0,
+      "applicableType": "All",
+      "applicableValue": "",
+      "used": 64
+    },
+    {
+      "code": "AYUR100",
+      "type": "Flat",
+      "value": "100",
+      "status": "Active",
+      "minCartValue": 999,
+      "applicableType": "All",
+      "applicableValue": "",
+      "used": 89
     },
     {
       "code": "PURE99",
@@ -263,10 +287,32 @@
       "minCartValue": 400,
       "applicableType": "All",
       "applicableValue": "",
-      "used": 0
+      "used": 35
+    },
+    {
+      "code": "FREESHIP",
+      "type": "Free Shipping",
+      "value": "0",
+      "status": "Active",
+      "minCartValue": 0,
+      "applicableType": "All",
+      "applicableValue": "",
+      "used": 84
     }
   ],
   "leads": [
+    {
+      "id": "CW-1792046665959",
+      "waMessageId": "cw-923347246",
+      "name": "+918657973416",
+      "phone": "918657973416",
+      "source": "Chatwoot Live Chat",
+      "message": "This message is unavailable.",
+      "botReply": "Namaste +918657973416! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "15/10/2026, 12:14:25 pm"
+    },
     {
       "id": "CW-1791965202915",
       "waMessageId": "cw-921052059",
@@ -300,7 +346,7 @@
       "message": "Ketan.ke.h",
       "botReply": "Namaste Devaramkumawat112233@gmai! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
       "intent": "FALLBACK",
-      "status": "AI Resolved",
+      "status": "Responded",
       "date": "13/10/2026, 9:27:57 pm"
     },
     {
@@ -835,37 +881,8 @@
     }
   ],
   "marketing": {
-    "banners": [
-      {
-        "id": "ban_1",
-        "name": "100% Certified Ayurvedic Formulations for Vitality & Energy",
-        "title": "100% Certified Ayurvedic Formulations for Vitality & Energy",
-        "subtitle": "Authentic Ayurvedic remedies formulated by certified Vaidyas.",
-        "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
-        "link": "/solution/sugar-management",
-        "ctaText": "Explore Formulations",
-        "placement": "Homepage Middle Strip",
-        "status": "Active"
-      }
-    ],
-    "campaigns": [
-      {
-        "name": "Independence Day Sale",
-        "channel": "Meta Ads",
-        "spend": 45000,
-        "revenue": 135000,
-        "roas": 3,
-        "status": "Running"
-      },
-      {
-        "name": "Sugar Free Campaign",
-        "channel": "Google Ads",
-        "spend": 12000,
-        "revenue": 24000,
-        "roas": 2,
-        "status": "Paused"
-      }
-    ],
+    "campaigns": [],
+    "banners": [],
     "popups": [
       {
         "id": "pop_1",
@@ -987,7 +1004,8 @@
       "ctaText": " Chat with Doctor",
       "doctorsOnlineText": "Available Now",
       "availableSlotText": "Slots Available",
-      "doctorImage": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381375/pure_ayur_herbs/banners/mpsfirl1sl3oqebkl9lf.jpg"
+      "doctorImage": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381375/pure_ayur_herbs/banners/mpsfirl1sl3oqebkl9lf.jpg",
+      "visible": false
     },
     "footer": {
       "companyLegalName": "Pure Ayur Herbs ",
@@ -1044,7 +1062,8 @@
       "showColumnLinks": true,
       "showColumn1": true,
       "showColumn2": true,
-      "copyrightText": "Pure Ayur Herbs  | © Copyright 2026 Pure Ayur"
+      "copyrightText": "Pure Ayur Herbs  | © Copyright 2026 Pure Ayur",
+      "visible": true
     },
     "aboutUs": {
       "badge": "OUR HERITAGE & PHILOSOPHY",
@@ -1108,7 +1127,14 @@
       "ctaSubtitle": "Explore our classical Ayurvedic formulations or speak with our certified Vaidyas for free guidance.",
       "ctaButtonText": "Shop All Remedies",
       "ctaButtonLink": "/#products",
-      "guaranteeSubtitle": "Lab Tested & Certified Safe"
+      "guaranteeSubtitle": "Lab Tested & Certified Safe",
+      "visible": false
+    },
+    "sectionsVisibility": {
+      "footer": true,
+      "aboutSection": false,
+      "consultationBanner": false,
+      "healthQuiz": false
     }
   },
   "users": [

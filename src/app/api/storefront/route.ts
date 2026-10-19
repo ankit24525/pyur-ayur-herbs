@@ -115,7 +115,7 @@ export async function GET(request: Request) {
               })
           : [],
         popups: Array.isArray(db.marketing?.popups)
-          ? db.marketing.popups.filter((p: any) => p.status === "Active")
+          ? db.marketing.popups
           : [],
         notifications: Array.isArray(db.marketing?.notifications)
           ? db.marketing.notifications.filter((n: any) => n.status === "Active")

@@ -235,6 +235,28 @@ export default function HomeClient({
     localStorage.setItem("pyur_cart", JSON.stringify(newCart));
   };
 
+  // Dynamic Homepage Section Visibility Control
+  const isSectionVisible = (sectionKey: string): boolean => {
+    const visibility = cmsData?.sectionsVisibility || {};
+    if (visibility[sectionKey] !== undefined) {
+      return Boolean(visibility[sectionKey]);
+    }
+    // Backward compatibility checks for legacy properties
+    if (sectionKey === "announcement" && cmsData?.announcement?.visible !== undefined) {
+      return Boolean(cmsData.announcement.visible);
+    }
+    if (sectionKey === "consultationBanner" && cmsData?.consultationBanner?.visible !== undefined) {
+      return Boolean(cmsData.consultationBanner.visible);
+    }
+    if (sectionKey === "aboutSection" && cmsData?.aboutUs?.visible !== undefined) {
+      return Boolean(cmsData.aboutUs.visible);
+    }
+    if (sectionKey === "footer" && cmsData?.footer?.visible !== undefined) {
+      return Boolean(cmsData.footer.visible);
+    }
+    return true;
+  };
+
   // Modal States
   const [appModalOpen, setAppModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -298,11 +320,13 @@ export default function HomeClient({
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
       {/* Top Announcement Ticker Bar */}
-      <AnnouncementBar
-        data={cmsData.announcement}
-        marketingBanners={marketingData?.banners}
-        onOpenAppModal={() => setAppModalOpen(true)}
-      />
+      {isSectionVisible("announcement") && (
+        <AnnouncementBar
+          data={cmsData.announcement}
+          marketingBanners={marketingData?.banners}
+          onOpenAppModal={() => setAppModalOpen(true)}
+        />
+      )}
 
       {/* Main Sticky Header */}
       <SiteHeader
@@ -316,46 +340,53 @@ export default function HomeClient({
       />
 
       {/* Mobile Circular Category Selector - Mobile Only */}
-      <div className="md:hidden bg-white border-b border-[#ddddd9] py-3.5 px-4 overflow-x-auto no-scrollbar flex gap-5 scroll-smooth min-w-0">
-        {categories.map((c) => {
-          const isSelected = selectedConcern === c.name;
-          const shortName = getShortName(c.name);
-          return (
-            <button
-              key={c.id || c.name}
-              onClick={() => {
-                setSelectedConcern(isSelected ? null : c.name);
-                document.getElementById("shop")?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="flex flex-col items-center gap-1.5 shrink-0"
-            >
-              <div className={`size-14 rounded-full flex items-center justify-center text-2xl border transition duration-200 ${
-                isSelected 
-                  ? "border-[#244f31] bg-[#eef5df] shadow-xs" 
-                  : "border-[#ddddd9] bg-[#f8faf1] hover:border-[#80a03c]"
-              }`}>
-                <span>{c.icon || "🌿"}</span>
-              </div>
-              <span className={`text-[10px] font-bold tracking-tight text-center ${isSelected ? "text-[#244f31]" : "text-[#17231b]"}`}>
-                {shortName}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {isSectionVisible("mobileCategoryRail") && (
+        <div className="md:hidden bg-white border-b border-[#ddddd9] py-3.5 px-4 overflow-x-auto no-scrollbar flex gap-5 scroll-smooth min-w-0">
+          {categories.map((c) => {
+            const isSelected = selectedConcern === c.name;
+            const shortName = getShortName(c.name);
+            return (
+              <button
+                key={c.id || c.name}
+                onClick={() => {
+                  setSelectedConcern(isSelected ? null : c.name);
+                  document.getElementById("shop")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="flex flex-col items-center gap-1.5 shrink-0"
+              >
+                <div className={`size-14 rounded-full flex items-center justify-center text-2xl border transition duration-200 ${
+                  isSelected 
+                    ? "border-[#244f31] bg-[#eef5df] shadow-xs" 
+                    : "border-[#ddddd9] bg-[#f8faf1] hover:border-[#80a03c]"
+                }`}>
+                  <span>{c.icon || "🌿"}</span>
+                </div>
+                <span className={`text-[10px] font-bold tracking-tight text-center ${isSelected ? "text-[#244f31]" : "text-[#17231b]"}`}>
+                  {shortName}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Hero Banner Slider Carousel */}
-      <HeroSlider slides={cmsData.heroSlides} marketingBanners={marketingData?.banners} />
+      {isSectionVisible("heroSlider") && (
+        <HeroSlider slides={cmsData.heroSlides} marketingBanners={marketingData?.banners} />
+      )}
 
       {/* "SELECT CONCERN" Filter Section */}
-      <ConcernFilter
-        selectedConcern={selectedConcern}
-        onSelectConcern={(concern) => setSelectedConcern(concern)}
-        categories={categories}
-      />
+      {isSectionVisible("categoryFilter") && (
+        <ConcernFilter
+          selectedConcern={selectedConcern}
+          onSelectConcern={(concern) => setSelectedConcern(concern)}
+          categories={categories}
+        />
+      )}
 
       {/* Main Shop / Products Section */}
-      <div id="shop" className="scroll-mt-24">
+      {isSectionVisible("productsCatalog") && (
+        <div id="shop" className="scroll-mt-24">
         {catalog.length === 0 ? (
           <div className="mx-auto max-w-[1440px] px-4 py-16 text-center">
             <div className="mx-auto max-w-md rounded-2xl border border-dashed border-[#ddddd9] bg-white p-8 shadow-xs">
@@ -421,7 +452,9 @@ export default function HomeClient({
             />
 
             {/* Dynamic Promotional Marketing Banner Strip (Prime Middle Position) */}
-            <MarketingBannerStrip banners={marketingData?.banners} placement="Homepage Middle Strip" />
+            {isSectionVisible("marketingBanners") && (
+              <MarketingBannerStrip banners={marketingData?.banners} placement="Homepage Middle Strip" />
+            )}
 
             {/* 2. Dynamic Rails for every category with active products */}
             {categories.map((cat: any) => {
@@ -444,27 +477,42 @@ export default function HomeClient({
           </>
         )}
       </div>
+      )}
 
       {/* Dynamic Promotional Marketing Banner Strip (Above Consultation placement) */}
-      <MarketingBannerStrip banners={marketingData?.banners} placement="Above Consultation" />
+      {isSectionVisible("marketingBanners") && (
+        <MarketingBannerStrip banners={marketingData?.banners} placement="Above Consultation" />
+      )}
 
       {/* 1-on-1 Free Doctor Consultation Banner */}
-      <DoctorConsultationBanner data={cmsData.consultationBanner} />
+      {isSectionVisible("consultationBanner") && (
+        <DoctorConsultationBanner data={cmsData.consultationBanner} />
+      )}
 
       {/* Heritage & Philosophy About Us Section */}
-      <AboutSection cmsAboutUs={cmsData?.aboutUs} />
+      {isSectionVisible("aboutSection") && (
+        <AboutSection cmsAboutUs={cmsData?.aboutUs} />
+      )}
 
       {/* Why Pure Ayur Herbs Trust Section */}
-      <TrustSection />
+      {isSectionVisible("trustSection") && (
+        <TrustSection />
+      )}
 
       {/* 2-Minute Health Assessment Quiz */}
-      <AyurvedicQuizModal onAddToCart={handleAddToCart} />
+      {isSectionVisible("healthQuiz") && (
+        <AyurvedicQuizModal onAddToCart={handleAddToCart} />
+      )}
 
       {/* Customer Reviews & Transformations */}
-      <TestimonialsSection />
+      {isSectionVisible("testimonials") && (
+        <TestimonialsSection />
+      )}
 
       {/* Main Footer */}
-      <SiteFooter />
+      {isSectionVisible("footer") && (
+        <SiteFooter />
+      )}
 
       {/* Get App (Coming Soon) Modal */}
       <GetAppModal

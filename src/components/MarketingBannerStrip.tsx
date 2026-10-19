@@ -87,7 +87,7 @@ export default function MarketingBannerStrip({
 
   // Filter active banners matching placement
   const displayList = useMemo(() => {
-    const list = liveBanners && liveBanners.length > 0 ? liveBanners : banners;
+    const list = Array.isArray(liveBanners) ? liveBanners : (Array.isArray(banners) ? banners : []);
     const active = list.filter((b) => b && (b.status === "Active" || !b.status));
 
     if (placement && placement !== "all") {
@@ -103,22 +103,10 @@ export default function MarketingBannerStrip({
         return p.includes(target) || p === "all";
       });
 
-      if (matched.length > 0) {
-        return matched;
-      }
-
-      // If specific non-homepage placement requested and no banner configured, return empty
-      if (target.includes("consult") || target.includes("drawer")) {
-        return [];
-      }
+      return matched;
     }
 
-    if (active.length > 0) return active;
-    // Only show fallback on middle homepage strip
-    if (placement.toLowerCase().includes("middle") || placement.toLowerCase().includes("homepage")) {
-      return [FALLBACK_BANNER];
-    }
-    return [];
+    return active;
   }, [liveBanners, banners, placement]);
 
   // Auto-rotation when multiple banners are active

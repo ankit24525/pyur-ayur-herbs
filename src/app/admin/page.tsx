@@ -2836,6 +2836,7 @@ export default function AdminDashboard() {
 
   const handleToggleMarketingStatus = async (section: "campaigns" | "banners" | "popups" | "notifications", index: number) => {
     try {
+      let toggledTo = "";
       const updatedSection = dbData.marketing[section].map((item: any, idx: number) => {
         if (idx === index) {
           let nextStatus;
@@ -2844,13 +2845,20 @@ export default function AdminDashboard() {
           } else {
             nextStatus = item.status === "Active" ? "Inactive" : "Active";
           }
+          toggledTo = nextStatus;
           return { ...item, status: nextStatus };
         }
         return item;
       });
       const updated = { ...dbData.marketing, [section]: updatedSection };
       await saveKey("marketing", updated);
-      showToast("Status updated successfully!");
+      if (section === "popups" && editingPopupIndex === index && toggledTo) {
+        setNewPopup((prev: any) => ({ ...prev, status: toggledTo }));
+      }
+      if (section === "banners" && editingBannerIndex === index && toggledTo) {
+        setNewBanner((prev: any) => ({ ...prev, status: toggledTo }));
+      }
+      showToast(`Status updated to ${toggledTo || "new state"}!`);
     } catch {
       alert("Error updating status.");
     }
@@ -3713,6 +3721,112 @@ export default function AdminDashboard() {
     return success;
   };
 
+  const HOMEPAGE_SECTIONS = [
+    { key: "announcement", title: "Top Announcement Bar", desc: "Countdown ticker above header", icon: "📢" },
+    { key: "heroSlider", title: "Hero Carousel Banners", desc: "Top sliding promotional banners", icon: "🖼️" },
+    { key: "mobileCategoryRail", title: "Mobile Categories Rail", desc: "Circular category icons on mobile", icon: "🔘" },
+    { key: "categoryFilter", title: '"Select Concern" Filter Rail', desc: "Quick concern tabs above shop", icon: "🏷️" },
+    { key: "productsCatalog", title: "Products & Category Rails", desc: "Main shop shelves & product rails", icon: "🛍️" },
+    { key: "marketingBanners", title: "Marketing Banner Strips", desc: "Promotional banner strips", icon: "🎯" },
+    { key: "consultationBanner", title: "Doctor Consultation Banner", desc: "1-on-1 Ayurvedic doctor card", icon: "🩺" },
+    { key: "aboutSection", title: "Our Heritage & Philosophy", desc: "Botanical extraction story section", icon: "🌿" },
+    { key: "trustSection", title: "Why Pure Ayur Herbs", desc: "Trust & purity certification badges", icon: "🛡️" },
+    { key: "healthQuiz", title: "2-Minute Health Quiz", desc: "Interactive dosha assessment modal", icon: "📝" },
+    { key: "testimonials", title: "Customer Reviews & Stories", desc: "Verified buyer transformation cards", icon: "⭐" },
+    { key: "footer", title: "Storefront Footer", desc: "Certifications, links & copyright", icon: "📑" },
+  ];
+
+  const getSectionVisibility = (sectionKey: string): boolean => {
+    const content = dbData.content || {};
+    const visibility = content.sectionsVisibility || {};
+    if (visibility[sectionKey] !== undefined) {
+      return Boolean(visibility[sectionKey]);
+    }
+    if (sectionKey === "announcement" && content.announcement?.visible !== undefined) {
+      return Boolean(content.announcement.visible);
+    }
+    if (sectionKey === "consultationBanner" && content.consultationBanner?.visible !== undefined) {
+      return Boolean(content.consultationBanner.visible);
+    }
+    if (sectionKey === "aboutSection" && content.aboutUs?.visible !== undefined) {
+      return Boolean(content.aboutUs.visible);
+    }
+    if (sectionKey === "footer" && content.footer?.visible !== undefined) {
+      return Boolean(content.footer.visible);
+    }
+    return true;
+  };
+
+  const toggleSectionVisibility = async (sectionKey: string, sectionTitle: string) => {
+    const content = dbData.content || {};
+    const currentVal = getSectionVisibility(sectionKey);
+    const nextVal = !currentVal;
+    const currentVisibility = content.sectionsVisibility || {};
+    const updatedVisibility = {
+      ...currentVisibility,
+      [sectionKey]: nextVal,
+    };
+
+    const updatedContent: any = {
+      ...content,
+      sectionsVisibility: updatedVisibility,
+    };
+
+    if (sectionKey === "announcement") {
+      updatedContent.announcement = {
+        ...(content.announcement || {}),
+        visible: nextVal,
+      };
+    }
+    if (sectionKey === "consultationBanner") {
+      updatedContent.consultationBanner = {
+        ...(content.consultationBanner || {}),
+        visible: nextVal,
+      };
+    }
+    if (sectionKey === "aboutSection") {
+      updatedContent.aboutUs = {
+        ...(content.aboutUs || {}),
+        visible: nextVal,
+      };
+    }
+    if (sectionKey === "footer") {
+      updatedContent.footer = {
+        ...(content.footer || {}),
+        visible: nextVal,
+      };
+    }
+
+    setDbData((prev: any) => ({ ...prev, content: updatedContent }));
+    await handleSaveCMSContent(updatedContent);
+    showToast(
+      nextVal
+        ? `👁️ "${sectionTitle}" is now VISIBLE on homepage!`
+        : `🚫 "${sectionTitle}" is now HIDDEN from homepage!`
+    );
+  };
+
+  const renderVisibilityBadgeButton = (sectionKey: string, sectionTitle: string) => {
+    const isVisible = getSectionVisibility(sectionKey);
+    return (
+      <button
+        type="button"
+        onClick={() => void toggleSectionVisibility(sectionKey, sectionTitle)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer shadow-2xs transition ${
+          isVisible
+            ? "bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300"
+            : "bg-red-100 hover:bg-red-200 text-red-900 border border-red-300"
+        }`}
+        title={isVisible ? `Click to hide "${sectionTitle}" from homepage` : `Click to show "${sectionTitle}" on homepage`}
+      >
+        <span>{isVisible ? "👁️ Visible on Storefront" : "🚫 Hidden from Storefront"}</span>
+        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${isVisible ? "bg-emerald-200 text-emerald-900" : "bg-red-200 text-red-900"}`}>
+          {isVisible ? "Hide" : "Show"}
+        </span>
+      </button>
+    );
+  };
+
   const handleSaveSlide = (e: React.FormEvent) => {
     e.preventDefault();
     const content = dbData.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
@@ -4359,6 +4473,7 @@ export default function AdminDashboard() {
             <span className="text-[10px] text-[#666666]">Configure the footer address, support contacts, social media handles, and column links</span>
           </div>
           <div className="flex items-center gap-2">
+            {renderVisibilityBadgeButton("footer", "Storefront Footer")}
             <button
               type="button"
               onClick={() => {
@@ -10688,12 +10803,18 @@ export default function AdminDashboard() {
                               </span>
                               <span
                                 className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                                  newBanner.status === "Active"
-                                    ? "bg-emerald-100 text-emerald-800"
-                                    : "bg-red-100 text-red-800"
+                                  editingBannerIndex !== null || newBanner.title || newBanner.image
+                                    ? newBanner.status === "Active"
+                                      ? "bg-emerald-100 text-emerald-800"
+                                      : "bg-red-100 text-red-800"
+                                    : "bg-amber-100 text-amber-800 border border-amber-300"
                                 }`}
                               >
-                                {newBanner.status || "Active"}
+                                {editingBannerIndex !== null
+                                  ? `Editing • ${newBanner.status || "Active"}`
+                                  : newBanner.title || newBanner.image
+                                  ? `Draft • ${newBanner.status || "Active"}`
+                                  : "Draft Preview • Not Live"}
                               </span>
                             </div>
                           </div>
@@ -10899,34 +11020,146 @@ export default function AdminDashboard() {
 
                 {subTab === "popups" && (
                   <div className="space-y-6">
+                    {/* Master Status & 1-Click Quick Toggle Card */}
+                    {(() => {
+                      const popupsList = dbData.marketing?.popups || [];
+                      const hasPopups = popupsList.length > 0;
+                      const isLive = popupsList.some((p: any) => p.status === "Active");
+
+                      return (
+                        <div className={`p-5 rounded-2xl border transition-all ${
+                          isLive 
+                            ? "bg-emerald-50/70 border-emerald-300 shadow-xs" 
+                            : "bg-red-50/70 border-red-200 shadow-xs"
+                        }`}>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-start sm:items-center gap-3">
+                              <span className="relative flex size-3.5 mt-1 sm:mt-0 shrink-0">
+                                {isLive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                                <span className={`relative inline-flex rounded-full size-3.5 ${isLive ? "bg-emerald-600" : "bg-red-500"}`}></span>
+                              </span>
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="font-black text-[#17231b] text-sm tracking-tight">
+                                    Storefront Exit-Intent Popup:
+                                  </h4>
+                                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${
+                                    isLive ? "bg-emerald-200 text-emerald-900" : "bg-red-200 text-red-900"
+                                  }`}>
+                                    {isLive ? "● LIVE (Active on Website)" : "○ INACTIVE (Hidden from Website)"}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-600 mt-0.5">
+                                  {isLive
+                                    ? "Customers see your promotional discount modal when attempting to exit or after 4.5 seconds."
+                                    : "All popups are disabled. No popup modal will appear to any visitors on the website."}
+                                </p>
+                              </div>
+                            </div>
+
+                            {hasPopups && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    const nextStatus = isLive ? "Inactive" : "Active";
+                                    const updatedPopups = popupsList.map((p: any) => ({
+                                      ...p,
+                                      status: nextStatus,
+                                    }));
+                                    const updated = { ...dbData.marketing, popups: updatedPopups };
+                                    await saveKey("marketing", updated);
+                                    if (editingPopupIndex !== null) {
+                                      setNewPopup((prev: any) => ({ ...prev, status: nextStatus }));
+                                    }
+                                    showToast(
+                                      nextStatus === "Active"
+                                        ? "Popup is now ACTIVE and visible on storefront!"
+                                        : "Popup is now INACTIVE and completely hidden from storefront!"
+                                    );
+                                  } catch {
+                                    alert("Error changing popup status.");
+                                  }
+                                }}
+                                className={`shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer shadow-sm transition ${
+                                  isLive
+                                    ? "bg-red-600 hover:bg-red-700 text-white"
+                                    : "bg-emerald-700 hover:bg-emerald-800 text-white"
+                                }`}
+                              >
+                                {isLive ? "Turn Off Popup (Hide from Website)" : "Turn On Popup (Make Live on Website)"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Create / Edit Popup Form */}
-                    <form onSubmit={handleAddPopup} className="space-y-4 text-xs border bg-[#f8faf1]/40 border-[#ddddd9] p-5 rounded-2xl shadow-xs">
+                    <form onSubmit={handleAddPopup} className={`space-y-4 text-xs border p-5 rounded-2xl shadow-xs transition ${
+                      editingPopupIndex !== null
+                        ? "bg-amber-50/50 border-amber-300 ring-2 ring-amber-400/20"
+                        : "bg-[#f8faf1]/40 border-[#ddddd9]"
+                    }`}>
                       <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
-                        <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <Tag className="size-4 text-[#244f31]" />
-                          <span>{editingPopupIndex !== null ? `Edit Exit-Intent Popup #${editingPopupIndex + 1}` : "Create Exit-Intent & Promo Popup"}</span>
-                        </h4>
-                        {editingPopupIndex !== null && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingPopupIndex(null);
-                              setNewPopup({
-                                title: "",
-                                subtitle: "",
-                                discount: "FLAT 10% OFF",
-                                couponCode: "PURE10",
-                                image: "",
-                                trigger: "Exit Intent",
-                                ctaText: "Claim Coupon & Shop Now",
-                                status: "Active",
-                              });
-                            }}
-                            className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
-                          >
-                            Cancel Edit
-                          </button>
-                        )}
+                          <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider">
+                            {editingPopupIndex !== null ? `Edit Exit-Intent Popup #${editingPopupIndex + 1}` : "Create Exit-Intent & Promo Popup"}
+                          </h4>
+                          {editingPopupIndex !== null && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase">
+                              Editing Live Item
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {editingPopupIndex === null && dbData.marketing?.popups?.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const p = dbData.marketing.popups[0];
+                                setEditingPopupIndex(0);
+                                setNewPopup({
+                                  title: p.title || "",
+                                  subtitle: p.subtitle || "",
+                                  discount: p.discount || "FLAT 10% OFF",
+                                  couponCode: p.couponCode || "PURE10",
+                                  image: p.image || "",
+                                  trigger: p.trigger || "Exit Intent",
+                                  ctaText: p.ctaText || "Claim Coupon & Shop Now",
+                                  status: p.status || "Active",
+                                });
+                              }}
+                              className="text-[11px] font-bold text-[#244f31] hover:underline cursor-pointer"
+                            >
+                              Load Current Popup
+                            </button>
+                          )}
+
+                          {editingPopupIndex !== null && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingPopupIndex(null);
+                                setNewPopup({
+                                  title: "",
+                                  subtitle: "",
+                                  discount: "FLAT 10% OFF",
+                                  couponCode: "PURE10",
+                                  image: "",
+                                  trigger: "Exit Intent",
+                                  ctaText: "Claim Coupon & Shop Now",
+                                  status: "Active",
+                                });
+                              }}
+                              className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
+                            >
+                              Cancel Edit
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -11004,10 +11237,14 @@ export default function AdminDashboard() {
                           <select
                             value={newPopup.status}
                             onChange={(e) => setNewPopup({ ...newPopup, status: e.target.value })}
-                            className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white cursor-pointer font-bold"
+                            className={`w-full rounded-xl border p-2.5 outline-none cursor-pointer font-bold ${
+                              newPopup.status === "Active"
+                                ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                                : "border-red-400 bg-red-50 text-red-800"
+                            }`}
                           >
-                            <option value="Active">Active (Live)</option>
-                            <option value="Inactive">Inactive</option>
+                            <option value="Active">Active (Live on Website)</option>
+                            <option value="Inactive">Inactive (Hidden from Website)</option>
                           </select>
                         </div>
                       </div>
@@ -11053,9 +11290,20 @@ export default function AdminDashboard() {
 
                         {/* Interactive Live Mockup Card */}
                         <div className="mt-4 rounded-2xl border border-gray-300 bg-gray-50 p-4 max-w-sm mx-auto shadow-inner text-center">
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-2">
-                            👀 Storefront Modal Mockup Preview:
-                          </span>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">
+                              👀 Storefront Modal Mockup Preview:
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                              newPopup.status === "Active"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                              {editingPopupIndex !== null
+                                ? (newPopup.status === "Active" ? "● Active (Live)" : "○ Inactive (Hidden)")
+                                : `Draft (${newPopup.status})`}
+                            </span>
+                          </div>
                           <div className="rounded-2xl bg-white border border-gray-200 p-4 shadow-md space-y-2.5">
                             {newPopup.image && (
                               <img
@@ -11103,7 +11351,7 @@ export default function AdminDashboard() {
                           className="bg-[#244f31] hover:bg-[#1c3e26] text-white font-black uppercase tracking-wider rounded-xl px-6 py-3 transition shadow-md cursor-pointer flex items-center gap-2"
                         >
                           <Tag className="size-4" />
-                          <span>{editingPopupIndex !== null ? "Update Popup" : "Create Popup"}</span>
+                          <span>{editingPopupIndex !== null ? "Update & Save Popup" : "Create Popup"}</span>
                         </button>
                       </div>
                     </form>
@@ -11127,67 +11375,86 @@ export default function AdminDashboard() {
                               <td colSpan={6} className="p-6 text-center text-gray-500 font-semibold">No exit-intent popups defined.</td>
                             </tr>
                           ) : (
-                            dbData.marketing.popups.map((p: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-[#f8faf1]/30 transition">
-                                <td className="p-3">
-                                  {p.image ? (
-                                    <img src={p.image} alt="" className="size-10 rounded-lg object-cover border border-[#ddddd9]" />
-                                  ) : (
-                                    <div className="size-10 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">
-                                      None
+                            dbData.marketing.popups.map((p: any, idx: number) => {
+                              const isCurrentlyEditing = editingPopupIndex === idx;
+                              return (
+                                <tr
+                                  key={idx}
+                                  className={`transition ${
+                                    isCurrentlyEditing
+                                      ? "bg-amber-50/90 border-l-4 border-l-amber-500 font-medium"
+                                      : "hover:bg-[#f8faf1]/30"
+                                  }`}
+                                >
+                                  <td className="p-3">
+                                    {p.image ? (
+                                      <img src={p.image} alt="" className="size-10 rounded-lg object-cover border border-[#ddddd9]" />
+                                    ) : (
+                                      <div className="size-10 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">
+                                        None
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="p-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-[#17231b]">{p.title}</span>
+                                      {isCurrentlyEditing && (
+                                        <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 text-[9px] font-black uppercase animate-pulse">
+                                          Editing Now
+                                        </span>
+                                      )}
                                     </div>
-                                  )}
-                                </td>
-                                <td className="p-3">
-                                  <div className="font-bold text-[#17231b]">{p.title}</div>
-                                  <div className="text-[11px] text-emerald-800 font-bold">{p.discount || "N/A"}</div>
-                                </td>
-                                <td className="p-3 font-mono text-[#244f31] font-bold">{p.couponCode || "N/A"}</td>
-                                <td className="p-3 text-gray-600 font-medium">{p.trigger}</td>
-                                <td className="p-3 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleMarketingStatus("popups", idx)}
-                                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition ${
-                                      p.status === "Active" ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : "bg-red-100 text-red-800 hover:bg-red-200"
-                                    }`}
-                                    title="Click to toggle status"
-                                  >
-                                    {p.status}
-                                  </button>
-                                </td>
-                                <td className="p-3 text-center">
-                                  <div className="flex items-center justify-center gap-3">
+                                    <div className="text-[11px] text-emerald-800 font-bold">{p.discount || "N/A"}</div>
+                                  </td>
+                                  <td className="p-3 font-mono text-[#244f31] font-bold">{p.couponCode || "N/A"}</td>
+                                  <td className="p-3 text-gray-600 font-medium">{p.trigger}</td>
+                                  <td className="p-3 text-center">
                                     <button
                                       type="button"
-                                      onClick={() => {
-                                        setEditingPopupIndex(idx);
-                                        setNewPopup({
-                                          title: p.title || "",
-                                          subtitle: p.subtitle || "",
-                                          discount: p.discount || "FLAT 10% OFF",
-                                          couponCode: p.couponCode || "PURE10",
-                                          image: p.image || "",
-                                          trigger: p.trigger || "Exit Intent",
-                                          ctaText: p.ctaText || "Claim Coupon & Shop Now",
-                                          status: p.status || "Active",
-                                        });
-                                      }}
-                                      className="text-[#244f31] font-bold hover:underline cursor-pointer"
+                                      onClick={() => handleToggleMarketingStatus("popups", idx)}
+                                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider cursor-pointer transition shadow-2xs ${
+                                        p.status === "Active"
+                                          ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300"
+                                          : "bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
+                                      }`}
+                                      title="Click to toggle status"
                                     >
-                                      Edit
+                                      {p.status === "Active" ? "● Active (Live)" : "○ Inactive (Off)"}
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => void handleDeletePopup(idx)}
-                                      className="text-red-600 font-bold hover:underline cursor-pointer"
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <div className="flex items-center justify-center gap-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingPopupIndex(idx);
+                                          setNewPopup({
+                                            title: p.title || "",
+                                            subtitle: p.subtitle || "",
+                                            discount: p.discount || "FLAT 10% OFF",
+                                            couponCode: p.couponCode || "PURE10",
+                                            image: p.image || "",
+                                            trigger: p.trigger || "Exit Intent",
+                                            ctaText: p.ctaText || "Claim Coupon & Shop Now",
+                                            status: p.status || "Active",
+                                          });
+                                        }}
+                                        className="text-[#244f31] font-bold hover:underline cursor-pointer"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleDeletePopup(idx)}
+                                        className="text-red-600 font-bold hover:underline cursor-pointer"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
                           )}
                         </tbody>
                       </table>
@@ -11794,37 +12061,114 @@ export default function AdminDashboard() {
 
                   return (
                     <div className="space-y-8 text-xs text-[#17231b]">
+                      {/* Master Homepage Sections Visibility Manager */}
+                      <div className="border border-[#ddddd9] p-5 sm:p-6 rounded-2xl bg-white shadow-xs space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#ddddd9] pb-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-sm text-[#17231b] flex items-center gap-2">
+                                <Eye className="size-4 text-[#244f31]" />
+                                <span>Homepage Sections Visibility Manager</span>
+                              </span>
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#244f31] font-black text-[10px] uppercase tracking-wider">
+                                {HOMEPAGE_SECTIONS.filter((s) => getSectionVisibility(s.key)).length} of {HOMEPAGE_SECTIONS.length} Visible
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Show or hide any section of your storefront homepage in real-time. Click any button to instantly hide or reveal that section.
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const allVisible: any = {};
+                                HOMEPAGE_SECTIONS.forEach((s) => { allVisible[s.key] = true; });
+                                const updatedContent = {
+                                  ...content,
+                                  sectionsVisibility: allVisible,
+                                  announcement: { ...(content.announcement || {}), visible: true },
+                                  consultationBanner: { ...(content.consultationBanner || {}), visible: true },
+                                  aboutUs: { ...(content.aboutUs || {}), visible: true },
+                                  footer: { ...(content.footer || {}), visible: true },
+                                };
+                                setDbData((prev: any) => ({ ...prev, content: updatedContent }));
+                                await handleSaveCMSContent(updatedContent);
+                                showToast("All homepage sections are now VISIBLE!");
+                              }}
+                              className="px-3 py-1.5 rounded-xl border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-700 text-[11px] font-bold cursor-pointer transition"
+                            >
+                              Show All
+                            </button>
+                            <a
+                              href="/"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#244f31] bg-[#f8faf1] border border-[#244f31]/30 hover:bg-[#244f31]/10 px-3.5 py-1.5 rounded-xl transition cursor-pointer shadow-2xs"
+                            >
+                              <span>Preview Homepage</span>
+                              <ExternalLink className="size-3" />
+                            </a>
+                          </div>
+                        </div>
+
+                        {/* Grid of all 12 sections */}
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {HOMEPAGE_SECTIONS.map((sec) => {
+                            const isVisible = getSectionVisibility(sec.key);
+                            return (
+                              <div
+                                key={sec.key}
+                                className={`p-3.5 rounded-xl border transition flex items-center justify-between gap-3 ${
+                                  isVisible
+                                    ? "bg-[#f8faf1]/60 border-[#ddddd9]"
+                                    : "bg-red-50/40 border-red-200"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <span className="text-xl shrink-0">{sec.icon}</span>
+                                  <div className="min-w-0">
+                                    <div className="font-bold text-xs text-[#17231b] truncate">{sec.title}</div>
+                                    <div className="text-[10px] text-gray-500 truncate">{sec.desc}</div>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => void toggleSectionVisibility(sec.key, sec.title)}
+                                  className={`shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider cursor-pointer shadow-2xs transition ${
+                                    isVisible
+                                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                      : "bg-red-600 hover:bg-red-700 text-white"
+                                  }`}
+                                  title={isVisible ? `Click to hide "${sec.title}"` : `Click to show "${sec.title}"`}
+                                >
+                                  {isVisible ? "Hide" : "Show"}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
                       {/* Section A: Announcement Bar Editor */}
                       <div className="border border-[#ddddd9] p-5 rounded-2xl bg-white shadow-xs space-y-4">
-                        <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#ddddd9] pb-3 gap-3">
                           <div>
                             <span className="block font-black text-sm text-[#17231b]">Announcement Bar (Top Ticker Bar)</span>
                             <span className="text-[10px] text-[#666666]">Alerts above the site header with live countdown clocks and botanical background</span>
                           </div>
                           <div className="flex items-center gap-3">
+                            {renderVisibilityBadgeButton("announcement", "Top Announcement Bar")}
                             <a
                               href="/#top-announcement-banner"
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#244f31] bg-[#f8faf1] border border-[#244f31]/30 hover:bg-[#244f31]/10 px-3 py-1 rounded-lg transition"
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#244f31] bg-[#f8faf1] border border-[#244f31]/30 hover:bg-[#244f31]/10 px-3 py-1.5 rounded-xl transition"
                             >
                               👁️ Preview on Storefront
                             </a>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={announcement.visible !== false}
-                                onChange={(e) => {
-                                  const updated = {
-                                    ...content,
-                                    announcement: { ...announcement, visible: e.target.checked }
-                                  };
-                                  void handleSaveCMSContent(updated);
-                                }}
-                                className="rounded border-[#ddddd9] text-[#244f31] focus:ring-[#244f31]"
-                              />
-                              <span className="font-bold">Active / Visible</span>
-                            </label>
                           </div>
                         </div>
 
@@ -11977,33 +12321,36 @@ export default function AdminDashboard() {
 
                       {/* Section B: Hero Banners Slider Editor */}
                       <div className="border border-[#ddddd9] p-5 rounded-2xl bg-white shadow-xs space-y-4">
-                        <div className="flex items-center justify-between border-b border-[#ddddd9] pb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#ddddd9] pb-3 gap-3">
                           <div>
                             <span className="block font-black text-sm text-[#17231b]">Hero Carousel Banners ({activeSlides.length})</span>
                             <span className="text-[10px] text-[#666666]">Manage sliding panels at the top of homepage</span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setBgColorMode("solid");
-                              setNewSlide({
-                                id: 0,
-                                title: "",
-                                subtitle: "",
-                                offer: "",
-                                ctaText: "SHOP NOW",
-                                href: "#shop",
-                                badge: "NEW",
-                                image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80",
-                                bgColor: "#1d3b24",
-                                fullWidthBanner: false
-                              });
-                              setEditingSlide("new");
-                            }}
-                            className="bg-[#244f31] text-white px-3 py-1.5 rounded-lg font-bold shadow hover:bg-[#1c3e26] transition flex items-center gap-1"
-                          >
-                            <Plus className="size-3" /> Add Hero Slide
-                          </button>
+                          <div className="flex items-center gap-3">
+                            {renderVisibilityBadgeButton("heroSlider", "Hero Carousel Banners")}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBgColorMode("solid");
+                                setNewSlide({
+                                  id: 0,
+                                  title: "",
+                                  subtitle: "",
+                                  offer: "",
+                                  ctaText: "SHOP NOW",
+                                  href: "#shop",
+                                  badge: "NEW",
+                                  image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80",
+                                  bgColor: "#1d3b24",
+                                  fullWidthBanner: false
+                                });
+                                setEditingSlide("new");
+                              }}
+                              className="bg-[#244f31] text-white px-3 py-1.5 rounded-xl font-bold shadow hover:bg-[#1c3e26] transition flex items-center gap-1 cursor-pointer"
+                            >
+                              <Plus className="size-3" /> Add Hero Slide
+                            </button>
+                          </div>
                         </div>
 
                         <div className="border border-[#ddddd9] rounded-xl overflow-hidden bg-white shadow-xs">
@@ -12140,9 +12487,14 @@ export default function AdminDashboard() {
 
                       {/* Section C: Doctor Consultation Banner Editor */}
                       <div className="border border-[#ddddd9] p-5 rounded-2xl bg-white shadow-xs space-y-4">
-                        <div className="border-b border-[#ddddd9] pb-3">
-                          <span className="block font-black text-sm text-[#17231b]">Ayurvedic Doctor Consultation Section Banner</span>
-                          <span className="text-[10px] text-[#666666]">Customize promotional copy and BAMS doctor credentials</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#ddddd9] pb-3 gap-3">
+                          <div>
+                            <span className="block font-black text-sm text-[#17231b]">Ayurvedic Doctor Consultation Section Banner</span>
+                            <span className="text-[10px] text-[#666666]">Customize promotional copy and BAMS doctor credentials</span>
+                          </div>
+                          <div>
+                            {renderVisibilityBadgeButton("consultationBanner", "Doctor Consultation Banner")}
+                          </div>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
@@ -12421,6 +12773,7 @@ export default function AdminDashboard() {
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
+                                {renderVisibilityBadgeButton("aboutSection", "Our Heritage & Philosophy Section")}
                                 <a
                                   href="/#about"
                                   target="_blank"

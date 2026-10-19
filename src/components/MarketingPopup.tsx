@@ -35,15 +35,21 @@ export default function MarketingPopup({ popups = [] }: MarketingPopupProps) {
   const [copied, setCopied] = useState(false);
   const hasTriggeredRef = useRef(false);
 
-  // If popups list is empty or hasn't loaded, use default fallback.
-  // If popups list exists and all are explicitly "Inactive", don't show.
+  // Check query params for instant preview / force show (e.g. ?popup=1 or #popup)
+  const isForced =
+    typeof window !== "undefined" &&
+    (window.location.search.includes("popup") ||
+      window.location.search.includes("preview") ||
+      window.location.hash.includes("popup"));
+
+  // Only display a popup that is explicitly marked Active.
+  // Never show fallback popups to customers when popups are Inactive or empty.
   const activePopup =
-    popups.length === 0
-      ? FALLBACK_POPUP
-      : popups.find((p) => p.status === "Active") || null;
+    popups.find((p) => p && p.status === "Active") ||
+    (isForced ? popups[0] || FALLBACK_POPUP : null);
 
   useEffect(() => {
-    if (!activePopup || (typeof window !== "undefined" && activePopup.status === "Inactive")) return;
+    if (!activePopup || (!isForced && activePopup.status === "Inactive")) return;
 
     // Purge any stale permanent dismissal locks stored in localStorage from earlier builds
     try {
@@ -57,13 +63,6 @@ export default function MarketingPopup({ popups = [] }: MarketingPopupProps) {
     } catch {}
 
     const popupKey = `pyur_popup_dismissed_${activePopup.id || "pop_1"}`;
-
-    // Check query params for instant preview / force show (e.g. ?popup=1 or #popup)
-    const isForced =
-      typeof window !== "undefined" &&
-      (window.location.search.includes("popup") ||
-        window.location.search.includes("preview") ||
-        window.location.hash.includes("popup"));
 
     if (!isForced && typeof window !== "undefined") {
       const dismissedTimestamp = sessionStorage.getItem(popupKey);

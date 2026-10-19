@@ -334,63 +334,32 @@ function sanitizeDBData(data: any): DBData {
     if (!Array.isArray(data.marketing.notifications)) data.marketing.notifications = [];
   }
 
-  if (data.marketing.banners.length === 0) {
-    data.marketing.banners = [
-      {
-        id: "ban_1",
-        name: "100% Certified Ayurvedic Formulations for Peak Vitality & Daily Wellness",
-        subtitle: "Formulated by certified Ayurvedic Vaidyas. Clinically backed botanicals for peak stamina and daily wellness.",
-        image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
-        link: "/products/virja-powder",
-        ctaText: "Explore Pure Formulations",
-        placement: "Homepage Middle Strip",
-        status: "Active",
-      },
-    ];
-  } else {
-    data.marketing.banners = data.marketing.banners.map((b: any, idx: number) => {
-      const bannerTitle = (b.title || b.name || "100% Certified Ayurvedic Formulations").trim();
-      return {
-        id: b.id || `ban_${idx + 1}`,
-        name: bannerTitle,
-        title: bannerTitle,
-        subtitle: b.subtitle || "Authentic Ayurvedic remedies formulated by certified Vaidyas.",
-        image: b.image || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
-        link: b.link || "/products/virja-powder",
-        ctaText: b.ctaText || "Explore Formulations",
-        placement: b.placement || "Homepage Middle Strip",
-        status: b.status || "Active",
-      };
-    });
-  }
+  data.marketing.banners = (data.marketing.banners || []).map((b: any, idx: number) => {
+    const bannerTitle = (b.title || b.name || "100% Certified Ayurvedic Formulations").trim();
+    return {
+      id: b.id || `ban_${idx + 1}`,
+      name: bannerTitle,
+      title: bannerTitle,
+      subtitle: b.subtitle || "Authentic Ayurvedic remedies formulated by certified Vaidyas.",
+      image: b.image || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
+      link: b.link || "/products/virja-powder",
+      ctaText: b.ctaText || "Explore Formulations",
+      placement: b.placement || "Homepage Middle Strip",
+      status: b.status || "Active",
+    };
+  });
 
-  if (data.marketing.popups.length === 0) {
-    data.marketing.popups = [
-      {
-        id: "pop_1",
-        title: "Wait! Claim Extra 10% Off Your Order",
-        subtitle: "Join 50,000+ happy customers restoring vitality and balance with pure Ayurvedic formulations.",
-        discount: "FLAT 10% OFF",
-        couponCode: "PURE10",
-        image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
-        trigger: "Exit Intent",
-        ctaText: "Claim Coupon & Shop Now",
-        status: "Active",
-      },
-    ];
-  } else {
-    data.marketing.popups = data.marketing.popups.map((p: any) => ({
-      id: p.id || "pop_1",
-      title: p.title || "Wait! Claim Extra 10% Off Your Order",
-      subtitle: p.subtitle || "Join 50,000+ happy customers restoring vitality and balance with pure Ayurvedic formulations.",
-      discount: p.discount || "FLAT 10% OFF",
-      couponCode: p.couponCode || "PURE10",
-      image: p.image || "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
-      trigger: p.trigger || "Exit Intent",
-      ctaText: p.ctaText || "Claim Coupon & Shop Now",
-      status: p.status || "Active",
-    }));
-  }
+  data.marketing.popups = (data.marketing.popups || []).map((p: any, idx: number) => ({
+    id: p.id || `pop_${idx + 1}`,
+    title: p.title || "Wait! Claim Extra 10% Off Your Order",
+    subtitle: p.subtitle || "Join 50,000+ happy customers restoring vitality and balance with pure Ayurvedic formulations.",
+    discount: p.discount || "FLAT 10% OFF",
+    couponCode: p.couponCode || "PURE10",
+    image: p.image || "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
+    trigger: p.trigger || "Exit Intent",
+    ctaText: p.ctaText || "Claim Coupon & Shop Now",
+    status: p.status || "Active",
+  }));
 
   if (!data.content || typeof data.content !== "object") {
     data.content = { announcement: {}, heroSlides: [], consultationBanner: {}, footer: {}, aboutUs: {} };
@@ -434,6 +403,9 @@ function sanitizeDBData(data: any): DBData {
     if (!data.content.footer) data.content.footer = {};
     if (!data.content.aboutUs || typeof data.content.aboutUs !== "object") {
       data.content.aboutUs = {};
+    }
+    if (!data.content.sectionsVisibility || typeof data.content.sectionsVisibility !== "object") {
+      data.content.sectionsVisibility = {};
     }
   }
 

@@ -515,6 +515,41 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
     }
   };
 
+  // Mobile Gallery Touch and Navigation Helpers
+  const touchStartXRef = useRef<number | null>(null);
+
+  const handlePrevImage = () => {
+    if (gallery.length <= 1) return;
+    const currentIndex = gallery.indexOf(selectedImage);
+    const prevIndex = currentIndex <= 0 ? gallery.length - 1 : currentIndex - 1;
+    setSelectedImage(gallery[prevIndex]);
+  };
+
+  const handleNextImage = () => {
+    if (gallery.length <= 1) return;
+    const currentIndex = gallery.indexOf(selectedImage);
+    const nextIndex = currentIndex >= gallery.length - 1 ? 0 : currentIndex + 1;
+    setSelectedImage(gallery[nextIndex]);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartXRef.current - touchEndX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        handleNextImage();
+      } else {
+        handlePrevImage();
+      }
+    }
+    touchStartXRef.current = null;
+  };
+
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b] antialiased pb-24 lg:pb-0">
       {/* ========================================================================= */}
@@ -570,7 +605,11 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
       {/* ========================================================================= */}
       <section className="bg-white pb-6 lg:hidden border-b border-[#e5e5e5]">
         {/* Product Image Stage */}
-        <div className="relative bg-[#f6f7f9] p-4 flex items-center justify-center min-h-[290px] overflow-hidden">
+        <div
+          className="relative bg-[#f6f7f9] p-4 flex items-center justify-center min-h-[290px] overflow-hidden select-none"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Top Right Badges */}
           <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
             <span className="rounded-md bg-[#80a03c] px-2.5 py-1 text-xs font-black uppercase text-white shadow-xs">
@@ -581,6 +620,35 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
             </span>
           </div>
 
+          {/* Quick Nav Arrows on Mobile */}
+          {gallery.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                aria-label="Previous product image"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 size-8 rounded-full bg-white/90 backdrop-blur-xs border border-neutral-200 flex items-center justify-center text-[#17231b] shadow-xs active:scale-90 transition cursor-pointer"
+              >
+                <ArrowLeft className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextImage}
+                aria-label="Next product image"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10 size-8 rounded-full bg-white/90 backdrop-blur-xs border border-neutral-200 flex items-center justify-center text-[#17231b] shadow-xs active:scale-90 transition cursor-pointer"
+              >
+                <ArrowRight className="size-4" />
+              </button>
+            </>
+          )}
+
+          {/* Counter Badge Bottom Right */}
+          {gallery.length > 1 && (
+            <div className="absolute bottom-2.5 right-3 z-10 rounded-full bg-black/60 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
+              {Math.max(1, gallery.indexOf(selectedImage) + 1)} / {gallery.length}
+            </div>
+          )}
+
           <Image
             src={selectedImage || product.image}
             alt={`${product.name} - Pure Ayur Herbs`}
@@ -588,9 +656,40 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
             height={480}
             unoptimized
             priority
-            className="h-[250px] w-auto max-w-[85%] object-contain drop-shadow-sm"
+            className="h-[250px] w-auto max-w-[85%] object-contain drop-shadow-sm transition-all duration-300"
           />
         </div>
+
+        {/* Mobile Catalog Image Thumbnails Strip */}
+        {gallery.length > 1 && (
+          <div className="mt-3 px-4 flex items-center justify-center gap-2.5 overflow-x-auto no-scrollbar py-1">
+            {gallery.map((imgUrl, idx) => {
+              const isSelected = selectedImage === imgUrl;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setSelectedImage(imgUrl)}
+                  className={`size-16 shrink-0 overflow-hidden rounded-xl border-2 p-1 transition cursor-pointer ${
+                    isSelected
+                      ? "border-[#244f31] bg-[#eef5df] ring-2 ring-[#244f31]/20 shadow-xs"
+                      : "border-[#ddddd9] bg-white hover:border-[#80a03c]"
+                  }`}
+                  aria-label={`View product image ${idx + 1}`}
+                >
+                  <Image
+                    src={imgUrl}
+                    alt={`${product.name} thumbnail ${idx + 1}`}
+                    width={64}
+                    height={64}
+                    unoptimized
+                    className="size-full object-cover rounded-lg"
+                  />
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Product Information Body */}
         <div className="px-4 pt-3.5">

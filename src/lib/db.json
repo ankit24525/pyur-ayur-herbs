@@ -9,10 +9,11 @@
       "compareAt": 2199,
       "rating": 5,
       "reviews": 2,
-      "badge": "NEW",
+      "badge": "65% OFF",
       "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381364/pure_ayur_herbs/products/kleuwprcuiyj1duvlojh.jpg",
       "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792131126/pure_ayur_herbs/products/gtmuedejuiatouj2sawf.webp"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792131126/pure_ayur_herbs/products/gtmuedejuiatouj2sawf.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792480505/pure_ayur_herbs/products/ozolkwpyby8hnxivppk2.webp"
       ],
       "ingredients": [
         "Herbal Extract"
@@ -37,7 +38,7 @@
       "compareAt": 499,
       "rating": 5,
       "reviews": 0,
-      "badge": "NEW",
+      "badge": "30%OFF",
       "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381365/pure_ayur_herbs/products/ospkjprkxo1rzsb6ghmy.jpg",
       "images": [
         "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381365/pure_ayur_herbs/products/ospkjprkxo1rzsb6ghmy.jpg"
@@ -65,7 +66,7 @@
       "compareAt": 599,
       "rating": 4,
       "reviews": 1,
-      "badge": "NEW",
+      "badge": "33%OFF",
       "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381366/pure_ayur_herbs/products/xemjcovn6mbh6edriszp.jpg",
       "images": [
         "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381366/pure_ayur_herbs/products/xemjcovn6mbh6edriszp.jpg"
@@ -85,34 +86,6 @@
       "variants": []
     },
     {
-      "id": "prod_1788512010828",
-      "name": "PERFECT 36 CREAM",
-      "slug": "perfect-36-cream",
-      "concern": "Womens Health",
-      "price": 499,
-      "compareAt": 599,
-      "rating": 5,
-      "reviews": 0,
-      "badge": "NEW",
-      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381367/pure_ayur_herbs/products/aux22j4iqo4xus6bbja4.jpg",
-      "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381367/pure_ayur_herbs/products/aux22j4iqo4xus6bbja4.jpg"
-      ],
-      "ingredients": [
-        "Herbal Extract"
-      ],
-      "description": "Perfect 36 is a natural herbal toning cream formulated with time-tested Ayurvedic botanicals like Shatavari, Ashwagandha, Gambhari, and Jamun. Designed for external application, it supports skin elasticity and firmness as part of a daily body care routine.\nMethod of Use: Massage gently into the area for a few minutes until fully absorbed. Apply morning and night.\nKey Highlights:\nPure Herbal, Ayurvedic Proprietary Medicine\nSafe & Gentle, No Side Effects\nGMP Certified\nFor External Use Only\nNet Volume: 100ml",
-      "coinsEarned": 35,
-      "deliveryDays": "3 - 5 Days",
-      "inStock": true,
-      "sku": "PAH-PERFECT-36-CREAM-738",
-      "stockQty": 50,
-      "lowStockThreshold": 10,
-      "showCoins": false,
-      "hasVariants": false,
-      "variants": []
-    },
-    {
       "id": "prod_1788947560528",
       "name": "VIRJA POWDER-Ultimate MEN'S Power& Vitality blend",
       "slug": "virja-powder",
@@ -121,7 +94,7 @@
       "compareAt": 1499,
       "rating": 5,
       "reviews": 0,
-      "badge": "NEW",
+      "badge": "40%OFF",
       "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg",
       "images": [
         "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg"
@@ -149,7 +122,7 @@
       "compareAt": 499,
       "rating": 5,
       "reviews": 0,
-      "badge": "NEW",
+      "badge": "20%OFF",
       "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381369/pure_ayur_herbs/products/x2yhpnwfcsesqdjjmzll.jpg",
       "images": [
         "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381370/pure_ayur_herbs/products/i61gzjzqgb1svtwafpix.jpg"
@@ -167,6 +140,36 @@
       "lowStockThreshold": 10,
       "hasVariants": false,
       "variants": []
+    },
+    {
+      "id": "prod_1792466035640",
+      "name": "Madunashi powder+ Madhunashi syrup COMBO OFFER",
+      "slug": "mandunashi-powder-mandhunashi-syrup-combo-offer",
+      "concern": "Sugar Management",
+      "price": 999,
+      "compareAt": 2698,
+      "rating": 5,
+      "reviews": 0,
+      "badge": "63%OFF",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792465949/pure_ayur_herbs/products/frwb9wzdiji4hp6zoic6.webp",
+      "images": [
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792465980/pure_ayur_herbs/products/nvjucpymvsrx1iabpirc.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792466007/pure_ayur_herbs/products/xhgs2kzlgulwmiincsbi.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792466017/pure_ayur_herbs/products/gysk7tfi6npnmshddz9m.webp"
+      ],
+      "ingredients": [
+        "13 herbs wala Formula"
+      ],
+      "description": "Premium Ayurvedic wellness support.",
+      "coinsEarned": 50,
+      "showCoins": true,
+      "deliveryDays": "3 - 5 Days",
+      "inStock": true,
+      "sku": "PAH-MANDUNASHI-POWDER-MANDHUNASHI-SYRUP-COMBO-OFFER-153",
+      "stockQty": 50,
+      "lowStockThreshold": 10,
+      "variants": [],
+      "hasVariants": false
     }
   ],
   "orders": [
@@ -815,6 +818,19 @@
   ],
   "testimonials": [
     {
+      "id": "test_1792489624477",
+      "name": "Mannu",
+      "location": "Uttrakhand",
+      "rating": 5,
+      "title": "Authentic Ayurvedic Formulation",
+      "comment": "Mujhe to isske bdia result mile mera kafi weigt kamm hua h mere liye best product hai",
+      "productTagged": "FAT BURNER-Metabolism Support Juice",
+      "verifiedBuyer": true,
+      "avatar": "",
+      "status": "Approved",
+      "date": "20 Oct 2026"
+    },
+    {
       "id": "test_1",
       "name": "Rajesh K.",
       "location": "Pune, Maharashtra",
@@ -893,7 +909,7 @@
         "image": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
         "trigger": "Exit Intent",
         "ctaText": "Claim Coupon & Shop Now",
-        "status": "Active"
+        "status": "Inactive"
       }
     ],
     "notifications": [
@@ -949,7 +965,7 @@
   ],
   "content": {
     "announcement": {
-      "visible": true,
+      "visible": false,
       "text": "BUY MADNUNASHI POWDER GET SYRUP FREE",
       "code": "FREE MADHUNASHI",
       "btnText": "Claim Gift",
@@ -959,40 +975,52 @@
     },
     "heroSlides": [
       {
-        "fullWidthBanner": false,
-        "id": 2,
-        "title": "Virja Gold Majun",
-        "subtitle": "Supports Male Vitality, Stamina & Power",
-        "offer": "BUY 2 GET EXTRA 10% OFF WITH CODE: PURE10",
-        "ctaText": "SHOP NOW",
-        "href": "#data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAA",
-        "badge": "Traditional Ayurvedic Formula",
-        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381371/pure_ayur_herbs/banners/bidpzfec1hwxx0rpeznr.jpg",
-        "bgColor": "#4a0404"
-      },
-      {
-        "fullWidthBanner": false,
+        "fullWidthBanner": true,
         "id": 1,
-        "title": "Madhunashi: Blood Sugar Wellness Support",
-        "subtitle": "Formulated for Blood Sugar Management with Gudmar, Jamun ,Karela &10 other herbs",
-        "offer": "GET EXTRA 10% OFF WITH CODE: PURE10",
-        "ctaText": "SHOP NOW",
-        "href": "#shop",
-        "badge": "100% Natural & GMP Certified",
-        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381372/pure_ayur_herbs/banners/nburc3snato4yevma7uh.jpg",
-        "bgColor": "#1d3b24"
+        "title": "100% Ayurvedic Virja Powder & Gold Majun",
+        "subtitle": "AUTHENTIC AYURVEDA FOR PEAK MEN'S STAMINA & ENERGY",
+        "offer": "Buy 2 get extra discount",
+        "ctaText": "SHOP VIRJA REMEDIES",
+        "href": "/products/virja-powder",
+        "badge": "100% Pure Sourced",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792487064/pure_ayur_herbs/slides/aqgmg2vfnjsabicyibzz.webp",
+        "bgColor": "from-[#1d3b24] via-[#244f31] to-[#0f2416]"
       },
       {
-        "fullWidthBanner": false,
+        "fullWidthBanner": true,
+        "id": 2,
+        "title": "",
+        "subtitle": "",
+        "offer": "Buy 2 get 10% extra discount",
+        "ctaText": "EXPLORE MADHUNASHI",
+        "href": "/products/madhunashi-powder",
+        "badge": "GMP Certified",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792485827/pure_ayur_herbs/slides/rvu9pujovtefprtnyafv.webp",
+        "bgColor": "from-[#2d6b3f] via-[#1d4629] to-[#122c1b]"
+      },
+      {
+        "fullWidthBanner": true,
         "id": 3,
-        "title": "Fat Burn Juice",
-        "subtitle": "Supports Metabolism, Detox & Energy to Burn Naturally.",
-        "offer": "BUY 2 GET EXTRA 10% OFF WITH CODE: PURE10",
+        "title": "",
+        "subtitle": "",
+        "offer": "",
+        "ctaText": "UNLOCK FAT BURNER",
+        "href": "/products/fat-burner",
+        "badge": "",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792486276/pure_ayur_herbs/slides/ralznvft8a2cnlwry0uo.webp",
+        "bgColor": "from-[#3e2c1e] via-[#63432b] to-[#2b1d13]"
+      },
+      {
+        "fullWidthBanner": true,
+        "id": 4,
+        "title": "Helps maange suger level",
+        "subtitle": "",
+        "offer": "",
         "ctaText": "SHOP NOW",
         "href": "#shop",
-        "badge": "Ayurvedic Slim Tonic",
-        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381374/pure_ayur_herbs/banners/ykhf8ipolmhyqg8h3hwa.jpg",
-        "bgColor": "#78350f"
+        "badge": "Combo offer",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792487611/pure_ayur_herbs/slides/pzfmvns62jtxpvwfsito.webp",
+        "bgColor": "#701a75"
       }
     ],
     "consultationBanner": {
@@ -1128,13 +1156,21 @@
       "ctaButtonText": "Shop All Remedies",
       "ctaButtonLink": "/#products",
       "guaranteeSubtitle": "Lab Tested & Certified Safe",
-      "visible": false
+      "visible": true
     },
     "sectionsVisibility": {
-      "footer": true,
-      "aboutSection": false,
+      "announcement": false,
+      "heroSlider": true,
+      "mobileCategoryRail": true,
+      "categoryFilter": true,
+      "productsCatalog": true,
+      "marketingBanners": true,
       "consultationBanner": false,
-      "healthQuiz": false
+      "aboutSection": true,
+      "trustSection": true,
+      "healthQuiz": true,
+      "testimonials": true,
+      "footer": true
     }
   },
   "users": [

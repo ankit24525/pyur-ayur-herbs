@@ -497,6 +497,40 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
     } catch {}
   };
 
+  const [addedToast, setAddedToast] = useState(false);
+
+  const handleCurrentProductAddToCart = () => {
+    const hasCustomVariant = variants.length > 1;
+    const variantLabel = currentVariant.name || currentVariant.value || "";
+    const displayName =
+      hasCustomVariant && variantLabel && !product.name.includes(variantLabel)
+        ? `${product.name} (${variantLabel})`
+        : product.name;
+    const cartItemId = hasCustomVariant ? `${product.id}-${currentVariant.id}` : product.id;
+
+    handleAddToCart({
+      id: cartItemId,
+      name: displayName,
+      slug: product.slug,
+      concern: product.category,
+      price: unitPrice,
+      compareAt: unitMrp,
+      rating: Number(product.rating) || 5.0,
+      reviews: Number(product.reviews) || 0,
+      badge: currentVariant.badge || product.discount || "NEW",
+      image: currentVariant.image || product.image,
+      ingredients: ingredients.map((i) => i.name),
+      description: product.description || "",
+      coinsEarned: product.showCoins !== false ? Number(product.coins || 0) : 0,
+      showCoins: product.showCoins !== false && Number(product.coins || 0) > 0,
+      deliveryDays: "3 - 5 Days",
+      inStock: true,
+    });
+
+    setAddedToast(true);
+    setTimeout(() => setAddedToast(false), 2000);
+  };
+
   const handleBuyNow = () => {
     const variantLabel = currentVariant.value || currentVariant.name || "";
     const variantImage = currentVariant.image ? `&variantImage=${encodeURIComponent(currentVariant.image)}` : "";
@@ -606,12 +640,12 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
       <section className="bg-white pb-6 lg:hidden border-b border-[#e5e5e5]">
         {/* Product Image Stage */}
         <div
-          className="relative bg-[#f6f7f9] p-4 flex items-center justify-center min-h-[290px] overflow-hidden select-none"
+          className="relative bg-white aspect-square w-full overflow-hidden select-none flex items-center justify-center"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
           {/* Top Right Badges */}
-          <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
+          <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5 pointer-events-none">
             <span className="rounded-md bg-[#80a03c] px-2.5 py-1 text-xs font-black uppercase text-white shadow-xs">
               {discountPercent > 0 ? `${discountPercent}% OFF` : currentVariant.discount || "32% OFF"}
             </span>
@@ -652,11 +686,11 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
           <Image
             src={selectedImage || product.image}
             alt={`${product.name} - Pure Ayur Herbs`}
-            width={480}
-            height={480}
+            width={600}
+            height={600}
             unoptimized
             priority
-            className="h-[250px] w-auto max-w-[85%] object-contain drop-shadow-sm transition-all duration-300"
+            className="size-full object-cover transition-all duration-300"
           />
         </div>
 
@@ -750,6 +784,57 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
             <div className="mt-2 rounded-lg bg-[#fff6d9] border border-amber-200/80 px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-bold text-amber-950">
               <span>✨</span>
               <span>{product.perUnitCostText || "Effective cost: Just ₹8 per daily dose • 100% Sugar Free"}</span>
+            </div>
+
+            {/* Trust Assurance Card (COD / 3 Days Return / Free Delivery) */}
+            <div className="mt-3 overflow-hidden rounded-2xl border border-[#ddddd9] bg-[#f8f9fa] shadow-2xs">
+              <div className="grid grid-cols-3 gap-1 px-2 py-3 text-center items-start">
+                {/* Cash on Delivery */}
+                <div className="flex flex-col items-center">
+                  <div className="size-9 rounded-full bg-white shadow-2xs border border-neutral-200/80 flex items-center justify-center text-[#17231b] font-bold text-sm mb-1.5">
+                    ₹
+                  </div>
+                  <span className="text-[11px] font-bold text-[#17231b] leading-tight">
+                    Cash on Delivery
+                  </span>
+                </div>
+
+                {/* 3 Days Return */}
+                <div className="flex flex-col items-center">
+                  <div className="size-9 rounded-full bg-white shadow-2xs border border-neutral-200/80 flex items-center justify-center text-[#17231b] mb-1.5">
+                    <RefreshCw className="size-3.5 text-[#17231b] stroke-[2.2]" />
+                  </div>
+                  <Link
+                    href="/return-policy"
+                    target="_blank"
+                    className="text-center leading-tight group hover:text-[#244f31] cursor-pointer"
+                  >
+                    <span className="text-[11px] font-bold text-[#17231b] group-hover:text-[#244f31] underline decoration-[#17231b]/60 group-hover:decoration-[#244f31]">
+                      3 days Return
+                    </span>
+                    <span className="block text-[9px] text-neutral-600 mt-0.5 leading-tight">
+                      (Wrong/damaged items only)
+                    </span>
+                  </Link>
+                </div>
+
+                {/* Free Delivery */}
+                <div className="flex flex-col items-center">
+                  <div className="size-9 rounded-full bg-white shadow-2xs border border-neutral-200/80 flex items-center justify-center text-[#17231b] mb-1.5">
+                    <Truck className="size-4 text-[#17231b]" />
+                  </div>
+                  <span className="text-[11px] font-bold text-[#17231b] leading-tight">
+                    Free Delivery
+                  </span>
+                </div>
+              </div>
+
+              {/* Bottom priority strip */}
+              <div className="bg-[#e9ecef] py-1.5 px-3 text-center border-t border-neutral-200/80">
+                <span className="text-[11px] font-bold text-[#2d3748]">
+                  Your order, our priority
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1029,12 +1114,12 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
 
             {/* Main Stage Image Card */}
             <div
-              className={`order-1 relative overflow-hidden rounded-2xl border border-[#ddddd9] bg-white p-4 sm:p-6 shadow-xs lg:order-2 ${
+              className={`order-1 relative overflow-hidden rounded-2xl border border-[#ddddd9] bg-white shadow-xs lg:order-2 aspect-square flex items-center justify-center ${
                 gallery.length > 1 ? "lg:col-span-10" : "lg:col-span-12"
               }`}
             >
               {/* Discount Ribbon Badge */}
-              <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
+              <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5 pointer-events-none">
                 <span className="rounded-full bg-[#80a03c] px-3 py-1 text-xs font-black uppercase text-white shadow-xs">
                   {discountPercent > 0 ? `${discountPercent}% OFF` : currentVariant.discount || "SPECIAL OFFER"}
                 </span>
@@ -1044,10 +1129,10 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
               </div>
 
               {/* Mobile Rating Bubble inside photo */}
-              <div className="absolute bottom-3 left-3 z-10 lg:hidden">
+              <div className="absolute bottom-3 left-3 z-10 lg:hidden pointer-events-none">
                 <a
                   href="#reviews"
-                  className="flex items-center gap-1 rounded-full bg-white/95 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-[#17231b] shadow-sm border border-neutral-200"
+                  className="flex items-center gap-1 rounded-full bg-white/95 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-[#17231b] shadow-sm border border-neutral-200 pointer-events-auto"
                 >
                   <Star className="size-3.5 fill-amber-500 text-amber-500" />
                   <span>{displayRating}</span>
@@ -1059,11 +1144,11 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
                 src={selectedImage || product.image}
                 alt={`${product.name} - Pure Ayur Herbs`}
                 title={product.name}
-                width={650}
-                height={650}
+                width={700}
+                height={700}
                 unoptimized
                 priority
-                className="mx-auto h-[320px] sm:h-[460px] w-full object-contain transition-transform duration-300 hover:scale-[1.02]"
+                className="size-full object-cover transition-transform duration-500 hover:scale-[1.03]"
               />
             </div>
           </div>
@@ -1145,6 +1230,57 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
               <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-[#fff6d9] border border-amber-200/80 px-2.5 py-1 text-xs font-bold text-amber-950">
                 <span>✨</span>
                 <span>{product.perUnitCostText || "Value for money • Effective daily holistic care"}</span>
+              </div>
+
+              {/* Trust Assurance Card (COD / 3 Days Return / Free Delivery) */}
+              <div className="mt-4 overflow-hidden rounded-2xl border border-[#ddddd9] bg-[#f8f9fa] shadow-2xs">
+                <div className="grid grid-cols-3 gap-2 px-4 py-3.5 text-center items-start">
+                  {/* Cash on Delivery */}
+                  <div className="flex flex-col items-center">
+                    <div className="size-11 rounded-full bg-white shadow-2xs border border-neutral-200/80 flex items-center justify-center text-[#17231b] font-bold text-base mb-1.5">
+                      ₹
+                    </div>
+                    <span className="text-xs font-bold text-[#17231b] leading-tight">
+                      Cash on Delivery
+                    </span>
+                  </div>
+
+                  {/* 3 Days Return */}
+                  <div className="flex flex-col items-center">
+                    <div className="size-11 rounded-full bg-white shadow-2xs border border-neutral-200/80 flex items-center justify-center text-[#17231b] mb-1.5">
+                      <RefreshCw className="size-4 text-[#17231b] stroke-[2.2]" />
+                    </div>
+                    <Link
+                      href="/return-policy"
+                      target="_blank"
+                      className="text-center leading-tight group hover:text-[#244f31] cursor-pointer"
+                    >
+                      <span className="text-xs font-bold text-[#17231b] group-hover:text-[#244f31] underline decoration-[#17231b]/60 group-hover:decoration-[#244f31]">
+                        3 days Return
+                      </span>
+                      <span className="block text-[10px] text-neutral-600 mt-0.5 leading-tight">
+                        (Wrong/damaged items only)
+                      </span>
+                    </Link>
+                  </div>
+
+                  {/* Free Delivery */}
+                  <div className="flex flex-col items-center">
+                    <div className="size-11 rounded-full bg-white shadow-2xs border border-neutral-200/80 flex items-center justify-center text-[#17231b] mb-1.5">
+                      <Truck className="size-4.5 text-[#17231b]" />
+                    </div>
+                    <span className="text-xs font-bold text-[#17231b] leading-tight">
+                      Free Delivery
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom priority strip */}
+                <div className="bg-[#e9ecef] py-1.5 px-3 text-center border-t border-neutral-200/80">
+                  <span className="text-xs font-bold text-[#2d3748]">
+                    Your order, our priority
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -1356,38 +1492,24 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
                   {/* Add to Basket Button */}
                   <button
                     type="button"
-                    onClick={() => {
-                      const hasCustomVariant = variants.length > 1;
-                      const variantLabel = currentVariant.name || currentVariant.value || "";
-                      const displayName =
-                        hasCustomVariant && variantLabel && !product.name.includes(variantLabel)
-                          ? `${product.name} (${variantLabel})`
-                          : product.name;
-                      const cartItemId = hasCustomVariant ? `${product.id}-${currentVariant.id}` : product.id;
-
-                      handleAddToCart({
-                        id: cartItemId,
-                        name: displayName,
-                        slug: product.slug,
-                        concern: product.category,
-                        price: unitPrice,
-                        compareAt: unitMrp,
-                        rating: Number(product.rating) || 5.0,
-                        reviews: Number(product.reviews) || 0,
-                        badge: currentVariant.badge || product.discount || "NEW",
-                        image: currentVariant.image || product.image,
-                        ingredients: ingredients.map((i) => i.name),
-                        description: product.description || "",
-                        coinsEarned: product.showCoins !== false ? Number(product.coins || 0) : 0,
-                        showCoins: product.showCoins !== false && Number(product.coins || 0) > 0,
-                        deliveryDays: "3 - 5 Days",
-                        inStock: true,
-                      });
-                    }}
-                    className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border-2 border-[#80a03c] bg-white text-xs font-black uppercase tracking-widest text-[#244f31] shadow-xs transition hover:bg-[#eef5df] cursor-pointer"
+                    onClick={handleCurrentProductAddToCart}
+                    className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border-2 text-xs font-black uppercase tracking-widest shadow-xs transition cursor-pointer ${
+                      addedToast
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-800"
+                        : "border-[#80a03c] bg-white text-[#244f31] hover:bg-[#eef5df]"
+                    }`}
                   >
-                    <ShoppingBag className="size-4 text-[#80a03c]" />
-                    <span>ADD TO BASKET</span>
+                    {addedToast ? (
+                      <>
+                        <Check className="size-4 text-emerald-600 stroke-[3]" />
+                        <span>ADDED TO BASKET!</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="size-4 text-[#80a03c]" />
+                        <span>ADD TO BASKET</span>
+                      </>
+                    )}
                   </button>
                 </div>
 
@@ -2030,21 +2152,28 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
           aria-label="Mobile Floating Action Bar"
           className="fixed bottom-3 left-3 right-3 z-40 bg-white/95 backdrop-blur-md rounded-2xl border border-[#ddddd9] p-2 shadow-[0_6px_25px_rgba(0,0,0,0.15)] lg:hidden flex items-center gap-2 max-w-md mx-auto animate-in slide-in-from-bottom duration-200"
         >
-          {/* Left: Chat with Doctor */}
-          <a
-            href={`https://wa.me/${whatsappNum}?text=${encodeURIComponent(
-              `Namaste Doctor! I am looking at ${product.name} on Pure Ayur Herbs and would like a consultation on dosage.`
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-xl border border-[#ddddd9] bg-white px-3 py-2.5 text-xs font-bold text-[#17231b] shadow-2xs hover:bg-[#f8faf1] transition shrink-0 cursor-pointer"
+          {/* Left: ADD TO CART */}
+          <button
+            type="button"
+            onClick={handleCurrentProductAddToCart}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl border-2 py-2.5 px-3 text-xs sm:text-sm font-black uppercase tracking-wider shadow-2xs active:scale-98 transition cursor-pointer ${
+              addedToast
+                ? "border-emerald-600 bg-emerald-50 text-emerald-800"
+                : "border-[#80a03c] bg-white text-[#244f31] hover:bg-[#eef5df]"
+            }`}
           >
-            <span className="size-2 rounded-full bg-[#25D366] animate-pulse" />
-            <span className="text-[11px] sm:text-xs font-bold">Chat with Doctor</span>
-            <span className="rounded-full bg-[#eef5df] px-1.5 py-0.5 text-[9px] font-black text-[#244f31] border border-emerald-200">
-              Online
-            </span>
-          </a>
+            {addedToast ? (
+              <>
+                <Check className="size-4 text-emerald-600 stroke-[3]" />
+                <span>ADDED!</span>
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="size-4 text-[#80a03c]" />
+                <span>ADD TO CART</span>
+              </>
+            )}
+          </button>
 
           {/* Right: BUY NOW with floating Price pill */}
           <button

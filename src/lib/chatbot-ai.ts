@@ -187,7 +187,7 @@ Company background:
 - Free shipping across India on prepaid & COD orders.
 - Fast 2–4 business days priority delivery.
 - Cash on Delivery (COD) and PhonePe prepaid available.
-- 7-Day return policy for unsealed items.
+- 3-Day return policy for wrong or damaged items.
 Our Product Catalog:
 ${catalog.map(
   (p) => `- ${p.name} (₹${p.price}): For ${p.concern}. Ingredients: ${p.ingredients}. Dosage: ${p.dosage}. Link: ${p.link}`

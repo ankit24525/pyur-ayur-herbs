@@ -410,7 +410,7 @@ export default function CartPage() {
                   </div>
                   <div className="flex items-center gap-2 font-bold text-[#244f31]">
                     <CheckCircle2 className="size-4 text-[#80a03c]" />
-                    <span>Easy 7-Day Hassle-Free Returns</span>
+                    <span>3-Day Returns (Wrong/Damaged Items)</span>
                   </div>
                 </div>
               </div>

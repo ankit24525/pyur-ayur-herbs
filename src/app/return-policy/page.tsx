@@ -9,7 +9,7 @@ export default function ReturnPolicyPage() {
   return (
     <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
       <div className="bg-[#1e3c27] text-white py-2.5 text-center text-xs font-semibold">
-        🛡️ 7-Day Easy Returns & Replacements Guarantee
+        🛡️ 3-Day Returns &amp; Replacements Guarantee (Wrong/Damaged Items Only)
       </div>
 
       <div className="mx-auto max-w-[800px] px-4 py-8 md:py-16">
@@ -22,24 +22,24 @@ export default function ReturnPolicyPage() {
           <div className="flex items-center gap-3 border-b border-[#ddddd9] pb-4">
             <RotateCw className="size-7 text-[#80a03c]" />
             <h1 className="text-2xl font-black uppercase text-[#17231b] sm:text-3xl">
-              Return & Replacement Policy
+              Return &amp; Replacement Policy
             </h1>
           </div>
 
           <p className="mt-4 text-xs text-[#666666] leading-relaxed md:text-sm">
-            At <b>Pure Ayur Herbs</b>, we stand behind the quality of our Ayurvedic products. If you are not satisfied with your purchase, we offer a hassle-free <b>7-Day Easy Return & Replacement Policy</b> from the date of delivery.
+            At <b>Pure Ayur Herbs</b>, we take utmost care in packaging and delivering genuine Ayurvedic formulations. We offer a <b>3-Day Return &amp; Replacement Policy</b> from the date of delivery for any wrong, damaged, or defective items received.
           </p>
 
           <div className="mt-8 space-y-6">
             <div>
               <h3 className="text-sm font-bold text-[#17231b] flex items-center gap-2">
                 <CheckCircle className="size-4 text-[#80a03c]" />
-                <span>1. Conditions for Returns & Replacement</span>
+                <span>1. Conditions for Returns &amp; Replacement</span>
               </h3>
               <ul className="mt-2 list-disc list-inside text-xs text-[#666666] space-y-1.5 pl-2">
-                <li>Products must be returned within 7 days from the delivery date.</li>
-                <li>The item must be in its original packaging, unopened, and unused (with seal intact).</li>
-                <li>Damaged, leaked, or wrong items received will be replaced immediately at no extra cost.</li>
+                <li>Return or replacement requests must be submitted within <b>3 days</b> from the delivery date.</li>
+                <li>Applicable strictly for <b>wrong, broken, leaking, or damaged items</b> received.</li>
+                <li>Please share clear unboxing photos/video and packaging labels with your request.</li>
               </ul>
             </div>
 

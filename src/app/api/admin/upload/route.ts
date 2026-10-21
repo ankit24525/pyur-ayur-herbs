@@ -19,6 +19,7 @@ export async function POST(request: Request) {
 
     let fileToUpload: string | Blob = "";
     let folder = "pure_ayur_herbs";
+    let cropPreset = "";
 
     const contentType = request.headers.get("content-type") || "";
 
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, error: "No file provided" }, { status: 400 });
       }
       folder = (formData.get("folder") as string) || folder;
+      cropPreset = (formData.get("cropPreset") as string) || "";
 
       if (typeof file === "string") {
         fileToUpload = file;
@@ -43,6 +45,7 @@ export async function POST(request: Request) {
       const body = await request.json();
       fileToUpload = body.file || "";
       if (body.folder) folder = body.folder;
+      if (body.cropPreset) cropPreset = body.cropPreset;
     }
 
     if (!fileToUpload) {
@@ -76,16 +79,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Insert f_auto,q_auto into the delivery URL for maximum automatic compression and responsive format
-    let optimizedUrl = data.secure_url;
-    if (optimizedUrl.includes("/image/upload/")) {
-      optimizedUrl = optimizedUrl.replace("/image/upload/", "/image/upload/f_auto,q_auto/");
+    // Cloudinary AI Smart Crop (g_auto) & Responsive Format
+    const rawSecureUrl = data.secure_url;
+    let optimizedUrl = rawSecureUrl;
+    let desktopUrl = "";
+    let mobileUrl = "";
+
+    const isSlideUpload = cropPreset === "hero_desktop" || folder.includes("slides");
+    const isMobileSlideUpload = cropPreset === "hero_mobile";
+    const isProductUpload = cropPreset === "product" || folder.includes("products");
+
+    if (rawSecureUrl.includes("/image/upload/")) {
+      if (isSlideUpload) {
+        desktopUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_pad,w_1920,h_600,b_auto,f_auto,q_auto/");
+        mobileUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_pad,w_1080,h_1080,b_auto,f_auto,q_auto/");
+        optimizedUrl = desktopUrl;
+      } else if (isMobileSlideUpload) {
+        mobileUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_pad,w_1080,h_1080,b_auto,f_auto,q_auto/");
+        optimizedUrl = mobileUrl;
+      } else if (isProductUpload) {
+        optimizedUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/");
+      } else {
+        optimizedUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/f_auto,q_auto/");
+      }
     }
 
     return NextResponse.json({
       success: true,
       url: optimizedUrl,
-      rawUrl: data.secure_url,
+      desktopUrl: desktopUrl || optimizedUrl,
+      mobileUrl: mobileUrl || "",
+      rawUrl: rawSecureUrl,
       publicId: data.public_id,
       bytes: data.bytes,
       format: data.format,

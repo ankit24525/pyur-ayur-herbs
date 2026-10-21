@@ -10,10 +10,13 @@
       "rating": 5,
       "reviews": 2,
       "badge": "65% OFF",
-      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381364/pure_ayur_herbs/products/kleuwprcuiyj1duvlojh.jpg",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792569275/pure_ayur_herbs/products/hwesld3evunpqbk9er0s.webp",
       "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792131126/pure_ayur_herbs/products/gtmuedejuiatouj2sawf.webp",
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792480505/pure_ayur_herbs/products/ozolkwpyby8hnxivppk2.webp"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792480505/pure_ayur_herbs/products/ozolkwpyby8hnxivppk2.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792496643/pure_ayur_herbs/products/tjv6iuidhsb31yy2guwu.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792496648/pure_ayur_herbs/products/hooiatmndk7r1njj9sys.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792496664/pure_ayur_herbs/products/qej43umtpisz6b2qwm65.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792496670/pure_ayur_herbs/products/rudveq2qx3uiynsvogj4.webp"
       ],
       "ingredients": [
         "Herbal Extract"
@@ -25,7 +28,7 @@
       "sku": "PAH-MADHUNASHI-POWDER--412",
       "stockQty": 50,
       "lowStockThreshold": 10,
-      "showCoins": true,
+      "showCoins": false,
       "hasVariants": false,
       "variants": []
     },
@@ -39,9 +42,12 @@
       "rating": 5,
       "reviews": 0,
       "badge": "30%OFF",
-      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381365/pure_ayur_herbs/products/ospkjprkxo1rzsb6ghmy.jpg",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792547874/pure_ayur_herbs/products/cckewssua9abbelbyknf.webp",
       "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381365/pure_ayur_herbs/products/ospkjprkxo1rzsb6ghmy.jpg"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792547909/pure_ayur_herbs/products/fogsv3w1qwisuqxgcpsu.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792547922/pure_ayur_herbs/products/w1xhm7ltvpjxupqj2cja.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792547926/pure_ayur_herbs/products/piaimdkfmcc7gbyq6gh3.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792547930/pure_ayur_herbs/products/v3nuplmhccpf7ld4zser.webp"
       ],
       "ingredients": [
         "Herbal Extract"
@@ -67,9 +73,12 @@
       "rating": 4,
       "reviews": 1,
       "badge": "33%OFF",
-      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381366/pure_ayur_herbs/products/xemjcovn6mbh6edriszp.jpg",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1791381366/pure_ayur_herbs/products/xemjcovn6mbh6edriszp.jpg",
       "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381366/pure_ayur_herbs/products/xemjcovn6mbh6edriszp.jpg"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792499924/pure_ayur_herbs/products/gb1rxsu2rhkzg6ixpipz.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792499967/pure_ayur_herbs/products/avupdddne6bfnou6vuzw.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792500005/pure_ayur_herbs/products/zyxgbz7fcstjy9xh5pyy.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792500009/pure_ayur_herbs/products/pr18torelnur27hqj9tg.webp"
       ],
       "ingredients": [
         "Herbal Extract"
@@ -81,7 +90,7 @@
       "sku": "PAH-FAT-BURNER-183",
       "stockQty": 50,
       "lowStockThreshold": 10,
-      "showCoins": true,
+      "showCoins": false,
       "hasVariants": false,
       "variants": []
     },
@@ -90,14 +99,19 @@
       "name": "VIRJA POWDER-Ultimate MEN'S Power& Vitality blend",
       "slug": "virja-powder",
       "concern": "Energy and Vitality",
-      "price": 899,
+      "price": 749,
       "compareAt": 1499,
       "rating": 5,
       "reviews": 0,
-      "badge": "40%OFF",
-      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg",
+      "badge": "50%OFF",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg",
       "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792495770/pure_ayur_herbs/products/a6cygeyswq3apsqnh9fl.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792495798/pure_ayur_herbs/products/iukqchkwimqejtzhm22o.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792495816/pure_ayur_herbs/products/nshxhlfdc3es4attuq7e.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792495828/pure_ayur_herbs/products/jencnixxccucxzr6cylx.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792495832/pure_ayur_herbs/products/qhkbm6rpgpg2upd17mei.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792495837/pure_ayur_herbs/products/d7okda7jalsahw4wmjuh.webp"
       ],
       "ingredients": [
         "Herbal Extract"
@@ -123,9 +137,11 @@
       "rating": 5,
       "reviews": 0,
       "badge": "20%OFF",
-      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381369/pure_ayur_herbs/products/x2yhpnwfcsesqdjjmzll.jpg",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1791381369/pure_ayur_herbs/products/x2yhpnwfcsesqdjjmzll.jpg",
       "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381370/pure_ayur_herbs/products/i61gzjzqgb1svtwafpix.jpg"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792547050/pure_ayur_herbs/products/darovrsj9whyrbi5a9ef.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792547062/pure_ayur_herbs/products/ebci1xxfmksttess3svs.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792547069/pure_ayur_herbs/products/c15pb12fxplpootfcrpm.webp"
       ],
       "ingredients": [
         "Herbal Extract"
@@ -151,11 +167,11 @@
       "rating": 5,
       "reviews": 0,
       "badge": "63%OFF",
-      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792465949/pure_ayur_herbs/products/frwb9wzdiji4hp6zoic6.webp",
+      "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792465949/pure_ayur_herbs/products/frwb9wzdiji4hp6zoic6.webp",
       "images": [
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792465980/pure_ayur_herbs/products/nvjucpymvsrx1iabpirc.webp",
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792466007/pure_ayur_herbs/products/xhgs2kzlgulwmiincsbi.webp",
-        "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792466017/pure_ayur_herbs/products/gysk7tfi6npnmshddz9m.webp"
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792465980/pure_ayur_herbs/products/nvjucpymvsrx1iabpirc.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792466007/pure_ayur_herbs/products/xhgs2kzlgulwmiincsbi.webp",
+        "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/v1792466017/pure_ayur_herbs/products/gysk7tfi6npnmshddz9m.webp"
       ],
       "ingredients": [
         "13 herbs wala Formula"
@@ -261,49 +277,21 @@
       "applicableType": "All",
       "applicableValue": "",
       "used": 142
-    },
-    {
-      "code": "PREPAID5",
-      "type": "Percentage",
-      "value": "5",
-      "status": "Active",
-      "minCartValue": 0,
-      "applicableType": "All",
-      "applicableValue": "",
-      "used": 64
-    },
-    {
-      "code": "AYUR100",
-      "type": "Flat",
-      "value": "100",
-      "status": "Active",
-      "minCartValue": 999,
-      "applicableType": "All",
-      "applicableValue": "",
-      "used": 89
-    },
-    {
-      "code": "PURE99",
-      "type": "Flat",
-      "value": "99",
-      "status": "Active",
-      "minCartValue": 400,
-      "applicableType": "All",
-      "applicableValue": "",
-      "used": 35
-    },
-    {
-      "code": "FREESHIP",
-      "type": "Free Shipping",
-      "value": "0",
-      "status": "Active",
-      "minCartValue": 0,
-      "applicableType": "All",
-      "applicableValue": "",
-      "used": 84
     }
   ],
   "leads": [
+    {
+      "id": "CW-1792561186156",
+      "waMessageId": "cw-937007717",
+      "name": "+918069087895",
+      "phone": "918069087895",
+      "source": "Chatwoot Live Chat",
+      "message": "This message is unavailable.",
+      "botReply": "Namaste +918069087895! 🙏\n\nThank you for contacting Pure Ayur Herbs.\n\nTo help you quickly, please choose from below:\n1️⃣ Reply *1* to **Track an existing Order**\n2️⃣ Reply *2* to **Cancel an Order** (Instant 1-Click Cancel)\n3️⃣ Reply *3* for **Remedy Recommendations** (Virja, Madhunashi, Fat Burner, Perfect 36)\n4️⃣ Reply *4* for **Dosage & Usage Instructions**\n5️⃣ Reply *5* for **Full Product Catalog & Prices**\n6️⃣ Reply *6* or *Support* to **Talk with our Ayurvedic Doctor**\n\nYou can also browse our 100% AYUSH Certified store:\n🌐 https://www.purreayurherbs.com",
+      "intent": "FALLBACK",
+      "status": "AI Resolved",
+      "date": "21/10/2026, 11:09:46 am"
+    },
     {
       "id": "CW-1792046665959",
       "waMessageId": "cw-923347246",
@@ -626,7 +614,7 @@
     "prepaidDiscount": 5,
     "taxRate": 18,
     "shipping": {
-      "freeThreshold": 990,
+      "freeThreshold": 899,
       "baseRate": 49,
       "partners": []
     },
@@ -705,22 +693,6 @@
       "date": "19 Sept 2026",
       "status": "Approved",
       "createdAt": "2026-09-19T19:00:08.209Z"
-    },
-    {
-      "id": "REV-101",
-      "product": "Dia Free Juice - Ayurvedic Sugar Management (1L)",
-      "customer": "Sanjay V.",
-      "rating": 5,
-      "comment": "Fasting sugar levels dropped cleanly. Excellent taste.",
-      "status": "Approved"
-    },
-    {
-      "id": "REV-102",
-      "product": "Pure Himalayan Shilajit Gold Resin (20g)",
-      "customer": "Arjun K.",
-      "rating": 5,
-      "comment": "Best resin quality. Feeling strong energy all day.",
-      "status": "Approved"
     }
   ],
   "blogs": [
@@ -976,6 +948,7 @@
     "heroSlides": [
       {
         "fullWidthBanner": true,
+        "mobileImage": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1080,h_1080,b_auto,f_auto,q_auto/v1792563924/pure_ayur_herbs/slides/dor9xmdnrqoynda6lvbr.webp",
         "id": 1,
         "title": "100% Ayurvedic Virja Powder & Gold Majun",
         "subtitle": "AUTHENTIC AYURVEDA FOR PEAK MEN'S STAMINA & ENERGY",
@@ -983,11 +956,12 @@
         "ctaText": "SHOP VIRJA REMEDIES",
         "href": "/products/virja-powder",
         "badge": "100% Pure Sourced",
-        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792487064/pure_ayur_herbs/slides/aqgmg2vfnjsabicyibzz.webp",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1920,h_600,b_auto,f_auto,q_auto/v1792561900/pure_ayur_herbs/slides/qgrb7sohf13d48aqswqk.webp",
         "bgColor": "from-[#1d3b24] via-[#244f31] to-[#0f2416]"
       },
       {
         "fullWidthBanner": true,
+        "mobileImage": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1080,h_1080,b_auto,f_auto,q_auto/v1792566926/pure_ayur_herbs/slides/mzewm71qnbu5ygnb5czg.webp",
         "id": 2,
         "title": "",
         "subtitle": "",
@@ -995,11 +969,12 @@
         "ctaText": "EXPLORE MADHUNASHI",
         "href": "/products/madhunashi-powder",
         "badge": "GMP Certified",
-        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792485827/pure_ayur_herbs/slides/rvu9pujovtefprtnyafv.webp",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1920,h_600,b_auto,f_auto,q_auto/v1792566780/pure_ayur_herbs/slides/pgv8tmdnmwlmtwu90hi6.webp",
         "bgColor": "from-[#2d6b3f] via-[#1d4629] to-[#122c1b]"
       },
       {
         "fullWidthBanner": true,
+        "mobileImage": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1080,h_1080,b_auto,f_auto,q_auto/v1792567457/pure_ayur_herbs/slides/wo2luan0twmum9ej2ns2.webp",
         "id": 3,
         "title": "",
         "subtitle": "",
@@ -1007,11 +982,12 @@
         "ctaText": "UNLOCK FAT BURNER",
         "href": "/products/fat-burner",
         "badge": "",
-        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792486276/pure_ayur_herbs/slides/ralznvft8a2cnlwry0uo.webp",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1920,h_600,b_auto,f_auto,q_auto/v1792567374/pure_ayur_herbs/slides/cg7mgiotjfmu5ulyyrqu.webp",
         "bgColor": "from-[#3e2c1e] via-[#63432b] to-[#2b1d13]"
       },
       {
         "fullWidthBanner": true,
+        "mobileImage": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1080,h_1080,b_auto,f_auto,q_auto/v1792568339/pure_ayur_herbs/slides/wjxciqhokyvkafdnukxo.webp",
         "id": 4,
         "title": "Helps maange suger level",
         "subtitle": "",
@@ -1019,7 +995,7 @@
         "ctaText": "SHOP NOW",
         "href": "#shop",
         "badge": "Combo offer",
-        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792487611/pure_ayur_herbs/slides/pzfmvns62jtxpvwfsito.webp",
+        "image": "https://res.cloudinary.com/dwadcfj3b/image/upload/c_pad,w_1920,h_600,b_auto,f_auto,q_auto/v1792568335/pure_ayur_herbs/slides/vsxemtbahscxymtx6bnt.webp",
         "bgColor": "#701a75"
       }
     ],
@@ -1156,7 +1132,7 @@
       "ctaButtonText": "Shop All Remedies",
       "ctaButtonLink": "/#products",
       "guaranteeSubtitle": "Lab Tested & Certified Safe",
-      "visible": true
+      "visible": false
     },
     "sectionsVisibility": {
       "announcement": false,
@@ -1166,9 +1142,9 @@
       "productsCatalog": true,
       "marketingBanners": true,
       "consultationBanner": false,
-      "aboutSection": true,
+      "aboutSection": false,
       "trustSection": true,
-      "healthQuiz": true,
+      "healthQuiz": false,
       "testimonials": true,
       "footer": true
     }

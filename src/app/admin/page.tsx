@@ -70,6 +70,7 @@ import {
 } from "lucide-react";
 import { formatSeoTitle, formatSeoDescription, SITE_URL } from "@/lib/seo-schema";
 import { defaultFaqs } from "@/lib/default-faqs";
+import ImageDropzone from "@/components/ImageDropzone";
 
 // High-efficiency WebP exporter: reduces image byte sizes by 75-85% while retaining crisp clarity
 const exportCanvasAsWebP = (canvas: HTMLCanvasElement, quality = 0.78): string => {
@@ -82,19 +83,51 @@ const exportCanvasAsWebP = (canvas: HTMLCanvasElement, quality = 0.78): string =
   return canvas.toDataURL("image/jpeg", quality);
 };
 
-// Direct Cloudinary upload helper: uploads image to Cloudinary CDN and returns optimized URL
-const uploadImageToCloud = async (fileOrDataUrl: File | string, folder = "pure_ayur_herbs"): Promise<string> => {
+// Helper to transform any Cloudinary URL to precise dimensions using AI smart gravity (g_auto)
+const getCloudinaryCropUrl = (url: string, preset: "desktop" | "mobile" | "product"): string => {
+  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) return url;
+  const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(?:[^/]+\/)?(v\d+\/.+)$/);
+  if (!match) {
+    const parts = url.split("/image/upload/");
+    if (parts.length === 2) {
+      let rest = parts[1];
+      const vIndex = rest.indexOf("/v");
+      if (vIndex !== -1 && !rest.startsWith("v")) {
+        rest = rest.slice(vIndex + 1);
+      }
+      let trans = "f_auto,q_auto";
+      if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
+      else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+      else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
+      return `${parts[0]}/image/upload/${trans}/${rest}`;
+    }
+    return url;
+  }
+  let trans = "f_auto,q_auto";
+  if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
+  else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+  else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
+  return `${match[1]}${trans}/${match[2]}`;
+};
+
+// Advanced Cloudinary upload with AI Smart-Crop (Option 2)
+const uploadImageWithAiCrop = async (
+  fileOrDataUrl: File | string,
+  folder = "pure_ayur_herbs",
+  cropPreset = ""
+): Promise<{ url: string; desktopUrl: string; mobileUrl: string; rawUrl: string }> => {
   try {
     let body: any;
     let headers: Record<string, string> = {};
 
     if (typeof fileOrDataUrl === "string") {
-      body = JSON.stringify({ file: fileOrDataUrl, folder });
+      body = JSON.stringify({ file: fileOrDataUrl, folder, cropPreset });
       headers["Content-Type"] = "application/json";
     } else {
       const formData = new FormData();
       formData.append("file", fileOrDataUrl);
       formData.append("folder", folder);
+      if (cropPreset) formData.append("cropPreset", cropPreset);
       body = formData;
     }
 
@@ -106,12 +139,27 @@ const uploadImageToCloud = async (fileOrDataUrl: File | string, folder = "pure_a
 
     if (res.ok) {
       const data = await res.json();
-      if (data.url) return data.url;
+      return {
+        url: data.url || "",
+        desktopUrl: data.desktopUrl || data.url || "",
+        mobileUrl: data.mobileUrl || "",
+        rawUrl: data.rawUrl || data.url || "",
+      };
     }
   } catch (err) {
     console.warn("Cloudinary upload failed, using fallback:", err);
   }
-  return "";
+  return { url: "", desktopUrl: "", mobileUrl: "", rawUrl: "" };
+};
+
+// Direct Cloudinary upload helper: uploads image to Cloudinary CDN and returns optimized URL
+const uploadImageToCloud = async (
+  fileOrDataUrl: File | string,
+  folder = "pure_ayur_herbs",
+  cropPreset = ""
+): Promise<string> => {
+  const result = await uploadImageWithAiCrop(fileOrDataUrl, folder, cropPreset);
+  return result.url;
 };
 
 function ProductVariantsEditor({
@@ -1402,6 +1450,10 @@ export default function AdminDashboard() {
 
   // CMS slide states
   const [editingSlide, setEditingSlide] = useState<any>(null);
+  const [slideDesktopUploading, setSlideDesktopUploading] = useState(false);
+  const [slideMobileUploading, setSlideMobileUploading] = useState(false);
+  const [productImageUploading, setProductImageUploading] = useState(false);
+  const [editProductImageUploading, setEditProductImageUploading] = useState(false);
   const [bgColorMode, setBgColorMode] = useState<"solid" | "presets" | "customGrad">("solid");
   const [gradStartColor, setGradStartColor] = useState<string>("#1d3b24");
   const [gradEndColor, setGradEndColor] = useState<string>("#0f2416");
@@ -1414,6 +1466,7 @@ export default function AdminDashboard() {
     href: "",
     badge: "",
     image: "",
+    mobileImage: "",
     bgColor: "#1d3b24",
     fullWidthBanner: false,
   });
@@ -1938,88 +1991,76 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const handleProductImageDrop = async (file: File) => {
+    setProductImageUploading(true);
+    try {
+      const compressed = await compressImageFile(file, 1200, 1200, 0.85);
+      setNewProduct((prev) => ({ ...prev, image: compressed }));
+      const cloudUrl = await uploadImageToCloud(compressed, "pure_ayur_herbs/products", "product");
+      if (cloudUrl) setNewProduct((prev) => ({ ...prev, image: cloudUrl }));
+    } catch {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = document.createElement("img");
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 800;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, width, height);
-          const compressed = exportCanvasAsWebP(canvas, 0.78);
-          setNewProduct((prev) => ({ ...prev, image: compressed }));
-          void uploadImageToCloud(compressed, "pure_ayur_herbs/products").then((cloudUrl) => {
-            if (cloudUrl) setNewProduct((prev) => ({ ...prev, image: cloudUrl }));
+      reader.onloadend = async () => {
+        const raw = reader.result as string;
+        setNewProduct((prev) => ({ ...prev, image: raw }));
+        const cloudUrl = await uploadImageToCloud(raw, "pure_ayur_herbs/products", "product");
+        if (cloudUrl) setNewProduct((prev) => ({ ...prev, image: cloudUrl }));
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setProductImageUploading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await handleProductImageDrop(file);
+  };
+
+  const processAdditionalProductImage = async (file: File) => {
+    try {
+      const compressed = await compressImageFile(file, 1200, 1200, 0.85);
+      const currentIdx = (newProduct.images || []).length;
+      setNewProduct((prev: any) => ({
+        ...prev,
+        images: [...(prev.images || []), compressed]
+      }));
+      showToast("Uploading gallery image to Cloudinary CDN...");
+      const cloudUrl = await uploadImageToCloud(compressed, "pure_ayur_herbs/products", "product");
+      if (cloudUrl) {
+        setNewProduct((prev: any) => {
+          const next = [...(prev.images || [])];
+          next[currentIdx] = cloudUrl;
+          return { ...prev, images: next };
+        });
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const raw = reader.result as string;
+        const currentIdx = (newProduct.images || []).length;
+        setNewProduct((prev: any) => ({
+          ...prev,
+          images: [...(prev.images || []), raw]
+        }));
+        const cloudUrl = await uploadImageToCloud(raw, "pure_ayur_herbs/products", "product");
+        if (cloudUrl) {
+          setNewProduct((prev: any) => {
+            const next = [...(prev.images || [])];
+            next[currentIdx] = cloudUrl;
+            return { ...prev, images: next };
           });
-        };
-        img.src = reader.result as string;
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleAddProductAdditionalImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddProductAdditionalImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    const target = e.target;
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = document.createElement("img");
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 800;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, width, height);
-          const compressed = exportCanvasAsWebP(canvas, 0.78);
-          setNewProduct((prev: any) => ({
-            ...prev,
-            images: [...(prev.images || []), compressed]
-          }));
-          const currentImgIndex = (newProduct.images || []).length;
-          target.value = "";
-          showToast("Image added! Uploading to Cloudinary CDN...");
-          void uploadImageToCloud(compressed, "pure_ayur_herbs/products").then((cloudUrl) => {
-            if (cloudUrl) {
-              setNewProduct((prev: any) => {
-                const nextImgs = [...(prev.images || [])];
-                nextImgs[currentImgIndex] = cloudUrl;
-                return { ...prev, images: nextImgs };
-              });
-            }
-          });
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+      await processAdditionalProductImage(file);
+      e.target.value = "";
     }
   };
 
@@ -2125,88 +2166,76 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const handleEditProductImageDrop = async (file: File) => {
+    setEditProductImageUploading(true);
+    try {
+      const compressed = await compressImageFile(file, 1200, 1200, 0.85);
+      setEditingProduct((prev: any) => ({ ...prev, image: compressed }));
+      const cloudUrl = await uploadImageToCloud(compressed, "pure_ayur_herbs/products", "product");
+      if (cloudUrl) setEditingProduct((prev: any) => ({ ...prev, image: cloudUrl }));
+    } catch {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = document.createElement("img");
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 800;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, width, height);
-          const compressed = exportCanvasAsWebP(canvas, 0.78);
-          setEditingProduct((prev: any) => ({ ...prev, image: compressed }));
-          void uploadImageToCloud(compressed, "pure_ayur_herbs/products").then((cloudUrl) => {
-            if (cloudUrl) setEditingProduct((prev: any) => ({ ...prev, image: cloudUrl }));
+      reader.onloadend = async () => {
+        const raw = reader.result as string;
+        setEditingProduct((prev: any) => ({ ...prev, image: raw }));
+        const cloudUrl = await uploadImageToCloud(raw, "pure_ayur_herbs/products", "product");
+        if (cloudUrl) setEditingProduct((prev: any) => ({ ...prev, image: cloudUrl }));
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setEditProductImageUploading(false);
+    }
+  };
+
+  const processEditAdditionalProductImage = async (file: File) => {
+    try {
+      const compressed = await compressImageFile(file, 1200, 1200, 0.85);
+      const currentIdx = (editingProduct?.images || []).length;
+      setEditingProduct((prev: any) => ({
+        ...prev,
+        images: [...(prev.images || []), compressed]
+      }));
+      showToast("Uploading gallery image to Cloudinary CDN...");
+      const cloudUrl = await uploadImageToCloud(compressed, "pure_ayur_herbs/products", "product");
+      if (cloudUrl) {
+        setEditingProduct((prev: any) => {
+          const next = [...(prev.images || [])];
+          next[currentIdx] = cloudUrl;
+          return { ...prev, images: next };
+        });
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const raw = reader.result as string;
+        const currentIdx = (editingProduct?.images || []).length;
+        setEditingProduct((prev: any) => ({
+          ...prev,
+          images: [...(prev.images || []), raw]
+        }));
+        const cloudUrl = await uploadImageToCloud(raw, "pure_ayur_herbs/products", "product");
+        if (cloudUrl) {
+          setEditingProduct((prev: any) => {
+            const next = [...(prev.images || [])];
+            next[currentIdx] = cloudUrl;
+            return { ...prev, images: next };
           });
-        };
-        img.src = reader.result as string;
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleEditProductAdditionalImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    const target = e.target;
+    if (file) await handleEditProductImageDrop(file);
+  };
+
+  const handleEditProductAdditionalImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = document.createElement("img");
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 800;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, width, height);
-          const compressed = exportCanvasAsWebP(canvas, 0.78);
-          setEditingProduct((prev: any) => ({
-            ...prev,
-            images: [...(prev.images || []), compressed]
-          }));
-          const currentImgIndex = (editingProduct.images || []).length;
-          target.value = "";
-          showToast("Image added! Uploading to Cloudinary CDN...");
-          void uploadImageToCloud(compressed, "pure_ayur_herbs/products").then((cloudUrl) => {
-            if (cloudUrl) {
-              setEditingProduct((prev: any) => {
-                const nextImgs = [...(prev.images || [])];
-                nextImgs[currentImgIndex] = cloudUrl;
-                return { ...prev, images: nextImgs };
-              });
-            }
-          });
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+      await processEditAdditionalProductImage(file);
+      e.target.value = "";
     }
   };
 
@@ -2373,27 +2402,72 @@ export default function AdminDashboard() {
     });
   };
 
+  const handleSlideDesktopDrop = async (file: File) => {
+    setSlideDesktopUploading(true);
+    try {
+      const compressed = await compressImageFile(file, 2400, 2400, 0.88);
+      setNewSlide((prev) => ({ ...prev, image: compressed }));
+      const res = await uploadImageWithAiCrop(compressed, "pure_ayur_herbs/slides", "hero_desktop");
+      if (res.url) {
+        setNewSlide((prev) => ({
+          ...prev,
+          image: res.desktopUrl || res.url,
+          mobileImage: prev.mobileImage ? prev.mobileImage : (res.mobileUrl || "")
+        }));
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const raw = reader.result as string;
+        setNewSlide((prev) => ({ ...prev, image: raw }));
+        const res = await uploadImageWithAiCrop(raw, "pure_ayur_herbs/slides", "hero_desktop");
+        if (res.url) {
+          setNewSlide((prev) => ({
+            ...prev,
+            image: res.desktopUrl || res.url,
+            mobileImage: prev.mobileImage ? prev.mobileImage : (res.mobileUrl || "")
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setSlideDesktopUploading(false);
+    }
+  };
+
+  const handleSlideMobileDrop = async (file: File) => {
+    setSlideMobileUploading(true);
+    try {
+      const compressed = await compressImageFile(file, 2400, 2400, 0.88);
+      setNewSlide((prev) => ({ ...prev, mobileImage: compressed }));
+      const res = await uploadImageWithAiCrop(compressed, "pure_ayur_herbs/slides", "hero_mobile");
+      if (res.url) {
+        setNewSlide((prev) => ({ ...prev, mobileImage: res.mobileUrl || res.url }));
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const raw = reader.result as string;
+        setNewSlide((prev) => ({ ...prev, mobileImage: raw }));
+        const res = await uploadImageWithAiCrop(raw, "pure_ayur_herbs/slides", "hero_mobile");
+        if (res.url) {
+          setNewSlide((prev) => ({ ...prev, mobileImage: res.mobileUrl || res.url }));
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setSlideMobileUploading(false);
+    }
+  };
+
   const handleSlideFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      try {
-        const compressed = await compressImageFile(file, 1600, 900, 0.82);
-        setNewSlide((prev) => ({ ...prev, image: compressed }));
-        void uploadImageToCloud(compressed, "pure_ayur_herbs/slides").then((cloudUrl) => {
-          if (cloudUrl) setNewSlide((prev) => ({ ...prev, image: cloudUrl }));
-        });
-      } catch {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const raw = reader.result as string;
-          setNewSlide((prev) => ({ ...prev, image: raw }));
-          void uploadImageToCloud(raw, "pure_ayur_herbs/slides").then((cloudUrl) => {
-            if (cloudUrl) setNewSlide((prev) => ({ ...prev, image: cloudUrl }));
-          });
-        };
-        reader.readAsDataURL(file);
-      }
-    }
+    if (file) await handleSlideDesktopDrop(file);
+  };
+
+  const handleSlideMobileFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await handleSlideMobileDrop(file);
   };
 
   const handleBlogFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3857,6 +3931,7 @@ export default function AdminDashboard() {
       href: "",
       badge: "",
       image: "",
+      mobileImage: "",
       bgColor: "from-[#1d3b24] via-[#244f31] to-[#0f2416]",
       fullWidthBanner: false
     });
@@ -3880,17 +3955,51 @@ export default function AdminDashboard() {
       try {
         slidesToSave = await Promise.all(
           updatedSlides.map(async (s: any) => {
-            if (s.image && typeof s.image === "string" && s.image.startsWith("data:image/") && s.image.length > 180000) {
-              const compressed = await compressBase64String(s.image, 1600, 900, 0.82);
-              return { ...s, image: compressed };
+            let img = s.image;
+            let mImg = s.mobileImage;
+            if (img && typeof img === "string" && img.startsWith("data:image/")) {
+              try {
+                const res = await uploadImageWithAiCrop(img, "pure_ayur_herbs/slides", "hero_desktop");
+                if (res.url) {
+                  img = res.desktopUrl || res.url;
+                  if (!mImg && res.mobileUrl) mImg = res.mobileUrl;
+                }
+              } catch {}
+              if (img.startsWith("data:image/") && img.length > 180000) {
+                img = await compressBase64String(img, 1920, 600, 0.85);
+              }
             }
-            return s;
+            if (mImg && typeof mImg === "string" && mImg.startsWith("data:image/")) {
+              try {
+                const res = await uploadImageWithAiCrop(mImg, "pure_ayur_herbs/slides", "hero_mobile");
+                if (res.url) mImg = res.mobileUrl || res.url;
+              } catch {}
+              if (mImg.startsWith("data:image/") && mImg.length > 180000) {
+                mImg = await compressBase64String(mImg, 1080, 1080, 0.85);
+              }
+            }
+            if (img && typeof img === "string" && img.includes("res.cloudinary.com") && !img.includes("c_pad,w_1920,h_600")) {
+              img = getCloudinaryCropUrl(img, "desktop");
+            }
+            if (mImg && typeof mImg === "string" && mImg.includes("res.cloudinary.com") && !mImg.includes("c_pad,w_1080,h_1080")) {
+              mImg = getCloudinaryCropUrl(mImg, "mobile");
+            }
+            return { ...s, image: img, mobileImage: mImg };
           })
         );
       } catch {}
 
       const finalContent = { ...content, heroSlides: slidesToSave };
       await saveKey("content", finalContent);
+      setDbData((prev: any) => ({ ...prev, content: finalContent }));
+      if (typeof window !== "undefined") {
+        try {
+          const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
+          cached.content = finalContent;
+          localStorage.setItem("pyur_storefront_cache", JSON.stringify(cached));
+          window.dispatchEvent(new CustomEvent("pyur_storefront_updated", { detail: { key: "content", value: finalContent } }));
+        } catch {}
+      }
     })();
   };
 
@@ -7782,93 +7891,107 @@ export default function AdminDashboard() {
                           )}
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <label className="block text-xs font-bold font-semibold">Change Image (File Upload)</label>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleEditFileChange}
-                              className="mt-1 w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#eef5df] file:text-[#244f31] hover:file:bg-[#dce9c4] cursor-pointer"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold">Or Image URL</label>
-                            <input
-                              type="text"
-                              placeholder="https://example.com/image.jpg"
-                              value={editingProduct.image || ""}
-                              onChange={(e) => setEditingProduct({ ...editingProduct, image: e.target.value })}
-                              className="mt-1 w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31]"
-                            />
-                          </div>
-                        </div>
-
-                        {editingProduct.image && (
-                          <div className="mt-2">
-                            <span className="block text-xs font-bold mb-1">Image Preview (Main Thumbnail):</span>
-                            <img src={editingProduct.image} alt="Preview" className="h-20 w-20 rounded-lg object-cover border border-[#ddddd9]" />
-                          </div>
-                        )}
+                        {/* Main Product Showcase Photo with Drag & Drop (Edit Mode) */}
+                        <ImageDropzone
+                          label="Main Product Showcase Photo *"
+                          badge="1000 × 1000 px (AI Square 1:1)"
+                          icon="🌿"
+                          currentValue={editingProduct.image || ""}
+                          onFileSelect={handleEditProductImageDrop}
+                          onUrlChange={(val) => setEditingProduct((prev: any) => ({ ...prev, image: val }))}
+                          onClear={() => setEditingProduct((prev: any) => ({ ...prev, image: "" }))}
+                          isUploading={editProductImageUploading}
+                          previewAspectRatio="square"
+                          hint={
+                            <span>
+                              🌿 <strong>Product Showcase:</strong> Drag & drop your bottle or remedy image here. Auto-centered with clean white padding.
+                            </span>
+                          }
+                        />
 
                         {/* Additional Product Images Gallery Uploader (Edit Mode) */}
                         <div className="border border-[#ddddd9] p-4 rounded-xl bg-[#f8faf1]/50 space-y-3">
-                          <div>
-                            <span className="block text-xs font-bold text-[#17231b]">Additional Product Images (Carousel Gallery)</span>
-                            <span className="text-[10px] text-gray-500">Upload auxiliary images for the product detail page.</span>
-                          </div>
-                          <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
                             <div>
-                              <label className="block text-[11px] font-bold text-gray-600 mb-1">Add Image File</label>
+                              <span className="block text-xs font-bold text-[#17231b]">Additional Product Images (Carousel Gallery)</span>
+                              <span className="text-[10px] text-gray-500">Upload auxiliary images for the product detail page.</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded-full border border-[#80a03c]">
+                              {(editingProduct.images || []).length} / 8 Images
+                            </span>
+                          </div>
+
+                          {/* Drag & drop zone for gallery images in edit mode */}
+                          <div
+                            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                            onDrop={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const file = e.dataTransfer.files?.[0];
+                              if (file && file.type.startsWith("image/")) {
+                                await processEditAdditionalProductImage(file);
+                              }
+                            }}
+                            className="rounded-xl border-2 border-dashed border-[#ddddd9] bg-white p-3 hover:border-[#244f31] hover:bg-emerald-50/20 transition-all flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div className="p-2 bg-emerald-50 text-[#244f31] rounded-lg">
+                                <Upload className="size-4" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-[#17231b]">Drag & drop gallery photo here</div>
+                                <span className="text-[10px] text-gray-400">or browse computer</span>
+                              </div>
+                            </div>
+                            <label className="inline-flex items-center gap-1 bg-[#244f31] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#1c3e26] cursor-pointer transition active:scale-95 shadow-2xs">
+                              <Plus className="size-3" /> Browse File
                               <input
                                 type="file"
                                 accept="image/*"
                                 onChange={handleEditProductAdditionalImage}
-                                className="w-full text-[11px] text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-[#ddddd9] p-1.5 rounded-xl bg-white"
+                                className="hidden"
                               />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-gray-600 mb-1">Or Paste Image URL</label>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="https://example.com/other-image.jpg"
-                                  value={editProductImageUrl}
-                                  onChange={(e) => setEditProductImageUrl(e.target.value)}
-                                  className="flex-1 rounded-xl border border-[#ddddd9] px-2.5 py-1 text-xs outline-none focus:border-[#244f31] bg-white"
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      if (editProductImageUrl.trim()) {
-                                        setEditingProduct((prev: any) => ({
-                                          ...prev,
-                                          images: [...(prev.images || []), editProductImageUrl.trim()]
-                                        }));
-                                        setEditProductImageUrl("");
-                                      }
-                                    }
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (editProductImageUrl.trim()) {
-                                      setEditingProduct((prev: any) => ({
-                                        ...prev,
-                                        images: [...(prev.images || []), editProductImageUrl.trim()]
-                                      }));
-                                      setEditProductImageUrl("");
-                                    }
-                                  }}
-                                  className="bg-[#244f31] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#1c3e26]"
-                                >
-                                  Add
-                                </button>
-                              </div>
-                            </div>
+                            </label>
                           </div>
 
-                          {editingProduct.images && editingProduct.images.length > 0 && (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Or paste image URL: https://example.com/other-image.jpg"
+                              value={editProductImageUrl}
+                              onChange={(e) => setEditProductImageUrl(e.target.value)}
+                              className="flex-1 rounded-xl border border-[#ddddd9] px-2.5 py-1.5 text-xs outline-none focus:border-[#244f31] bg-white font-mono text-[11px]"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  if (editProductImageUrl.trim()) {
+                                    setEditingProduct((prev: any) => ({
+                                      ...prev,
+                                      images: [...(prev.images || []), editProductImageUrl.trim()]
+                                    }));
+                                    setEditProductImageUrl("");
+                                  }
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (editProductImageUrl.trim()) {
+                                  setEditingProduct((prev: any) => ({
+                                    ...prev,
+                                    images: [...(prev.images || []), editProductImageUrl.trim()]
+                                  }));
+                                  setEditProductImageUrl("");
+                                }
+                              }}
+                              className="bg-[#244f31] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-[#1c3e26] transition active:scale-95 shadow-2xs"
+                            >
+                              Add URL
+                            </button>
+                          </div>
+
+                        {editingProduct.images && editingProduct.images.length > 0 && (
                             <div className="space-y-2">
                               <span className="block text-[11px] font-bold text-gray-600">Gallery Previews ({editingProduct.images.length}):</span>
                               <div className="flex flex-wrap gap-3 pt-1.5">
@@ -8352,90 +8475,104 @@ export default function AdminDashboard() {
                       )}
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="block text-xs font-bold font-semibold">Product Image (File Upload)</label>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="mt-1 w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#eef5df] file:text-[#244f31] hover:file:bg-[#dce9c4] cursor-pointer"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold">Or Image URL</label>
-                        <input
-                          type="text"
-                          placeholder="https://example.com/image.jpg"
-                          value={newProduct.image}
-                          onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
-                          className="mt-1 w-full rounded-lg border border-[#ddddd9] p-2 text-xs outline-none focus:border-[#244f31]"
-                        />
-                      </div>
-                    </div>
-
-                    {newProduct.image && (
-                      <div className="mt-2">
-                        <span className="block text-xs font-bold mb-1">Image Preview (Main Thumbnail):</span>
-                        <img src={newProduct.image} alt="Preview" className="h-20 w-20 rounded-lg object-cover border border-[#ddddd9]" />
-                      </div>
-                    )}
+                    {/* Main Product Showcase Photo with Drag & Drop */}
+                    <ImageDropzone
+                      label="Main Product Showcase Photo *"
+                      badge="1000 × 1000 px (AI Square 1:1)"
+                      icon="🌿"
+                      currentValue={newProduct.image}
+                      onFileSelect={handleProductImageDrop}
+                      onUrlChange={(val) => setNewProduct((prev) => ({ ...prev, image: val }))}
+                      onClear={() => setNewProduct((prev) => ({ ...prev, image: "" }))}
+                      isUploading={productImageUploading}
+                      previewAspectRatio="square"
+                      hint={
+                        <span>
+                          🌿 <strong>Product Showcase:</strong> Drag & drop your bottle or remedy image here. Auto-centered with clean white padding.
+                        </span>
+                      }
+                    />
 
                     {/* Additional Product Images Gallery Uploader */}
                     <div className="border border-[#ddddd9] p-4 rounded-xl bg-[#f8faf1]/50 space-y-3">
-                      <div>
-                        <span className="block text-xs font-bold text-[#17231b]">Additional Product Images (Carousel Gallery)</span>
-                        <span className="text-[10px] text-gray-500">Upload auxiliary images for the product detail page.</span>
-                      </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <div>
-                          <label className="block text-[11px] font-bold text-gray-600 mb-1">Add Image File</label>
+                          <span className="block text-xs font-bold text-[#17231b]">Additional Product Images (Carousel Gallery)</span>
+                          <span className="text-[10px] text-gray-500">Upload auxiliary images for the product detail page.</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#244f31] bg-[#eef5df] px-2 py-0.5 rounded-full border border-[#80a03c]">
+                          {(newProduct.images || []).length} / 8 Images
+                        </span>
+                      </div>
+
+                      {/* Drag & drop zone for gallery images */}
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const file = e.dataTransfer.files?.[0];
+                          if (file && file.type.startsWith("image/")) {
+                            await processAdditionalProductImage(file);
+                          }
+                        }}
+                        className="rounded-xl border-2 border-dashed border-[#ddddd9] bg-white p-3 hover:border-[#244f31] hover:bg-emerald-50/20 transition-all flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 bg-emerald-50 text-[#244f31] rounded-lg">
+                            <Upload className="size-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-[#17231b]">Drag & drop gallery photo here</div>
+                            <span className="text-[10px] text-gray-400">or browse computer</span>
+                          </div>
+                        </div>
+                        <label className="inline-flex items-center gap-1 bg-[#244f31] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#1c3e26] cursor-pointer transition active:scale-95 shadow-2xs">
+                          <Plus className="size-3" /> Browse File
                           <input
                             type="file"
                             accept="image/*"
                             onChange={handleAddProductAdditionalImage}
-                            className="w-full text-[11px] text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-[#ddddd9] p-1.5 rounded-xl bg-white"
+                            className="hidden"
                           />
-                        </div>
-                        <div>
-                          <label className="block text-[11px] font-bold text-gray-600 mb-1">Or Paste Image URL</label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              placeholder="https://example.com/other-image.jpg"
-                              value={newProductImageUrl}
-                              onChange={(e) => setNewProductImageUrl(e.target.value)}
-                              className="flex-1 rounded-xl border border-[#ddddd9] px-2.5 py-1 text-xs outline-none focus:border-[#244f31] bg-white"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  if (newProductImageUrl.trim()) {
-                                    setNewProduct((prev: any) => ({
-                                      ...prev,
-                                      images: [...(prev.images || []), newProductImageUrl.trim()]
-                                    }));
-                                    setNewProductImageUrl("");
-                                  }
-                                }
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (newProductImageUrl.trim()) {
-                                  setNewProduct((prev: any) => ({
-                                    ...prev,
-                                    images: [...(prev.images || []), newProductImageUrl.trim()]
-                                  }));
-                                  setNewProductImageUrl("");
-                                }
-                              }}
-                              className="bg-[#244f31] text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-[#1c3e26]"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
+                        </label>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Or paste image URL: https://example.com/gallery-photo.jpg"
+                          value={newProductImageUrl}
+                          onChange={(e) => setNewProductImageUrl(e.target.value)}
+                          className="flex-1 rounded-xl border border-[#ddddd9] px-2.5 py-1.5 text-xs outline-none focus:border-[#244f31] bg-white font-mono text-[11px]"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              if (newProductImageUrl.trim()) {
+                                setNewProduct((prev: any) => ({
+                                  ...prev,
+                                  images: [...(prev.images || []), newProductImageUrl.trim()]
+                                }));
+                                setNewProductImageUrl("");
+                              }
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newProductImageUrl.trim()) {
+                              setNewProduct((prev: any) => ({
+                                ...prev,
+                                images: [...(prev.images || []), newProductImageUrl.trim()]
+                              }));
+                              setNewProductImageUrl("");
+                            }
+                          }}
+                          className="bg-[#244f31] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-[#1c3e26] transition active:scale-95 shadow-2xs"
+                        >
+                          Add URL
+                        </button>
                       </div>
 
                       {newProduct.images && newProduct.images.length > 0 && (
@@ -11781,33 +11918,108 @@ export default function AdminDashboard() {
                             </div>
 
                             <div className="space-y-4">
-                              <div>
-                                <label className="block font-bold mb-1">Upload Banner Photo *</label>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleSlideFileChange}
-                                  className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-[#ddddd9] p-1.5 rounded-xl bg-white"
-                                />
-                                <div className="mt-2 flex gap-4 items-center">
-                                  <div className="flex-1">
-                                    <label className="block font-bold text-[10px] text-gray-600 mb-0.5">Or Paste Image URL</label>
-                                    <input
-                                      type="text"
-                                      value={newSlide.image}
-                                      onChange={(e) => setNewSlide({ ...newSlide, image: e.target.value })}
-                                      placeholder="https://example.com/image.jpg"
-                                      className="w-full rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white text-[11px]"
-                                    />
-                                  </div>
-                                  {newSlide.image && (
-                                    <div className="shrink-0">
-                                      <span className="block font-bold text-[10px] text-gray-600 mb-0.5">Preview:</span>
-                                      <img src={newSlide.image} alt="Preview" className="h-14 w-20 rounded-lg object-cover border border-[#ddddd9]" />
+                              {/* Cloudinary AI Auto-Adjust Banner Notification */}
+                              <div className="rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 border border-emerald-200 p-3 shadow-2xs">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xl">🤖</span>
+                                    <div>
+                                      <div className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                                        Cloudinary AI Auto-Adjust Active
+                                        <span className="rounded-full bg-emerald-600 text-white px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-xs">
+                                          Auto-Crop & Focus
+                                        </span>
+                                      </div>
+                                      <p className="text-[11px] text-emerald-800 leading-tight mt-0.5">
+                                        Upload <strong>any photo</strong> — AI automatically detects your product subject and resizes to <strong>1920 × 600</strong> for Desktop and generates <strong>1080 × 1080</strong> for Mobile automatically!
+                                      </p>
                                     </div>
-                                  )}
+                                  </div>
                                 </div>
                               </div>
+
+                              {/* 1. Desktop & Laptop Banner Photo (Drag & Drop) */}
+                              <ImageDropzone
+                                label="Desktop & Laptop Banner Photo *"
+                                badge="1920 × 600 px (AI Auto-Fit)"
+                                icon="🖥️"
+                                currentValue={newSlide.image}
+                                onFileSelect={handleSlideDesktopDrop}
+                                onUrlChange={(val) => setNewSlide((prev) => ({ ...prev, image: val }))}
+                                onClear={() => setNewSlide((prev) => ({ ...prev, image: "" }))}
+                                isUploading={slideDesktopUploading}
+                                previewAspectRatio="wide"
+                                hint={
+                                  <span>
+                                    📐 <strong>Recommended Desktop Size:</strong> <strong>1920 × 600 px</strong>. Drag & drop any image here — Cloudinary AI auto-fits it cleanly.
+                                  </span>
+                                }
+                                urlAction={
+                                  newSlide.image?.includes("res.cloudinary.com") && !newSlide.image?.includes("c_pad,w_1920,h_600") ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const aiUrl = getCloudinaryCropUrl(newSlide.image, "desktop");
+                                        setNewSlide((prev) => ({ ...prev, image: aiUrl }));
+                                        showToast("Applied Cloudinary 1920×600 AI Sizing!");
+                                      }}
+                                      className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                                    >
+                                      ✨ Apply 1920×600 AI Sizing
+                                    </button>
+                                  ) : null
+                                }
+                              />
+
+                              {/* 2. Mobile Smartphone Banner Photo (Drag & Drop) */}
+                              <ImageDropzone
+                                label="Mobile Smartphone Banner (Kapiva Style)"
+                                badge="1080 × 1080 px (Square 1:1)"
+                                icon="📱"
+                                accent="amber"
+                                currentValue={newSlide.mobileImage}
+                                onFileSelect={handleSlideMobileDrop}
+                                onUrlChange={(val) => setNewSlide((prev) => ({ ...prev, mobileImage: val }))}
+                                onClear={() => setNewSlide((prev) => ({ ...prev, mobileImage: "" }))}
+                                isUploading={slideMobileUploading}
+                                previewAspectRatio="square"
+                                hint={
+                                  <span>
+                                    📱 <strong>Recommended Mobile Size:</strong> <strong>1080 × 1080 px</strong> (Square). Displays full-screen on smartphones with bold, readable text.
+                                  </span>
+                                }
+                                actionButton={
+                                  newSlide.image?.includes("res.cloudinary.com") ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const mobUrl = getCloudinaryCropUrl(newSlide.image, "mobile");
+                                        setNewSlide((prev) => ({ ...prev, mobileImage: mobUrl }));
+                                        showToast("Generated 1080×1080 Mobile banner using Cloudinary AI!");
+                                      }}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-amber-400 bg-amber-200 px-2.5 py-1 text-[10px] font-black text-amber-950 hover:bg-amber-300 transition active:scale-95 cursor-pointer shadow-xs"
+                                    >
+                                      ✨ Auto-Generate from Desktop with AI
+                                    </button>
+                                  ) : null
+                                }
+                                urlAction={
+                                  newSlide.mobileImage?.includes("res.cloudinary.com") && !newSlide.mobileImage?.includes("c_pad,w_1080,h_1080") ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const aiMob = getCloudinaryCropUrl(newSlide.mobileImage, "mobile");
+                                        setNewSlide((prev) => ({ ...prev, mobileImage: aiMob }));
+                                        showToast("Applied Cloudinary 1080×1080 AI Sizing!");
+                                      }}
+                                      className="text-[10px] font-bold text-amber-800 hover:underline cursor-pointer"
+                                    >
+                                      ✨ Apply 1080×1080 AI Sizing
+                                    </button>
+                                  ) : null
+                                }
+                              />
+
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <label className="block font-bold mb-1">CTA Button Text {!newSlide.fullWidthBanner && "*"}</label>
@@ -12341,6 +12553,7 @@ export default function AdminDashboard() {
                                   href: "#shop",
                                   badge: "NEW",
                                   image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80",
+                                  mobileImage: "",
                                   bgColor: "#1d3b24",
                                   fullWidthBanner: false
                                 });
@@ -12374,24 +12587,49 @@ export default function AdminDashboard() {
                                 activeSlides.map((slide: any, idx: number) => (
                                   <tr key={slide.id} className="hover:bg-[#f8faf1]/20 transition">
                                     <td className="p-3">
-                                      {slide.image ? (
-                                        <img src={slide.image} alt={slide.title || "Slide"} className="h-10 w-20 rounded object-cover border border-[#ddddd9]" />
-                                      ) : (
-                                        <div className="h-10 w-20 rounded bg-emerald-50 border border-[#ddddd9] flex items-center justify-center text-[10px] text-[#244f31] font-bold">
-                                          No Image
+                                      <div className="flex items-center gap-2">
+                                        <div className="text-center shrink-0">
+                                          {slide.image ? (
+                                            <img src={slide.image} alt={slide.title || "Desktop"} className="h-9 w-16 rounded object-cover border border-[#ddddd9]" />
+                                          ) : (
+                                            <div className="h-9 w-16 rounded bg-emerald-50 border border-[#ddddd9] flex items-center justify-center text-[9px] text-[#244f31] font-bold">
+                                              No Img
+                                            </div>
+                                          )}
+                                          <span className="block text-[8px] font-bold text-gray-500 mt-0.5">Desktop</span>
                                         </div>
-                                      )}
+                                        {slide.mobileImage && (
+                                          <div className="text-center shrink-0">
+                                            <img src={slide.mobileImage} alt="Mobile" className="h-9 w-9 rounded object-cover border border-amber-300" />
+                                            <span className="block text-[8px] font-bold text-amber-700 mt-0.5">Mobile</span>
+                                          </div>
+                                        )}
+                                      </div>
                                     </td>
                                     <td className="p-3">
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 flex-wrap">
                                         <span
                                           className="w-4 h-4 rounded-full border border-black/10 shadow-xs shrink-0"
                                           style={getPreviewBgStyle(slide.bgColor || "#1d3b24")}
                                           title={`Background: ${slide.bgColor || "#1d3b24"}`}
                                         />
-                                        <div className="font-bold text-[#17231b]">{slide.title}</div>
+                                        <div className="font-bold text-[#17231b]">{slide.title || "Full Width Campaign Banner"}</div>
+                                        {slide.fullWidthBanner && (
+                                          <span className="bg-[#eef5df] text-[#244f31] text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-[#80a03c]">
+                                            FULL BANNER
+                                          </span>
+                                        )}
+                                        {slide.mobileImage ? (
+                                          <span className="bg-amber-100 text-amber-900 text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-amber-300">
+                                            📱 KAPIVA MOBILE
+                                          </span>
+                                        ) : (
+                                          <span className="bg-gray-100 text-gray-600 text-[9px] font-medium px-1.5 py-0.5 rounded">
+                                            📱 Auto-Fit
+                                          </span>
+                                        )}
                                       </div>
-                                      <div className="text-[10px] text-[#666666] line-clamp-1 ml-6">{slide.subtitle}</div>
+                                      <div className="text-[10px] text-[#666666] line-clamp-1 ml-6">{slide.subtitle || slide.offer || slide.href}</div>
                                     </td>
                                     <td className="p-3 text-center">
                                       <div className="flex items-center justify-center gap-1">
@@ -12460,7 +12698,7 @@ export default function AdminDashboard() {
                                             } else {
                                               setBgColorMode("solid");
                                             }
-                                            setNewSlide({ fullWidthBanner: false, ...slide, bgColor: slideBg });
+                                            setNewSlide({ fullWidthBanner: false, mobileImage: "", ...slide, bgColor: slideBg });
                                             setEditingSlide(slide);
                                           }}
                                           className="text-[#244f31] font-bold hover:underline"

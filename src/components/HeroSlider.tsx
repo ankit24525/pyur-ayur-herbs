@@ -166,16 +166,28 @@ export default function HeroSlider({ slides, marketingBanners }: { slides?: any[
               <a
                 href={slide.href || "#shop"}
                 tabIndex={currentSlide === idx ? 0 : -1}
-                className="block w-full hover:opacity-95 transition-opacity"
+                className="relative block w-full overflow-hidden hover:opacity-98 transition-opacity bg-[#17231b]"
               >
-                <img
-                  src={slide.image}
-                  alt={slide.title || "Storefront Campaign Banner"}
-                  onError={(e) => {
-                    e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
-                  }}
-                  className="w-full h-auto min-h-[180px] max-h-[240px] sm:max-h-[340px] md:max-h-[420px] lg:max-h-[500px] object-cover sm:object-contain bg-[#17231b]"
+                {/* Ambient Blurred Backdrop to smoothly fill wide desktop displays without harsh bars */}
+                <div
+                  className="absolute inset-0 hidden sm:block bg-cover bg-center blur-2xl opacity-40 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${slide.image})` }}
                 />
+
+                {/* Main Crisp Banner Graphic (Dual Desktop & Mobile with HTML5 picture) */}
+                <picture className="relative mx-auto flex items-center justify-center w-full">
+                  {slide.mobileImage && (
+                    <source media="(max-width: 639px)" srcSet={slide.mobileImage} />
+                  )}
+                  <img
+                    src={slide.image}
+                    alt={slide.title || "Storefront Campaign Banner"}
+                    onError={(e) => {
+                      e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
+                    }}
+                    className="w-full h-auto block object-cover sm:object-contain max-h-[380px] sm:max-h-[480px] md:max-h-[560px] lg:max-h-[600px] drop-shadow-sm"
+                  />
+                </picture>
               </a>
             ) : (
               /* KAPIVA-STYLE UNIFIED RESPONSIVE SLIDE (SAME SLIDE ARTWORK ON DESKTOP & MOBILE) */
@@ -227,14 +239,19 @@ export default function HeroSlider({ slides, marketingBanners }: { slides?: any[
                 {slide.image && (
                   <div className="relative flex items-center justify-end w-[40%] sm:w-[42%] md:w-[45%] lg:w-[48%] h-full max-h-[160px] sm:max-h-[280px] md:max-h-[380px] lg:max-h-[440px] shrink-0 pointer-events-none">
                     <div className="relative w-full h-full flex items-center justify-center">
-                      <img
-                        src={slide.image}
-                        alt={slide.title || "Product Showcase"}
-                        onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
-                        }}
-                        className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
-                      />
+                      <picture className="size-full flex items-center justify-center">
+                        {slide.mobileImage && (
+                          <source media="(max-width: 639px)" srcSet={slide.mobileImage} />
+                        )}
+                        <img
+                          src={slide.image}
+                          alt={slide.title || "Product Showcase"}
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
+                          }}
+                          className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
+                        />
+                      </picture>
                     </div>
                   </div>
                 )}

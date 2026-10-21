@@ -20,12 +20,39 @@ export async function GET(request: Request) {
         })
       : [];
 
-    // Safe image sanitizer to guarantee responses never transmit heavy Base64 strings over the public API
+    // Safe image sanitizer to guarantee responses have valid URLs and fall back cleanly
     const sanitizeImage = (url: any, fallback: string): string => {
-      if (typeof url !== "string" || !url || url.startsWith("data:image/") || url.length > 500) {
+      if (typeof url !== "string" || !url || url.trim() === "") {
         return fallback;
       }
       return url;
+    };
+
+    // Helper to transform any Cloudinary URL to precise dimensions using AI smart gravity (g_auto)
+    const applyCloudinaryAiCrop = (url: string, preset: "desktop" | "mobile" | "product"): string => {
+      if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) return url;
+      const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(?:[^/]+\/)?(v\d+\/.+)$/);
+      if (!match) {
+        const parts = url.split("/image/upload/");
+        if (parts.length === 2) {
+          let rest = parts[1];
+          const vIndex = rest.indexOf("/v");
+          if (vIndex !== -1 && !rest.startsWith("v")) {
+            rest = rest.slice(vIndex + 1);
+          }
+          let trans = "f_auto,q_auto";
+          if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
+          else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+          else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
+          return `${parts[0]}/image/upload/${trans}/${rest}`;
+        }
+        return url;
+      }
+      let trans = "f_auto,q_auto";
+      if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
+      else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+      else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
+      return `${match[1]}${trans}/${match[2]}`;
     };
 
     const defaultProductImageMap: Record<string, string> = {
@@ -40,10 +67,10 @@ export async function GET(request: Request) {
     const rawProducts = Array.isArray(db.products) && db.products.length > 0 ? db.products : products;
     const sanitizedProducts = rawProducts.map((p: any) => {
       const fallback = defaultProductImageMap[p.slug] || "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80";
-      const cleanImage = sanitizeImage(p.image, fallback);
+      const cleanImage = applyCloudinaryAiCrop(sanitizeImage(p.image, fallback), "product");
       const cleanImages = Array.isArray(p.images)
         ? p.images
-            .map((img: any) => sanitizeImage(img, ""))
+            .map((img: any) => applyCloudinaryAiCrop(sanitizeImage(img, ""), "product"))
             .filter((img: string) => img.length > 0)
         : [cleanImage];
       return {
@@ -57,13 +84,26 @@ export async function GET(request: Request) {
     const sanitizedContent = {
       ...rawContent,
       heroSlides: Array.isArray(rawContent.heroSlides)
-        ? rawContent.heroSlides.map((slide: any) => ({
-            ...slide,
-            image: sanitizeImage(
+        ? rawContent.heroSlides.map((slide: any) => {
+            const rawImg = sanitizeImage(
               slide.image,
               "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80"
-            ),
-          }))
+            );
+            const desktopImage = applyCloudinaryAiCrop(rawImg, "desktop");
+            let mobileImage = typeof slide.mobileImage === "string" && slide.mobileImage.trim()
+              ? sanitizeImage(slide.mobileImage, "")
+              : "";
+            if (mobileImage) {
+              mobileImage = applyCloudinaryAiCrop(mobileImage, "mobile");
+            } else if (desktopImage.includes("res.cloudinary.com")) {
+              mobileImage = applyCloudinaryAiCrop(desktopImage, "mobile");
+            }
+            return {
+              ...slide,
+              image: desktopImage,
+              mobileImage,
+            };
+          })
         : [],
       consultationBanner: {
         ...(rawContent.consultationBanner || {}),

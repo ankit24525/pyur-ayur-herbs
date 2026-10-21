@@ -10,6 +10,32 @@ function cleanMongoUri(raw: string): string {
   return cleaned;
 }
 
+export function applyCloudinaryAiCrop(url: string, preset: "desktop" | "mobile" | "product"): string {
+  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) return url;
+  const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(?:[^/]+\/)?(v\d+\/.+)$/);
+  if (!match) {
+    const parts = url.split("/image/upload/");
+    if (parts.length === 2) {
+      let rest = parts[1];
+      const vIndex = rest.indexOf("/v");
+      if (vIndex !== -1 && !rest.startsWith("v")) {
+        rest = rest.slice(vIndex + 1);
+      }
+      let trans = "f_auto,q_auto";
+      if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
+      else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+      else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
+      return `${parts[0]}/image/upload/${trans}/${rest}`;
+    }
+    return url;
+  }
+  let trans = "f_auto,q_auto";
+  if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
+  else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+  else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
+  return `${match[1]}${trans}/${match[2]}`;
+}
+
 const PRIMARY_URI = cleanMongoUri(process.env.MONGODB_URI || "");
 const VERIFIED_FALLBACK_URI = "mongodb+srv://ankitpandey9658_db_user:Ankit123@cluster0.wzuiyyn.mongodb.net/pure_ayur_herbs?retryWrites=true&w=majority&appName=Cluster0";
 const uri = PRIMARY_URI || VERIFIED_FALLBACK_URI;
@@ -279,9 +305,12 @@ function sanitizeDBData(data: any): DBData {
 
   data.products = data.products.map((p: any) => {
     const fallback = defaultProductImageMap[p.slug] || "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80";
-    const image = (typeof p.image === "string" && !p.image.startsWith("data:") && p.image.length < 500) ? p.image : fallback;
+    const rawImage = (typeof p.image === "string" && p.image.trim()) ? p.image : fallback;
+    const image = applyCloudinaryAiCrop(rawImage, "product");
     const images = Array.isArray(p.images)
-      ? p.images.filter((img: any) => typeof img === "string" && !img.startsWith("data:") && img.length < 500)
+      ? p.images
+          .filter((img: any) => typeof img === "string" && img.trim())
+          .map((img: string) => applyCloudinaryAiCrop(img, "product"))
       : [image];
     return {
       ...p,
@@ -386,12 +415,23 @@ function sanitizeDBData(data: any): DBData {
       };
     }
     if (!Array.isArray(data.content.heroSlides)) data.content.heroSlides = [];
-    data.content.heroSlides = data.content.heroSlides.map((slide: any) => ({
-      ...slide,
-      image: (typeof slide.image === "string" && !slide.image.startsWith("data:") && slide.image.length < 500)
+    data.content.heroSlides = data.content.heroSlides.map((slide: any) => {
+      let img = (typeof slide.image === "string" && slide.image.trim())
         ? slide.image
-        : "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80",
-    }));
+        : "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80";
+      img = applyCloudinaryAiCrop(img, "desktop");
+      let mImg = typeof slide.mobileImage === "string" && slide.mobileImage.trim() ? slide.mobileImage : "";
+      if (mImg) {
+        mImg = applyCloudinaryAiCrop(mImg, "mobile");
+      } else if (img.includes("res.cloudinary.com")) {
+        mImg = applyCloudinaryAiCrop(img, "mobile");
+      }
+      return {
+        ...slide,
+        image: img,
+        mobileImage: mImg,
+      };
+    });
 
     if (!data.content.consultationBanner || typeof data.content.consultationBanner !== "object") {
       data.content.consultationBanner = {};

@@ -45,9 +45,9 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
 
   // Cross-tab real-time sync & background refresh
   useEffect(() => {
-    // 1. Fetch fresh storefront data from MongoDB in background
+    // 1. Fetch storefront data from MongoDB in background
     if (typeof window !== "undefined") {
-      getStorefrontData(true)
+      getStorefrontData()
         .then((fresh) => {
           if (fresh?.content?.aboutUs) {
             setAboutData(fresh.content.aboutUs);

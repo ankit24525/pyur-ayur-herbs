@@ -112,7 +112,7 @@ export default function ProductsCatalogClient({
   }, [initialProducts]);
 
   useEffect(() => {
-    getStorefrontData(true)
+    getStorefrontData()
       .then((data) => {
         if (data && data.products && Array.isArray(data.products) && data.products.length > 0) {
           setCatalogProducts(data.products);

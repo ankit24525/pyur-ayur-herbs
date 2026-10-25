@@ -130,7 +130,7 @@ export default function BestSellersSection({
       return;
     }
 
-    getStorefrontData(true)
+    getStorefrontData()
       .then((data) => {
         if (data && Array.isArray(data.products) && data.products.length > 0) {
           const liveMapped: BestSellerItem[] = data.products.map((p: any) => {

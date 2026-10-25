@@ -118,7 +118,7 @@ export default function SiteFooter() {
       } catch {}
     }
 
-    getStorefrontData(true)
+    getStorefrontData()
       .then((data) => {
         if (data && data.settings) {
           setSettings((prev: any) => ({ ...prev, ...data.settings }));

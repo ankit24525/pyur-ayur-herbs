@@ -2,12 +2,11 @@ import { readDB } from "@/lib/db";
 import AboutUsClient from "@/components/AboutUsClient";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
+// Enable Incremental Static Regeneration (ISR): Cache at Edge CDN for 120 seconds
+export const revalidate = 120;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const db = await readDB(true);
+  const db = await readDB();
   const about = db.content?.aboutUs;
   return {
     title: about?.title ? `${about.title} | Pure Ayur Herbs` : "About Us | Pure Ayur Herbs",
@@ -18,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AboutUsPage() {
-  const db = await readDB(true);
+  const db = await readDB();
   const initialAboutData = db.content?.aboutUs || null;
 
   return <AboutUsClient initialAboutData={initialAboutData} />;

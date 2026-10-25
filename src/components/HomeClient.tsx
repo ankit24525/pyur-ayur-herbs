@@ -111,9 +111,9 @@ export default function HomeClient({
       } catch {}
     }
 
-    // 2. Fetch live data from backend with cache busting
-    const loadStorefrontData = () => {
-      getStorefrontData(true)
+    // 2. Fetch live data from backend (deduplicated with edge cache)
+    const loadStorefrontData = (force = false) => {
+      getStorefrontData(force)
         .then((data) => {
           if (data && data.products && Array.isArray(data.products) && data.products.length > 0) {
             setCatalog(data.products);

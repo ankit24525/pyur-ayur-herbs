@@ -143,6 +143,7 @@ export async function POST(request: Request) {
     if (action === "saveSettings" && data) {
       db.settings = { ...db.settings, ...data };
       const success = await writeDB(db);
+      invalidateDBCache();
       if (!success) {
         return NextResponse.json(
           { success: false, error: "Database write failed." },
@@ -151,6 +152,7 @@ export async function POST(request: Request) {
       }
       try {
         revalidatePath("/", "layout");
+        revalidatePath("/", "page");
       } catch {}
       return NextResponse.json(
         { success: true, settings: db.settings },
@@ -161,6 +163,7 @@ export async function POST(request: Request) {
     if (action === "saveSeo" && data) {
       db.seo = { ...db.seo, ...data };
       const success = await writeDB(db);
+      invalidateDBCache();
       if (!success) {
         return NextResponse.json(
           { success: false, error: "Database write failed." },
@@ -169,6 +172,7 @@ export async function POST(request: Request) {
       }
       try {
         revalidatePath("/", "layout");
+        revalidatePath("/", "page");
       } catch {}
       return NextResponse.json(
         { success: true, seo: db.seo },

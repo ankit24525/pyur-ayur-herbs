@@ -63,7 +63,7 @@ export default function FaqsPage() {
     }
 
     // 2. Fetch live data from storefront client
-    getStorefrontData(true)
+    getStorefrontData()
       .then((data) => {
         if (Array.isArray(data?.faqs) && data.faqs.length > 0) {
           const cleanServerFaqs = data.faqs.filter((f: any) => !isLegacyFaq(f));

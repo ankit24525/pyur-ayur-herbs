@@ -8,8 +8,8 @@ let cachedStorefrontPromise: Promise<any> | null = null;
 let cachedStorefrontData: any = null;
 let lastFetchTimestamp = 0;
 
-// 2-second in-memory client-side cache TTL (only for deduplicating simultaneous component mounts on a single page render)
-const IN_MEMORY_TTL = 2 * 1000;
+// 30-second in-memory client-side cache TTL (deduplicates simultaneous mounts and rapid page navigations)
+const IN_MEMORY_TTL = 30 * 1000;
 
 // Real-time cross-tab synchronization listener
 if (typeof window !== "undefined") {
@@ -35,12 +35,7 @@ if (typeof window !== "undefined") {
 
 export async function getStorefrontData(forceFresh = false): Promise<any> {
   const now = Date.now();
-  const isLocalhost =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-
-  // On localhost, always ensure fresh data is fetched
-  const shouldForce = forceFresh || isLocalhost;
+  const shouldForce = forceFresh;
 
   // 1. Return existing in-memory data if valid and not forcing fresh
   if (!forceFresh && cachedStorefrontData && now - lastFetchTimestamp < IN_MEMORY_TTL) {

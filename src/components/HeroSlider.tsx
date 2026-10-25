@@ -348,6 +348,8 @@ export default function HeroSlider({
                         }}
                         className="size-full object-cover object-center"
                         loading={idx === 1 ? "eager" : "lazy"}
+                        fetchPriority={idx === 1 ? "high" : "auto"}
+                        decoding={idx === 1 ? "sync" : "async"}
                       />
                     </picture>
                   </Link>

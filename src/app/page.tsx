@@ -2,12 +2,11 @@ import { readDB } from "@/lib/db";
 import HomeClient from "@/components/HomeClient";
 import { products, concerns } from "@/lib/store";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
+// Enable Incremental Static Regeneration (ISR): Cache at Edge CDN for 60 seconds
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const db = await readDB(true);
+  const db = await readDB();
 
   const initialProducts = Array.isArray(db.products) && db.products.length > 0 ? db.products : products;
   const initialCategories = Array.isArray(db.categories) && db.categories.length > 0 ? db.categories : concerns;

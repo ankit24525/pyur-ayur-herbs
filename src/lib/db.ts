@@ -77,9 +77,9 @@ async function getMongoClient(): Promise<MongoClient> {
 
   const tryConnect = async (targetUri: string): Promise<MongoClient> => {
     const client = new MongoClient(targetUri, {
-      serverSelectionTimeoutMS: 8000,
-      connectTimeoutMS: 8000,
-      socketTimeoutMS: 20000,
+      serverSelectionTimeoutMS: 2500,
+      connectTimeoutMS: 2500,
+      socketTimeoutMS: 15000,
       maxPoolSize: 10,
     });
     await client.connect();
@@ -184,7 +184,7 @@ export async function getDBHealthStatus(): Promise<{
 }
 
 let dbMemoryCache: { data: DBData; timestamp: number } | null = null;
-const CACHE_TTL_MS = 2000; // 2s max in-memory cache for rapid real-time synchronization
+const CACHE_TTL_MS = 30000; // 30s in-memory cache for ultra-fast serverless performance and near-zero database latency
 
 export function invalidateDBCache() {
   dbMemoryCache = null;

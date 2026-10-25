@@ -22,9 +22,9 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
 
   // Real-time synchronization: local cache, background API fetch, and cross-tab broadcasts
   useEffect(() => {
-    // Fetch fresh storefront data in background to sync latest from MongoDB
+    // Fetch storefront data in background to sync latest from MongoDB
     if (typeof window !== "undefined") {
-      getStorefrontData(true)
+      getStorefrontData()
         .then((fresh) => {
           if (fresh?.content?.aboutUs) {
             setClientAboutUs(fresh.content.aboutUs);

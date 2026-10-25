@@ -3,9 +3,8 @@ import { Suspense } from "react";
 import { readDB } from "@/lib/db";
 import { products as fallbackProducts } from "@/lib/store";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
+// Enable Incremental Static Regeneration (ISR): Cache at Edge CDN for 60 seconds
+export const revalidate = 60;
 
 export const metadata = {
   title: "New Arrivals & All Products | Pure Ayur Herbs",
@@ -28,7 +27,7 @@ export default async function ProductsPage({
   const category =
     typeof resolvedParams.category === "string" ? resolvedParams.category : undefined;
 
-  const db = await readDB(true);
+  const db = await readDB();
   const liveProducts = Array.isArray(db.products) && db.products.length > 0 ? db.products : fallbackProducts;
 
   return (

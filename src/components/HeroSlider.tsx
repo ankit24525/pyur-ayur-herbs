@@ -1,103 +1,212 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { heroSlides as defaultSlides } from "@/lib/store";
 
-const getSlideBackgroundStyle = (bgColor?: string, isFullWidth?: boolean): React.CSSProperties => {
-  if (isFullWidth || !bgColor) return {};
-  const trimmed = bgColor.trim();
-  if (
-    trimmed.startsWith("#") ||
-    trimmed.startsWith("rgb") ||
-    trimmed.startsWith("hsl") ||
-    trimmed.startsWith("linear-gradient")
-  ) {
-    return { background: trimmed };
-  }
-  return {};
-};
+/**
+ * ============================================================================
+ * HeroSlider Component
+ * ============================================================================
+ * 
+ * Purpose:
+ * Main homepage hero carousel displaying brand visual banners and key promotions.
+ * 
+ * Key Features:
+ * 1. Seamless Infinite Looping: Uses cloned buffer slides [S_last, S_0, ..., S_last, S_0]
+ *    so the slider can loop infinitely in both directions without jarring rewinds.
+ * 2. Responsive 1200x800 Aspect Ratio: Fixed 3:2 canvas matching the Taitva design,
+ *    centered on desktop and gracefully adapting on tablet and mobile.
+ * 3. Gesture & Keyboard Navigation: Touch swiping on mobile, arrow keys on desktop,
+ *    and on-hover autoplay pause.
+ * 4. Tab Visibility Detection: Automatically pauses when user switches tabs to
+ *    prevent runaway timers or skipped frames.
+ * 5. Responsive Image Support: Uses HTML5 <picture> to serve dedicated mobile crops
+ *    when available, with automatic fallback protection against broken links.
+ */
 
-const getSlideBackgroundClass = (bgColor?: string, isFullWidth?: boolean): string => {
-  if (isFullWidth) return "";
-  const trimmed = bgColor?.trim() || "";
-  if (
-    trimmed.startsWith("#") ||
-    trimmed.startsWith("rgb") ||
-    trimmed.startsWith("hsl") ||
-    trimmed.startsWith("linear-gradient")
-  ) {
-    return "";
-  }
-  if (trimmed.startsWith("from-") || trimmed.includes("bg-")) {
-    return trimmed.startsWith("bg-") ? trimmed : `bg-gradient-to-r ${trimmed}`;
-  }
-  return "bg-gradient-to-r from-[#4a0404] via-[#330202] to-[#1a0101]";
-};
+export default function HeroSlider({
+  slides,
+  marketingBanners,
+}: {
+  /** Array of custom slide objects passed from Storefront CMS / MongoDB */
+  slides?: any[];
+  /** Optional secondary promotional banner strips */
+  marketingBanners?: any[];
+}) {
+  // --------------------------------------------------------------------------
+  // Component State
+  // --------------------------------------------------------------------------
 
-export default function HeroSlider({ slides, marketingBanners }: { slides?: any[]; marketingBanners?: any[] }) {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  // Track position in the extended slides array.
+  // Starts at index 1 because index 0 is occupied by the cloned last slide buffer.
+  const [slideIndex, setSlideIndex] = useState(1);
+
+  // When true, CSS transitions (550ms cubic-bezier) animate track movement.
+  // Temporarily set to false during infinite-loop boundary resets for invisible jumps.
+  const [isTransitioning, setIsTransitioning] = useState(true);
+
+  // Autoplay pause flag (triggered by mouse hover, touch interaction, or hidden tab).
   const [isPaused, setIsPaused] = useState(false);
+
+  // Touch tracking refs for mobile swipe calculations
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
 
-  const baseSlides = slides && slides.length > 0 ? slides : defaultSlides;
+  // --------------------------------------------------------------------------
+  // Slide Data Normalization & Infinite Loop Buffer
+  // --------------------------------------------------------------------------
 
-  // Convert any active marketing banners with placement "Top Hero Slider" into slides
-  const heroMarketingSlides = (marketingBanners || [])
-    .filter(
-      (b: any) =>
-        b.status === "Active" &&
-        ((b.placement || "").toLowerCase().includes("hero") ||
-          (b.placement || "").toLowerCase().includes("carousel") ||
-          (b.placement || "").toLowerCase().includes("top"))
-    )
-    .map((b: any, idx: number) => ({
-      id: b.id || `mkt_slide_${idx}`,
-      badge: "Featured Promotion",
-      title: b.title || b.name,
-      subtitle: b.subtitle || "100% Certified Ayurvedic Formulations",
-      image: b.image || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
-      ctaText: b.ctaText || "Explore Formulations",
-      link: b.link || "#shop",
-      bgColor: "from-[#1b3d26] via-[#244f31] to-[#163320]",
-    }));
+  // Fallback to default bundled slides if no CMS slides are provided or valid
+  const activeSlides = useMemo(() => {
+    if (Array.isArray(slides)) {
+      return slides;
+    }
+    return defaultSlides;
+  }, [slides]);
 
-  const activeSlides =
-    heroMarketingSlides.length > 0 ? [...heroMarketingSlides, ...baseSlides] : baseSlides;
   const slideCount = activeSlides.length;
 
+  /**
+   * Cloned slides array for seamless infinite looping.
+   * If we have 3 slides [A, B, C], the extended array becomes [C, A, B, C, A]:
+   * - Index 0: Clone of Slide C (left buffer)
+   * - Index 1: Real Slide A
+   * - Index 2: Real Slide B
+   * - Index 3: Real Slide C
+   * - Index 4: Clone of Slide A (right buffer)
+   */
+  const extendedSlides = useMemo(() => {
+    if (slideCount <= 1) return activeSlides;
+    return [
+      activeSlides[slideCount - 1], // Prepend clone of last slide
+      ...activeSlides,              // Original slides
+      activeSlides[0],              // Append clone of first slide
+    ];
+  }, [activeSlides, slideCount]);
+
+  // --------------------------------------------------------------------------
+  // Navigation Handlers (Next / Prev)
+  // --------------------------------------------------------------------------
+
+  /** Advances track to the next slide with smooth CSS animation */
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slideCount);
+    if (slideCount <= 1) return;
+    setSlideIndex((prev) => {
+      // Guard against unbounded index overflow
+      if (prev >= slideCount + 1) return 1;
+      return prev + 1;
+    });
+    setIsTransitioning(true);
   }, [slideCount]);
 
+  /** Moves track to the previous slide with smooth CSS animation */
   const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount);
+    if (slideCount <= 1) return;
+    setSlideIndex((prev) => {
+      // Guard against underflow
+      if (prev <= 0) return slideCount;
+      return prev - 1;
+    });
+    setIsTransitioning(true);
   }, [slideCount]);
 
-  // Autoplay with Pause on Hover & Pause on Interaction
+  // --------------------------------------------------------------------------
+  // Infinite Loop Seamless Snap Logic
+  // --------------------------------------------------------------------------
+
+  /**
+   * Called when the CSS transform transition completes.
+   * If we arrived at a cloned boundary slide:
+   * 1. Turn off CSS transition (`isTransitioning = false`)
+   * 2. Instantly jump to the real counterpart slide without visual flicker
+   */
+  const handleTransitionEnd = (e?: React.TransitionEvent<HTMLDivElement>) => {
+    // Ignore transition events triggered by child elements
+    if (e && e.target !== e.currentTarget) return;
+    if (slideCount <= 1) return;
+
+    if (slideIndex <= 0) {
+      // Reached left clone (Slide C) -> instantly snap to real Slide C (index = slideCount)
+      setIsTransitioning(false);
+      setSlideIndex(slideCount);
+    } else if (slideIndex >= slideCount + 1) {
+      // Reached right clone (Slide A) -> instantly snap to real Slide A (index = 1)
+      setIsTransitioning(false);
+      setSlideIndex(1);
+    }
+  };
+
+  /**
+   * Safety Watchdog:
+   * If `onTransitionEnd` is dropped by the browser (e.g. background tab or rapid scrolling),
+   * this safety timeout ensures the slider snaps back into bounds within 580ms.
+   */
+  useEffect(() => {
+    if (slideCount <= 1) return;
+    if (slideIndex >= slideCount + 1 || slideIndex <= 0) {
+      const safetyTimer = setTimeout(() => {
+        setIsTransitioning(false);
+        setSlideIndex(slideIndex >= slideCount + 1 ? 1 : slideCount);
+      }, 580);
+      return () => clearTimeout(safetyTimer);
+    }
+  }, [slideIndex, slideCount]);
+
+  /** Clamps index safely if slide count changes dynamically */
+  useEffect(() => {
+    if (slideIndex > slideCount + 1 || slideIndex < 0) {
+      setIsTransitioning(false);
+      setSlideIndex(1);
+    }
+  }, [slideCount, slideIndex]);
+
+  // --------------------------------------------------------------------------
+  // Autoplay & Visibility Lifecycle
+  // --------------------------------------------------------------------------
+
+  /** Pause carousel when browser tab is inactive to save CPU and avoid frame lag */
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) {
+        setIsPaused(true);
+      } else {
+        setIsPaused(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  /** Autoplay timer: advances slide every 5.5 seconds unless paused */
   useEffect(() => {
     if (slideCount <= 1 || isPaused) return;
 
     const timer = setInterval(() => {
       nextSlide();
-    }, 5000);
+    }, 5500);
 
     return () => clearInterval(timer);
   }, [slideCount, isPaused, nextSlide]);
 
-  // Resume autoplay after user interaction timeout
+  /**
+   * Temporarily pauses autoplay for 7 seconds whenever the user manually interacts
+   * (clicking arrows, swiping, or pressing pagination dots)
+   */
   const handleInteraction = () => {
     setIsPaused(true);
-    // Resume after 7s of no interaction
     const resumeTimer = setTimeout(() => {
       setIsPaused(false);
     }, 7000);
     return () => clearTimeout(resumeTimer);
   };
 
-  // Keyboard Navigation (ArrowLeft / ArrowRight)
+  // --------------------------------------------------------------------------
+  // User Input Listeners (Keyboard & Touch Swiping)
+  // --------------------------------------------------------------------------
+
+  /** Keyboard arrow navigation for accessibility */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowLeft") {
       handleInteraction();
@@ -108,7 +217,7 @@ export default function HeroSlider({ slides, marketingBanners }: { slides?: any[
     }
   };
 
-  // Touch Swipe Handlers for Mobile Devices
+  /** Touch event handlers for mobile swipe gestures */
   const handleTouchStart = (e: React.TouchEvent) => {
     handleInteraction();
     touchStartX.current = e.touches[0].clientX;
@@ -121,189 +230,187 @@ export default function HeroSlider({ slides, marketingBanners }: { slides?: any[
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
     const diffX = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 35; // 35px minimum swipe
-
+    const minSwipeDistance = 35; // Minimum horizontal drag distance to register a swipe
     if (diffX > minSwipeDistance) {
-      nextSlide();
+      nextSlide(); // Swiped left -> show next
     } else if (diffX < -minSwipeDistance) {
-      prevSlide();
+      prevSlide(); // Swiped right -> show prev
     }
-
     touchStartX.current = null;
     touchEndX.current = null;
   };
 
+  // --------------------------------------------------------------------------
+  // Helper: Image URL Transformation
+  // --------------------------------------------------------------------------
+
+  /** Formats Cloudinary URLs to match the exact 1200x800 container dimensions edge-to-edge without padding sidebars */
+  const getFormattedSlideImage = (url: string) => {
+    if (!url || typeof url !== "string") return url;
+    let formatted = url;
+    if (formatted.includes("c_pad,w_1920,h_600")) {
+      formatted = formatted.replace("c_pad,w_1920,h_600", "c_fill,g_auto,w_1200,h_800");
+    }
+    if (formatted.includes("c_pad,w_1200,h_800,b_auto")) {
+      formatted = formatted.replace("c_pad,w_1200,h_800,b_auto", "c_fill,g_auto,w_1200,h_800");
+    } else if (formatted.includes("c_pad,w_1200,h_800")) {
+      formatted = formatted.replace("c_pad,w_1200,h_800", "c_fill,g_auto,w_1200,h_800");
+    }
+    return formatted;
+  };
+
+  if (slideCount === 0) return null;
+
+  // Compute 0-based active index for pagination dots
+  const activeNormalizedIndex =
+    slideCount <= 1
+      ? 0
+      : slideIndex === 0
+      ? slideCount - 1
+      : slideIndex === slideCount + 1
+      ? 0
+      : slideIndex - 1;
+
+  // --------------------------------------------------------------------------
+  // Render JSX
+  // --------------------------------------------------------------------------
+
   return (
     <section
-      ref={sliderRef}
       tabIndex={0}
       role="region"
       aria-roledescription="carousel"
-      aria-label="Featured Ayurvedic Remedies Hero Slider"
+      aria-label="Pure Ayur Herbs Storefront Hero Banner"
       onKeyDown={handleKeyDown}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative w-full overflow-hidden bg-[#17231b] touch-pan-y outline-none focus-visible:ring-2 focus-visible:ring-[#80a03c]"
+      className="w-full bg-white pt-0 pb-1 select-none outline-none"
     >
-      <div
-        className="flex transition-transform duration-500 ease-out"
-        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-      >
-        {activeSlides.map((slide, idx) => (
+      {/* Container: Strict 1200x800 Canvas (max-w-[1200px] mx-auto) */}
+      <div className="w-full md:mx-auto md:max-w-[1200px] px-0">
+        
+        {/* Banner Frame: Exact 1200x800 px Container (3:2 Aspect Ratio) */}
+        <div className="relative w-full max-w-[1200px] mx-auto aspect-[1200/800] overflow-hidden rounded-none bg-[#023915]/5 shadow-none">
+          
+          {/* Sliding Track: Moves horizontally via CSS translateX */}
           <div
-            key={slide.id || idx}
-            role="group"
-            aria-roledescription="slide"
-            aria-label={`Slide ${idx + 1} of ${slideCount}: ${slide.title || "Ayurvedic Campaign"}`}
-            aria-hidden={currentSlide !== idx}
-            style={getSlideBackgroundStyle(slide.bgColor, slide.fullWidthBanner)}
-            className={`relative w-full shrink-0 overflow-hidden ${getSlideBackgroundClass(slide.bgColor, slide.fullWidthBanner)} text-white`}
+            onTransitionEnd={handleTransitionEnd}
+            className="flex w-full h-full will-change-transform"
+            style={{
+              transform: `translateX(-${slideIndex * 100}%)`,
+              transition: isTransitioning
+                ? "transform 550ms cubic-bezier(0.25, 1, 0.5, 1)"
+                : "none",
+            }}
           >
-            {slide.fullWidthBanner ? (
-              <a
-                href={slide.href || "#shop"}
-                tabIndex={currentSlide === idx ? 0 : -1}
-                className="relative block w-full overflow-hidden hover:opacity-98 transition-opacity bg-[#17231b]"
-              >
-                {/* Ambient Blurred Backdrop to smoothly fill wide desktop displays without harsh bars */}
+            {extendedSlides.map((slide, idx) => {
+              const isSlideActive = idx === slideIndex;
+              const slideImage =
+                slide.image && typeof slide.image === "string" && slide.image.trim()
+                  ? getFormattedSlideImage(slide.image)
+                  : "/brand/hero-taitva-1200x800.jpg";
+              const mobileImage =
+                slide.mobileImage && typeof slide.mobileImage === "string" && slide.mobileImage.trim()
+                  ? getFormattedSlideImage(slide.mobileImage)
+                  : slideImage;
+
+              return (
                 <div
-                  className="absolute inset-0 hidden sm:block bg-cover bg-center blur-2xl opacity-40 scale-110 pointer-events-none"
-                  style={{ backgroundImage: `url(${slide.image})` }}
-                />
-
-                {/* Main Crisp Banner Graphic (Dual Desktop & Mobile with HTML5 picture) */}
-                <picture className="relative mx-auto flex items-center justify-center w-full">
-                  {slide.mobileImage && (
-                    <source media="(max-width: 639px)" srcSet={slide.mobileImage} />
-                  )}
-                  <img
-                    src={slide.image}
-                    alt={slide.title || "Storefront Campaign Banner"}
-                    onError={(e) => {
-                      e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
-                    }}
-                    className="w-full h-auto block object-cover sm:object-contain max-h-[380px] sm:max-h-[480px] md:max-h-[560px] lg:max-h-[600px] drop-shadow-sm"
-                  />
-                </picture>
-              </a>
-            ) : (
-              /* KAPIVA-STYLE UNIFIED RESPONSIVE SLIDE (SAME SLIDE ARTWORK ON DESKTOP & MOBILE) */
-              <div className="relative mx-auto flex max-w-[1440px] min-h-[220px] sm:min-h-[320px] md:min-h-[420px] lg:min-h-[480px] items-center justify-between px-3 py-4 sm:px-6 sm:py-8 md:px-10 lg:px-16 lg:py-12">
-                {/* Central Safe Area - Left Column: Text & CTAs */}
-                <div className="z-10 flex flex-col items-start text-left max-w-[58%] sm:max-w-[55%] md:max-w-xl shrink-0">
-                  {slide.badge && (
-                    <span className="mb-1 sm:mb-2 md:mb-3 inline-flex items-center gap-1 sm:gap-1.5 rounded-full bg-[#7ca038] px-2 py-0.5 sm:px-3 sm:py-1 text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-wider text-white shadow-md">
-                      <Sparkles className="size-2.5 sm:size-3 md:size-3.5 text-white" /> {slide.badge}
-                    </span>
-                  )}
-
-                  <h1 className="text-xs sm:text-2xl md:text-4xl lg:text-5xl font-black leading-tight sm:leading-snug tracking-tight text-white line-clamp-3">
-                    {slide.title}
-                  </h1>
-
-                  {slide.subtitle && (
-                    <p className="mt-1 sm:mt-2 text-[9px] sm:text-xs lg:text-sm font-extrabold tracking-wider text-[#f2c94c] uppercase line-clamp-2">
-                      {slide.subtitle}
-                    </p>
-                  )}
-
-                  {slide.offer && (
-                    <div className="mt-1.5 sm:mt-3 rounded-lg bg-black/25 px-2 py-1 sm:px-3.5 sm:py-1.5 text-[8px] sm:text-xs font-bold border border-white/20 backdrop-blur-xs text-white">
-                      🎁 {slide.offer}
-                    </div>
-                  )}
-
-                  {/* Action Buttons Pair */}
-                  <div className="mt-2.5 sm:mt-5 flex flex-wrap items-center gap-1.5 sm:gap-3">
-                    <a
-                      href={slide.href || "#shop"}
-                      tabIndex={currentSlide === idx ? 0 : -1}
-                      className="inline-flex items-center justify-center rounded-lg sm:rounded-xl bg-[#7ca038] px-2.5 py-1.5 sm:px-5 sm:py-3 text-[9px] sm:text-xs md:text-sm font-black uppercase tracking-wider text-white shadow-md transition hover:bg-[#68882e] active:scale-95"
-                    >
-                      {slide.ctaText || "SHOP NOW"}
-                    </a>
-                    <a
-                      href="#concerns"
-                      tabIndex={currentSlide === idx ? 0 : -1}
-                      className="hidden sm:inline-flex items-center justify-center rounded-xl border border-white/40 bg-black/20 px-4 py-3 text-xs md:text-sm font-bold uppercase tracking-wider text-white backdrop-blur-xs transition hover:bg-white/20 active:scale-95"
-                    >
-                      SELECT CONCERN
-                    </a>
-                  </div>
+                  key={slide.id ? `${slide.id}_${idx}` : idx}
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`Slide ${idx + 1}`}
+                  aria-hidden={!isSlideActive}
+                  className="w-full h-full shrink-0 relative flex items-center justify-center bg-[#f8faf5]"
+                >
+                  {/* Clickable Banner Link wrapping the whole slide */}
+                  <Link
+                    href={slide.href || slide.link || "/products"}
+                    tabIndex={isSlideActive ? 0 : -1}
+                    className="block size-full focus:outline-none cursor-pointer relative flex items-center justify-center"
+                  >
+                    {/* HTML5 Picture Element for Responsive Mobile/Desktop Image Switching */}
+                    <picture className="size-full flex items-center justify-center">
+                      {/* Mobile viewport source (under 640px) */}
+                      <source media="(max-width: 639px)" srcSet={mobileImage} />
+                      {/* Default Desktop & Tablet Image */}
+                      <img
+                        src={slideImage}
+                        alt={slide.title || "Pure Ayur Herbs Ayurvedic Formulation Banner"}
+                        onError={(e) => {
+                          // Automatic fallback protection if image fails to load
+                          if (typeof window !== "undefined" && !e.currentTarget.src.endsWith("/brand/hero-wild-authentic-pure.jpg")) {
+                            e.currentTarget.src = "/brand/hero-wild-authentic-pure.jpg";
+                          }
+                        }}
+                        className="size-full object-cover object-center"
+                        loading={idx === 1 ? "eager" : "lazy"}
+                      />
+                    </picture>
+                  </Link>
                 </div>
-
-                {/* Right Column: Uncropped Product & Bottle Showcase Image */}
-                {slide.image && (
-                  <div className="relative flex items-center justify-end w-[40%] sm:w-[42%] md:w-[45%] lg:w-[48%] h-full max-h-[160px] sm:max-h-[280px] md:max-h-[380px] lg:max-h-[440px] shrink-0 pointer-events-none">
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <picture className="size-full flex items-center justify-center">
-                        {slide.mobileImage && (
-                          <source media="(max-width: 639px)" srcSet={slide.mobileImage} />
-                        )}
-                        <img
-                          src={slide.image}
-                          alt={slide.title || "Product Showcase"}
-                          onError={(e) => {
-                            e.currentTarget.src = "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=80";
-                          }}
-                          className="max-h-full max-w-full object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
-                        />
-                      </picture>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+              );
+            })}
           </div>
-        ))}
-      </div>
 
-      {/* Slide Navigation Arrow Controls */}
-      {slideCount > 1 && (
-        <>
-          <button
-            onClick={() => {
-              handleInteraction();
-              prevSlide();
-            }}
-            className="absolute left-1.5 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 sm:p-2.5 text-white backdrop-blur-xs transition hover:bg-black/60 active:scale-95 z-10"
-            aria-label="Previous Slide"
-          >
-            <ChevronLeft className="size-4 sm:size-6" />
-          </button>
-
-          <button
-            onClick={() => {
-              handleInteraction();
-              nextSlide();
-            }}
-            className="absolute right-1.5 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 sm:p-2.5 text-white backdrop-blur-xs transition hover:bg-black/60 active:scale-95 z-10"
-            aria-label="Next Slide"
-          >
-            <ChevronRight className="size-4 sm:size-6" />
-          </button>
-
-          {/* Pagination Dots Indicator */}
-          <div className="absolute bottom-2 sm:bottom-4 left-1/2 flex -translate-x-1/2 gap-1 sm:gap-2 z-10">
-            {activeSlides.map((_, idx) => (
+          {/* Desktop Arrow Navigation Controls (Hidden on mobile, matching Taitva Desktop) */}
+          {slideCount > 1 && (
+            <>
+              {/* Previous Slide Button */}
               <button
-                key={idx}
+                type="button"
                 onClick={() => {
                   handleInteraction();
-                  setCurrentSlide(idx);
+                  prevSlide();
                 }}
-                className={`h-1.5 sm:h-2.5 rounded-full transition-all ${
-                  currentSlide === idx ? "w-5 sm:w-8 bg-[#7ca038]" : "w-1.5 sm:w-2.5 bg-white/50"
+                className="hidden md:flex absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 size-10 lg:size-11 rounded-full bg-white/95 hover:bg-white border border-neutral-300 shadow-md items-center justify-center text-neutral-800 hover:text-black hover:scale-105 active:scale-95 transition cursor-pointer z-20"
+                aria-label="Previous Slide"
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+
+              {/* Next Slide Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleInteraction();
+                  nextSlide();
+                }}
+                className="hidden md:flex absolute right-3 lg:right-4 top-1/2 -translate-y-1/2 size-10 lg:size-11 rounded-full bg-white/95 hover:bg-white border border-neutral-300 shadow-md items-center justify-center text-neutral-800 hover:text-black hover:scale-105 active:scale-95 transition cursor-pointer z-20"
+                aria-label="Next Slide"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Taitva Centered Pagination Dots (Directly Below Banner Frame) */}
+        {slideCount > 1 && (
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-2.5 sm:mt-4 mb-1 sm:mb-2">
+            {activeSlides.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  handleInteraction();
+                  setIsTransitioning(true);
+                  setSlideIndex(i + 1);
+                }}
+                aria-label={`Go to slide ${i + 1}`}
+                className={`transition-all duration-300 rounded-full cursor-pointer ${
+                  i === activeNormalizedIndex
+                    ? "size-2.5 bg-[#023915] scale-110"
+                    : "size-2 bg-neutral-300 hover:bg-neutral-400"
                 }`}
-                aria-label={`Go to slide ${idx + 1}`}
               />
             ))}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </section>
   );
 }

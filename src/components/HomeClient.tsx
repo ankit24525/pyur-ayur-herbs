@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import SiteHeader from "@/components/SiteHeader";
@@ -12,6 +12,7 @@ import DoctorConsultationBanner from "@/components/DoctorConsultationBanner";
 import AyurvedicQuizModal from "@/components/AyurvedicQuizModal";
 import AboutSection from "@/components/AboutSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import RecentlyViewedSection from "@/components/RecentlyViewedSection";
 import SiteFooter from "@/components/SiteFooter";
 import MarketingBannerStrip from "@/components/MarketingBannerStrip";
 import MarketingPopup from "@/components/MarketingPopup";
@@ -201,9 +202,10 @@ export default function HomeClient({
 
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
 
-  // Load cart from localStorage safely
+  // Load cart from localStorage safely and subscribe to live changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const syncCart = () => {
+      if (typeof window === "undefined") return;
       try {
         const stored = localStorage.getItem("pyur_cart");
         if (stored) {
@@ -226,13 +228,24 @@ export default function HomeClient({
         setCart([]);
         try { localStorage.removeItem("pyur_cart"); } catch {}
       }
-    }
+    };
+
+    syncCart();
+    window.addEventListener("storage", syncCart);
+    window.addEventListener("pyur_cart_updated", syncCart);
+    return () => {
+      window.removeEventListener("storage", syncCart);
+      window.removeEventListener("pyur_cart_updated", syncCart);
+    };
   }, []);
 
   // Save cart to localStorage on updates
   const saveCartState = (newCart: { product: Product; quantity: number }[]) => {
     setCart(newCart);
     localStorage.setItem("pyur_cart", JSON.stringify(newCart));
+    setTimeout(() => {
+      window.dispatchEvent(new Event("pyur_cart_updated"));
+    }, 0);
   };
 
   // Dynamic Homepage Section Visibility Control
@@ -314,11 +327,36 @@ export default function HomeClient({
 
   // Filter products by selected concern if active
   const filteredProducts = selectedConcern
-    ? catalog.filter((p) => (p.concern || "").toLowerCase() === selectedConcern.toLowerCase())
+    ? catalog.filter((p) => {
+        const pConcern = (p.concern || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+        const sConcern = selectedConcern.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+        return pConcern === sConcern || pConcern.includes(sConcern) || sConcern.includes(pConcern);
+      })
     : catalog;
 
+  // Fresh Arrivals: Always exactly 6 products, sorted newer to older (newest first)
+  const freshArrivalsProducts = useMemo(() => {
+    if (!catalog || catalog.length === 0) return [];
+    const sorted = [...catalog].sort((a: any, b: any) => {
+      if (a.createdAt && b.createdAt) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      const numA = parseInt(String(a.id).replace(/\D/g, ""), 10);
+      const numB = parseInt(String(b.id).replace(/\D/g, ""), 10);
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numB - numA;
+      }
+      return 0;
+    });
+
+    if (sorted.length > 1 && sorted[0]?.id === catalog[0]?.id) {
+      return [...catalog].reverse().slice(0, 6);
+    }
+    return sorted.slice(0, 6);
+  }, [catalog]);
+
   return (
-    <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
+    <main className="min-h-screen bg-white text-neutral-900">
       {/* Top Announcement Ticker Bar */}
       {isSectionVisible("announcement") && (
         <AnnouncementBar
@@ -339,43 +377,12 @@ export default function HomeClient({
         products={catalog}
       />
 
-      {/* Mobile Circular Category Selector - Mobile Only */}
-      {isSectionVisible("mobileCategoryRail") && (
-        <div className="md:hidden bg-white border-b border-[#ddddd9] py-3.5 px-4 overflow-x-auto no-scrollbar flex gap-5 scroll-smooth min-w-0">
-          {categories.map((c) => {
-            const isSelected = selectedConcern === c.name;
-            const shortName = getShortName(c.name);
-            return (
-              <button
-                key={c.id || c.name}
-                onClick={() => {
-                  setSelectedConcern(isSelected ? null : c.name);
-                  document.getElementById("shop")?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="flex flex-col items-center gap-1.5 shrink-0"
-              >
-                <div className={`size-14 rounded-full flex items-center justify-center text-2xl border transition duration-200 ${
-                  isSelected 
-                    ? "border-[#244f31] bg-[#eef5df] shadow-xs" 
-                    : "border-[#ddddd9] bg-[#f8faf1] hover:border-[#80a03c]"
-                }`}>
-                  <span>{c.icon || "🌿"}</span>
-                </div>
-                <span className={`text-[10px] font-bold tracking-tight text-center ${isSelected ? "text-[#244f31]" : "text-[#17231b]"}`}>
-                  {shortName}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Hero Banner Slider Carousel */}
+      {/* Hero Banner Slider Carousel (Full Width Taitva Style) */}
       {isSectionVisible("heroSlider") && (
         <HeroSlider slides={cmsData.heroSlides} marketingBanners={marketingData?.banners} />
       )}
 
-      {/* "SELECT CONCERN" Filter Section */}
+      {/* "NOURISH & THRIVE" 3 Category Circles (Taitva Style) */}
       {isSectionVisible("categoryFilter") && (
         <ConcernFilter
           selectedConcern={selectedConcern}
@@ -384,7 +391,7 @@ export default function HomeClient({
         />
       )}
 
-      {/* Main Shop / Products Section */}
+      {/* Main Shop / Products Section (FRESH ARRIVALS) */}
       {isSectionVisible("productsCatalog") && (
         <div id="shop" className="scroll-mt-24">
         {catalog.length === 0 ? (
@@ -400,31 +407,30 @@ export default function HomeClient({
         ) : selectedConcern ? (
           filteredProducts.length > 0 ? (
             <ProductRail
-              title={`Remedies for ${selectedConcern}`}
-              subtitle={`Showing ${filteredProducts.length} Ayurvedic formulations`}
+              title={selectedConcern.toUpperCase()}
               items={filteredProducts}
               onAddToCart={handleAddToCart}
               onBuyNow={handleBuyNow}
             />
           ) : (
             <div className="mx-auto max-w-[1440px] px-4 py-12 md:py-16 text-center">
-              <div className="mx-auto max-w-lg rounded-3xl border border-[#ddddd9] bg-gradient-to-b from-white via-white to-[#f8faf1] p-8 sm:p-12 shadow-sm text-center">
-                <div className="mx-auto flex size-20 items-center justify-center rounded-2xl bg-[#eef5df] border border-[#80a03c]/30 text-3xl mb-5 shadow-xs">
+              <div className="mx-auto max-w-lg rounded-3xl border border-neutral-200 bg-white p-8 sm:p-12 shadow-sm text-center">
+                <div className="mx-auto flex size-20 items-center justify-center rounded-2xl bg-[#c2d4c5]/20 border border-[#023915]/20 text-3xl mb-5 shadow-xs">
                   <span>{categories.find((c: any) => (c.name || "").toLowerCase() === selectedConcern.toLowerCase())?.icon || "🌿"}</span>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#80a03c]/15 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#244f31]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#023915]/10 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#023915]">
                   ⏳ Formulations Coming Soon
                 </span>
-                <h3 className="mt-4 text-2xl font-black text-[#17231b] sm:text-3xl">
+                <h3 className="mt-4 text-2xl font-black text-neutral-900 sm:text-3xl">
                   {selectedConcern} Care Coming Soon!
                 </h3>
-                <p className="mt-3 text-sm leading-relaxed text-[#666666]">
+                <p className="mt-3 text-sm leading-relaxed text-neutral-600">
                   Our expert Ayurvedic Vaidyas are currently preparing 100% natural, certified gold-grade formulations for <strong>{selectedConcern}</strong>. Authentic remedies will be launching here very soon!
                 </p>
                 <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     onClick={() => setSelectedConcern(null)}
-                    className="w-full sm:w-auto rounded-xl bg-[#244f31] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-[#1b3b24] cursor-pointer"
+                    className="w-full sm:w-auto rounded-xl bg-[#023915] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-black cursor-pointer"
                   >
                     Explore All Available Remedies
                   </button>
@@ -442,11 +448,12 @@ export default function HomeClient({
           )
         ) : (
           <>
-            {/* 1. All Bestselling Remedies Rail */}
+            {/* 1. FRESH ARRIVALS Rail: Always exactly 6 products, sorted newer to older, in grid (never slider) */}
             <ProductRail
-              title="Top Bestselling Ayurvedic Remedies"
-              subtitle="All authentic gold-grade Ayurvedic juices, resins & elixirs"
-              items={catalog}
+              title="FRESH ARRIVALS"
+              subtitle="Recently formulated 100% natural Ayurvedic remedies"
+              items={freshArrivalsProducts}
+              disableMobileSlider={true}
               onAddToCart={handleAddToCart}
               onBuyNow={handleBuyNow}
             />
@@ -458,9 +465,11 @@ export default function HomeClient({
 
             {/* 2. Dynamic Rails for every category with active products */}
             {categories.map((cat: any) => {
-              const catProducts = catalog.filter(
-                (p) => (p.concern || "").toLowerCase() === (cat.name || "").toLowerCase()
-              );
+              const catProducts = catalog.filter((p) => {
+                const pConcern = (p.concern || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+                const cName = (cat.name || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+                return pConcern === cName || pConcern.includes(cName) || cName.includes(pConcern);
+              });
               if (catProducts.length === 0) return null;
               return (
                 <ProductRail
@@ -496,13 +505,16 @@ export default function HomeClient({
 
       {/* Why Pure Ayur Herbs Trust Section */}
       {isSectionVisible("trustSection") && (
-        <TrustSection />
+        <TrustSection bannerImage={cmsData?.trustSection?.image || cmsData?.trustBanner} />
       )}
 
       {/* 2-Minute Health Assessment Quiz */}
       {isSectionVisible("healthQuiz") && (
         <AyurvedicQuizModal onAddToCart={handleAddToCart} />
       )}
+
+      {/* Recently Viewed Remedies */}
+      <RecentlyViewedSection />
 
       {/* Customer Reviews & Transformations */}
       {isSectionVisible("testimonials") && (

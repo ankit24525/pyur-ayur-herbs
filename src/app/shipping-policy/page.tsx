@@ -6,17 +6,17 @@ import SiteFooter from "@/components/SiteFooter";
 
 export default function ShippingPolicyPage() {
   return (
-    <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
+    <main className="min-h-screen bg-white text-neutral-900">
       <div className="mx-auto max-w-[800px] px-4 py-8 md:py-16">
-        <Link href="/" className="inline-flex items-center gap-2 text-xs font-bold text-[#80a03c] hover:text-[#244f31] mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 text-xs font-bold text-[#023915] hover:text-black mb-6">
           <ArrowLeft className="size-4" />
           <span>Back to Shop</span>
         </Link>
 
-        <div className="rounded-2xl border border-[#ddddd9] bg-white p-6 shadow-sm md:p-10">
-          <div className="flex items-center gap-3 border-b border-[#ddddd9] pb-4">
-            <Truck className="size-7 text-[#80a03c]" />
-            <h1 className="text-2xl font-black uppercase text-[#17231b] sm:text-3xl">
+        <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs md:p-10">
+          <div className="flex items-center gap-3 border-b border-neutral-200 pb-4">
+            <Truck className="size-6 text-[#023915]" />
+            <h1 className="text-xl font-bold uppercase text-neutral-900 sm:text-2xl">
               Shipping & Delivery Policy
             </h1>
           </div>

@@ -36,16 +36,16 @@ export function HeroSkeleton() {
 
 export function ConcernFilterSkeleton() {
   return (
-    <div className="border-b border-[#ddddd9] bg-white py-4">
+    <div className="border-b border-neutral-200 bg-white py-4">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-2.5 rounded-full border border-[#ddddd9] bg-[#f8faf1] px-4 py-2 shrink-0 shadow-2xs"
+              className="flex items-center gap-2.5 rounded-full border border-neutral-200 bg-neutral-100 px-4 py-2 shrink-0 shadow-2xs"
             >
-              <Shimmer className="size-6 rounded-full bg-neutral-200" />
-              <Shimmer className="h-3.5 w-16 sm:w-20 rounded-md bg-neutral-200" />
+              <Shimmer className="size-5 rounded-full bg-neutral-200" />
+              <Shimmer className="h-3 w-16 sm:w-20 rounded-md bg-neutral-200" />
             </div>
           ))}
         </div>
@@ -56,35 +56,22 @@ export function ConcernFilterSkeleton() {
 
 export function ProductCardSkeleton() {
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-[#ddddd9] bg-white shadow-xs">
-      {/* Product Image Box */}
-      <div className="relative aspect-square w-full bg-[#f8faf1] p-4 flex items-center justify-center">
-        <Shimmer className="h-full w-full rounded-xl bg-neutral-200" />
-        <Shimmer className="absolute top-3 left-3 h-5 w-16 rounded-full bg-neutral-300" />
+    <div className="flex flex-col">
+      {/* Product Image Box - Borderless floating on white */}
+      <div className="relative aspect-square w-full bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center">
+        <Shimmer className="h-full w-full bg-neutral-200" />
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col p-4 space-y-3">
-        {/* Rating Stars placeholder */}
-        <div className="flex items-center gap-1.5">
-          <Shimmer className="h-3.5 w-14 rounded-md bg-neutral-200" />
-          <Shimmer className="h-3 w-10 rounded-md bg-neutral-200" />
-        </div>
-
+      <div className="flex flex-1 flex-col pt-3 space-y-2">
         {/* Title */}
-        <div className="space-y-1.5 flex-1">
-          <Shimmer className="h-4 w-5/6 rounded-md bg-neutral-300" />
-          <Shimmer className="h-3.5 w-2/3 rounded-md bg-neutral-200" />
-        </div>
+        <Shimmer className="h-3.5 w-3/4 rounded-md bg-neutral-300" />
 
         {/* Price & MRP Row */}
-        <div className="flex items-baseline gap-2 pt-1">
-          <Shimmer className="h-6 w-20 rounded-md bg-neutral-300" />
-          <Shimmer className="h-4 w-14 rounded-md bg-neutral-200" />
+        <div className="flex items-baseline gap-2">
+          <Shimmer className="h-4 w-16 rounded-md bg-neutral-300" />
+          <Shimmer className="h-3 w-12 rounded-md bg-neutral-200" />
         </div>
-
-        {/* Add to Cart Button */}
-        <Shimmer className="h-10 w-full rounded-xl bg-[#244f31]/30" />
       </div>
     </div>
   );
@@ -102,7 +89,7 @@ export function ProductRailSkeleton({ title = "Loading Products..." }: { title?:
           <Shimmer className="h-8 w-24 rounded-full bg-neutral-200" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 items-start">
           {Array.from({ length: 4 }).map((_, i) => (
             <ProductCardSkeleton key={i} />
           ))}
@@ -114,14 +101,14 @@ export function ProductRailSkeleton({ title = "Loading Products..." }: { title?:
 
 export function StorefrontSkeleton() {
   return (
-    <div className="min-h-screen bg-[#f8faf1] text-[#17231b] animate-in fade-in duration-200">
+    <div className="min-h-screen bg-white text-neutral-900 animate-in fade-in duration-200">
       {/* Top bar placeholder */}
-      <div className="bg-[#244f31] py-2 px-4">
+      <div className="bg-[#023915] py-2 px-4">
         <Shimmer className="h-4 w-64 mx-auto rounded-full bg-white/20" />
       </div>
 
       {/* Header bar placeholder */}
-      <div className="bg-white border-b border-[#ddddd9] py-3.5 px-4">
+      <div className="bg-white border-b border-neutral-200 py-3.5 px-4">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Shimmer className="size-10 rounded-full bg-neutral-200" />

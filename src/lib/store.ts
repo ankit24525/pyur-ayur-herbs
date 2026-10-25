@@ -224,6 +224,17 @@ export const menuLinks = [
 
 export const heroSlides = [
   {
+    id: 0,
+    title: "Himalayan Ayurvedic Goodness & Vitality",
+    subtitle: "AUTHENTIC BOTANICAL WELLNESS CRAFTED FROM HIMALAYAN HERBS",
+    offer: "Special Launch Offer",
+    ctaText: "SHOP NOW",
+    href: "/products",
+    badge: "100% Himalayan Herbs",
+    image: "/brand/hero-taitva-1200x800.jpg",
+    bgColor: "#023915",
+  },
+  {
     id: 1,
     title: "100% Ayurvedic Virja Powder & Gold Majun",
     subtitle: "AUTHENTIC AYURVEDA FOR PEAK MEN'S STAMINA & ENERGY",
@@ -231,8 +242,8 @@ export const heroSlides = [
     ctaText: "SHOP VIRJA REMEDIES",
     href: "/products/virja-powder",
     badge: "100% Pure Sourced",
-    image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80",
-    bgColor: "from-[#1d3b24] via-[#244f31] to-[#0f2416]",
+    image: "/brand/hero-taitva-1200x800.jpg",
+    bgColor: "#023915",
   },
   {
     id: 2,
@@ -242,8 +253,8 @@ export const heroSlides = [
     ctaText: "EXPLORE MADHUNASHI",
     href: "/products/madhunashi-powder",
     badge: "GMP Certified",
-    image: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=1200&q=80",
-    bgColor: "from-[#2d6b3f] via-[#1d4629] to-[#122c1b]",
+    image: "/brand/hero-taitva-1200x800.jpg",
+    bgColor: "#023915",
   },
   {
     id: 3,
@@ -253,7 +264,7 @@ export const heroSlides = [
     ctaText: "UNLOCK FAT BURNER",
     href: "/products/fat-burner",
     badge: "100% Ayurvedic",
-    image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80",
-    bgColor: "from-[#3e2c1e] via-[#63432b] to-[#2b1d13]",
+    image: "/brand/hero-taitva-1200x800.jpg",
+    bgColor: "#023915",
   },
 ];

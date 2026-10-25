@@ -244,22 +244,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   // Graceful Product Not Found Page
   return (
-    <main className="min-h-screen bg-[#f8faf1] text-[#17231b] flex flex-col justify-between">
+    <main className="min-h-screen bg-white text-neutral-900 flex flex-col justify-between">
       <SiteHeader />
 
       <section className="mx-auto max-w-lg px-4 py-20 text-center">
-        <div className="rounded-3xl border border-[#ddddd9] bg-white p-8 shadow-sm">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-[#f8faf1] text-[#244f31]">
-            <PackageX className="size-8 text-[#80a03c]" />
+        <div className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-[#f5f5f5] text-[#023915]">
+            <PackageX className="size-8 text-[#023915]" />
           </div>
-          <h2 className="mt-5 text-2xl font-black text-[#17231b]">Product Not Found</h2>
-          <p className="mt-2 text-sm text-[#666666]">
+          <h2 className="mt-5 text-2xl font-black text-neutral-900">Product Not Found</h2>
+          <p className="mt-2 text-sm text-neutral-600">
             The product formulation you are looking for is currently unavailable or has been updated in our catalog.
           </p>
           <div className="mt-6">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#244f31] px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-[#1b3b24]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#023915] px-6 py-3 text-sm font-bold text-white shadow-md transition hover:bg-black"
             >
               <ArrowLeft className="size-4" />
               <span>Explore All Products</span>

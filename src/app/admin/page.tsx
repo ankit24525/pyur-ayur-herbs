@@ -96,16 +96,16 @@ const getCloudinaryCropUrl = (url: string, preset: "desktop" | "mobile" | "produ
         rest = rest.slice(vIndex + 1);
       }
       let trans = "f_auto,q_auto";
-      if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
-      else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+      if (preset === "desktop") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
+      else if (preset === "mobile") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
       else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
       return `${parts[0]}/image/upload/${trans}/${rest}`;
     }
     return url;
   }
   let trans = "f_auto,q_auto";
-  if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
-  else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+  if (preset === "desktop") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
+  else if (preset === "mobile") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
   else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
   return `${match[1]}${trans}/${match[2]}`;
 };
@@ -1474,6 +1474,9 @@ export default function AdminDashboard() {
   const getPreviewBgStyle = (bgColor?: string): React.CSSProperties => {
     if (!bgColor) return { background: "#1d3b24" };
     const trimmed = bgColor.trim();
+    if (trimmed === "transparent" || trimmed === "none") {
+      return { background: "repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%) 50% / 8px 8px" };
+    }
     if (trimmed.startsWith("#") || trimmed.startsWith("rgb") || trimmed.startsWith("hsl") || trimmed.startsWith("linear-gradient")) {
       return { background: trimmed };
     }
@@ -1488,7 +1491,7 @@ export default function AdminDashboard() {
   };
 
   const getHexColorValue = (bgColor?: string): string => {
-    if (!bgColor) return "#1d3b24";
+    if (!bgColor || bgColor === "transparent" || bgColor === "none") return "#ffffff";
     const trimmed = bgColor.trim();
     if (/^#[0-9A-F]{6}$/i.test(trimmed)) return trimmed;
     if (/^#[0-9A-F]{3}$/i.test(trimmed)) {
@@ -3799,7 +3802,7 @@ export default function AdminDashboard() {
     { key: "announcement", title: "Top Announcement Bar", desc: "Countdown ticker above header", icon: "📢" },
     { key: "heroSlider", title: "Hero Carousel Banners", desc: "Top sliding promotional banners", icon: "🖼️" },
     { key: "mobileCategoryRail", title: "Mobile Categories Rail", desc: "Circular category icons on mobile", icon: "🔘" },
-    { key: "categoryFilter", title: '"Select Concern" Filter Rail', desc: "Quick concern tabs above shop", icon: "🏷️" },
+    { key: "categoryFilter", title: "Shop by Health Goal / Concerns", desc: "Interactive circular category slider above shop", icon: "🏷️" },
     { key: "productsCatalog", title: "Products & Category Rails", desc: "Main shop shelves & product rails", icon: "🛍️" },
     { key: "marketingBanners", title: "Marketing Banner Strips", desc: "Promotional banner strips", icon: "🎯" },
     { key: "consultationBanner", title: "Doctor Consultation Banner", desc: "1-on-1 Ayurvedic doctor card", icon: "🩺" },
@@ -3904,15 +3907,16 @@ export default function AdminDashboard() {
   const handleSaveSlide = (e: React.FormEvent) => {
     e.preventDefault();
     const content = dbData.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
-    const currentSlides = (content.heroSlides && content.heroSlides.length > 0) ? content.heroSlides : defaultHeroSlides;
+    const currentSlides = Array.isArray(content.heroSlides) ? content.heroSlides : defaultHeroSlides;
     let updatedSlides;
 
     if (editingSlide === "new") {
-      const newId = currentSlides.length > 0 ? Math.max(...currentSlides.map((s: any) => s.id)) + 1 : 1;
+      const numericIds = currentSlides.map((s: any) => Number(s.id)).filter((n: number) => !isNaN(n));
+      const newId = numericIds.length > 0 ? Math.max(...numericIds) + 1 : Date.now();
       const slide = { ...newSlide, id: newId };
       updatedSlides = [...currentSlides, slide];
     } else {
-      updatedSlides = currentSlides.map((s: any) => s.id === editingSlide.id ? newSlide : s);
+      updatedSlides = currentSlides.map((s: any) => String(s.id) === String(editingSlide.id) ? { ...newSlide, id: s.id } : s);
     }
 
     const updatedContent = { ...content, heroSlides: updatedSlides };
@@ -3966,7 +3970,7 @@ export default function AdminDashboard() {
                 }
               } catch {}
               if (img.startsWith("data:image/") && img.length > 180000) {
-                img = await compressBase64String(img, 1920, 600, 0.85);
+                img = await compressBase64String(img, 1200, 800, 0.85);
               }
             }
             if (mImg && typeof mImg === "string" && mImg.startsWith("data:image/")) {
@@ -3975,13 +3979,13 @@ export default function AdminDashboard() {
                 if (res.url) mImg = res.mobileUrl || res.url;
               } catch {}
               if (mImg.startsWith("data:image/") && mImg.length > 180000) {
-                mImg = await compressBase64String(mImg, 1080, 1080, 0.85);
+                mImg = await compressBase64String(mImg, 1200, 800, 0.85);
               }
             }
-            if (img && typeof img === "string" && img.includes("res.cloudinary.com") && !img.includes("c_pad,w_1920,h_600")) {
+            if (img && typeof img === "string" && img.includes("res.cloudinary.com") && !img.includes("c_fill,g_auto,w_1200,h_800")) {
               img = getCloudinaryCropUrl(img, "desktop");
             }
-            if (mImg && typeof mImg === "string" && mImg.includes("res.cloudinary.com") && !mImg.includes("c_pad,w_1080,h_1080")) {
+            if (mImg && typeof mImg === "string" && mImg.includes("res.cloudinary.com") && !mImg.includes("c_fill,g_auto,w_1200,h_800")) {
               mImg = getCloudinaryCropUrl(mImg, "mobile");
             }
             return { ...s, image: img, mobileImage: mImg };
@@ -4003,11 +4007,11 @@ export default function AdminDashboard() {
     })();
   };
 
-  const handleDeleteSlide = (slideId: number) => {
+  const handleDeleteSlide = (slideId: string | number) => {
     if (confirm("Are you sure you want to delete this slide?")) {
       const content = dbData.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
-      const currentSlides = (content.heroSlides && content.heroSlides.length > 0) ? content.heroSlides : defaultHeroSlides;
-      const updatedSlides = currentSlides.filter((s: any) => s.id !== slideId);
+      const currentSlides = Array.isArray(content.heroSlides) ? content.heroSlides : defaultHeroSlides;
+      const updatedSlides = currentSlides.filter((s: any) => String(s.id) !== String(slideId));
       const updatedContent = { ...content, heroSlides: updatedSlides };
       setDbData((prev: any) => ({ ...prev, content: updatedContent }));
       showToast("Hero Slide deleted successfully!");
@@ -11828,7 +11832,8 @@ export default function AdminDashboard() {
                   const content = dbData.content || { 
                     announcement: { visible: true, text: "", code: "", btnText: "", link: "" },
                     heroSlides: [],
-                    consultationBanner: { title: "", subtitle: "", ctaText: "", badge: "", doctorName: "", doctorTitle: "", doctorImage: "", doctorsOnlineText: "", availableSlotText: "" }
+                    consultationBanner: { title: "", subtitle: "", ctaText: "", badge: "", doctorName: "", doctorTitle: "", doctorImage: "", doctorsOnlineText: "", availableSlotText: "" },
+                    trustSection: { image: "/brand/why-pure-ayur-banner.jpg" },
                   };
 
                   if (editingSlide !== null) {
@@ -11931,7 +11936,7 @@ export default function AdminDashboard() {
                                         </span>
                                       </div>
                                       <p className="text-[11px] text-emerald-800 leading-tight mt-0.5">
-                                        Upload <strong>any photo</strong> — AI automatically detects your product subject and resizes to <strong>1920 × 600</strong> for Desktop and generates <strong>1080 × 1080</strong> for Mobile automatically!
+                                        Upload <strong>any photo</strong> — AI automatically detects your product subject and resizes to <strong>1200 × 800</strong> (3:2) for Desktop & Tablets, and generates <strong>1200 × 800</strong> (or 800 × 800) for Mobile automatically!
                                       </p>
                                     </div>
                                   </div>
@@ -11941,7 +11946,7 @@ export default function AdminDashboard() {
                               {/* 1. Desktop & Laptop Banner Photo (Drag & Drop) */}
                               <ImageDropzone
                                 label="Desktop & Laptop Banner Photo *"
-                                badge="1920 × 600 px (AI Auto-Fit)"
+                                badge="1200 × 800 px (3:2 Aspect Ratio)"
                                 icon="🖥️"
                                 currentValue={newSlide.image}
                                 onFileSelect={handleSlideDesktopDrop}
@@ -11951,21 +11956,21 @@ export default function AdminDashboard() {
                                 previewAspectRatio="wide"
                                 hint={
                                   <span>
-                                    📐 <strong>Recommended Desktop Size:</strong> <strong>1920 × 600 px</strong>. Drag & drop any image here — Cloudinary AI auto-fits it cleanly.
+                                    📐 <strong>Recommended Desktop Size:</strong> <strong>1200 × 800 px</strong> (3:2 Aspect Ratio). Drag & drop any image here — Cloudinary AI auto-fits cleanly to the Taitva layout.
                                   </span>
                                 }
                                 urlAction={
-                                  newSlide.image?.includes("res.cloudinary.com") && !newSlide.image?.includes("c_pad,w_1920,h_600") ? (
+                                  newSlide.image?.includes("res.cloudinary.com") && !newSlide.image?.includes("c_pad,w_1200,h_800") ? (
                                     <button
                                       type="button"
                                       onClick={() => {
                                         const aiUrl = getCloudinaryCropUrl(newSlide.image, "desktop");
                                         setNewSlide((prev) => ({ ...prev, image: aiUrl }));
-                                        showToast("Applied Cloudinary 1920×600 AI Sizing!");
+                                        showToast("Applied Cloudinary 1200×800 AI Sizing!");
                                       }}
                                       className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
                                     >
-                                      ✨ Apply 1920×600 AI Sizing
+                                      ✨ Apply 1200×800 AI Sizing
                                     </button>
                                   ) : null
                                 }
@@ -11973,8 +11978,8 @@ export default function AdminDashboard() {
 
                               {/* 2. Mobile Smartphone Banner Photo (Drag & Drop) */}
                               <ImageDropzone
-                                label="Mobile Smartphone Banner (Kapiva Style)"
-                                badge="1080 × 1080 px (Square 1:1)"
+                                label="Mobile Smartphone Banner (Taitva Style)"
+                                badge="1200 × 800 px (3:2 Aspect Ratio)"
                                 icon="📱"
                                 accent="amber"
                                 currentValue={newSlide.mobileImage}
@@ -11982,10 +11987,10 @@ export default function AdminDashboard() {
                                 onUrlChange={(val) => setNewSlide((prev) => ({ ...prev, mobileImage: val }))}
                                 onClear={() => setNewSlide((prev) => ({ ...prev, mobileImage: "" }))}
                                 isUploading={slideMobileUploading}
-                                previewAspectRatio="square"
+                                previewAspectRatio="wide"
                                 hint={
                                   <span>
-                                    📱 <strong>Recommended Mobile Size:</strong> <strong>1080 × 1080 px</strong> (Square). Displays full-screen on smartphones with bold, readable text.
+                                    📱 <strong>Recommended Mobile Size:</strong> <strong>1200 × 800 px</strong> (3:2 Aspect Ratio). Same 3:2 canvas as desktop, but formatted with larger text for phones. (Optional — if left empty, the desktop banner is used automatically).
                                   </span>
                                 }
                                 actionButton={
@@ -11995,7 +12000,7 @@ export default function AdminDashboard() {
                                       onClick={() => {
                                         const mobUrl = getCloudinaryCropUrl(newSlide.image, "mobile");
                                         setNewSlide((prev) => ({ ...prev, mobileImage: mobUrl }));
-                                        showToast("Generated 1080×1080 Mobile banner using Cloudinary AI!");
+                                        showToast("Generated 1200×800 Mobile banner using Cloudinary AI!");
                                       }}
                                       className="inline-flex items-center gap-1 rounded-lg border border-amber-400 bg-amber-200 px-2.5 py-1 text-[10px] font-black text-amber-950 hover:bg-amber-300 transition active:scale-95 cursor-pointer shadow-xs"
                                     >
@@ -12004,17 +12009,17 @@ export default function AdminDashboard() {
                                   ) : null
                                 }
                                 urlAction={
-                                  newSlide.mobileImage?.includes("res.cloudinary.com") && !newSlide.mobileImage?.includes("c_pad,w_1080,h_1080") ? (
+                                  newSlide.mobileImage?.includes("res.cloudinary.com") && !newSlide.mobileImage?.includes("c_pad,w_1200,h_800") ? (
                                     <button
                                       type="button"
                                       onClick={() => {
                                         const aiMob = getCloudinaryCropUrl(newSlide.mobileImage, "mobile");
                                         setNewSlide((prev) => ({ ...prev, mobileImage: aiMob }));
-                                        showToast("Applied Cloudinary 1080×1080 AI Sizing!");
+                                        showToast("Applied Cloudinary 1200×800 AI Sizing!");
                                       }}
                                       className="text-[10px] font-bold text-amber-800 hover:underline cursor-pointer"
                                     >
-                                      ✨ Apply 1080×1080 AI Sizing
+                                      ✨ Apply 1200×800 AI Sizing
                                     </button>
                                   ) : null
                                 }
@@ -12040,9 +12045,12 @@ export default function AdminDashboard() {
                                     required
                                     value={newSlide.href}
                                     onChange={(e) => setNewSlide({ ...newSlide, href: e.target.value })}
-                                    placeholder="e.g. #shop"
-                                    className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white"
+                                    placeholder="e.g. /products/virja-powder or #shop"
+                                    className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white text-xs"
                                   />
+                                  <span className="text-[10px] text-gray-500 mt-1 block">
+                                    Tip: Enter <strong>/products/virja-powder</strong> to go directly to the product, or <strong>/#shop</strong> to scroll to products on the homepage.
+                                  </span>
                                 </div>
                               </div>
                               {/* Slide Background Color & Gradient Editor */}
@@ -12058,7 +12066,11 @@ export default function AdminDashboard() {
                                       className="h-6 w-16 rounded-md border border-gray-300 shadow-inner flex items-center justify-center text-[9px] font-black text-white px-1 truncate"
                                       style={getPreviewBgStyle(newSlide.bgColor)}
                                     >
-                                      Sample
+                                      {newSlide.bgColor === "transparent" ? (
+                                        <span className="text-gray-700 text-[8px] font-bold">None</span>
+                                      ) : (
+                                        "Sample"
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -12068,24 +12080,42 @@ export default function AdminDashboard() {
                                   <button
                                     type="button"
                                     onClick={() => setBgColorMode("solid")}
-                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "solid" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
+                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "solid" && newSlide.bgColor !== "transparent" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
                                   >
                                     🎨 Solid Color & Palette
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setBgColorMode("presets")}
-                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "presets" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
+                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "presets" && newSlide.bgColor !== "transparent" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
                                   >
                                     ✨ Theme Presets
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setBgColorMode("customGrad")}
-                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "customGrad" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
+                                    className={`px-3 py-1 rounded-lg font-bold transition ${bgColorMode === "customGrad" && newSlide.bgColor !== "transparent" ? "bg-[#244f31] text-white shadow-xs" : "bg-white text-gray-700 hover:bg-gray-100 border border-[#ddddd9]"}`}
                                   >
                                     🌈 Custom 2-Color Gradient
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setNewSlide({ ...newSlide, bgColor: "transparent" });
+                                      showToast("Background color hidden (Transparent)");
+                                    }}
+                                    className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1 ${newSlide.bgColor === "transparent" ? "bg-red-700 text-white shadow-xs" : "bg-white text-red-700 hover:bg-red-50 border border-red-200"}`}
+                                  >
+                                    <span>🚫 Hide BG Color (Transparent)</span>
+                                  </button>
+                                </div>
+
+                                {/* Informational Callout regarding New UI */}
+                                <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-900 text-[11px] flex items-start gap-2">
+                                  <span className="text-base leading-none">💡</span>
+                                  <span>
+                                    <strong>Taitva UI Design Note:</strong> Full-width graphical banners (<strong>1200 × 800 px</strong>) fill 100% of the carousel frame edge-to-edge, so the background color is automatically hidden behind your banner image. Click <strong>"Hide BG Color (Transparent)"</strong> if you want zero background color.
+                                  </span>
                                 </div>
 
                                 {/* Mode 1: Solid Color & Swatches */}
@@ -12117,6 +12147,8 @@ export default function AdminDashboard() {
                                       <span className="block text-[10px] font-bold text-gray-500 mb-1.5">Popular Ayurvedic & Brand Swatches:</span>
                                       <div className="flex flex-wrap gap-1.5">
                                         {[
+                                          { name: "🚫 None (Transparent)", hex: "transparent" },
+                                          { name: "Taitva Forest Green", hex: "#023915" },
                                           { name: "Rich Madhunashi Maroon", hex: "#4a0404" },
                                           { name: "Deep Crimson Ruby", hex: "#660b0b" },
                                           { name: "Deep Forest", hex: "#1d3b24" },
@@ -12140,7 +12172,14 @@ export default function AdminDashboard() {
                                                 : "border-[#ddddd9] bg-white hover:bg-gray-50"
                                             }`}
                                           >
-                                            <span className="size-3 rounded-full shrink-0 border border-black/10" style={{ backgroundColor: swatch.hex }} />
+                                            <span
+                                              className="size-3 rounded-full shrink-0 border border-black/10"
+                                              style={
+                                                swatch.hex === "transparent"
+                                                  ? { background: "repeating-conic-gradient(#cbd5e1 0% 25%, #ffffff 0% 50%) 50% / 6px 6px" }
+                                                  : { backgroundColor: swatch.hex }
+                                              }
+                                            />
                                             <span>{swatch.name}</span>
                                           </button>
                                         ))}
@@ -12267,7 +12306,7 @@ export default function AdminDashboard() {
                     );
                   }
 
-                  const activeSlides = (content.heroSlides && content.heroSlides.length > 0) ? content.heroSlides : defaultHeroSlides;
+                  const activeSlides = Array.isArray(content.heroSlides) ? content.heroSlides : defaultHeroSlides;
                   const announcement = content.announcement || { visible: true, text: "", code: "", btnText: "", link: "" };
                   const cb = content.consultationBanner || { title: "", subtitle: "", ctaText: "", badge: "", doctorName: "", doctorTitle: "", doctorImage: "", doctorsOnlineText: "", availableSlotText: "" };
 
@@ -13245,7 +13284,176 @@ export default function AdminDashboard() {
                         );
                       })()}
 
-                      {/* Section E: Storefront Footer CMS Editor */}
+                      {/* Section E: Why Pure Ayur Herbs? (Brand Trust Banner) */}
+                      {(() => {
+                        const trustSec = content.trustSection || {};
+                        const trustBannerImage = trustSec.image || content.trustBanner || "/brand/why-pure-ayur-banner.jpg";
+
+                        const updateTrustImage = (newUrl: string) => {
+                          const updatedTrust = {
+                            ...trustSec,
+                            image: newUrl,
+                          };
+                          const updatedContent = {
+                            ...content,
+                            trustSection: updatedTrust,
+                            trustBanner: newUrl,
+                          };
+                          setDbData((prev: any) => ({ ...prev, content: updatedContent }));
+                        };
+
+                        const handleSaveTrust = async (urlToSave?: string) => {
+                          const finalUrl = urlToSave !== undefined ? urlToSave : trustBannerImage;
+                          const updatedContent = {
+                            ...content,
+                            trustSection: {
+                              ...trustSec,
+                              image: finalUrl,
+                            },
+                            trustBanner: finalUrl,
+                          };
+                          await handleSaveCMSContent(updatedContent, true);
+                          showToast("✨ Why Pure Ayur Herbs banner saved successfully!");
+                        };
+
+                        return (
+                          <div className="border border-[#ddddd9] p-5 sm:p-6 rounded-2xl bg-white shadow-xs space-y-6">
+                            {/* Header Bar */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#ddddd9] pb-4">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-black text-sm text-[#17231b]">
+                                    🛡️ Why Pure Ayur Herbs? (Brand Trust Banner)
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#244f31] font-bold text-[10px]">
+                                    Live on Homepage
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-[#666666] mt-0.5 block">
+                                  Prominent editorial trust banner showcasing Ayurvedic purity certifications and clinical research.
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {renderVisibilityBadgeButton("trustSection", "Why Pure Ayur Herbs Section")}
+                                <a
+                                  href="/#trust"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#244f31] bg-[#f8faf1] border border-[#244f31]/30 hover:bg-[#244f31]/10 px-3.5 py-1.5 rounded-xl transition cursor-pointer shadow-2xs"
+                                >
+                                  <span>Preview on Homepage</span>
+                                  <span>↗</span>
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleSaveTrust()}
+                                  className="px-4 py-1.5 bg-[#244f31] hover:bg-[#1d3b24] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                                >
+                                  Save Changes
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Banner Image Editor & Preview Grid */}
+                            <div className="grid gap-6 lg:grid-cols-12 items-start">
+                              {/* Left Controls */}
+                              <div className="lg:col-span-5 space-y-4">
+                                <div>
+                                  <label className="block font-bold text-xs text-[#17231b] mb-1">
+                                    Banner Image URL
+                                  </label>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      value={trustBannerImage}
+                                      onChange={(e) => updateTrustImage(e.target.value)}
+                                      onBlur={() => void handleSaveTrust()}
+                                      placeholder="/brand/why-pure-ayur-banner.jpg or https://..."
+                                      className="flex-1 rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-[#f8faf1]/20 text-xs"
+                                    />
+                                    <label className="px-3.5 py-2 rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-bold text-xs transition cursor-pointer shrink-0 shadow-xs flex items-center gap-1.5">
+                                      <Upload className="size-3.5" />
+                                      <span>Upload</span>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            showToast("Uploading trust banner image...");
+                                            const url = await uploadImageToCloud(file, "pure_ayur_herbs/brand");
+                                            if (url) {
+                                              updateTrustImage(url);
+                                              await handleSaveTrust(url);
+                                              showToast("✨ Trust banner uploaded & saved live!");
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                  <p className="text-[11px] text-[#666666] mt-1.5 leading-relaxed">
+                                    Recommended: <strong>1376 × 768 px</strong> (or <strong>1440 × 800 px</strong>, ~16:9 widescreen ratio) matching the Taitva design. Supports PNG, JPG, or WebP.
+                                  </p>
+                                </div>
+
+                                <div className="p-3.5 rounded-xl bg-[#f8faf1] border border-[#ddddd9] space-y-2">
+                                  <span className="text-xs font-bold text-[#244f31] flex items-center gap-1.5">
+                                    💡 Quick Actions
+                                  </span>
+                                  <div className="flex flex-wrap gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        const defaultBanner = "/brand/why-pure-ayur-banner.jpg";
+                                        updateTrustImage(defaultBanner);
+                                        await handleSaveTrust(defaultBanner);
+                                        showToast("Reset to default brand trust banner");
+                                      }}
+                                      className="text-xs font-bold px-3 py-1.5 bg-white border border-[#ddddd9] hover:border-[#244f31] rounded-lg text-[#17231b] transition shadow-2xs"
+                                    >
+                                      Reset to Default Banner
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-[11px] space-y-1">
+                                  <span className="font-bold block">📌 Where is this displayed?</span>
+                                  <span>
+                                    This wide banner is displayed on the storefront homepage directly under the products / about section, showing your 4 Ayurvedic certification stamps: 100% Herbal Purity, Ayush Certified, NABL Lab Tested, and Zero Chemicals.
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Right: Live Preview */}
+                              <div className="lg:col-span-7">
+                                <span className="block font-bold text-xs text-[#17231b] mb-2">
+                                  Live Storefront Preview
+                                </span>
+                                <div className="relative rounded-2xl overflow-hidden border border-[#ddddd9] shadow-sm bg-[#f8faf5] group">
+                                  <img
+                                    src={trustBannerImage || "/brand/why-pure-ayur-banner.jpg"}
+                                    alt="Why Pure Ayur Herbs Preview"
+                                    className="w-full h-auto object-cover max-h-[320px] transition group-hover:scale-[1.01] duration-300"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = "/brand/why-pure-ayur-banner.jpg";
+                                    }}
+                                  />
+                                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-white text-[10px] font-medium border border-white/20">
+                                    Desktop & Mobile Banner (1376 × 768 px)
+                                  </div>
+                                </div>
+                                <span className="text-[10px] text-center text-gray-400 mt-2 block">
+                                  Image automatically scales gracefully across desktop, tablet, and mobile displays.
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Section F: Storefront Footer CMS Editor */}
                       {renderFooterCMSEditor()}
                     </div>
                   );
@@ -14335,13 +14543,26 @@ export default function AdminDashboard() {
                                           if (!file) return;
                                           setTestimonialAvatarUploading(true);
                                           try {
-                                            const url = await uploadImageToCloud(file, "pure_ayur_herbs/testimonials");
+                                            let url = await uploadImageToCloud(file, "pure_ayur_herbs/testimonials");
+                                            if (!url) {
+                                              url = await compressImageFile(file, 600, 600, 0.85);
+                                            }
                                             if (url) {
                                               setNewTestimonial((prev: any) => ({ ...prev, avatar: url }));
                                               showToast("Avatar uploaded!");
                                             }
                                           } catch {
-                                            showToast("Failed to upload avatar image");
+                                            try {
+                                              const localUrl = await compressImageFile(file, 600, 600, 0.85);
+                                              if (localUrl) {
+                                                setNewTestimonial((prev: any) => ({ ...prev, avatar: localUrl }));
+                                                showToast("Avatar image loaded!");
+                                              } else {
+                                                showToast("Failed to upload avatar image");
+                                              }
+                                            } catch {
+                                              showToast("Failed to upload avatar image");
+                                            }
                                           } finally {
                                             setTestimonialAvatarUploading(false);
                                           }

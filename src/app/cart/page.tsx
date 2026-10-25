@@ -24,7 +24,8 @@ export default function CartPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const syncCart = () => {
+      if (typeof window === "undefined") return;
       try {
         const stored = localStorage.getItem("pyur_cart");
         if (stored) {
@@ -38,49 +39,75 @@ export default function CartPage() {
               localStorage.setItem("pyur_cart", JSON.stringify(valid));
             }
           }
+        } else {
+          setCart([]);
         }
       } catch (e) {
         console.error("Failed to load cart:", e);
       } finally {
         setIsLoaded(true);
       }
-    }
+    };
+
+    syncCart();
+    window.addEventListener("storage", syncCart);
+    window.addEventListener("pyur_cart_updated", syncCart);
+    return () => {
+      window.removeEventListener("storage", syncCart);
+      window.removeEventListener("pyur_cart_updated", syncCart);
+    };
   }, []);
 
   const updateQuantity = (productId: string, delta: number) => {
-    setCart((prev) => {
-      const updated = prev
-        .map((item) => {
-          if (item && item.product && item.product.id === productId) {
-            const newQty = (Number(item.quantity) || 1) + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as { product: Product; quantity: number }[];
+    let currentCart = cart;
+    try {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) currentCart = parsed;
+      }
+    } catch {}
 
-      try {
-        localStorage.setItem("pyur_cart", JSON.stringify(updated));
+    const updated = currentCart
+      .map((item) => {
+        if (item && item.product && item.product.id === productId) {
+          const newQty = (Number(item.quantity) || 1) + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      })
+      .filter(Boolean) as { product: Product; quantity: number }[];
+
+    setCart(updated);
+    try {
+      localStorage.setItem("pyur_cart", JSON.stringify(updated));
+      setTimeout(() => {
         window.dispatchEvent(new Event("pyur_cart_updated"));
-      } catch {}
-
-      return updated;
-    });
+      }, 0);
+    } catch {}
   };
 
   const removeItem = (productId: string) => {
-    setCart((prev) => {
-      const updated = prev.filter(
-        (item) => item && item.product && item.product.id !== productId
-      );
+    let currentCart = cart;
+    try {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) currentCart = parsed;
+      }
+    } catch {}
 
-      try {
-        localStorage.setItem("pyur_cart", JSON.stringify(updated));
+    const updated = currentCart.filter(
+      (item) => item && item.product && item.product.id !== productId
+    );
+
+    setCart(updated);
+    try {
+      localStorage.setItem("pyur_cart", JSON.stringify(updated));
+      setTimeout(() => {
         window.dispatchEvent(new Event("pyur_cart_updated"));
-      } catch {}
-
-      return updated;
-    });
+      }, 0);
+    } catch {}
   };
 
   const validCart = cart.filter(
@@ -160,7 +187,7 @@ export default function CartPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#f8faf1] text-[#17231b] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-neutral-900 flex flex-col justify-between">
       <div>
         <AnnouncementBar onOpenAppModal={() => {}} />
         <SiteHeader
@@ -174,23 +201,23 @@ export default function CartPage() {
 
         <main className="max-w-5xl mx-auto px-4 py-6 md:py-10 w-full">
           {/* Top Breadcrumb */}
-          <div className="flex items-center gap-2 text-xs text-[#666666] mb-6">
-            <Link href="/" className="hover:text-[#244f31] flex items-center gap-1 font-semibold">
+          <div className="flex items-center gap-2 text-xs text-neutral-500 mb-6">
+            <Link href="/" className="hover:text-[#023915] flex items-center gap-1 font-semibold">
               <ArrowLeft className="size-3.5" />
               <span>Continue Shopping</span>
             </Link>
             <span>/</span>
-            <span className="font-bold text-[#17231b]">Shopping Basket</span>
+            <span className="font-bold text-neutral-900">Shopping Basket</span>
           </div>
 
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-10 items-center justify-center rounded-2xl bg-[#244f31] text-white shadow-xs">
+              <div className="flex size-10 items-center justify-center rounded-2xl bg-[#023915] text-white shadow-xs">
                 <ShoppingBag className="size-5" />
               </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-black text-[#17231b]">Your Herbal Basket</h1>
-                <p className="text-xs text-[#666666]">
+                <h1 className="text-xl md:text-2xl font-bold text-neutral-900">Your Herbal Basket</h1>
+                <p className="text-xs text-neutral-500">
                   {validCart.length > 0 ? `${totalCount} item${totalCount > 1 ? "s" : ""} selected for wellness` : "Your basket is empty"}
                 </p>
               </div>
@@ -199,22 +226,22 @@ export default function CartPage() {
 
           {!isLoaded ? (
             <div className="py-20 text-center">
-              <div className="inline-block size-8 animate-spin rounded-full border-4 border-[#244f31] border-t-transparent" />
+              <div className="inline-block size-8 animate-spin rounded-full border-4 border-[#023915] border-t-transparent" />
             </div>
           ) : validCart.length === 0 ? (
             /* Empty Cart View */
-            <div className="rounded-3xl border border-[#ddddd9] bg-white p-8 md:p-14 text-center shadow-xs">
-              <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[#f8faf1] text-[#80a03c]">
-                <ShoppingBag className="size-10 text-[#244f31]" />
+            <div className="rounded-3xl border border-neutral-200/80 bg-white p-8 md:p-14 text-center shadow-xs">
+              <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-[#f8f9fa] text-[#023915]">
+                <ShoppingBag className="size-10 text-[#023915]" />
               </div>
-              <h2 className="mt-5 text-xl md:text-2xl font-black text-[#17231b]">Your Basket is Empty</h2>
-              <p className="mt-2 text-xs md:text-sm text-[#666666] max-w-sm mx-auto">
+              <h2 className="mt-5 text-xl md:text-2xl font-bold text-neutral-900">Your Basket is Empty</h2>
+              <p className="mt-2 text-xs md:text-sm text-neutral-500 max-w-sm mx-auto">
                 Looks like you haven&apos;t added any Ayurvedic formulations yet. Explore our high-altitude herbs and holistic remedies!
               </p>
               <div className="mt-6">
                 <Link
                   href="/"
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#244f31] px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-[#1b3b24]"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#023915] px-6 py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-black"
                 >
                   <ArrowLeft className="size-4" />
                   <span>Explore Products</span>
@@ -227,10 +254,10 @@ export default function CartPage() {
               {/* Left 2 Columns: Items */}
               <div className="lg:col-span-2 space-y-4">
                 {/* Free Shipping Progress Card */}
-                <div className="rounded-2xl border border-[#80a03c]/20 bg-[#eef5df] p-4 shadow-xs">
-                  <div className="flex justify-between text-xs font-bold text-[#244f31]">
+                <div className="rounded-2xl border border-neutral-200 bg-[#c2d4c5]/30 p-4 shadow-xs">
+                  <div className="flex justify-between text-xs font-bold text-[#023915]">
                     <span className="flex items-center gap-1.5">
-                      <Truck className="size-4 text-[#80a03c]" />
+                      <Truck className="size-4 text-[#023915]" />
                       {isFreeDelivery
                         ? "🎉 Congratulations! FREE Delivery Unlocked!"
                         : `Add ₹${freeShippingThreshold - subtotal} more for FREE Delivery`}
@@ -239,7 +266,7 @@ export default function CartPage() {
                   </div>
                   <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-white/70">
                     <div
-                      className="h-full bg-[#80a03c] transition-all duration-500 rounded-full"
+                      className="h-full bg-[#023915] transition-all duration-500 rounded-full"
                       style={{ width: `${progressToFreeShipping}%` }}
                     />
                   </div>
@@ -259,64 +286,64 @@ export default function CartPage() {
                     return (
                       <div
                         key={product.id}
-                        className="flex gap-3 md:gap-4 rounded-2xl border border-[#ddddd9] bg-white p-3.5 md:p-4 shadow-xs transition hover:border-[#244f31]/30"
+                        className="flex gap-3 md:gap-4 rounded-2xl border border-neutral-200/80 bg-white p-3.5 md:p-4 shadow-2xs transition hover:border-neutral-300"
                       >
-                        <div className="relative size-20 md:size-24 shrink-0 rounded-xl overflow-hidden bg-[#f8faf1] border border-[#ddddd9]/50">
+                        <div className="relative size-20 md:size-24 shrink-0 rounded-xl overflow-hidden bg-white border border-neutral-200">
                           <Image
                             src={imageSrc}
                             alt={product.name || "Ayurvedic product"}
                             fill
                             sizes="96px"
-                            className="object-cover"
+                            className="object-contain p-1"
                           />
                         </div>
 
                         <div className="flex flex-1 flex-col justify-between min-w-0">
                           <div>
                             <div className="flex items-start justify-between gap-2">
-                              <h3 className="line-clamp-2 text-xs md:text-sm font-black text-[#17231b]">
+                              <h3 className="line-clamp-2 text-xs md:text-sm font-bold text-neutral-900">
                                 {product.name}
                               </h3>
                               <button
                                 onClick={() => removeItem(product.id)}
-                                className="p-1 text-gray-400 hover:text-red-600 transition"
+                                className="p-1 text-neutral-400 hover:text-red-600 transition cursor-pointer"
                                 title="Remove item"
                               >
                                 <Trash2 className="size-4" />
                               </button>
                             </div>
                             {isCoinsActive && coinsEarned > 0 && (
-                              <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-[#80a03c]">
+                              <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
                                 <Sparkles className="size-3" />
                                 Earn {coinsEarned * quantity} Pure Coins 🪙
                               </p>
                             )}
                           </div>
 
-                          <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                          <div className="flex items-center justify-between mt-3 pt-2 border-t border-neutral-100">
                             <div className="flex items-baseline gap-1.5">
-                              <span className="text-sm md:text-base font-black text-[#17231b]">
+                              <span className="text-sm md:text-base font-bold text-neutral-900">
                                 ₹{price * quantity}
                               </span>
                               {compareAt > price && (
-                                <span className="text-xs text-gray-400 line-through">
+                                <span className="text-xs text-neutral-400 line-through">
                                   ₹{compareAt * quantity}
                                 </span>
                               )}
                             </div>
 
-                            <div className="flex items-center rounded-lg border border-[#ddddd9] bg-white">
+                            <div className="flex items-center rounded-lg border border-neutral-200 bg-white">
                               <button
                                 onClick={() => updateQuantity(product.id, -1)}
-                                className="p-1.5 hover:bg-[#f8faf1] text-[#17231b] transition"
+                                className="p-1.5 hover:bg-neutral-100 text-neutral-900 transition cursor-pointer"
                                 aria-label="Decrease quantity"
                               >
                                 <Minus className="size-3" />
                               </button>
-                              <span className="px-3 text-xs font-bold">{quantity}</span>
+                              <span className="px-3 text-xs font-bold text-neutral-900">{quantity}</span>
                               <button
                                 onClick={() => updateQuantity(product.id, 1)}
-                                className="p-1.5 hover:bg-[#f8faf1] text-[#17231b] transition"
+                                className="p-1.5 hover:bg-neutral-100 text-neutral-900 transition cursor-pointer"
                                 aria-label="Increase quantity"
                               >
                                 <Plus className="size-3" />
@@ -332,46 +359,46 @@ export default function CartPage() {
 
               {/* Right Column: Order Summary */}
               <div className="space-y-4">
-                <div className="rounded-2xl border border-[#ddddd9] bg-white p-5 shadow-xs">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-[#17231b] pb-3 border-b border-[#ddddd9]">
+                <div className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xs">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-900 pb-3 border-b border-neutral-200">
                     Order Summary
                   </h3>
 
                   <div className="mt-4 space-y-2.5 text-xs">
-                    <div className="flex justify-between text-gray-600">
+                    <div className="flex justify-between text-neutral-600">
                       <span>Item Subtotal ({totalCount} items)</span>
-                      <span className="font-bold text-[#17231b]">₹{subtotal}</span>
+                      <span className="font-bold text-neutral-900">₹{subtotal}</span>
                     </div>
 
                     {totalSavings > 0 && (
-                      <div className="flex justify-between text-[#80a03c]">
+                      <div className="flex justify-between text-emerald-700">
                         <span>MRP Discount</span>
                         <span className="font-bold">-₹{totalSavings}</span>
                       </div>
                     )}
 
-                    <div className="flex justify-between text-gray-600">
+                    <div className="flex justify-between text-neutral-600">
                       <span>Delivery Fee</span>
-                      <span className="font-bold text-[#17231b]">
+                      <span className="font-bold text-neutral-900">
                         {isFreeDelivery ? (
-                          <span className="text-[#80a03c]">FREE</span>
+                          <span className="text-emerald-700">FREE</span>
                         ) : (
                           "₹99"
                         )}
                       </span>
                     </div>
 
-                    <div className="border-t border-[#ddddd9] pt-3 flex justify-between items-baseline">
-                      <span className="text-sm font-black text-[#17231b]">Total Payable</span>
+                    <div className="border-t border-neutral-200 pt-3 flex justify-between items-baseline">
+                      <span className="text-sm font-bold text-neutral-900">Total Payable</span>
                       <div className="text-right">
-                        <span className="text-xl font-black text-[#244f31]">₹{totalPayable}</span>
-                        <span className="block text-[10px] text-gray-500">Taxes Included</span>
+                        <span className="text-xl font-bold text-[#023915]">₹{totalPayable}</span>
+                        <span className="block text-[10px] text-neutral-500">Taxes Included</span>
                       </div>
                     </div>
                   </div>
 
                   {totalCoins > 0 && (
-                    <div className="mt-4 p-2.5 rounded-xl bg-[#f8faf1] border border-[#ddddd9]/60 flex items-center gap-2 text-xs font-bold text-[#244f31]">
+                    <div className="mt-4 p-2.5 rounded-xl bg-[#f5f5f5] border border-neutral-200 flex items-center gap-2 text-xs font-bold text-[#023915]">
                       <span>🪙</span>
                       <span>You will earn {totalCoins} Pure Coins on this order!</span>
                     </div>
@@ -388,13 +415,13 @@ export default function CartPage() {
                         window.location.href = `/checkout?productId=${encodeURIComponent(p.id)}&quantity=${q}${priceParam}${nameParam}${imgParam}`;
                       }
                     }}
-                    className="mt-5 w-full rounded-xl bg-[#244f31] py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-lg transition hover:bg-[#1b3b24]"
+                    className="mt-5 w-full rounded-xl bg-[#023915] py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-black cursor-pointer"
                   >
                     Proceed to Checkout
                   </button>
 
-                  <div className="mt-4 flex items-center justify-center gap-2 text-[11px] font-semibold text-gray-500">
-                    <ShieldCheck className="size-4 text-[#80a03c]" />
+                  <div className="mt-4 flex items-center justify-center gap-2 text-[11px] font-semibold text-neutral-500">
+                    <ShieldCheck className="size-4 text-[#023915]" />
                     <span>Safe & Secure 256-Bit Encrypted Checkout</span>
                   </div>
                 </div>

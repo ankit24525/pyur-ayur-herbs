@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Phone, Mail, CreditCard, ShieldCheck, Wallet, Truck, Smartphone } from "lucide-react";
 import { getStorefrontData } from "@/lib/storefront-client";
 
 export function formatFooterHref(rawUrl?: string, label?: string): string {
   const cleanLabel = (label || "").trim().toLowerCase();
   const raw = (rawUrl || "").trim();
 
-  // 1. If label is About Us, always guarantee it resolves to /about-us
   if (
     cleanLabel === "about us" ||
     cleanLabel === "about-us" ||
@@ -29,7 +27,6 @@ export function formatFooterHref(rawUrl?: string, label?: string): string {
     }
   }
 
-  // 1b. If label is FAQs, always guarantee it resolves to /faqs
   if (
     cleanLabel === "faqs" ||
     cleanLabel === "faq" ||
@@ -48,121 +45,76 @@ export function formatFooterHref(rawUrl?: string, label?: string): string {
     }
   }
 
-  // 1c. If label is Shop All or Shop, always resolve to /#shop (the products catalog on homepage)
-  if (
-    cleanLabel === "shop all" ||
-    cleanLabel === "shop" ||
-    cleanLabel === "shop now" ||
-    cleanLabel === "all products" ||
-    cleanLabel === "shop all products" ||
-    cleanLabel.includes("shop all")
-  ) {
-    if (!raw || raw === "/" || raw === "#") {
-      return "/#shop";
-    }
-  }
-
-  // 1d. If label is Media or Media Hub, always resolve to /media
-  if (
-    cleanLabel === "media" ||
-    cleanLabel === "media hub" ||
-    cleanLabel === "videos" ||
-    cleanLabel.includes("media")
-  ) {
-    if (!raw || raw === "#" || raw === "/" || raw.includes("solution")) {
-      return "/media";
-    }
-  }
-
-  // 2. Empty or hash fallback
   if (!raw || raw === "#") {
     if (cleanLabel.includes("about")) return "/about-us";
     if (cleanLabel.includes("faq")) return "/faqs";
     if (cleanLabel.includes("blog")) return "/blog";
-    if (cleanLabel.includes("media")) return "/media";
+    if (cleanLabel.includes("privacy")) return "/privacy-policy";
+    if (cleanLabel.includes("return")) return "/return-policy";
+    if (cleanLabel.includes("shipping")) return "/shipping-policy";
+    if (cleanLabel.includes("terms")) return "/terms-of-service";
     if (cleanLabel.includes("contact")) return "/contact-us";
     return "#";
   }
 
-  // 3. Absolute external URLs or protocol schemes
   if (/^(https?:|\/\/|mailto:|tel:)/i.test(raw)) {
     return raw;
   }
 
-  // 4. Hash/anchor links
   if (raw.startsWith("#")) {
     return raw;
   }
 
-  // 5. Any slug or relative path: ensure single leading slash and clean whitespace
   const cleanedSlug = raw.replace(/^\/+/, "").replace(/\s+/g, "-");
-
-  if (cleanedSlug.toLowerCase() === "about-us" || cleanedSlug.toLowerCase() === "about") {
-    return "/about-us";
-  }
-
-  if (cleanedSlug.toLowerCase() === "faqs" || cleanedSlug.toLowerCase() === "faq") {
-    return "/faqs";
-  }
-
-  if (cleanedSlug.toLowerCase() === "media" || cleanedSlug.toLowerCase() === "media-hub") {
-    return "/media";
-  }
-
   return `/${cleanedSlug}`;
 }
+
+const DEFAULT_USEFUL_LINKS = [
+  { label: "About Us", url: "/about-us" },
+  { label: "Privacy Policy", url: "/privacy-policy" },
+  { label: "Return Policy", url: "/return-policy" },
+  { label: "Shipping Policy", url: "/shipping-policy" },
+  { label: "Terms & Conditions", url: "/terms-of-service" },
+];
+
+const MOST_SEARCHED_TAGS = [
+  { label: "Herbal Drinks", href: "/products?search=Herbal+Drinks" },
+  { label: "Healthy Botanicals", href: "/products?search=Botanicals" },
+  { label: "Best Sellers", href: "/products?sort=bestseller" },
+  { label: "Under 499", href: "/products?maxPrice=499" },
+  { label: "Wholesome Superfoods", href: "/products?search=Superfoods" },
+  { label: "Daily Nutrition", href: "/products?search=Nutrition" },
+  { label: "Under 999", href: "/products?maxPrice=999" },
+  { label: "Natural Supplements", href: "/products?search=Supplements" },
+  { label: "Under 299", href: "/products?maxPrice=299" },
+];
 
 export default function SiteFooter() {
   const [footerData, setFooterData] = useState<any>(null);
   const [settings, setSettings] = useState<any>({
     storeName: "Pure Ayur Herbs",
-    supportEmail: "info@pureayurherbs.com",
-    whatsappNumber: "917247824101",
+    supportEmail: "anshv799@gmail.com",
+    whatsappNumber: "91 - 8588011038",
     companyLegalName: "Pure Ayur Herbs Private Limited",
-    registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
-    gstin: "09AAPCP8765A1Z5",
+    registeredAddress:
+      "H. NO-A-10/1, F/F, Sonia Vihar, Opp NEAR BR PUBLIC SCHOOL, BLOCK -A , PART-2, Shahdara, Delhi, New Delhi, 110094",
     socialLinks: {
-      instagram: "https://instagram.com",
       facebook: "https://facebook.com",
+      instagram: "https://instagram.com",
       youtube: "https://youtube.com",
       twitter: "https://twitter.com",
-      linkedin: "",
     },
   });
 
   useEffect(() => {
-    const sanitizeFooterLinks = (links: any[]) => {
-      if (!Array.isArray(links)) return links;
-      return links.map((l: any) => {
-        const label = l?.label?.toLowerCase().trim() || "";
-        if (label === "about us" || label === "about") {
-          return { ...l, url: "/about-us" };
-        }
-        if (label === "faqs" || label === "faq" || label === "frequently asked questions") {
-          return { ...l, url: "/faqs" };
-        }
-        if (label === "shop all" || label === "shop" || label.includes("shop all")) {
-          return { ...l, url: "/#shop" };
-        }
-        return l;
-      });
-    };
-
-    // Check localStorage cache first for instantaneous rendering
     if (typeof window !== "undefined") {
       try {
-        const cached = JSON.parse(localStorage.getItem("pyur_storefront_cache") || "{}");
-        if (cached.settings) setSettings((prev: any) => ({ ...prev, ...cached.settings }));
-        if (cached.content?.footer) {
-          const f = { ...cached.content.footer };
-          if (Array.isArray(f.column1Links)) {
-            f.column1Links = sanitizeFooterLinks(f.column1Links);
-          }
-          if (Array.isArray(f.column2Links)) {
-            f.column2Links = sanitizeFooterLinks(f.column2Links);
-          }
-          setFooterData(f);
-        }
+        const cached = JSON.parse(
+          localStorage.getItem("pyur_storefront_cache") || "{}"
+        );
+        if (cached.settings)
+          setSettings((prev: any) => ({ ...prev, ...cached.settings }));
+        if (cached.content?.footer) setFooterData(cached.content.footer);
       } catch {}
     }
 
@@ -172,14 +124,7 @@ export default function SiteFooter() {
           setSettings((prev: any) => ({ ...prev, ...data.settings }));
         }
         if (data && data.content?.footer) {
-          const f = { ...data.content.footer };
-          if (Array.isArray(f.column1Links)) {
-            f.column1Links = sanitizeFooterLinks(f.column1Links);
-          }
-          if (Array.isArray(f.column2Links)) {
-            f.column2Links = sanitizeFooterLinks(f.column2Links);
-          }
-          setFooterData(f);
+          setFooterData(data.content.footer);
         }
       })
       .catch((e) => console.error("Error loading settings in footer:", e));
@@ -193,480 +138,284 @@ export default function SiteFooter() {
       }
     };
     window.addEventListener("pyur_storefront_updated", handleUpdate);
-    return () => window.removeEventListener("pyur_storefront_updated", handleUpdate);
+    return () =>
+      window.removeEventListener("pyur_storefront_updated", handleUpdate);
   }, []);
 
-  const companyName = footerData?.companyLegalName || settings?.companyLegalName || "Pure Ayur Herbs Private Limited";
-  const registeredAddress = footerData?.registeredAddress || settings?.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301";
-  const gstin = footerData?.gstin || settings?.gstin || "09AAPCP8765A1Z5";
-  const whatsappNum = footerData?.supportWhatsapp || settings?.whatsappNumber || "917247824101";
-  const supportEmail = footerData?.supportEmail || settings?.supportEmail || "info@pureayurherbs.com";
+  const displayPhone =
+    footerData?.supportWhatsapp ||
+    settings?.whatsappNumber ||
+    "+91 - 8588011038";
 
-  let cleanNumber = (whatsappNum || "917247824101").replace(/\D/g, "");
-  if (cleanNumber.length === 10) {
-    cleanNumber = "91" + cleanNumber;
+  let cleanPhone = displayPhone.replace(/[^\d+]/g, "");
+  if (!cleanPhone.startsWith("+") && cleanPhone.length === 10) {
+    cleanPhone = "+91" + cleanPhone;
   }
 
-  const social = footerData?.socialLinks || settings?.socialLinks || {
-    instagram: "https://instagram.com",
-    facebook: "https://facebook.com",
-    youtube: "https://youtube.com",
-    twitter: "https://twitter.com",
-    linkedin: "",
-  };
+  const displayEmail =
+    footerData?.supportEmail ||
+    settings?.supportEmail ||
+    "anshv799@gmail.com";
 
-  const col1Title = footerData?.column1Title || "Shop All";
-  const col1Links = Array.isArray(footerData?.column1Links)
-    ? footerData.column1Links
-    : [
-        { label: "Virja Powder", url: "/products/virja-powder" },
-        { label: "Madhunashi Powder", url: "/products/madhunashi-powder" },
-        { label: "Fat Burner", url: "/products/fat-burner" },
-        { label: "Perfect 36 Cream", url: "/products/perfect-36-cream" },
-        { label: "Virja Gold Majun", url: "/products/virja-gold-majun" },
-      ];
+  const displayAddress =
+    footerData?.registeredAddress ||
+    settings?.registeredAddress ||
+    "H. NO-A-10/1, F/F, Sonia Vihar, Opp NEAR BR PUBLIC SCHOOL, BLOCK -A , PART-2, Shahdara, Delhi, New Delhi, 110094";
 
-  const col2Title = footerData?.column2Title || "About Us";
-  const col2Links = Array.isArray(footerData?.column2Links)
-    ? footerData.column2Links
-    : [
-        { label: "About Us", url: "/about-us" },
-        { label: "FAQs", url: "/faqs" },
-        { label: "Blog", url: "/blog" },
-        { label: "Media Hub", url: "/media" },
-        { label: "Contact Us", url: "/contact-us" },
-      ];
+  const social = footerData?.socialLinks ||
+    settings?.socialLinks || {
+      facebook: "https://facebook.com",
+      instagram: "https://instagram.com",
+    };
 
-  const showLeafPattern = footerData?.showLeafPattern !== false;
-  const showMarketplaces = footerData?.showMarketplaces !== false;
-  const showPaymentGateways = footerData?.showPaymentGateways !== false;
-  const showColumnLinks = footerData?.showColumnLinks !== false;
-  const showColumn1 = showColumnLinks && footerData?.showColumn1 !== false;
-  const showColumn2 = showColumnLinks && footerData?.showColumn2 !== false;
-  const copyrightText = footerData?.copyrightText || `${companyName} | © Copyright ${new Date().getFullYear()} Pure Ayur`;
+  const usefulLinks =
+    Array.isArray(footerData?.usefulLinks) && footerData.usefulLinks.length > 0
+      ? footerData.usefulLinks
+      : DEFAULT_USEFUL_LINKS;
 
-  // Overlapping botanical leaf designs for the top border strip
-  const leavesPattern = showLeafPattern ? (
-    <div className="h-9 w-full bg-gradient-to-r from-emerald-50 via-emerald-100 to-emerald-50 border-y border-emerald-200/40 relative overflow-hidden flex items-center justify-around select-none">
-      {[...Array(12)].map((_, i) => (
-        <svg
-          key={i}
-          className={`size-5 text-emerald-800/20 opacity-30 transform transition-transform duration-500 hover:scale-110`}
-          style={{
-            transform: `rotate(${i % 2 === 0 ? 15 + i * 5 : -15 - i * 3}deg) translateY(${i % 3 === 0 ? "2px" : "-2px"})`,
-          }}
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          <path d="M17 8C8 10 5.9 16.1 5 21C4 16 6 10 15 7C16 6.5 17 6.8 17 8ZM12.1 12.2C8.1 13.1 7.1 16.1 6.5 19C6 16.5 7.1 13.1 11.1 11.2C11.5 11 12 11.2 12.1 12.2Z" />
-        </svg>
-      ))}
-    </div>
-  ) : null;
-
-  const handleFooterLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, label?: string) => {
-    const isShopTarget =
-      href === "/#shop" ||
-      href === "#shop" ||
-      (href === "/" && (label || "").toLowerCase().includes("shop"));
-
-    if (isShopTarget) {
-      if (typeof window !== "undefined") {
-        const shopEl = document.getElementById("shop");
-        if (shopEl) {
-          e.preventDefault();
-          shopEl.scrollIntoView({ behavior: "smooth", block: "start" });
-          window.history.pushState(null, "", "/#shop");
-        } else if (window.location.pathname === "/") {
-          e.preventDefault();
-          window.scrollTo({ top: 400, behavior: "smooth" });
-        }
-      }
-    }
-  };
+  const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-white text-[#17231b] border-t border-neutral-100 flex flex-col">
-      {/* Decorative Botanical Leaf Strip */}
-      {leavesPattern}
-
-      {/* Main Footer Content */}
-      <div className="mx-auto max-w-[1440px] w-full px-5 py-12 md:px-8 md:py-16">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-4 lg:grid-cols-5">
-          {/* Column 1: Brand details */}
-          <div className="md:col-span-2">
-            {/* Pure Ayur framed logo */}
-            <div className="border-2 border-[#244f31] p-3 rounded-xl inline-flex items-center gap-3 mb-6 bg-white select-none shadow-sm">
-              <div className="relative flex size-12 items-center justify-center rounded-full overflow-hidden border border-[#244f31]/10 bg-white shrink-0">
-                <Image
-                  src="/brand/pure-ayur-logo.png"
-                  alt="Pure Ayur Herbs Logo"
-                  width={60}
-                  height={60}
-                  className="size-full object-cover"
-                />
+    <footer className="w-full text-white flex flex-col select-none">
+      {/* 1. Main Content Section (Deep Forest Slate Theme with Reference Structure) */}
+      <div className="bg-[#14271c] w-full py-12 md:py-16">
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-6 md:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12">
+            {/* Top / Left Block: Brand Details & Social Links */}
+            <div className="md:col-span-5 flex flex-col">
+              {/* Brand Logo & Name */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="size-9 rounded-full bg-white/10 p-1 flex items-center justify-center shrink-0 border border-white/20">
+                  <Image
+                    src="/brand/pure-ayur-logo.png"
+                    alt="Pure Ayur Herbs"
+                    width={40}
+                    height={40}
+                    className="size-full object-contain"
+                  />
+                </div>
+                <h2 className="font-serif text-2xl sm:text-3xl font-normal tracking-widest uppercase text-white">
+                  PURE AYUR HERBS
+                </h2>
               </div>
-              <div className="flex flex-col leading-none text-left">
-                <span className="text-base font-black uppercase tracking-wider text-[#244f31]">
-                  PURE AYUR
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#80a03c]">
-                  HERBS
-                </span>
+
+              {/* Brand Mission Description */}
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal max-w-md mb-5">
+                Pure Ayur Herbs offers premium quality Ayurvedic wellness
+                formulations crafted for holistic health and vitality. Every
+                remedy delivers pure Himalayan botanicals and natural goodness
+                you can trust.
+              </p>
+
+              {/* Social Follow Us Strip */}
+              <div className="flex items-center gap-3 text-xs sm:text-sm text-neutral-300 font-normal">
+                <span>Follow us on</span>
+                <div className="flex items-center gap-2">
+                  {/* Facebook */}
+                  <a
+                    href={
+                      social.facebook?.startsWith("http")
+                        ? social.facebook
+                        : `https://${social.facebook || "facebook.com"}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow us on Facebook"
+                    className="size-7 rounded-full bg-[#1877F2] text-white flex items-center justify-center hover:scale-110 transition shadow-xs cursor-pointer"
+                  >
+                    <svg className="size-4 fill-white" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                  </a>
+
+                  {/* Instagram */}
+                  <a
+                    href={
+                      social.instagram?.startsWith("http")
+                        ? social.instagram
+                        : `https://${social.instagram || "instagram.com"}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow us on Instagram"
+                    className="size-7 rounded-lg bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white flex items-center justify-center hover:scale-110 transition shadow-xs cursor-pointer"
+                  >
+                    <svg
+                      className="size-4 fill-none stroke-white stroke-2"
+                      viewBox="0 0 24 24"
+                    >
+                      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                    </svg>
+                  </a>
+                </div>
               </div>
             </div>
 
-            {/* Address & GSTIN */}
-            <p className="text-xs text-[#555555] leading-relaxed italic mb-5 max-w-sm font-medium">
-              {companyName},<br />
-              Registered Office Address: {registeredAddress}<br />
-              GSTIN: {gstin}
-            </p>
+            {/* Middle Block: Useful Links */}
+            <div className="md:col-span-3 flex flex-col">
+              <h3 className="font-bold text-white text-base sm:text-lg tracking-tight mb-3 sm:mb-4">
+                Useful Links
+              </h3>
+              <ul className="flex flex-col gap-2.5 text-xs sm:text-sm text-neutral-300 font-normal">
+                {usefulLinks.map((link: any, idx: number) => {
+                  const href = formatFooterHref(link.url, link.label);
+                  return (
+                    <li key={idx}>
+                      <Link
+                        href={href}
+                        className="hover:text-white transition inline-block cursor-pointer"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
 
-            {/* Support Phone */}
-            {whatsappNum && (
-              <a
-                href={`https://api.whatsapp.com/send?phone=${cleanNumber}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 text-sm font-black text-[#17231b] hover:text-[#80a03c] transition mb-3 w-fit"
-              >
-                <Phone className="size-4.5 text-[#244f31]" />
-                <span>+{whatsappNum} (Support)</span>
-              </a>
-            )}
-
-            {/* Support Email */}
-            {supportEmail && (
-              <a
-                href={`mailto:${supportEmail}`}
-                className="flex items-center gap-2.5 text-sm font-black text-[#17231b] hover:text-[#80a03c] transition w-fit"
-              >
-                <Mail className="size-4.5 text-[#244f31]" />
-                <span>{supportEmail}</span>
-              </a>
-            )}
+            {/* Right Block: Contact Us */}
+            <div className="md:col-span-4 flex flex-col">
+              <h3 className="font-bold text-white text-base sm:text-lg tracking-tight mb-3 sm:mb-4">
+                Contact Us
+              </h3>
+              <div className="flex flex-col gap-2.5 text-xs sm:text-sm text-neutral-300 font-normal leading-relaxed">
+                <p>
+                  Call:{" "}
+                  <a
+                    href={`tel:${cleanPhone}`}
+                    className="hover:text-white transition font-medium"
+                  >
+                    {displayPhone}
+                  </a>
+                </p>
+                <p>
+                  Email:{" "}
+                  <a
+                    href={`mailto:${displayEmail}`}
+                    className="hover:text-white transition font-medium"
+                  >
+                    {displayEmail}
+                  </a>
+                </p>
+                <p className="text-neutral-300 leading-relaxed">
+                  Address: {displayAddress}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Column 2: Dynamic Link Block 1 */}
-          {showColumn1 && (
-            <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
-                {col1Title}
-              </h4>
-              <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
-                {col1Links.filter((link: any) => link.visible !== false && !link.hidden).map((link: any, idx: number) => {
-                  const href = formatFooterHref(link.url, link.label);
-                  const isExternal = /^(https?:|\/\/)/i.test(href);
-                  if (isExternal) {
-                    return (
-                      <a key={idx} href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => handleFooterLinkClick(e, href, link.label)} className="hover:text-[#80a03c] transition">
-                        {link.label}
-                      </a>
-                    );
-                  }
-                  return (
-                    <Link key={idx} href={href} prefetch={true} onClick={(e) => handleFooterLinkClick(e, href, link.label)} className="hover:text-[#80a03c] transition cursor-pointer">
-                      {link.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Column 3: Dynamic Link Block 2 */}
-          {showColumn2 && (
-            <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
-                {col2Title}
-              </h4>
-              <div className="flex flex-col gap-3.5 text-xs font-extrabold text-[#666666] tracking-wide uppercase">
-                {col2Links.filter((link: any) => link.visible !== false && !link.hidden).map((link: any, idx: number) => {
-                  const href = formatFooterHref(link.url, link.label);
-                  const isExternal = /^(https?:|\/\/)/i.test(href);
-                  if (isExternal) {
-                    return (
-                      <a key={idx} href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => handleFooterLinkClick(e, href, link.label)} className="hover:text-[#80a03c] transition">
-                        {link.label}
-                      </a>
-                    );
-                  }
-                  return (
-                    <Link key={idx} href={href} prefetch={true} onClick={(e) => handleFooterLinkClick(e, href, link.label)} className="hover:text-[#80a03c] transition cursor-pointer">
-                      {link.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Column 4: Follow Us & Socials */}
-          <div className="flex flex-col gap-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-[#244f31]">
-              Follow Us
+          {/* Bottom of Content Block: Most searched on store */}
+          <div className="mt-10 sm:mt-12 pt-8 border-t border-white/10">
+            <h4 className="font-bold text-white text-xs sm:text-sm tracking-wide mb-3">
+              Most searched on store
             </h4>
-            <div className="flex flex-wrap gap-3.5 text-[#17231b]">
-              {social.instagram && (
-                <a
-                  href={social.instagram.startsWith("http") ? social.instagram : `https://${social.instagram}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Follow us on Instagram"
-                  aria-label="Instagram"
-                  className="hover:text-[#80a03c] transition p-1 rounded hover:bg-neutral-50"
-                >
-                  <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-                  </svg>
-                </a>
-              )}
-              {social.facebook && (
-                <a
-                  href={social.facebook.startsWith("http") ? social.facebook : `https://${social.facebook}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Follow us on Facebook"
-                  aria-label="Facebook"
-                  className="hover:text-[#80a03c] transition p-1 rounded hover:bg-neutral-50"
-                >
-                  <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-                  </svg>
-                </a>
-              )}
-              {social.youtube && (
-                <a
-                  href={social.youtube.startsWith("http") ? social.youtube : `https://${social.youtube}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Subscribe on YouTube"
-                  aria-label="YouTube"
-                  className="hover:text-[#80a03c] transition p-1 rounded hover:bg-neutral-50"
-                >
-                  <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
-                    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
-                  </svg>
-                </a>
-              )}
-              {social.twitter && (
-                <a
-                  href={social.twitter.startsWith("http") ? social.twitter : `https://${social.twitter}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Follow us on X (Twitter)"
-                  aria-label="Twitter"
-                  className="hover:text-[#80a03c] transition p-1 rounded hover:bg-neutral-50"
-                >
-                  <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
-                  </svg>
-                </a>
-              )}
-              {social.linkedin && (
-                <a
-                  href={social.linkedin.startsWith("http") ? social.linkedin : `https://${social.linkedin}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Connect on LinkedIn"
-                  aria-label="LinkedIn"
-                  className="hover:text-[#80a03c] transition p-1 rounded hover:bg-neutral-50"
-                >
-                  <svg className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-                    <rect width="4" height="12" x="2" y="9"/>
-                    <circle cx="4" cy="4" r="2"/>
-                  </svg>
-                </a>
-              )}
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2 text-xs sm:text-sm text-neutral-300 font-normal leading-relaxed">
+              {MOST_SEARCHED_TAGS.map((tag, idx) => (
+                <span key={idx} className="inline-flex items-center">
+                  <Link
+                    href={tag.href}
+                    className="hover:text-white transition hover:underline cursor-pointer"
+                  >
+                    {tag.label}
+                  </Link>
+                  {idx < MOST_SEARCHED_TAGS.length - 1 && (
+                    <span className="ml-2.5 text-neutral-500 select-none">
+                      |
+                    </span>
+                  )}
+                </span>
+              ))}
             </div>
           </div>
-        </div>
-
-        <hr className="my-10 border-[#ddddd9]" />
-
-        {/* Marketplace & Payment Gateways Strip */}
-        {(showMarketplaces || showPaymentGateways) && (
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 pb-10">
-            {/* Marketplace Badges */}
-            {showMarketplaces && (
-              <div className="flex flex-col gap-2.5">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#999999]">Also available on:</span>
-                <div className="flex flex-wrap items-center gap-5 select-none">
-                  <div className="h-6 w-16 text-neutral-800 relative flex items-center justify-center font-bold text-xs border border-neutral-100 rounded px-1.5 bg-neutral-50/50">
-                    amazon.in
-                  </div>
-                  <div className="h-6 w-16 text-neutral-800 relative flex items-center justify-center font-bold text-xs border border-neutral-100 rounded px-1.5 bg-neutral-50/50">
-                    Flipkart
-                  </div>
-                  <div className="h-6 w-16 text-purple-700 relative flex items-center justify-center font-extrabold text-xs border border-neutral-100 rounded px-1.5 bg-neutral-50/50">
-                    zepto
-                  </div>
-                  <div className="h-6 w-20 text-orange-600 relative flex items-center justify-center font-extrabold text-[10px] border border-neutral-100 rounded px-1.5 bg-neutral-50/50">
-                    instamart
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Payment Gateway Badges */}
-            {showPaymentGateways && (
-              <div className="flex flex-col gap-2.5 w-full lg:w-auto">
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#999999]">We Accept:</span>
-                <div className="flex flex-wrap items-center gap-6 select-none bg-white/50 p-2.5 px-4 rounded-2xl border border-[#ddddd9]">
-                  <div className="flex items-center">
-                    <svg className="h-6 w-auto" viewBox="0 0 110 24" fill="none">
-                      <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2Z" fill="#FC8019" />
-                      <circle cx="12" cy="9" r="3" fill="white" />
-                      <text x="25" y="16" fill="#1C3F94" fontSize="12" fontWeight="900" fontFamily="sans-serif">instamart</text>
-                    </svg>
-                  </div>
-
-                  <div className="flex items-center">
-                    <svg className="h-5 w-auto" viewBox="0 0 90 28" fill="none">
-                      <text x="0" y="16" fill="#111" fontSize="13" fontWeight="900" fontFamily="sans-serif">amazon</text>
-                      <text x="50" y="16" fill="#666" fontSize="12" fontWeight="500" fontFamily="sans-serif">pay</text>
-                      <path d="M6 18C15 23 35 23 44 18" stroke="#FF9900" strokeWidth="2" strokeLinecap="round" fill="none" />
-                      <path d="M44 18L41.5 15.5M44 18L42.5 20.5" stroke="#FF9900" strokeWidth="2" strokeLinecap="round" fill="none" />
-                    </svg>
-                  </div>
-
-                  <div className="flex items-center">
-                    <svg className="h-5 w-auto" viewBox="0 0 80 22" fill="none">
-                      <text x="0" y="15" fill="#E07C24" fontSize="12" fontWeight="900" fontStyle="italic" fontFamily="sans-serif">BHIM</text>
-                      <text x="34" y="15" fill="#0A79DF" fontSize="12" fontWeight="900" fontStyle="italic" fontFamily="sans-serif">UPI</text>
-                      <path d="M30 6L32 15M34 6L32 15" stroke="#50DBB4" strokeWidth="1.5" />
-                    </svg>
-                  </div>
-
-                  <div className="flex items-center opacity-80">
-                    <svg className="h-7 w-auto" viewBox="0 0 32 32" fill="none">
-                      <circle cx="16" cy="16" r="14" stroke="#999" strokeWidth="1" strokeDasharray="3 2" />
-                      <circle cx="16" cy="16" r="11" stroke="#999" strokeWidth="0.5" />
-                      <path d="M9 16C9 12.13 12.13 9 16 9C19.87 9 23 12.13 23 16C23 19.87 19.87 23 16 23C12.13 23 9 19.87 9 16Z" fill="#eee" />
-                      <text x="16" y="14" fill="#555" fontSize="4.5" fontWeight="900" textAnchor="middle" fontFamily="sans-serif">COD</text>
-                      <text x="16" y="20" fill="#555" fontSize="3.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">ONLINE</text>
-                    </svg>
-                  </div>
-
-                  <div className="flex items-center">
-                    <svg className="h-6 w-auto" viewBox="0 0 48 24" fill="none">
-                      <path d="M4 12C4 8.69 6.69 6 10 6H14" stroke="#4285F4" strokeWidth="3" strokeLinecap="round" />
-                      <path d="M14 6C17.31 6 20 8.69 20 12" stroke="#34A853" strokeWidth="3" strokeLinecap="round" />
-                      <path d="M20 12C20 15.31 17.31 18 14 18" stroke="#FBBC05" strokeWidth="3" strokeLinecap="round" />
-                      <path d="M14 18H10C6.69 18 4 15.31 4 12" stroke="#EA4335" strokeWidth="3" strokeLinecap="round" />
-                      <text x="24" y="16" fill="#5F6368" fontSize="12" fontWeight="bold" fontFamily="sans-serif">Pay</text>
-                    </svg>
-                  </div>
-
-                  <div className="flex items-center">
-                    <svg className="h-6 w-auto" viewBox="0 0 36 24" fill="none">
-                      <circle cx="12" cy="12" r="10" fill="#EB001B" fillOpacity="0.9" />
-                      <circle cx="24" cy="12" r="10" fill="#FF5F00" fillOpacity="0.9" />
-                      <path d="M18 5.58C16.38 7.26 15.38 9.51 15.38 12C15.38 14.49 16.38 16.74 18 18.42C19.62 16.74 20.62 14.49 20.62 12C20.62 9.51 19.62 7.26 18 5.58Z" fill="#FF5F00" />
-                    </svg>
-                  </div>
-
-                  <div className="flex items-center">
-                    <svg className="h-5 w-auto" viewBox="0 0 65 20" fill="none">
-                      <text x="0" y="15" fill="#1C3F94" fontSize="13" fontWeight="900" fontStyle="italic" fontFamily="sans-serif">RuPay</text>
-                      <path d="M52 5L58 10L52 15" stroke="#FC8019" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M46 5L52 10L46 15" stroke="#80A03C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-
-                  <div className="flex items-center">
-                    <svg className="h-5 w-auto" viewBox="0 0 50 18" fill="none">
-                      <text x="5" y="15" fill="#1A1F71" fontSize="15" fontWeight="900" fontStyle="italic" fontFamily="sans-serif">VISA</text>
-                      <path d="M0 3L6 3.5L4 12L0 3Z" fill="#F7B600" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Amazon & Flipkart Style SEO Semantic Internal Linking Mesh */}
-        <div className="border-t border-[#f0f0eb] pt-6 pb-2 text-left">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
-            <span className="text-xs font-black uppercase tracking-wider text-[#17231b]">
-              🌿 Popular Ayurvedic Searches & Solutions in India
-            </span>
-            <span className="text-[10px] font-bold text-[#80a03c] uppercase tracking-wider">
-              100% AYUSH Certified Remedies • Priority India Delivery
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 text-[11px] leading-relaxed text-[#666666]">
-            <div>
-              <span className="font-bold text-[#17231b] block mb-1 text-xs">Sugar Management</span>
-              <ul className="space-y-1">
-                <li><Link href="/solution/sugar-management" className="hover:text-[#80a03c] transition">Madhunashi Sugar Care</Link></li>
-                <li><Link href="/products/madhunashi-powder" className="hover:text-[#80a03c] transition">Madhunashi Powder</Link></li>
-                <li><Link href="/solution/sugar-management" className="hover:text-[#80a03c] transition">Karela Jamun Juice</Link></li>
-                <li><Link href="/solution/sugar-management" className="hover:text-[#80a03c] transition">Gudmar Glucose Balance</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <span className="font-bold text-[#17231b] block mb-1 text-xs">Men's Stamina & Energy</span>
-              <ul className="space-y-1">
-                <li><Link href="/solution/energy" className="hover:text-[#80a03c] transition">Virja Ayurvedic Vitality</Link></li>
-                <li><Link href="/products/virja-powder" className="hover:text-[#80a03c] transition">Virja Powder for Men</Link></li>
-                <li><Link href="/products/virja-gold-majun" className="hover:text-[#80a03c] transition">Virja Gold Majun Tonic</Link></li>
-                <li><Link href="/solution/energy" className="hover:text-[#80a03c] transition">Pure Himalayan Shilajit</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <span className="font-bold text-[#17231b] block mb-1 text-xs">Gym, Fitness & Detox</span>
-              <ul className="space-y-1">
-                <li><Link href="/solution/gym-and-fitness" className="hover:text-[#80a03c] transition">Ayurvedic Fat Burner Juice</Link></li>
-                <li><Link href="/products/fat-burner" className="hover:text-[#80a03c] transition">Herbal Weight Loss Tonic</Link></li>
-                <li><Link href="/solution/liver-care" className="hover:text-[#80a03c] transition">Liver Cleanse & Detox</Link></li>
-                <li><Link href="/solution/daily-ayurveda" className="hover:text-[#80a03c] transition">Triphala Digestive Care</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <span className="font-bold text-[#17231b] block mb-1 text-xs">Skin Radiance & Hair</span>
-              <ul className="space-y-1">
-                <li><Link href="/solution/skin-and-hair" className="hover:text-[#80a03c] transition">Kashmiri Kumkumadi Oil</Link></li>
-                <li><Link href="/products/perfect-36-cream" className="hover:text-[#80a03c] transition">Perfect 36 Herbal Cream</Link></li>
-                <li><Link href="/solution/skin-and-hair" className="hover:text-[#80a03c] transition">Wild Organic Amla Juice</Link></li>
-                <li><Link href="/solution/skin-and-hair" className="hover:text-[#80a03c] transition">Bhringraj Hair Growth Elixir</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <span className="font-bold text-[#17231b] block mb-1 text-xs">Heart & Women's Care</span>
-              <ul className="space-y-1">
-                <li><Link href="/solution/heart-health" className="hover:text-[#80a03c] transition">Arjuna Cardiac BP Balance</Link></li>
-                <li><Link href="/solution/womens-health" className="hover:text-[#80a03c] transition">Women's Period Harmony</Link></li>
-                <li><Link href="/solution/womens-health" className="hover:text-[#80a03c] transition">Shatavari Hormonal Tonic</Link></li>
-                <li><Link href="/blog" className="hover:text-[#80a03c] transition">Ayurvedic Health Guides</Link></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Policy Links Row */}
-        <div className="flex flex-wrap justify-between items-center gap-4 text-xs font-bold text-[#666666] tracking-wide pt-4 border-t border-[#f0f0eb] select-none">
-          <Link href="/privacy-policy" className="hover:text-[#80a03c] transition">Privacy Policy</Link>
-          <Link href="/terms-of-service" className="hover:text-[#80a03c] transition">Terms and Conditions</Link>
-          <Link href="/shipping-policy" className="hover:text-[#80a03c] transition">Shipping Policy</Link>
-          <Link href="/return-policy" className="hover:text-[#80a03c] transition">Cancellation Policy</Link>
         </div>
       </div>
 
-      {/* Copyright Bottom Bar */}
-      <div className="bg-[#17231b] py-3.5 w-full text-center text-[10px] text-white/80 font-bold uppercase tracking-wider select-none flex items-center justify-center gap-2">
-        <span>{copyrightText}</span>
+      {/* 2. Payment Gateway Badges Strip (Clean White Container matching Image 2) */}
+      <div className="bg-white py-5 sm:py-6 border-t border-neutral-200">
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-6 md:px-8">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-4 sm:gap-x-8">
+            {/* PhonePe */}
+            <div className="flex items-center gap-1.5 font-bold text-xs shrink-0 select-none">
+              <div className="size-6 rounded-full bg-[#5f259f] flex items-center justify-center text-white text-[11px] font-black">
+                पे
+              </div>
+              <span className="text-[#5f259f] font-extrabold text-sm tracking-tight">
+                PhonePe
+              </span>
+            </div>
+
+            {/* Google Pay */}
+            <div className="flex items-center gap-1 font-bold text-xs shrink-0 select-none">
+              <svg className="size-5" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.94 0 12s.45 3.84 1.25 5.42l4.03-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
+              </svg>
+              <span className="text-neutral-700 font-bold text-sm tracking-tight">
+                Pay
+              </span>
+            </div>
+
+            {/* Paytm */}
+            <div className="flex items-center font-black text-sm tracking-tight shrink-0 select-none">
+              <span className="text-[#002e6e]">pay</span>
+              <span className="text-[#00b9f5]">tm</span>
+            </div>
+
+            {/* BHIM UPI */}
+            <div className="flex items-center gap-1 font-black text-xs tracking-wider shrink-0 select-none">
+              <span className="text-[#097939] italic font-black text-sm">
+                UPI
+              </span>
+              <span className="text-[#ea6c00] text-xs font-black">▶</span>
+            </div>
+
+            {/* RuPay */}
+            <div className="flex items-center gap-1 font-black text-sm text-[#002d62] shrink-0 select-none">
+              <span>RuPay</span>
+              <span className="text-[#f37021] text-xs font-bold">❯</span>
+            </div>
+
+            {/* Mastercard */}
+            <div className="flex items-center shrink-0 select-none">
+              <svg className="h-6 w-auto" viewBox="0 0 36 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#EB001B" />
+                <circle
+                  cx="24"
+                  cy="12"
+                  r="10"
+                  fill="#F79E1B"
+                  fillOpacity="0.9"
+                />
+              </svg>
+            </div>
+
+            {/* Visa */}
+            <div className="flex items-center font-black text-sm italic tracking-widest text-[#1a1f71] shrink-0 select-none">
+              VISA
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Bottom Copyright Bar */}
+      <div className="bg-[#0c1a11] py-3.5 pb-18 md:pb-3.5 w-full text-center text-[11px] text-neutral-400 font-normal">
+        © {currentYear} Pure Ayur Herbs. All rights reserved.
       </div>
     </footer>
   );

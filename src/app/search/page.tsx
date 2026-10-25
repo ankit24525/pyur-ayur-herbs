@@ -19,7 +19,7 @@ function SearchContent() {
   const [query, setQuery] = useState(initialQuery);
   const [catalog, setCatalog] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedConcern, setSelectedConcern] = useState("all");
+  const [selectedConcern, setSelectedConcern] = useState(searchParams.get("category") || "all");
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "rating">("featured");
 
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
@@ -29,7 +29,8 @@ function SearchContent() {
 
   // Sync cart from localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const syncCart = () => {
+      if (typeof window === "undefined") return;
       try {
         const stored = localStorage.getItem("pyur_cart");
         if (stored) {
@@ -37,14 +38,28 @@ function SearchContent() {
           if (Array.isArray(parsed)) {
             setCart(parsed.filter((i: any) => i && i.product && i.product.id));
           }
+        } else {
+          setCart([]);
         }
       } catch {}
-    }
+    };
+
+    syncCart();
+    window.addEventListener("storage", syncCart);
+    window.addEventListener("pyur_cart_updated", syncCart);
+    return () => {
+      window.removeEventListener("storage", syncCart);
+      window.removeEventListener("pyur_cart_updated", syncCart);
+    };
   }, []);
 
-  // Sync query when searchParams change
+  // Sync query and category when searchParams change
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
+    const cat = searchParams.get("category");
+    if (cat) {
+      setSelectedConcern(cat);
+    }
   }, [searchParams]);
 
   // Load products from storefront API
@@ -60,22 +75,32 @@ function SearchContent() {
   }, []);
 
   const handleAddToCart = (product: Product) => {
-    setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.product.id === product.id);
-      let updated;
-      if (existing) {
-        updated = prevCart.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      } else {
-        updated = [...prevCart, { product, quantity: 1 }];
+    let currentCart = cart;
+    try {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) currentCart = parsed;
       }
-      try {
-        localStorage.setItem("pyur_cart", JSON.stringify(updated));
+    } catch {}
+
+    const existing = currentCart.find((item) => item.product && item.product.id === product.id);
+    let updated: { product: Product; quantity: number }[];
+    if (existing) {
+      updated = currentCart.map((item) =>
+        item.product.id === product.id ? { ...item, quantity: (Number(item.quantity) || 1) + 1 } : item
+      );
+    } else {
+      updated = [...currentCart, { product, quantity: 1 }];
+    }
+
+    setCart(updated);
+    try {
+      localStorage.setItem("pyur_cart", JSON.stringify(updated));
+      setTimeout(() => {
         window.dispatchEvent(new Event("pyur_cart_updated"));
-      } catch {}
-      return updated;
-    });
+      }, 0);
+    } catch {}
   };
 
   const handleBuyNow = (product: Product) => {
@@ -84,33 +109,52 @@ function SearchContent() {
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
-    setCart((prevCart) => {
-      const updated = prevCart
-        .map((item) => {
-          if (item.product.id === productId) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as { product: Product; quantity: number }[];
-      try {
-        localStorage.setItem("pyur_cart", JSON.stringify(updated));
+    let currentCart = cart;
+    try {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) currentCart = parsed;
+      }
+    } catch {}
+
+    const updated = currentCart
+      .map((item) => {
+        if (item && item.product && item.product.id === productId) {
+          const newQty = (Number(item.quantity) || 1) + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      })
+      .filter(Boolean) as { product: Product; quantity: number }[];
+
+    setCart(updated);
+    try {
+      localStorage.setItem("pyur_cart", JSON.stringify(updated));
+      setTimeout(() => {
         window.dispatchEvent(new Event("pyur_cart_updated"));
-      } catch {}
-      return updated;
-    });
+      }, 0);
+    } catch {}
   };
 
   const handleRemoveItem = (productId: string) => {
-    setCart((prevCart) => {
-      const updated = prevCart.filter((item) => item.product.id !== productId);
-      try {
-        localStorage.setItem("pyur_cart", JSON.stringify(updated));
+    let currentCart = cart;
+    try {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) currentCart = parsed;
+      }
+    } catch {}
+
+    const updated = currentCart.filter((item) => item && item.product && item.product.id !== productId);
+    setCart(updated);
+    try {
+      localStorage.setItem("pyur_cart", JSON.stringify(updated));
+      setTimeout(() => {
         window.dispatchEvent(new Event("pyur_cart_updated"));
-      } catch {}
-      return updated;
-    });
+      }, 0);
+    } catch {}
   };
 
   // Distinct concerns available in catalog
@@ -168,7 +212,7 @@ function SearchContent() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fdfdfc] text-[#17231b]">
+    <div className="flex min-h-screen flex-col bg-white text-neutral-900">
       <AnnouncementBar onOpenAppModal={() => setAppModalOpen(true)} />
       <SiteHeader
         cart={cart}
@@ -180,36 +224,36 @@ function SearchContent() {
         products={catalog}
       />
 
-      <main className="flex-1">
+      <main className="flex-1 bg-white">
         {/* Header Search Banner */}
-        <section className="border-b border-[#ddddd9] bg-gradient-to-b from-[#f4f7eb] to-white py-8 px-4 sm:px-6">
+        <section className="border-b border-neutral-200/80 bg-[#f8f9fa] py-8 px-4 sm:px-6">
           <div className="mx-auto max-w-4xl text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eef5df] px-3 py-1 text-xs font-black uppercase tracking-wider text-[#244f31]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#c2d4c5]/40 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#023915]">
               <Sparkles className="size-3.5" />
               Ayurvedic Remedy Finder
             </span>
-            <h1 className="mt-3 text-2xl font-black text-[#17231b] md:text-4xl">
+            <h1 className="mt-3 text-2xl font-bold text-neutral-900 md:text-3xl">
               {query ? `Search Results for "${query}"` : "Search Pure Ayur Herbs"}
             </h1>
-            <p className="mt-2 text-xs font-medium text-[#666666] md:text-sm">
+            <p className="mt-2 text-xs font-medium text-neutral-600 md:text-sm">
               Explore 100% certified Ayurvedic formulations including Virja Powder, Madhunashi, Fat Burner, and Perfect 36 Cream.
             </p>
 
             {/* On-page Search Input */}
-            <div className="mt-6 flex items-center gap-2 rounded-xl border border-[#ddddd9] bg-white p-2 shadow-sm focus-within:border-[#244f31] focus-within:ring-2 focus-within:ring-[#244f31]/20">
-              <Search className="size-5 shrink-0 text-[#666666] ml-2" />
+            <div className="mt-6 flex items-center gap-2 rounded-xl border border-neutral-200 bg-white p-2 shadow-xs focus-within:border-[#023915] focus-within:ring-2 focus-within:ring-[#023915]/10">
+              <Search className="size-5 shrink-0 text-neutral-400 ml-2" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by remedy name, health concern, or ingredient..."
-                className="w-full text-sm outline-none placeholder:text-[#999999] px-2 py-1"
+                className="w-full text-xs md:text-sm outline-none placeholder:text-neutral-400 px-2 py-1"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery("")}
-                  className="rounded-md px-2 py-1 text-xs font-bold text-[#666666] hover:bg-[#f8faf1]"
+                  className="rounded-md px-2 py-1 text-xs font-bold text-neutral-500 hover:bg-neutral-100"
                 >
                   Clear
                 </button>
@@ -217,8 +261,8 @@ function SearchContent() {
             </div>
 
             {/* Quick Keyword Pills */}
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs text-[#666666]">
-              <span className="font-bold text-[#17231b]">Popular:</span>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-xs text-neutral-600">
+              <span className="font-bold text-neutral-900">Popular:</span>
               {popularTags.map((tag) => (
                 <button
                   key={tag}
@@ -226,8 +270,8 @@ function SearchContent() {
                   onClick={() => setQuery(tag)}
                   className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold transition ${
                     query.toLowerCase() === tag.toLowerCase()
-                      ? "border-[#244f31] bg-[#244f31] text-white"
-                      : "border-[#ddddd9] bg-white text-[#244f31] hover:bg-[#f4f7eb]"
+                      ? "border-[#023915] bg-[#023915] text-white"
+                      : "border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-100"
                   }`}
                 >
                   {tag}
@@ -240,7 +284,7 @@ function SearchContent() {
         {/* Results Toolbar & Grid */}
         <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
           {/* Filter Bar */}
-          <div className="flex flex-col gap-4 border-b border-[#ddddd9] pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 border-b border-neutral-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
             {/* Category / Concern Chips */}
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -248,8 +292,8 @@ function SearchContent() {
                 onClick={() => setSelectedConcern("all")}
                 className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                   selectedConcern === "all"
-                    ? "bg-[#244f31] text-white shadow-xs"
-                    : "bg-[#f8faf1] text-[#17231b] hover:bg-[#eef2db]"
+                    ? "bg-[#023915] text-white shadow-xs"
+                    : "bg-[#f5f5f5] text-neutral-800 hover:bg-neutral-200"
                 }`}
               >
                 All Concerns ({catalog.length})
@@ -261,8 +305,8 @@ function SearchContent() {
                   onClick={() => setSelectedConcern(c)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                     selectedConcern.toLowerCase() === c.toLowerCase()
-                      ? "bg-[#244f31] text-white shadow-xs"
-                      : "bg-[#f8faf1] text-[#17231b] hover:bg-[#eef2db]"
+                      ? "bg-[#023915] text-white shadow-xs"
+                      : "bg-[#f5f5f5] text-neutral-800 hover:bg-neutral-200"
                   }`}
                 >
                   {c}
@@ -272,12 +316,12 @@ function SearchContent() {
 
             {/* Sort Dropdown */}
             <div className="flex items-center gap-2 self-end sm:self-auto">
-              <ArrowUpDown className="size-4 text-[#666666]" />
-              <span className="text-xs font-semibold text-[#666666]">Sort by:</span>
+              <ArrowUpDown className="size-4 text-neutral-400" />
+              <span className="text-xs font-semibold text-neutral-500">Sort by:</span>
               <select
                 value={sortBy}
                 onChange={(e: any) => setSortBy(e.target.value)}
-                className="rounded-lg border border-[#ddddd9] bg-white px-2.5 py-1 text-xs font-bold text-[#17231b] outline-none"
+                className="rounded-lg border border-neutral-200 bg-white px-2.5 py-1 text-xs font-bold text-neutral-900 outline-none"
               >
                 <option value="featured">Featured / Best Matches</option>
                 <option value="price-asc">Price: Low to High</option>
@@ -288,13 +332,13 @@ function SearchContent() {
           </div>
 
           {/* Active Status */}
-          <div className="mt-4 flex items-center justify-between text-xs text-[#666666]">
+          <div className="mt-4 flex items-center justify-between text-xs text-neutral-500">
             <span>
-              Showing <strong className="text-[#17231b]">{filteredProducts.length}</strong> remedies
+              Showing <strong className="text-neutral-900">{filteredProducts.length}</strong> remedies
               {query && (
                 <span>
                   {" "}
-                  for "<strong className="text-[#244f31]">{query}</strong>"
+                  for "<strong className="text-[#023915]">{query}</strong>"
                 </span>
               )}
             </span>
@@ -302,14 +346,14 @@ function SearchContent() {
 
           {/* Loading Skeleton */}
           {loading ? (
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 items-start">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="h-72 animate-pulse rounded-xl bg-gray-100" />
+                <div key={i} className="aspect-square w-full animate-pulse rounded-xl bg-neutral-100" />
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
             /* Product Grid */
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-6 lg:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 items-start">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -321,14 +365,14 @@ function SearchContent() {
             </div>
           ) : (
             /* Empty State */
-            <div className="my-16 rounded-2xl border border-dashed border-[#ddddd9] bg-[#fdfdfa] p-8 text-center sm:p-12">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#f4f7eb] text-[#244f31]">
+            <div className="my-16 rounded-2xl border border-dashed border-neutral-200 bg-[#f8f9fa] p-8 text-center sm:p-12">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-[#c2d4c5]/40 text-[#023915]">
                 <Search className="size-6" />
               </div>
-              <h3 className="mt-4 text-base font-bold text-[#17231b] sm:text-lg">
+              <h3 className="mt-4 text-base font-bold text-neutral-900 sm:text-lg">
                 No remedies found matching "{query}"
               </h3>
-              <p className="mx-auto mt-2 max-w-md text-xs text-[#666666]">
+              <p className="mx-auto mt-2 max-w-md text-xs text-neutral-500">
                 We couldn't find an exact match. Check the spelling or try searching by health concern like
                 Sugar Management, Energy, or Liver Care.
               </p>
@@ -339,13 +383,13 @@ function SearchContent() {
                     setQuery("");
                     setSelectedConcern("all");
                   }}
-                  className="rounded-lg bg-[#244f31] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#17231b]"
+                  className="rounded-lg bg-[#023915] px-4 py-2 text-xs font-bold text-white transition hover:bg-black"
                 >
                   View All Products
                 </button>
                 <Link
                   href="/#concerns"
-                  className="rounded-lg border border-[#ddddd9] bg-white px-4 py-2 text-xs font-bold text-[#17231b] transition hover:bg-[#f8faf1]"
+                  className="rounded-lg border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-800 transition hover:bg-neutral-50"
                 >
                   Browse Health Concerns
                 </Link>
@@ -363,7 +407,7 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#fdfdfc] p-10 text-center text-sm font-bold text-[#244f31]">Loading search results...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white p-10 text-center text-sm font-bold text-[#023915]">Loading search results...</div>}>
       <SearchContent />
     </Suspense>
   );

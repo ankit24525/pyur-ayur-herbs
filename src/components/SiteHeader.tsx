@@ -13,6 +13,7 @@ import {
   Truck,
   Sparkles,
   ChevronRight,
+  ChevronDown,
   Plus,
   Minus,
   Trash2,
@@ -109,6 +110,9 @@ export default function SiteHeader({
       window.removeEventListener("storage", handleAuthSync);
     };
   }, []);
+  const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [concernsDropdownOpen, setConcernsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -218,7 +222,7 @@ export default function SiteHeader({
     isMountedRef.current = true;
 
     const syncCart = () => {
-      if (typeof window === "undefined") return;
+      if (typeof window === "undefined" || !isMountedRef.current) return;
       try {
         const stored = localStorage.getItem("pyur_cart");
         if (stored) {
@@ -242,12 +246,20 @@ export default function SiteHeader({
       }
     };
 
+    const handleCartEvent = () => {
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          syncCart();
+        }
+      }, 0);
+    };
+
     syncCart();
-    window.addEventListener("storage", syncCart);
-    window.addEventListener("pyur_cart_updated", syncCart);
+    window.addEventListener("storage", handleCartEvent);
+    window.addEventListener("pyur_cart_updated", handleCartEvent);
     return () => {
-      window.removeEventListener("storage", syncCart);
-      window.removeEventListener("pyur_cart_updated", syncCart);
+      window.removeEventListener("storage", handleCartEvent);
+      window.removeEventListener("pyur_cart_updated", handleCartEvent);
     };
   }, []);
 
@@ -286,7 +298,9 @@ export default function SiteHeader({
               .filter(Boolean);
             localStorage.setItem("pyur_cart", JSON.stringify(updated));
             setLocalCart(updated);
-            window.dispatchEvent(new Event("pyur_cart_updated"));
+            setTimeout(() => {
+              window.dispatchEvent(new Event("pyur_cart_updated"));
+            }, 0);
           }
         }
       } catch {}
@@ -308,7 +322,9 @@ export default function SiteHeader({
             );
             localStorage.setItem("pyur_cart", JSON.stringify(updated));
             setLocalCart(updated);
-            window.dispatchEvent(new Event("pyur_cart_updated"));
+            setTimeout(() => {
+              window.dispatchEvent(new Event("pyur_cart_updated"));
+            }, 0);
           }
         }
       } catch {}
@@ -355,323 +371,400 @@ export default function SiteHeader({
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-[#ddddd9] bg-white shadow-sm">
-        {/* Main Navigation Row */}
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-3 px-3 md:h-20 md:gap-6 md:px-6">
+      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200/80 px-4 md:px-8 py-2.5 sm:py-3">
+        {/* Mobile Header Row (Matching Screenshot: [Shopping Bag + Badge] [Centered Logo] [Search Icon]) */}
+        <div className="flex md:hidden items-center justify-between w-full">
+          {/* Left: Shopping Bag with Badge */}
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            className="relative p-1.5 text-neutral-800 transition hover:bg-neutral-100 rounded-full cursor-pointer"
+            aria-label="Shopping Cart"
+          >
+            <ShoppingBag className="size-6 text-neutral-900 stroke-[1.75]" />
+            {totalCartCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex size-4.5 min-w-4.5 items-center justify-center rounded-full bg-[#023915] text-[10px] font-bold text-white shadow-2xs">
+                {totalCartCount}
+              </span>
+            )}
+          </button>
+
+          {/* Center: Brand Logo */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="relative flex size-8 sm:size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#023915]/20 shrink-0 overflow-hidden">
+              <Image
+                src="/brand/pure-ayur-logo.png"
+                alt="Pure Ayur Herbs Logo"
+                width={36}
+                height={36}
+                className="size-full rounded-full object-cover group-hover:scale-105 transition-transform duration-300"
+                priority
+              />
+            </div>
+            <div className="flex flex-col leading-none text-left">
+              <span className="text-sm sm:text-base font-black uppercase tracking-wider text-[#023915]">
+                PURE AYUR
+              </span>
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.25em] text-[#80a03c]">
+                HERBS
+              </span>
+            </div>
+          </Link>
+
+          {/* Right: Search Toggle Icon */}
+          <button
+            type="button"
+            onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+            className="p-1.5 text-neutral-800 transition hover:bg-neutral-100 rounded-full cursor-pointer"
+            aria-label="Search remedies"
+          >
+            <Search className="size-6 text-neutral-900 stroke-[1.75]" />
+          </button>
+        </div>
+
+        {/* Desktop Header Row (Hidden on mobile) */}
+        <div className="hidden md:flex mx-auto max-w-[1440px] items-center justify-between gap-3 md:gap-6">
           {/* Left: Mobile Menu & Brand Logo */}
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-2.5 md:gap-4 shrink-0">
             <button
               onClick={() => setMenuOpen(true)}
-              className="rounded-md p-1.5 text-[#17231b] transition hover:bg-[#f8faf1]"
+              className="rounded-md p-1.5 text-neutral-800 transition hover:bg-neutral-100 cursor-pointer lg:hidden"
               aria-label="Open Navigation Menu"
             >
-              <Menu className="size-6 md:size-7" />
+              <Menu className="size-6" />
             </button>
 
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="relative flex size-12 items-center justify-center rounded-full bg-white p-0.5 shadow-md border border-[#244f31]/20 md:size-14 shrink-0 overflow-hidden">
+              <div className="relative flex size-10 md:size-11 items-center justify-center rounded-full bg-white p-0.5 border border-[#023915]/20 shrink-0 overflow-hidden">
                 <Image
                   src="/brand/pure-ayur-logo.png"
                   alt="Pure Ayur Herbs Logo"
-                  width={70}
-                  height={70}
+                  width={44}
+                  height={44}
                   className="size-full rounded-full object-cover group-hover:scale-105 transition-transform duration-300"
                   priority
                 />
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-base font-black uppercase tracking-wider text-[#244f31] md:text-xl">
+                <span className="text-base md:text-lg font-black uppercase tracking-wider text-[#023915]">
                   PURE AYUR
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#80a03c] md:text-xs">
+                <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.25em] text-[#80a03c]">
                   HERBS
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Location & Pincode Checker (Desktop) */}
-          <button
-            onClick={() => setPincodeModalOpen(true)}
-            className="hidden items-center gap-2 rounded-lg border border-[#ddddd9] bg-[#f8faf1] px-3 py-1.5 text-left transition hover:border-[#80a03c] lg:flex"
-          >
-            <MapPin className="size-4 shrink-0 text-[#244f31]" />
-            <div className="flex flex-col leading-tight">
-              <span className="text-xs font-bold text-[#17231b]">
-                {verifiedPincode ? `Delivering to ${verifiedPincode}` : "Verify Pincode"}
-              </span>
-              <span className="text-[11px] font-medium text-[#666666]">
-                {verifiedPincode ? "Serviceable Area" : "For accurate delivery date"}
-              </span>
-            </div>
-            <ChevronRight className="size-3.5 text-[#80a03c]" />
-          </button>
-
-          {/* Center: Search Bar with Rotating Suggestions */}
-          <div ref={searchContainerRef} className="relative flex-1 max-w-xl hidden md:block">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center rounded-lg border border-[#666666] bg-white px-3 py-2 transition-all focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31]">
-              <button type="submit" aria-label="Search" className="text-[#666666] hover:text-[#244f31] transition">
-                <Search className="size-4 shrink-0 md:size-5" />
-              </button>
-              <input
-                type="text"
-                value={searchQuery}
-                onFocus={() => {
-                  if (searchQuery.trim().length > 0) setIsSearching(true);
-                }}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setIsSearching(false);
-                }}
-                placeholder={`Search for "${headerSearchSuggestions[suggestionIdx] || "Ayurvedic remedies"}"`}
-                className="w-full pl-2 text-xs text-[#17231b] outline-none placeholder:text-[#666666] md:text-sm"
-              />
-              {searchQuery && (
+          {/* Center: Desktop Navigation Links OR Active Search Field */}
+          {desktopSearchOpen ? (
+            <div ref={searchContainerRef} className="relative flex-1 max-w-xl mx-4">
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+                <Search className="absolute left-3.5 size-4 text-[#023915] pointer-events-none" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
+                  onFocus={() => {
+                    if (searchQuery.trim().length > 0) setIsSearching(true);
+                  }}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setIsSearching(false);
+                      setDesktopSearchOpen(false);
+                    }
+                  }}
+                  placeholder={`Search for "${headerSearchSuggestions[suggestionIdx] || "Ayurvedic remedies"}"...`}
+                  className="w-full bg-[#f8faf5] border border-neutral-300 rounded-full py-2 pl-10 pr-10 text-xs md:text-sm text-neutral-800 placeholder:text-neutral-400 outline-none focus:border-[#023915] focus:bg-white shadow-xs transition"
+                />
                 <button
                   type="button"
                   onClick={() => {
                     setSearchQuery("");
                     setIsSearching(false);
+                    setDesktopSearchOpen(false);
                   }}
-                  className="p-1 text-[#666666] hover:text-[#17231b]"
+                  className="absolute right-3 p-1 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                  aria-label="Close search"
                 >
                   <X className="size-4" />
                 </button>
-              )}
-            </form>
+              </form>
 
-            {/* Live Search Results Dropdown */}
-            {isSearching && (
-              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-[#ddddd9] bg-white shadow-xl">
-                {searchResults.length > 0 ? (
-                  <div className="divide-y divide-[#ddddd9]">
-                    <div className="flex items-center justify-between bg-[#f8faf1] px-4 py-2 text-xs font-bold text-[#244f31]">
-                      <span>Found {searchResults.length} matching remedies</span>
-                      <Link
-                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
-                        onClick={() => setIsSearching(false)}
-                        className="text-[11px] font-semibold text-[#80a03c] hover:underline"
-                      >
-                        View all →
-                      </Link>
-                    </div>
-                    {searchResults.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/products/${product.slug || product.id}`}
-                        onClick={() => {
-                          setSearchQuery("");
-                          setIsSearching(false);
-                        }}
-                        className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-[#f8faf1]"
-                      >
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          width={48}
-                          height={48}
-                          className="size-12 rounded object-cover shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="truncate text-xs font-bold text-[#17231b] md:text-sm">
-                            {product.name}
-                          </h4>
-                          <div className="flex items-center gap-2 text-xs text-[#666666] mt-0.5">
-                            <span className="font-bold text-[#244f31]">₹{product.price}</span>
-                            {product.compareAt > product.price && (
-                              <span className="line-through text-[11px]">₹{product.compareAt}</span>
-                            )}
-                            <span className="rounded bg-[#eef5df] px-1.5 py-0.5 text-[10px] font-bold text-[#244f31] truncate">
-                              {product.concern}
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleItemQuantityChange(product.id, 1);
+              {/* Live Search Results Dropdown */}
+              {isSearching && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-2xl border border-neutral-200 bg-white shadow-xl">
+                  {searchResults.length > 0 ? (
+                    <div className="divide-y divide-neutral-100">
+                      <div className="flex items-center justify-between bg-neutral-50 px-4 py-2 text-xs font-bold text-[#023915]">
+                        <span>Found {searchResults.length} matching remedies</span>
+                        <Link
+                          href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => {
+                            setIsSearching(false);
+                            setDesktopSearchOpen(false);
                           }}
-                          className="rounded bg-[#80a03c] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#244f31] shrink-0"
+                          className="text-[11px] font-semibold text-[#80a03c] hover:underline"
                         >
-                          ADD
-                        </button>
+                          View all →
+                        </Link>
+                      </div>
+                      {searchResults.map((product) => (
+                        <Link
+                          key={product.id}
+                          href={`/products/${product.slug || product.id}`}
+                          onClick={() => {
+                            setSearchQuery("");
+                            setIsSearching(false);
+                            setDesktopSearchOpen(false);
+                          }}
+                          className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-neutral-50"
+                        >
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={48}
+                            height={48}
+                            className="size-12 rounded object-contain shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="truncate text-xs font-bold text-neutral-900 md:text-sm">
+                              {product.name}
+                            </h4>
+                            <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5">
+                              <span className="font-bold text-[#023915]">₹{product.price}</span>
+                              {product.compareAt > product.price && (
+                                <span className="line-through text-[11px]">₹{product.compareAt}</span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleItemQuantityChange(product.id, 1);
+                            }}
+                            className="rounded-full bg-[#023915] px-3 py-1 text-xs font-bold text-white transition hover:bg-black shrink-0"
+                          >
+                            ADD
+                          </button>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-5 text-center">
+                      <p className="text-xs font-medium text-neutral-600">
+                        No matching products found for "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+              <Link
+                href="/"
+                className="text-xs font-bold uppercase tracking-wider text-neutral-800 hover:text-[#023915] transition"
+              >
+                Home
+              </Link>
+
+              {/* Ayurvedic Concerns Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => setConcernsDropdownOpen(true)}
+                onMouseLeave={() => setConcernsDropdownOpen(false)}
+              >
+                <button
+                  type="button"
+                  onClick={() => setConcernsDropdownOpen(!concernsDropdownOpen)}
+                  className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-neutral-800 hover:text-[#023915] transition cursor-pointer py-1"
+                >
+                  <span>Ayurvedic Concerns</span>
+                  <ChevronDown
+                    className={`size-3.5 transition-transform duration-200 ${
+                      concernsDropdownOpen ? "rotate-180 text-[#023915]" : "text-neutral-500"
+                    }`}
+                  />
+                </button>
+                {concernsDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-64 rounded-2xl border border-neutral-200 bg-white p-2 shadow-xl z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-[#023915]/70 border-b border-neutral-100 mb-1">
+                      Targeted Solutions
+                    </div>
+                    {[
+                      { label: "Sugar Management", href: "/products?category=Sugar+Management" },
+                      { label: "Energy & Vitality", href: "/products?category=Energy+%26+Vitality" },
+                      { label: "Gym & Fitness", href: "/products?category=Gym+%26+Fitness" },
+                      { label: "Women's Health", href: "/products?category=Women%27s+Health" },
+                      { label: "Daily Wellness", href: "/products?category=Daily+Ayurveda" },
+                      { label: "Skin & Hair", href: "/products?category=Skin+%26+Hair" },
+                    ].map((item) => (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setConcernsDropdownOpen(false)}
+                        className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-[#f5f5f5] hover:text-[#023915] transition"
+                      >
+                        <span>{item.label}</span>
+                        <ChevronRight className="size-3 text-neutral-400" />
                       </Link>
                     ))}
-                    <div className="bg-[#f8faf1] p-2.5 text-center">
+                    <div className="pt-1 mt-1 border-t border-neutral-100">
                       <Link
-                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
-                        onClick={() => setIsSearching(false)}
-                        className="text-xs font-bold text-[#244f31] hover:underline"
+                        href="/products"
+                        onClick={() => setConcernsDropdownOpen(false)}
+                        className="block rounded-xl px-3 py-1.5 text-center text-xs font-bold text-[#023915] hover:bg-neutral-50 transition"
                       >
-                        View all {searchResults.length} results for "{searchQuery}" →
+                        View All Formulations →
                       </Link>
                     </div>
-                  </div>
-                ) : (
-                  <div className="p-5 text-center">
-                    <p className="text-xs font-medium text-[#666666]">
-                      No matching products found for "{searchQuery}"
-                    </p>
-                    <p className="text-[11px] text-[#999999] mt-1">
-                      Try searching for Virja, Madhunashi, Fat Burner, or Perfect 36.
-                    </p>
                   </div>
                 )}
               </div>
-            )}
-          </div>
+
+              <Link
+                href="/#products"
+                className="text-xs font-bold uppercase tracking-wider text-neutral-800 hover:text-[#023915] transition"
+              >
+                New Arrivals
+              </Link>
+
+              <Link
+                href="/products"
+                className="text-xs font-bold uppercase tracking-wider text-neutral-800 hover:text-[#023915] transition"
+              >
+                All Products
+              </Link>
+
+              <Link
+                href="/about-us"
+                className="text-xs font-bold uppercase tracking-wider text-neutral-800 hover:text-[#023915] transition"
+              >
+                About Us
+              </Link>
+            </nav>
+          )}
 
           {/* Right Action Icons & Buttons */}
-          <div className="flex items-center gap-2 md:gap-3">
-            {/* Get App Button */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Desktop Search Toggle Icon */}
             <button
-              onClick={() => {
-                if (onOpenAppModal) onOpenAppModal();
-                setAppModalOpen(true);
-              }}
-              className="hidden rounded-md border border-[#17231b] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#17231b] transition hover:bg-[#244f31] hover:text-white lg:block cursor-pointer"
+              onClick={() => setDesktopSearchOpen(!desktopSearchOpen)}
+              className="rounded-full p-2 text-neutral-800 transition hover:bg-neutral-100 cursor-pointer hidden md:flex"
+              title={desktopSearchOpen ? "Close Search" : "Search Products"}
+              aria-label="Search"
             >
-              GET APP
+              <Search className="size-5" />
             </button>
 
-            {/* Login Button / Profile */}
+            {/* Login / Profile (Taitva Style) */}
             {!mounted ? (
-              <div className="h-7 w-20 hidden sm:block" />
+              <div className="size-8 hidden sm:block" />
             ) : user ? (
-              <>
-                <div className="relative group hidden sm:block">
-                  <Link
-                    href="/profile?tab=orders"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase text-[#17231b] bg-[#f8faf1] rounded-md border border-[#ddddd9] hover:bg-[#eef2db] transition"
-                  >
-                    <User className="size-3.5 text-[#244f31]" />
-                    <span>Hi, {(user?.name || "Member").split(" ")[0]}!</span>
-                  </Link>
-                  
-                  {/* Hover Dropdown Menu */}
-                  <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-[#ddddd9] bg-white p-2 shadow-xl opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200">
-                    <div className="px-3 py-2 border-b border-[#f0f0eb] text-xs font-semibold text-[#666666]">
-                      Hi, {user?.name || "Member"}!
-                    </div>
-                    <div className="flex flex-col py-1">
-                      <Link
-                        href="/profile?tab=orders"
-                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                      >
-                        Orders
-                      </Link>
-                      <Link
-                        href="/profile?tab=wallet"
-                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                      >
-                        Wallet
-                      </Link>
-                      <Link
-                        href="/profile?tab=addresses"
-                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                      >
-                        Addresses
-                      </Link>
-                      <Link
-                        href="/profile?tab=recently-viewed"
-                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                      >
-                        Recently Viewed
-                      </Link>
-                      <Link
-                        href="/profile?tab=settings"
-                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                      >
-                        Account Settings
-                      </Link>
-                      <Link
-                        href="/contact-us"
-                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#17231b] transition hover:bg-[#f8faf1] hover:text-[#244f31]"
-                      >
-                        Contact Us
-                      </Link>
-                    </div>
-                    <div className="border-t border-[#f0f0eb] pt-1 mt-1">
-                      <button
-                        onClick={async () => {
-                          setUser(null);
-                          if (typeof window !== "undefined") {
-                            localStorage.removeItem("pyur_session");
-                            localStorage.removeItem("pyur_user");
-                            sessionStorage.clear();
-                            document.cookie = "pyur_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
-                          }
-                          try {
-                            await fetch("/api/auth/logout", {
-                              method: "POST",
-                              credentials: "include",
-                              cache: "no-store",
-                              keepalive: true,
-                            });
-                          } catch {}
-                          window.location.href = "/";
-                        }}
-                        className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 cursor-pointer"
-                      >
-                        SIGN OUT
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mobile Profile Icon Button */}
+              <div className="relative group hidden sm:block">
                 <Link
                   href="/profile?tab=orders"
-                  className="sm:hidden rounded-md p-1.5 text-[#17231b] hover:bg-[#f8faf1] transition"
-                  title="My Profile"
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-neutral-800 rounded-full border border-neutral-200 hover:border-[#023915] transition"
                 >
-                  <User className="size-6 text-[#244f31]" />
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden items-center gap-1 rounded-md border border-[#17231b] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#17231b] transition hover:bg-[#244f31] hover:text-white sm:flex"
-                >
-                  <User className="size-3.5" />
-                  <span>LOGIN</span>
+                  <User className="size-3.5 text-[#023915]" />
+                  <span>{(user?.name || "Member").split(" ")[0]}</span>
                 </Link>
 
-                {/* Mobile Login Icon Button */}
-                <Link
-                  href="/login"
-                  className="sm:hidden rounded-md p-1.5 text-[#17231b] hover:bg-[#f8faf1] transition"
-                  title="Login / Sign Up"
-                >
-                  <User className="size-6 text-[#17231b]" />
-                </Link>
-              </>
+                {/* Hover Dropdown Menu */}
+                <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl opacity-0 translate-y-1 invisible group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible transition-all duration-200">
+                  <div className="px-3 py-2 border-b border-neutral-100 text-xs font-semibold text-neutral-500">
+                    Hi, {user?.name || "Member"}!
+                  </div>
+                  <div className="flex flex-col py-1">
+                    <Link
+                      href="/profile?tab=orders"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-50 hover:text-[#023915]"
+                    >
+                      Orders
+                    </Link>
+                    <Link
+                      href="/profile?tab=wallet"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-50 hover:text-[#023915]"
+                    >
+                      Wallet
+                    </Link>
+                    <Link
+                      href="/profile?tab=addresses"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-50 hover:text-[#023915]"
+                    >
+                      Addresses
+                    </Link>
+                    <Link
+                      href="/profile?tab=settings"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-50 hover:text-[#023915]"
+                    >
+                      Account Settings
+                    </Link>
+                  </div>
+                  <div className="border-t border-neutral-100 pt-1 mt-1">
+                    <button
+                      onClick={async () => {
+                        setUser(null);
+                        if (typeof window !== "undefined") {
+                          localStorage.removeItem("pyur_session");
+                          localStorage.removeItem("pyur_user");
+                          sessionStorage.clear();
+                          document.cookie = "pyur_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                        }
+                        try {
+                          await fetch("/api/auth/logout", {
+                            method: "POST",
+                            credentials: "include",
+                            cache: "no-store",
+                            keepalive: true,
+                          });
+                        } catch {}
+                        window.location.href = "/";
+                      }}
+                      className="w-full text-left rounded-lg px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 cursor-pointer"
+                    >
+                      SIGN OUT
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-full p-2 text-neutral-800 transition hover:bg-neutral-100 cursor-pointer hidden sm:flex"
+                title="Account / Login"
+                aria-label="Account Login"
+              >
+                <User className="size-5" />
+              </Link>
             )}
 
             {/* Track Order Icon */}
             <button
               onClick={() => setTrackOrderOpen(true)}
-              className="rounded-md p-2 text-[#17231b] transition hover:bg-[#f8faf1]"
+              className="rounded-full p-2 text-neutral-800 transition hover:bg-neutral-100 cursor-pointer hidden sm:flex"
               title="Track Order"
+              aria-label="Track Order"
             >
-              <Truck className="size-5 md:size-6" />
+              <Truck className="size-5" />
             </button>
 
-            {/* Shopping Cart Drawer Trigger */}
+            {/* Shopping Cart Drawer Trigger with circular #023915 count badge */}
             <div className="relative">
               <button
                 onClick={() => setCartOpen(true)}
-                className={`relative rounded-md p-2 text-[#17231b] transition duration-300 ${
-                  isBouncing ? "scale-110 text-[#80a03c]" : "hover:bg-[#f8faf1]"
+                className={`relative rounded-full p-2 text-neutral-800 transition hover:bg-neutral-100 cursor-pointer ${
+                  isBouncing ? "scale-110 text-[#023915]" : ""
                 }`}
                 aria-label="Shopping Cart"
               >
-                <ShoppingBag className={`size-5 md:size-6 transition-transform duration-300 ${isBouncing ? "scale-110" : ""}`} />
+                <ShoppingBag className="size-5 md:size-6" />
                 {totalCartCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#c9704c] text-[10px] font-bold text-white shadow-sm">
+                  <span className="absolute -top-0.5 -right-0.5 flex size-4.5 min-w-4.5 items-center justify-center rounded-full bg-[#023915] text-[10px] font-bold text-white shadow-2xs">
                     {totalCartCount}
                   </span>
                 )}
@@ -679,12 +772,11 @@ export default function SiteHeader({
 
               {/* Floating Basket Toast Notification */}
               {showToast && (
-                <div className="absolute right-0 top-full mt-2.5 z-50 w-52 rounded-xl border border-[#ddddd9] bg-white p-3 shadow-xl animate-toast-in">
-                  {/* Small Arrow pointing up to the basket */}
-                  <div className="absolute -top-1.5 right-4 size-3 rotate-45 border-t border-l border-[#ddddd9] bg-white" />
+                <div className="absolute right-0 top-full mt-2.5 z-50 w-52 rounded-xl border border-neutral-200 bg-white p-3 shadow-xl animate-toast-in">
+                  <div className="absolute -top-1.5 right-4 size-3 rotate-45 border-t border-l border-neutral-200 bg-white" />
                   
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#244f31]">
-                    <CheckCircle2 className="size-4 shrink-0 text-[#80a03c]" />
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#023915]">
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
                     <span>Product added to basket</span>
                   </div>
                 </div>
@@ -693,137 +785,123 @@ export default function SiteHeader({
           </div>
         </div>
 
-        {/* Mobile Search Bar Row (Mobile only: md:hidden) */}
-        <div className="px-3 pb-3 md:hidden">
-          <div ref={mobileSearchContainerRef} className="relative">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center rounded-lg border border-[#666666] bg-white px-3 py-2 transition-all focus-within:border-[#244f31] focus-within:ring-1 focus-within:ring-[#244f31]">
-              <button type="submit" aria-label="Search" className="text-[#666666] hover:text-[#244f31] transition">
-                <Search className="size-4 shrink-0" />
-              </button>
-              <input
-                type="text"
-                value={searchQuery}
-                onFocus={() => {
-                  if (searchQuery.trim().length > 0) setIsSearching(true);
-                }}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setIsSearching(false);
-                }}
-                placeholder={`Search for "${headerSearchSuggestions[suggestionIdx] || "Ayurvedic remedies"}"`}
-                className="w-full pl-2 text-xs text-[#17231b] outline-none placeholder:text-[#666666]"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setIsSearching(false);
+        {/* Mobile Search Bar Row (Shown when search icon clicked: md:hidden) */}
+        {mobileSearchOpen && (
+          <div className="mt-2.5 md:hidden animate-in fade-in slide-in-from-top-1 duration-150">
+            <div ref={mobileSearchContainerRef} className="relative">
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+                <Search className="absolute left-3 size-3.5 text-neutral-400 pointer-events-none" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
+                  onFocus={() => {
+                    if (searchQuery.trim().length > 0) setIsSearching(true);
                   }}
-                  className="p-1 text-[#666666] hover:text-[#17231b]"
-                >
-                  <X className="size-4" />
-                </button>
-              )}
-            </form>
-
-            {/* Live Search Results Dropdown */}
-            {isSearching && (
-              <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-[#ddddd9] bg-white shadow-xl">
-                {searchResults.length > 0 ? (
-                  <div className="divide-y divide-[#ddddd9]">
-                    <div className="flex items-center justify-between bg-[#f8faf1] px-4 py-2 text-xs font-bold text-[#244f31]">
-                      <span>Found {searchResults.length} matching remedies</span>
-                      <Link
-                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
-                        onClick={() => setIsSearching(false)}
-                        className="text-[11px] font-semibold text-[#80a03c] hover:underline"
-                      >
-                        View all →
-                      </Link>
-                    </div>
-                    {searchResults.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/products/${product.slug || product.id}`}
-                        onClick={() => {
-                          setSearchQuery("");
-                          setIsSearching(false);
-                        }}
-                        className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-[#f8faf1]"
-                      >
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          width={48}
-                          height={48}
-                          className="size-12 rounded object-cover shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="truncate text-xs font-bold text-[#17231b]">
-                            {product.name}
-                          </h4>
-                          <div className="flex items-center gap-2 text-xs text-[#666666] mt-0.5">
-                            <span className="font-bold text-[#244f31]">₹{product.price}</span>
-                            {product.compareAt > product.price && (
-                              <span className="line-through text-[11px]">₹{product.compareAt}</span>
-                            )}
-                            <span className="rounded bg-[#eef5df] px-1.5 py-0.5 text-[10px] font-bold text-[#244f31] truncate">
-                              {product.concern}
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleItemQuantityChange(product.id, 1);
-                          }}
-                          className="rounded bg-[#80a03c] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#244f31] shrink-0"
-                        >
-                          ADD
-                        </button>
-                      </Link>
-                    ))}
-                    <div className="bg-[#f8faf1] p-2.5 text-center">
-                      <Link
-                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
-                        onClick={() => setIsSearching(false)}
-                        className="text-xs font-bold text-[#244f31] hover:underline"
-                      >
-                        View all {searchResults.length} results for "{searchQuery}" →
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-5 text-center">
-                    <p className="text-xs font-medium text-[#666666]">
-                      No matching products found for "{searchQuery}"
-                    </p>
-                    <p className="text-[11px] text-[#999999] mt-1">
-                      Try searching for Virja, Madhunashi, Fat Burner, or Perfect 36.
-                    </p>
-                  </div>
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={`Search for "${headerSearchSuggestions[suggestionIdx] || "Ayurvedic remedies"}"`}
+                  className="w-full bg-[#f8faf5] border border-neutral-200 rounded-full py-1.5 pl-8 pr-8 text-xs text-neutral-800 placeholder:text-neutral-400 outline-none focus:border-[#023915] transition"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsSearching(false);
+                      setMobileSearchOpen(false);
+                    }}
+                    className="absolute right-2.5 p-0.5 text-neutral-400 hover:text-neutral-700"
+                  >
+                    <X className="size-3.5" />
+                  </button>
                 )}
-              </div>
-            )}
-          </div>
-        </div>
+              </form>
 
-        {/* Mobile Pincode Delivery Strip */}
-        <div className="flex items-center justify-between border-t border-[#ddddd9] bg-[#f8faf1] px-4 py-2 lg:hidden">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-[#17231b]">
-            <MapPin className="size-3.5 text-[#244f31]" />
-            <span>{verifiedPincode ? `Delivery to ${verifiedPincode}` : "Verify pincode for accurate delivery"}</span>
+              {/* Live Search Results Dropdown */}
+              {isSearching && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-96 overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-xl">
+                  {searchResults.length > 0 ? (
+                    <div className="divide-y divide-neutral-100">
+                      <div className="flex items-center justify-between bg-neutral-50 px-4 py-2 text-xs font-bold text-[#023915]">
+                        <span>Found {searchResults.length} matching remedies</span>
+                        <Link
+                          href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => {
+                            setIsSearching(false);
+                            setMobileSearchOpen(false);
+                          }}
+                          className="text-[11px] font-semibold text-[#80a03c] hover:underline"
+                        >
+                          View all →
+                        </Link>
+                      </div>
+                      {searchResults.map((product) => (
+                        <Link
+                          key={product.id}
+                          href={`/products/${product.slug || product.id}`}
+                          onClick={() => {
+                            setSearchQuery("");
+                            setIsSearching(false);
+                            setMobileSearchOpen(false);
+                          }}
+                          className="flex cursor-pointer items-center gap-3 p-3 transition hover:bg-neutral-50"
+                        >
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={48}
+                            height={48}
+                            className="size-12 rounded object-contain shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="truncate text-xs font-bold text-neutral-900">
+                              {product.name}
+                            </h4>
+                            <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5">
+                              <span className="font-bold text-[#023915]">₹{product.price}</span>
+                              {product.compareAt > product.price && (
+                                <span className="line-through text-[11px]">₹{product.compareAt}</span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleItemQuantityChange(product.id, 1);
+                            }}
+                            className="rounded-full bg-[#023915] px-3 py-1 text-xs font-bold text-white transition hover:bg-black shrink-0"
+                          >
+                            ADD
+                          </button>
+                        </Link>
+                      ))}
+                      <div className="bg-neutral-50 p-2.5 text-center">
+                        <Link
+                          href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => {
+                            setIsSearching(false);
+                            setMobileSearchOpen(false);
+                          }}
+                          className="text-xs font-bold text-[#023915] hover:underline"
+                        >
+                          View all {searchResults.length} results for "{searchQuery}" →
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-5 text-center">
+                      <p className="text-xs font-medium text-neutral-600">
+                        No matching products found for "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          <button
-            onClick={() => setPincodeModalOpen(true)}
-            className="text-xs font-bold text-[#80a03c] underline"
-          >
-            {verifiedPincode ? "Change" : "Verify"}
-          </button>
-        </div>
+        )}
       </header>
 
       {/* Drawer Navigation Menu */}
@@ -834,9 +912,9 @@ export default function SiteHeader({
             onClick={() => setMenuOpen(false)}
           />
           <div className="relative z-10 flex w-full max-w-xs flex-col bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#ddddd9] pb-4">
+            <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="relative flex size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#244f31]/20 overflow-hidden shrink-0">
+                <div className="relative flex size-9 items-center justify-center rounded-full bg-white p-0.5 border border-[#023915]/20 overflow-hidden shrink-0">
                   <Image
                     src="/brand/pure-ayur-logo.png"
                     alt="Pure Ayur Herbs Logo"
@@ -845,11 +923,11 @@ export default function SiteHeader({
                     className="size-full rounded-full object-cover"
                   />
                 </div>
-                <span className="font-black text-[#244f31] text-sm tracking-wider uppercase">PURE AYUR HERBS</span>
+                <span className="font-black text-[#023915] text-sm tracking-wider uppercase">PURE AYUR HERBS</span>
               </div>
               <button
                 onClick={() => setMenuOpen(false)}
-                className="rounded-full p-1 text-[#666666] hover:bg-[#f8faf1]"
+                className="rounded-full p-1 text-neutral-500 hover:bg-neutral-100"
               >
                 <X className="size-5" />
               </button>
@@ -859,11 +937,11 @@ export default function SiteHeader({
               {!mounted ? (
                 <div className="h-11 rounded-xl bg-gray-100 animate-pulse" />
               ) : user ? (
-                <div className="bg-[#f8faf1] p-3.5 rounded-xl border border-[#ddddd9] flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#ddddd9]/60">
+                <div className="bg-[#f5f5f5] p-3.5 rounded-xl border border-neutral-200 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
                     <div className="flex items-center gap-2">
-                      <User className="size-4 text-[#244f31]" />
-                      <span className="font-bold text-[#17231b] text-sm">Hello, {(user?.name || "Member").split(" ")[0]}</span>
+                      <User className="size-4 text-[#023915]" />
+                      <span className="font-bold text-neutral-900 text-sm">Hello, {(user?.name || "Member").split(" ")[0]}</span>
                     </div>
                     <button
                       onClick={async () => {
@@ -889,32 +967,32 @@ export default function SiteHeader({
                       Logout
                     </button>
                   </div>
-                  <div className="flex flex-col gap-2 text-xs font-bold text-[#17231b]">
+                  <div className="flex flex-col gap-2 text-xs font-bold text-neutral-800">
                     <Link
                       href="/profile?tab=orders"
                       onClick={() => setMenuOpen(false)}
-                      className="hover:text-[#244f31] flex items-center gap-1.5"
+                      className="hover:text-[#023915] flex items-center gap-1.5"
                     >
                       📦 My Orders
                     </Link>
                     <Link
                       href="/profile?tab=wallet"
                       onClick={() => setMenuOpen(false)}
-                      className="hover:text-[#244f31] flex items-center gap-1.5"
+                      className="hover:text-[#023915] flex items-center gap-1.5"
                     >
                       🪙 My Wallet (Coins)
                     </Link>
                     <Link
                       href="/profile?tab=addresses"
                       onClick={() => setMenuOpen(false)}
-                      className="hover:text-[#244f31] flex items-center gap-1.5"
+                      className="hover:text-[#023915] flex items-center gap-1.5"
                     >
                       📍 Saved Addresses
                     </Link>
                     <Link
                       href="/profile?tab=settings"
                       onClick={() => setMenuOpen(false)}
-                      className="hover:text-[#244f31] flex items-center gap-1.5"
+                      className="hover:text-[#023915] flex items-center gap-1.5"
                     >
                       ⚙️ Account Settings
                     </Link>
@@ -924,7 +1002,7 @@ export default function SiteHeader({
                 <Link
                   href="/login"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 rounded-xl border border-[#17231b] p-3 text-sm font-bold text-[#17231b] justify-center hover:bg-[#244f31] hover:text-white transition"
+                  className="flex items-center gap-2 rounded-xl border border-[#023915] p-3 text-sm font-bold text-[#023915] justify-center hover:bg-[#023915] hover:text-white transition"
                 >
                   <User className="size-4" />
                   <span>LOGIN / SIGN UP</span>
@@ -936,7 +1014,7 @@ export default function SiteHeader({
                   key={link.label}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="text-base font-semibold text-[#17231b] transition hover:text-[#80a03c]"
+                  className="text-base font-semibold text-neutral-800 transition hover:text-[#023915]"
                 >
                   {link.label}
                 </a>
@@ -972,22 +1050,22 @@ export default function SiteHeader({
           />
           <div className="relative z-10 flex w-full max-w-md flex-col bg-white shadow-2xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#ddddd9] p-4">
+            <div className="flex items-center justify-between border-b border-neutral-200 p-4">
               <div className="flex items-center gap-2">
-                <ShoppingBag className="size-5 text-[#244f31]" />
-                <h3 className="text-lg font-bold text-[#17231b]">Your Herbal Basket ({totalCartCount})</h3>
+                <ShoppingBag className="size-5 text-[#023915]" />
+                <h3 className="text-lg font-bold text-neutral-900">Your Herbal Basket ({totalCartCount})</h3>
               </div>
               <button
                 onClick={() => setCartOpen(false)}
-                className="rounded-full p-1 text-[#666666] hover:bg-[#f8faf1]"
+                className="rounded-full p-1 text-neutral-500 hover:bg-neutral-100"
               >
                 <X className="size-5" />
               </button>
             </div>
 
             {/* Free Shipping Bar */}
-            <div className="bg-[#eef5df] px-4 py-3">
-              <div className="flex justify-between text-xs font-bold text-[#244f31]">
+            <div className="bg-[#c2d4c5]/25 px-4 py-3">
+              <div className="flex justify-between text-xs font-bold text-[#023915]">
                 <span>
                   {cartSubtotal >= freeShippingThreshold
                     ? "🎉 FREE Delivery Unlocked!"
@@ -995,9 +1073,9 @@ export default function SiteHeader({
                 </span>
                 <span>{Math.round(progressToFreeShipping)}%</span>
               </div>
-              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[#ddddd9]">
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-neutral-200">
                 <div
-                  className="h-full bg-[#80a03c] transition-all duration-500"
+                  className="h-full bg-[#023915] transition-all duration-500"
                   style={{ width: `${progressToFreeShipping}%` }}
                 />
               </div>
@@ -1018,41 +1096,41 @@ export default function SiteHeader({
                     return (
                       <div
                         key={product.id || String(Math.random())}
-                        className="flex gap-3 rounded-lg border border-[#ddddd9] p-3 bg-white"
+                        className="flex gap-3 rounded-xl border border-neutral-200 p-3 bg-white"
                       >
-                        <div className="relative size-16 shrink-0 rounded overflow-hidden bg-gray-50 border border-gray-100">
+                        <div className="relative size-16 shrink-0 rounded-lg overflow-hidden bg-white border border-neutral-100 flex items-center justify-center">
                           <Image
                             src={imageSrc}
                             alt={product.name || "Ayurvedic product"}
                             fill
                             sizes="64px"
-                            className="object-cover"
+                            className="object-contain"
                           />
                         </div>
                         <div className="flex flex-1 flex-col justify-between min-w-0">
                           <div>
-                            <h4 className="line-clamp-1 text-xs font-bold text-[#17231b]">
+                            <h4 className="line-clamp-1 text-xs font-bold text-neutral-900">
                               {product.name || "Ayurvedic Formulation"}
                             </h4>
                             {isCoinsActive && coinsEarned > 0 && (
-                              <span className="text-[10px] font-semibold text-[#80a03c]">
+                              <span className="text-[10px] font-semibold text-emerald-800">
                                 Earn {coinsEarned * quantity} Pure Coins 🪙
                               </span>
                             )}
                           </div>
                           <div className="flex items-center justify-between mt-2">
-                            <div className="flex items-center gap-1 text-xs font-bold text-[#17231b]">
+                            <div className="flex items-center gap-1 text-xs font-bold text-neutral-900">
                               <span>₹{price * quantity}</span>
                               {compareAt > price && (
-                                <span className="text-[10px] text-[#666666] line-through">
+                                <span className="text-[10px] text-neutral-400 line-through">
                                   ₹{compareAt * quantity}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center rounded border border-[#ddddd9]">
+                            <div className="flex items-center rounded-lg border border-neutral-300">
                               <button
                                 onClick={() => handleItemQuantityChange(product.id, -1)}
-                                className="p-1 hover:bg-[#f8faf1] transition"
+                                className="p-1 hover:bg-neutral-100 transition"
                                 aria-label="Decrease quantity"
                               >
                                 <Minus className="size-3" />
@@ -1060,7 +1138,7 @@ export default function SiteHeader({
                               <span className="px-2 text-xs font-bold">{quantity}</span>
                               <button
                                 onClick={() => handleItemQuantityChange(product.id, 1)}
-                                className="p-1 hover:bg-[#f8faf1] transition"
+                                className="p-1 hover:bg-neutral-100 transition"
                                 aria-label="Increase quantity"
                               >
                                 <Plus className="size-3" />
@@ -1070,7 +1148,7 @@ export default function SiteHeader({
                         </div>
                         <button
                           onClick={() => handleItemRemove(product.id)}
-                          className="self-start p-1 text-[#666666] hover:text-[#c9704c] transition"
+                          className="self-start p-1 text-neutral-400 hover:text-red-600 transition"
                           aria-label="Remove item"
                         >
                           <Trash2 className="size-4" />
@@ -1081,12 +1159,12 @@ export default function SiteHeader({
                 </div>
               ) : (
                 <div className="flex h-full flex-col items-center justify-center text-center py-12">
-                  <ShoppingBag className="size-12 text-[#ddddd9]" />
-                  <p className="mt-3 text-sm font-bold text-[#17231b]">Your herbal basket is empty</p>
-                  <p className="mt-1 text-xs text-[#666666]">Explore our 100% pure Ayurvedic remedies!</p>
+                  <ShoppingBag className="size-12 text-neutral-300" />
+                  <p className="mt-3 text-sm font-bold text-neutral-900">Your herbal basket is empty</p>
+                  <p className="mt-1 text-xs text-neutral-500">Explore our 100% pure Ayurvedic remedies!</p>
                   <button
                     onClick={() => setCartOpen(false)}
-                    className="mt-4 rounded-xl bg-[#244f31] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#1d3b24]"
+                    className="mt-4 rounded-xl bg-[#023915] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-black"
                   >
                     Start Shopping
                   </button>
@@ -1096,12 +1174,12 @@ export default function SiteHeader({
 
             {/* Footer Checkout */}
             {validCartItems.length > 0 && (
-              <div className="border-t border-[#ddddd9] bg-white p-4">
+              <div className="border-t border-neutral-200 bg-white p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-bold text-[#17231b]">Total Payable</span>
+                  <span className="text-sm font-bold text-neutral-900">Total Payable</span>
                   <div className="text-right">
-                    <span className="text-lg font-black text-[#244f31]">₹{cartSubtotal}</span>
-                    <span className="block text-[10px] text-[#666666]">Taxes included</span>
+                    <span className="text-lg font-black text-[#023915]">₹{cartSubtotal}</span>
+                    <span className="block text-[10px] text-neutral-500">Taxes included</span>
                   </div>
                 </div>
                 <button
@@ -1117,7 +1195,7 @@ export default function SiteHeader({
                       setCartOpen(false);
                     }
                   }}
-                  className="w-full rounded-lg bg-[#244f31] py-3 text-sm font-bold tracking-wider text-white shadow-lg transition hover:bg-[#1d3b24]"
+                  className="w-full rounded-xl bg-[#023915] py-3 text-sm font-bold tracking-wider text-white shadow-lg transition hover:bg-black uppercase"
                 >
                   PROCEED TO CHECKOUT
                 </button>
@@ -1134,9 +1212,9 @@ export default function SiteHeader({
             className="fixed inset-0 bg-black/50 backdrop-blur-xs"
             onClick={() => setPincodeModalOpen(false)}
           />
-          <div className="relative z-10 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-[#17231b]">Check Delivery Pincode</h3>
-            <p className="mt-1 text-xs text-[#666666]">
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-neutral-200">
+            <h3 className="text-lg font-bold text-neutral-900">Check Delivery Pincode</h3>
+            <p className="mt-1 text-xs text-neutral-500">
               Enter your 6-digit PIN code to check estimated delivery date and cash-on-delivery availability.
             </p>
             <form onSubmit={handleVerifyPincode} className="mt-4 flex gap-2">
@@ -1146,11 +1224,11 @@ export default function SiteHeader({
                 value={pincodeInput}
                 onChange={(e) => setPincodeInput(e.target.value.replace(/\D/g, ""))}
                 placeholder="Enter 6-digit Pincode"
-                className="flex-1 rounded-lg border border-[#ddddd9] px-3 py-2 text-sm outline-none focus:border-[#244f31]"
+                className="flex-1 rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-[#023915]"
               />
               <button
                 type="submit"
-                className="rounded-lg bg-[#244f31] px-4 py-2 text-xs font-bold text-white hover:bg-[#1d3b24]"
+                className="rounded-xl bg-[#023915] px-4 py-2 text-xs font-bold text-white hover:bg-black transition cursor-pointer"
               >
                 VERIFY
               </button>
@@ -1166,9 +1244,9 @@ export default function SiteHeader({
             className="fixed inset-0 bg-black/50 backdrop-blur-xs"
             onClick={() => setTrackOrderOpen(false)}
           />
-          <div className="relative z-10 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-[#17231b]">Track Your Order</h3>
-            <p className="mt-1 text-xs text-[#666666]">
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-neutral-200">
+            <h3 className="text-lg font-bold text-neutral-900">Track Your Order</h3>
+            <p className="mt-1 text-xs text-neutral-500">
               Enter your Order ID (e.g. PYR-1048) or registered Mobile Number.
             </p>
             <form onSubmit={handleTrackOrder} className="mt-4 flex gap-2">
@@ -1177,18 +1255,18 @@ export default function SiteHeader({
                 value={orderIdInput}
                 onChange={(e) => setOrderIdInput(e.target.value)}
                 placeholder="Order ID / Mobile No."
-                className="flex-1 rounded-lg border border-[#ddddd9] px-3 py-2 text-sm outline-none focus:border-[#244f31]"
+                className="flex-1 rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-[#023915]"
               />
               <button
                 type="submit"
-                className="rounded-lg bg-[#244f31] px-4 py-2 text-xs font-bold text-white hover:bg-[#1d3b24]"
+                className="rounded-xl bg-[#023915] px-4 py-2 text-xs font-bold text-white hover:bg-black transition cursor-pointer"
               >
                 TRACK
               </button>
             </form>
             {trackedStatus && (
-              <div className="mt-4 rounded-lg bg-[#eef5df] p-3 text-xs font-semibold text-[#244f31] flex items-center gap-2">
-                <CheckCircle2 className="size-4 shrink-0 text-[#80a03c]" />
+              <div className="mt-4 rounded-xl bg-[#c2d4c5]/25 p-3 text-xs font-semibold text-[#023915] flex items-center gap-2">
+                <CheckCircle2 className="size-4 shrink-0 text-emerald-700" />
                 <span>{trackedStatus}</span>
               </div>
             )}

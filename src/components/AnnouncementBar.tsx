@@ -24,9 +24,9 @@ interface AnnouncementBarProps {
 
 const DEFAULT_ANNOUNCEMENT: AnnouncementData = {
   visible: true,
-  text: "Free Kesar Sale Ends in",
-  code: "FREEKESAR",
-  btnText: "Claim Gift",
+  text: "Minimum 30% off on all products.",
+  code: "",
+  btnText: "",
   link: "/#shop",
   bgImage: "/brand/top-botanical-banner.jpg",
   timerDuration: "07:34:59",
@@ -242,86 +242,37 @@ export default function AnnouncementBar({
   return (
     <div
       id="top-announcement-banner"
-      className="relative z-40 w-full overflow-hidden text-white shadow-sm border-b border-[#1c3d25]/30 select-none"
-      style={{
-        backgroundImage: `linear-gradient(to right, rgba(13, 34, 21, 0.88), rgba(16, 44, 26, 0.72), rgba(13, 34, 21, 0.88)), url('${bgUrl}')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      className="relative z-40 w-full bg-[#023915] text-white py-2 px-4 select-none border-b border-black/10 shadow-xs"
     >
-      <div className="mx-auto flex h-11 sm:h-12 max-w-[1440px] items-center justify-between px-3 sm:px-4 md:px-6">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between px-2 sm:px-4">
         {/* Left Spacer for absolute center alignment on desktop */}
-        <div className="hidden md:flex items-center w-8 shrink-0" />
+        <div className="hidden md:block w-8 shrink-0" />
 
-        {/* Center: Promotional Text & Live Circular Countdown Clocks */}
+        {/* Center: Taitva Promotional Text */}
         <Link
           href={targetLink}
-          className="flex-1 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-center group cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-2 text-center group cursor-pointer"
         >
-          {/* Main Sale Text */}
-          <span className="text-xs sm:text-sm font-semibold tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)] group-hover:text-[#e4f1c5] transition-colors">
-            {activeAnnouncement.text}
+          <span className="text-xs sm:text-[13px] font-semibold tracking-wide text-white group-hover:text-[#c2d4c5] transition-colors">
+            {activeAnnouncement.text || "Minimum 30% off on all products."}
           </span>
 
-          {/* Styled Circular Countdown Badges */}
-          <div className="inline-flex items-center gap-1 sm:gap-1.5 font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-            {/* Hours */}
-            <div className="flex items-center gap-1">
-              <span className="flex items-center justify-center size-5 sm:size-6 rounded-full bg-white text-[#d32f2f] text-[11px] sm:text-xs font-black shadow-md ring-1 ring-black/10">
-                {timeUnits.hours}
-              </span>
-              <span className="text-[10px] sm:text-xs font-bold text-white/95 uppercase tracking-wider">
-                HH :
-              </span>
-            </div>
-
-            {/* Minutes */}
-            <div className="flex items-center gap-1">
-              <span className="flex items-center justify-center size-5 sm:size-6 rounded-full bg-white text-[#d32f2f] text-[11px] sm:text-xs font-black shadow-md ring-1 ring-black/10">
-                {timeUnits.minutes}
-              </span>
-              <span className="text-[10px] sm:text-xs font-bold text-white/95 uppercase tracking-wider">
-                MM :
-              </span>
-            </div>
-
-            {/* Seconds */}
-            <div className="flex items-center gap-1">
-              <span className="flex items-center justify-center size-5 sm:size-6 rounded-full bg-white text-[#d32f2f] text-[11px] sm:text-xs font-black shadow-md ring-1 ring-black/10">
-                {timeUnits.seconds}
-              </span>
-              <span className="text-[10px] sm:text-xs font-bold text-white/95 uppercase tracking-wider">
-                SS
-              </span>
-            </div>
-          </div>
-
-          {/* Optional Promo Code Badge */}
           {activeAnnouncement.code && (
-            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-400/90 text-[#132a18] font-mono text-[10px] font-black tracking-wider uppercase shadow-sm">
-              <Sparkles className="size-3" />
+            <span className="rounded bg-white/15 px-2 py-0.5 font-mono text-[11px] font-bold text-white border border-white/20">
               {activeAnnouncement.code}
-            </span>
-          )}
-
-          {/* Optional Action CTA Link */}
-          {activeAnnouncement.btnText && (
-            <span className="hidden sm:inline-flex items-center gap-0.5 text-[11px] font-bold text-[#b4d47c] group-hover:text-white underline underline-offset-2 transition-colors ml-1">
-              <span>{activeAnnouncement.btnText}</span>
-              <ChevronRight className="size-3" />
             </span>
           )}
         </Link>
 
-        {/* Right: Close / Dismiss Button */}
-        <div className="flex items-center justify-end shrink-0 pl-2">
+        {/* Right: Close / Dismiss Button (Hidden on Mobile for Clean Centered View) */}
+        <div className="hidden sm:flex items-center justify-end shrink-0 pl-2">
           <button
             onClick={handleDismiss}
             className="rounded-full p-1 text-white/70 hover:text-white hover:bg-black/20 transition-all cursor-pointer"
             aria-label="Close announcement"
             title="Dismiss announcement"
           >
-            <X className="size-4" />
+            <X className="size-3.5" />
           </button>
         </div>
       </div>

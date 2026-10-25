@@ -9,10 +9,48 @@ export async function GET(request: Request) {
     const productId = (searchParams.get("productId") || searchParams.get("slug") || "").trim().toLowerCase();
 
     const db = await readDB();
-    const allReviews = db.reviews || [];
+    const allReviews = Array.isArray(db.reviews) ? db.reviews : [];
+    const allTestimonials = Array.isArray(db.testimonials) ? db.testimonials : [];
 
-    // Filter reviews for this product if productId is provided
-    let reviews = allReviews.filter((r: any) => r.status === "Approved" || !r.status);
+    // Transform approved testimonials into review records
+    const mappedTestimonials = allTestimonials
+      .filter((t: any) => (t.status || "Approved") === "Approved")
+      .map((t: any) => ({
+        id: t.id,
+        productId: t.productTagged || t.product || "",
+        product: t.productTagged || t.product || "Ayurvedic Formulation",
+        productName: t.productTagged || t.product || "Ayurvedic Formulation",
+        customer: t.name,
+        name: t.name,
+        rating: Number(t.rating) || 5,
+        title: t.title || "Authentic Ayurvedic Formulation",
+        comment: t.comment || "",
+        location: t.location || "India",
+        verifiedBuyer: t.verifiedBuyer !== false,
+        image: t.photo || t.avatar || null,
+        photo: t.photo || t.avatar || null,
+        images: [t.photo || t.avatar].filter(Boolean),
+        date: t.date || "Recent",
+        status: "Approved",
+      }));
+
+    // Deduplicate between reviews and testimonials
+    const combinedMap = new Map<string, any>();
+    allReviews
+      .filter((r: any) => (r.status || "Approved") === "Approved")
+      .forEach((r: any) => {
+        const key = `${r.name || r.customer}-${r.comment?.slice(0, 30)}`.toLowerCase();
+        combinedMap.set(key, r);
+      });
+
+    mappedTestimonials.forEach((t: any) => {
+      const key = `${t.name}-${t.comment?.slice(0, 30)}`.toLowerCase();
+      if (!combinedMap.has(key)) {
+        combinedMap.set(key, t);
+      }
+    });
+
+    let reviews = Array.from(combinedMap.values());
 
     if (productId) {
       reviews = reviews.filter((r: any) => {

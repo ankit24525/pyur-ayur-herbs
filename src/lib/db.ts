@@ -22,16 +22,16 @@ export function applyCloudinaryAiCrop(url: string, preset: "desktop" | "mobile" 
         rest = rest.slice(vIndex + 1);
       }
       let trans = "f_auto,q_auto";
-      if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
-      else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+      if (preset === "desktop") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
+      else if (preset === "mobile") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
       else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
       return `${parts[0]}/image/upload/${trans}/${rest}`;
     }
     return url;
   }
   let trans = "f_auto,q_auto";
-  if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
-  else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+  if (preset === "desktop") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
+  else if (preset === "mobile") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
   else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
   return `${match[1]}${trans}/${match[2]}`;
 }
@@ -196,6 +196,62 @@ import { defaultMedia } from "./default-media";
 
 export const defaultTestimonials = [
   {
+    id: "test_harpreet_singh",
+    name: "Harpreet Singh",
+    location: "Amritsar, Punjab",
+    rating: 5,
+    title: "Authentic herbal taste and natural balance",
+    comment: "I have tried several brands, but this neem karela jamun juice feels the most authentic. The bitter taste is natural, showing its purity, and it has really helped stabilize my daily energy and glucose levels without any insulin spikes. A staple in my morning routine now.",
+    productTagged: "Madhunashi Sugar Care",
+    verifiedBuyer: true,
+    avatar: "/reviews/review-customer-1.jpg",
+    photo: "/reviews/review-customer-1.jpg",
+    status: "Approved",
+    date: "13 Sep 2026",
+  },
+  {
+    id: "test_sunita_deshmukh",
+    name: "Sunita Deshmukh",
+    location: "Pune, Maharashtra",
+    rating: 5,
+    title: "Noticeable improvement in vitality and digestion",
+    comment: "I have been adding this herbal powder to my morning routine every day. It mixes very easily and feels completely pure without any artificial grit. My energy and vitality have noticeably improved and my skin feels much clearer within just a month.",
+    productTagged: "Virja Powder for Men",
+    verifiedBuyer: true,
+    avatar: "/reviews/review-customer-2.jpg",
+    photo: "/reviews/review-customer-2.jpg",
+    status: "Approved",
+    date: "24 Sep 2026",
+  },
+  {
+    id: "test_madhavan_iyer",
+    name: "Madhavan Iyer",
+    location: "Bengaluru, Karnataka",
+    rating: 5,
+    title: "Refreshing herbal tonic for active workdays",
+    comment: "This herbal fat burner juice has a wonderfully tart and refreshing taste. It has become a regular part of my morning routine, and I feel much more active through long workdays at my desk without afternoon fatigue or brain fog.",
+    productTagged: "Fat Burner Metabolism Support Juice",
+    verifiedBuyer: true,
+    avatar: "/reviews/review-customer-3.jpg",
+    photo: "/reviews/review-customer-3.jpg",
+    status: "Approved",
+    date: "09 Sep 2026",
+  },
+  {
+    id: "test_1792489624477",
+    name: "Mannu",
+    location: "Uttrakhand",
+    rating: 5,
+    title: "Authentic Ayurvedic Formulation",
+    comment: "Mujhe to isske bdia result mile mera kafi weigt kamm hua h mere liye best product hai",
+    productTagged: "FAT BURNER-Metabolism Support Juice",
+    verifiedBuyer: true,
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+    status: "Approved",
+    date: "20 Oct 2026",
+  },
+  {
     id: "test_1",
     name: "Rajesh K.",
     location: "Pune, Maharashtra",
@@ -329,23 +385,25 @@ function sanitizeDBData(data: any): DBData {
   if (!Array.isArray(data.testimonials) || data.testimonials.length === 0) {
     data.testimonials = defaultTestimonials;
   } else {
-    if (data.testimonials.length === 1 && (!data.testimonials[0].location || !data.testimonials[0].productTagged)) {
-      data.testimonials = defaultTestimonials;
-    } else {
-      data.testimonials = data.testimonials.map((t: any, idx: number) => ({
-        id: t.id || `test_${idx + 1}`,
-        name: t.name || "Verified Customer",
-        location: t.location || "India",
-        rating: Math.min(5, Math.max(1, Number(t.rating) || 5)),
-        title: t.title || "Authentic Ayurvedic Formulation",
-        comment: t.comment || "",
-        productTagged: t.productTagged || t.product || "Virja Powder for Men",
-        verifiedBuyer: t.verifiedBuyer !== false,
-        avatar: t.avatar || "",
-        status: t.status || "Approved",
-        date: t.date || "Verified Purchase",
-      }));
-    }
+    // Merge any verified default testimonials that are not in data.testimonials yet
+    const existingNames = new Set(data.testimonials.map((t: any) => (t.name || "").toLowerCase().trim()));
+    const missingDefaults = defaultTestimonials.filter((def) => !existingNames.has(def.name.toLowerCase().trim()));
+    const all = [...data.testimonials, ...missingDefaults];
+
+    data.testimonials = all.map((t: any, idx: number) => ({
+      id: t.id || `test_${idx + 1}`,
+      name: t.name || "Verified Customer",
+      location: t.location || "India",
+      rating: Math.min(5, Math.max(1, Number(t.rating) || 5)),
+      title: t.title || "Authentic Ayurvedic Formulation",
+      comment: t.comment || "",
+      productTagged: t.productTagged || t.product || "Virja Powder for Men",
+      verifiedBuyer: t.verifiedBuyer !== false,
+      avatar: t.avatar || t.photo || "/reviews/review-customer-1.jpg",
+      photo: t.photo || t.avatar || "/reviews/review-customer-1.jpg",
+      status: t.status || "Approved",
+      date: t.date || "Verified Purchase",
+    }));
   }
   if (!Array.isArray(data.users)) data.users = [];
   if (!Array.isArray(data.reviews)) data.reviews = [];
@@ -415,13 +473,16 @@ function sanitizeDBData(data: any): DBData {
       };
     }
     if (!Array.isArray(data.content.heroSlides)) data.content.heroSlides = [];
+
     data.content.heroSlides = data.content.heroSlides.map((slide: any) => {
       let img = (typeof slide.image === "string" && slide.image.trim())
         ? slide.image
         : "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80";
-      img = applyCloudinaryAiCrop(img, "desktop");
+      if (!img.startsWith("/brand/")) {
+        img = applyCloudinaryAiCrop(img, "desktop");
+      }
       let mImg = typeof slide.mobileImage === "string" && slide.mobileImage.trim() ? slide.mobileImage : "";
-      if (mImg) {
+      if (mImg && !mImg.startsWith("/brand/")) {
         mImg = applyCloudinaryAiCrop(mImg, "mobile");
       } else if (img.includes("res.cloudinary.com")) {
         mImg = applyCloudinaryAiCrop(img, "mobile");
@@ -429,7 +490,7 @@ function sanitizeDBData(data: any): DBData {
       return {
         ...slide,
         image: img,
-        mobileImage: mImg,
+        mobileImage: mImg || img,
       };
     });
 
@@ -441,6 +502,9 @@ function sanitizeDBData(data: any): DBData {
     }
 
     if (!data.content.footer) data.content.footer = {};
+    if (!data.content.trustSection || typeof data.content.trustSection !== "object") {
+      data.content.trustSection = { image: "/brand/why-pure-ayur-banner.jpg" };
+    }
     if (!data.content.aboutUs || typeof data.content.aboutUs !== "object") {
       data.content.aboutUs = {};
     }

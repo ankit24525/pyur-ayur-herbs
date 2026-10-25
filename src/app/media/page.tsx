@@ -87,7 +87,9 @@ export default function MediaHubPage() {
   const saveCartState = (newCart: { product: Product; quantity: number }[]) => {
     setCart(newCart);
     localStorage.setItem("pyur_cart", JSON.stringify(newCart));
-    window.dispatchEvent(new CustomEvent("pyur_cart_updated", { detail: newCart }));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("pyur_cart_updated", { detail: newCart }));
+    }, 0);
   };
 
   const handleAddToCart = (product: Product) => {

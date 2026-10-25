@@ -3,6 +3,7 @@ import MetaPixel from "@/components/MetaPixel";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import ToastContainer from "@/components/ToastContainer";
 import SessionTimeoutHandler from "@/components/SessionTimeoutHandler";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import type { Metadata } from "next";
 import { readDB } from "@/lib/db";
 import "./globals.css";
@@ -230,6 +231,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ToastContainer />
         <SessionTimeoutHandler />
         {children}
+        <MobileBottomNav />
       </body>
     </html>
   );

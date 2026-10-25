@@ -91,11 +91,11 @@ export async function POST(request: Request) {
 
     if (rawSecureUrl.includes("/image/upload/")) {
       if (isSlideUpload) {
-        desktopUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_pad,w_1920,h_600,b_auto,f_auto,q_auto/");
-        mobileUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_pad,w_1080,h_1080,b_auto,f_auto,q_auto/");
+        desktopUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_fill,g_auto,w_1200,h_800,f_auto,q_auto/");
+        mobileUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_fill,g_auto,w_1200,h_800,f_auto,q_auto/");
         optimizedUrl = desktopUrl;
       } else if (isMobileSlideUpload) {
-        mobileUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_pad,w_1080,h_1080,b_auto,f_auto,q_auto/");
+        mobileUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_fill,g_auto,w_1200,h_800,f_auto,q_auto/");
         optimizedUrl = mobileUrl;
       } else if (isProductUpload) {
         optimizedUrl = rawSecureUrl.replace("/image/upload/", "/image/upload/c_pad,w_1000,h_1000,b_white,f_auto,q_auto/");

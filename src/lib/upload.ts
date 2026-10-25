@@ -5,7 +5,7 @@ export const compressImageToDataUrl = (file: File, maxDim = 1200, quality = 0.82
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
         let width = img.width;
         let height = img.height;
@@ -30,25 +30,40 @@ export const compressImageToDataUrl = (file: File, maxDim = 1200, quality = 0.82
         } catch {}
         resolve(canvas.toDataURL("image/jpeg", quality));
       };
-      img.onerror = reject;
+      img.onerror = () => {
+        // If image object fails to decode (e.g. unusual format), resolve with reader data URL
+        resolve((e.target?.result as string) || "");
+      };
       img.src = e.target?.result as string;
     };
-    reader.onerror = reject;
+    reader.onerror = () => resolve("");
     reader.readAsDataURL(file);
   });
 };
 
 // Upload review photo to Cloudinary CDN via /api/admin/upload with automatic fallback
 export const uploadReviewImage = async (file: File): Promise<string> => {
+  // Pre-generate a compressed local data URL so we always have an instant, reliable fallback
+  let localCompressed = "";
   try {
-    // 1. Compress first to reduce upload size and network load
-    const compressedDataUrl = await compressImageToDataUrl(file, 1000, 0.82);
+    localCompressed = await compressImageToDataUrl(file, 1000, 0.82);
+  } catch (err) {
+    console.warn("Client-side image compression error:", err);
+  }
 
-    // 2. Upload to Cloudinary CDN
+  try {
+    // 1. Upload to /api/admin/upload using compressed data URL (super fast, < 200KB)
+    const formData = new FormData();
+    if (localCompressed) {
+      formData.append("file", localCompressed);
+    } else {
+      formData.append("file", file);
+    }
+    formData.append("folder", "pure_ayur_reviews");
+
     const res = await fetch("/api/admin/upload", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ file: compressedDataUrl, folder: "pure_ayur_reviews" }),
+      body: formData,
     });
 
     if (res.ok) {
@@ -56,14 +71,18 @@ export const uploadReviewImage = async (file: File): Promise<string> => {
       if (data && data.url) return data.url;
     }
 
-    // 3. Fallback to lightweight compressed data URL if CDN upload fails
-    return compressedDataUrl;
+    // 2. Fallback to pre-compressed data URL if CDN upload did not return a 200 OK
+    if (localCompressed) return localCompressed;
   } catch (err) {
-    console.warn("Upload error, using compressed data URL fallback:", err);
-    try {
-      return await compressImageToDataUrl(file, 800, 0.75);
-    } catch {
-      return "";
-    }
+    console.warn("CDN review upload failed, using local compressed image:", err);
+    if (localCompressed) return localCompressed;
+  }
+
+  // 3. Guaranteed fallback: return compressed or empty string
+  if (localCompressed) return localCompressed;
+  try {
+    return await compressImageToDataUrl(file, 600, 0.75);
+  } catch {
+    return "";
   }
 };

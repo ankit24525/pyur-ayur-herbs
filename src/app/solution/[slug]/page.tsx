@@ -33,7 +33,8 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const syncCart = () => {
+      if (typeof window === "undefined") return;
       try {
         const stored = localStorage.getItem("pyur_cart");
         if (stored) {
@@ -43,12 +44,21 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
               (item: any) => item && item.product && typeof item.product === "object" && item.product.id
             );
             setCart(valid);
-          } else {
-            setCart([]);
+            return;
           }
-        } else {
-          setCart([]);
         }
+        setCart([]);
+      } catch {
+        setCart([]);
+      }
+    };
+
+    syncCart();
+    window.addEventListener("storage", syncCart);
+    window.addEventListener("pyur_cart_updated", syncCart);
+
+    if (typeof window !== "undefined") {
+      try {
 
         const cached = localStorage.getItem("pyur_storefront_cache");
         if (cached) {
@@ -97,49 +107,89 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
     window.addEventListener("storage", loadData);
 
     return () => {
+      window.removeEventListener("storage", syncCart);
+      window.removeEventListener("pyur_cart_updated", syncCart);
       window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
       window.removeEventListener("storage", loadData);
     };
   }, []);
 
   const handleAddToCart = (product: Product) => {
-    setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.product.id === product.id);
-      let updated;
-      if (existing) {
-        updated = prevCart.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      } else {
-        updated = [...prevCart, { product, quantity: 1 }];
+    let currentCart = cart;
+    try {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) currentCart = parsed;
       }
-      try { localStorage.setItem("pyur_cart", JSON.stringify(updated)); } catch {}
-      return updated;
-    });
+    } catch {}
+
+    const existing = currentCart.find((item) => item.product && item.product.id === product.id);
+    let updated: { product: Product; quantity: number }[];
+    if (existing) {
+      updated = currentCart.map((item) =>
+        item.product.id === product.id ? { ...item, quantity: (Number(item.quantity) || 1) + 1 } : item
+      );
+    } else {
+      updated = [...currentCart, { product, quantity: 1 }];
+    }
+
+    setCart(updated);
+    try {
+      localStorage.setItem("pyur_cart", JSON.stringify(updated));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("pyur_cart_updated"));
+      }, 0);
+    } catch {}
   };
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
-    setCart((prevCart) => {
-      const updated = prevCart
-        .map((item) => {
-          if (item.product.id === productId) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as { product: Product; quantity: number }[];
-      try { localStorage.setItem("pyur_cart", JSON.stringify(updated)); } catch {}
-      return updated;
-    });
+    let currentCart = cart;
+    try {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) currentCart = parsed;
+      }
+    } catch {}
+
+    const updated = currentCart
+      .map((item) => {
+        if (item && item.product && item.product.id === productId) {
+          const newQty = (Number(item.quantity) || 1) + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      })
+      .filter(Boolean) as { product: Product; quantity: number }[];
+
+    setCart(updated);
+    try {
+      localStorage.setItem("pyur_cart", JSON.stringify(updated));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("pyur_cart_updated"));
+      }, 0);
+    } catch {}
   };
 
   const handleRemoveItem = (productId: string) => {
-    setCart((prevCart) => {
-      const updated = prevCart.filter((item) => item.product.id !== productId);
-      try { localStorage.setItem("pyur_cart", JSON.stringify(updated)); } catch {}
-      return updated;
-    });
+    let currentCart = cart;
+    try {
+      const stored = localStorage.getItem("pyur_cart");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) currentCart = parsed;
+      }
+    } catch {}
+
+    const updated = currentCart.filter((item) => item && item.product && item.product.id !== productId);
+    setCart(updated);
+    try {
+      localStorage.setItem("pyur_cart", JSON.stringify(updated));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("pyur_cart_updated"));
+      }, 0);
+    } catch {}
   };
 
   const handleBuyNow = (product: Product) => {
@@ -195,7 +245,7 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
   };
 
   return (
-    <main className="min-h-screen bg-[#f8faf1] text-[#17231b]">
+    <main className="min-h-screen bg-white text-neutral-900">
       {/* Google Rich Snippets: Solution Breadcrumbs */}
       <script
         type="application/ld+json"
@@ -222,12 +272,12 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
       />
 
       {/* Breadcrumbs Navigation */}
-      <div className="mx-auto max-w-[1440px] px-4 py-3 text-xs text-[#666666] md:px-6">
-        <Link href="/" className="hover:text-[#244f31]">
+      <div className="mx-auto max-w-[1440px] px-4 py-3 text-xs text-neutral-500 md:px-6">
+        <Link href="/" className="hover:text-[#023915]">
           Home
         </Link>
         <span className="mx-2">/</span>
-        <span className="font-bold text-[#17231b]">{details.title}</span>
+        <span className="font-bold text-neutral-900">{details.title}</span>
       </div>
 
       {/* Hero Header Banner */}
@@ -237,10 +287,10 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
             <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-[#f2c94c]">
               <Sparkles className="size-3.5" /> AYURVEDIC SOLUTION GUIDE
             </span>
-            <h1 className="mt-2 text-2xl font-black leading-tight sm:text-4xl">
+            <h1 className="mt-2 text-2xl font-bold leading-tight sm:text-4xl">
               {details.title}
             </h1>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#80a03c]">
+            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-neutral-200">
               {details.subtitle}
             </p>
             <p className="mt-3 text-xs leading-relaxed text-white/80 md:text-sm">
@@ -266,51 +316,51 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
       {/* Products Catalog Listing Section */}
       <section className="mx-auto max-w-[1440px] px-4 py-8 md:px-6">
         {/* Sort & Count Header */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#ddddd9] pb-4">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4">
           <div className="flex items-center gap-2">
-            <Filter className="size-4 text-[#80a03c]" />
-            <span className="text-xs font-bold text-[#17231b] md:text-sm">
+            <Filter className="size-4 text-[#023915]" />
+            <span className="text-xs font-bold text-neutral-900 md:text-sm">
               Showing {sortedProducts.length} Ayurvedic Formulations
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-xs font-bold text-[#666666]">Sort By:</label>
+            <label className="text-xs font-bold text-neutral-500">Sort By:</label>
             <div className="relative">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none rounded-lg border border-[#ddddd9] bg-white py-1.5 pl-3 pr-8 text-xs font-bold text-[#17231b] outline-none focus:border-[#244f31]"
+                className="appearance-none rounded-lg border border-neutral-200 bg-white py-1.5 pl-3 pr-8 text-xs font-bold text-neutral-900 outline-none focus:border-[#023915]"
               >
                 <option value="popular">Bestsellers & Popular</option>
                 <option value="rating">Highest Rated</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#666666]" />
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-neutral-500" />
             </div>
           </div>
         </div>
 
         {/* Product Grid */}
         {sortedProducts.length === 0 ? (
-          <div className="mx-auto max-w-lg rounded-3xl border border-[#ddddd9] bg-gradient-to-b from-white via-white to-[#f8faf1] p-8 sm:p-12 text-center shadow-sm my-8">
-            <div className="mx-auto flex size-20 items-center justify-center rounded-2xl bg-[#eef5df] border border-[#80a03c]/30 text-3xl mb-5 shadow-xs">
+          <div className="mx-auto max-w-lg rounded-3xl border border-neutral-200 bg-[#f8f9fa] p-8 sm:p-12 text-center shadow-xs my-8">
+            <div className="mx-auto flex size-20 items-center justify-center rounded-2xl bg-[#c2d4c5]/40 border border-[#023915]/20 text-3xl mb-5 shadow-xs">
               <span>{categories.find((c: any) => (c.name || "").toLowerCase() === details.title?.toLowerCase())?.icon || "🌿"}</span>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#80a03c]/15 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#244f31]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#c2d4c5]/40 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-[#023915]">
               ⏳ Formulations Coming Soon
             </span>
-            <h3 className="mt-4 text-2xl font-black text-[#17231b] sm:text-3xl">
+            <h3 className="mt-4 text-2xl font-bold text-neutral-900 sm:text-3xl">
               {details.title} Formulations Coming Soon!
             </h3>
-            <p className="mt-3 text-sm leading-relaxed text-[#666666]">
+            <p className="mt-3 text-sm leading-relaxed text-neutral-600">
               Our expert Ayurvedic Vaidyas are currently preparing 100% natural, certified gold-grade formulations for <strong>{details.title}</strong>. Authentic remedies will be available here very soon!
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/"
-                className="w-full sm:w-auto rounded-xl bg-[#244f31] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-[#1b3b24]"
+                className="w-full sm:w-auto rounded-xl bg-[#023915] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-black"
               >
                 Explore All Available Remedies
               </Link>
@@ -325,7 +375,7 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 items-start">
             {sortedProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -338,26 +388,25 @@ export default function SolutionPage({ params }: { params: Promise<{ slug: strin
         )}
       </section>
 
-
       {/* Solution FAQ Guide */}
-      <section className="bg-white py-12 border-y border-[#ddddd9]">
+      <section className="bg-white py-12 border-y border-neutral-200">
         <div className="mx-auto max-w-[1440px] px-4 md:px-6">
           <div className="flex items-center gap-2 mb-4">
-            <HelpCircle className="size-5 text-[#80a03c]" />
-            <h2 className="text-xl font-black uppercase tracking-tight text-[#17231b] sm:text-2xl">
+            <HelpCircle className="size-5 text-[#023915]" />
+            <h2 className="text-xl font-bold uppercase tracking-tight text-neutral-900 sm:text-2xl">
               Ayurvedic Solution Guide & FAQs
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-5">
-              <h3 className="text-sm font-bold text-[#17231b]">How does Ayurveda help in long-term wellness?</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-[#666666]">
+            <div className="rounded-xl border border-neutral-200 bg-[#f8f9fa] p-5">
+              <h3 className="text-sm font-bold text-neutral-900">How does Ayurveda help in long-term wellness?</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-neutral-600">
                 Unlike quick chemical patches, Ayurveda works on balancing your core Agni (digestive fire) and Doshas (Vata, Pitta, Kapha) to treat root causes rather than just masking symptoms.
               </p>
             </div>
-            <div className="rounded-xl border border-[#ddddd9] bg-[#f8faf1] p-5">
-              <h3 className="text-sm font-bold text-[#17231b]">Are these remedies 100% natural & safe?</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-[#666666]">
+            <div className="rounded-xl border border-neutral-200 bg-[#f8f9fa] p-5">
+              <h3 className="text-sm font-bold text-neutral-900">Are these remedies 100% natural & safe?</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-neutral-600">
                 Yes, all Pure Ayur Herb products are 100% plant-based, cold-pressed, free from added refined sugars, and certified by the Ministry of AYUSH.
               </p>
             </div>

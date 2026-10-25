@@ -74,19 +74,28 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
       };
     } catch {}
 
-    // Cart loading from localStorage
-    if (typeof window !== "undefined") {
+    // Cart loading and sync from localStorage
+    const syncCart = () => {
+      if (typeof window === "undefined") return;
       try {
         const stored = localStorage.getItem("pyur_cart");
         if (stored) {
           setCart(JSON.parse(stored));
+        } else {
+          setCart([]);
         }
       } catch (e) {
         console.error(e);
       }
-    }
+    };
+
+    syncCart();
+    window.addEventListener("storage", syncCart);
+    window.addEventListener("pyur_cart_updated", syncCart);
 
     return () => {
+      window.removeEventListener("storage", syncCart);
+      window.removeEventListener("pyur_cart_updated", syncCart);
       window.removeEventListener("pyur_storefront_updated", handleLiveUpdate);
       if (channel) {
         try {
@@ -100,6 +109,9 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
     setCart(newCart);
     try {
       localStorage.setItem("pyur_cart", JSON.stringify(newCart));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("pyur_cart_updated"));
+      }, 0);
     } catch (e) {
       console.error(e);
     }
@@ -194,7 +206,7 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
   const stats = Array.isArray(content.stats) && content.stats.length > 0 ? content.stats : [];
 
   return (
-    <main className="min-h-screen bg-[#f8faf1] text-[#17231b] flex flex-col justify-between">
+    <main className="min-h-screen bg-white text-neutral-900 flex flex-col justify-between">
       <div>
         {/* Top Announcement Bar */}
         <AnnouncementBar onOpenAppModal={() => setAppModalOpen(true)} />
@@ -209,20 +221,20 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
         />
 
         {/* Breadcrumb Navigation */}
-        <div className="bg-white border-b border-[#ddddd9]">
+        <div className="bg-white border-b border-neutral-200">
           <div className="mx-auto max-w-[1440px] px-4 py-3 sm:px-6 md:px-8">
-            <nav className="flex items-center gap-2 text-xs font-semibold text-[#666666]">
-              <Link href="/" className="hover:text-[#244f31] transition">
+            <nav className="flex items-center gap-2 text-xs font-semibold text-neutral-500">
+              <Link href="/" className="hover:text-[#023915] transition">
                 Home
               </Link>
               <ChevronRight className="size-3 text-neutral-400" />
-              <span className="text-[#244f31] font-bold">About Us</span>
+              <span className="text-[#023915] font-bold">About Us</span>
             </nav>
           </div>
         </div>
 
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-b from-white via-[#f8faf1] to-[#f8faf1] py-14 sm:py-20 border-b border-[#ddddd9]">
+        <section className="relative bg-[#f8f9fa] py-14 sm:py-20 border-b border-neutral-200">
           <div className="mx-auto max-w-[1440px] px-4 sm:px-6 md:px-8">
             <div className="max-w-3xl mx-auto text-center">
               <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#eef5df] text-[#244f31] border border-[#80a03c]/30 text-xs font-black uppercase tracking-widest mb-4 shadow-2xs">
@@ -336,27 +348,27 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
 
                 {/* Mission & Vision Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="bg-[#f8faf1] border border-[#ddddd9] p-5 rounded-2xl shadow-2xs">
-                    <div className="size-8 rounded-lg bg-[#244f31] text-white flex items-center justify-center mb-3">
-                      <Award className="size-4 text-[#f2c94c]" />
+                  <div className="bg-[#f8f9fa] border border-neutral-200 p-5 rounded-2xl shadow-2xs">
+                    <div className="size-8 rounded-lg bg-[#023915] text-white flex items-center justify-center mb-3">
+                      <Award className="size-4 text-white" />
                     </div>
-                    <h3 className="text-xs sm:text-sm font-black text-[#17231b]">
+                    <h3 className="text-xs sm:text-sm font-bold text-neutral-900">
                       {content.missionTitle || "Our Sacred Mission"}
                     </h3>
-                    <p className="mt-1.5 text-[11px] sm:text-xs text-[#666666] leading-relaxed">
+                    <p className="mt-1.5 text-[11px] sm:text-xs text-neutral-600 leading-relaxed">
                       {content.missionDesc ||
                         "To restore authentic holistic health and vitality across every Indian household through honest, certified, and uncompromisingly potent Ayurvedic formulations."}
                     </p>
                   </div>
 
-                  <div className="bg-[#f8faf1] border border-[#ddddd9] p-5 rounded-2xl shadow-2xs">
-                    <div className="size-8 rounded-lg bg-[#244f31] text-white flex items-center justify-center mb-3">
-                      <Sparkles className="size-4 text-[#80a03c]" />
+                  <div className="bg-[#f8f9fa] border border-neutral-200 p-5 rounded-2xl shadow-2xs">
+                    <div className="size-8 rounded-lg bg-[#023915] text-white flex items-center justify-center mb-3">
+                      <Sparkles className="size-4 text-white" />
                     </div>
-                    <h3 className="text-xs sm:text-sm font-black text-[#17231b]">
+                    <h3 className="text-xs sm:text-sm font-bold text-neutral-900">
                       {content.visionTitle || "Our Vision"}
                     </h3>
-                    <p className="mt-1.5 text-[11px] sm:text-xs text-[#666666] leading-relaxed">
+                    <p className="mt-1.5 text-[11px] sm:text-xs text-neutral-600 leading-relaxed">
                       {content.visionDesc ||
                         "To become India's most trusted natural wellness sanctuary, empowering seekers to achieve peak physical, mental, and spiritual harmony through Vedic wisdom."}
                     </p>
@@ -369,15 +381,15 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
 
         {/* Quantitative Proof Stats */}
         {stats.length > 0 && (
-          <section className="py-12 bg-[#244f31] text-white">
+          <section className="py-12 bg-[#023915] text-white">
             <div className="mx-auto max-w-[1440px] px-4 sm:px-6 md:px-8">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-center divide-x-0 md:divide-x divide-white/10">
                 {stats.map((st: any, i: number) => (
                   <div key={i} className="px-2">
-                    <div className="text-2xl sm:text-3xl md:text-4xl font-black text-[#f2c94c] tracking-tight">
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
                       {st.value}
                     </div>
-                    <div className="text-xs text-neutral-300 font-semibold mt-1.5">
+                    <div className="text-xs text-neutral-200 font-semibold mt-1.5">
                       {st.label}
                     </div>
                   </div>
@@ -389,16 +401,16 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
 
         {/* The 4 Sacred Purity Pillars */}
         {pillars.length > 0 && (
-          <section className="py-14 sm:py-20 bg-[#f8faf1] border-b border-[#ddddd9]">
+          <section className="py-14 sm:py-20 bg-white border-b border-neutral-200">
             <div className="mx-auto max-w-[1440px] px-4 sm:px-6 md:px-8">
               <div className="text-center max-w-2xl mx-auto mb-12">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#ddddd9] text-[#244f31] text-xs font-black uppercase tracking-widest mb-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f8f9fa] border border-neutral-200 text-[#023915] text-xs font-bold uppercase tracking-widest mb-3">
                   UNCOMPROMISING STANDARDS
                 </span>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#17231b]">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900">
                   The 4 Pillars of Pure Ayur Integrity
                 </h2>
-                <p className="mt-3 text-xs sm:text-sm text-[#666666]">
+                <p className="mt-3 text-xs sm:text-sm text-neutral-600">
                   Every jar, powder, tonic, and capsule is held to the highest standard of holistic Ayurvedic medicine.
                 </p>
               </div>
@@ -407,22 +419,22 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
                 {pillars.map((pillar: any, i: number) => (
                   <div
                     key={i}
-                    className="bg-white rounded-2xl border border-[#ddddd9] p-6 shadow-xs hover:shadow-md hover:border-[#80a03c]/40 transition-all flex flex-col justify-between"
+                    className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-2xs hover:shadow-xs hover:border-[#023915] transition-all flex flex-col justify-between"
                   >
                     <div>
-                      <div className="size-12 rounded-2xl bg-[#eef5df] flex items-center justify-center text-2xl mb-4 border border-[#80a03c]/20">
+                      <div className="size-12 rounded-2xl bg-[#c2d4c5]/40 flex items-center justify-center text-2xl mb-4 border border-[#023915]/20">
                         {pillar.icon || "🌿"}
                       </div>
-                      <h3 className="text-sm sm:text-base font-black text-[#17231b]">
+                      <h3 className="text-sm sm:text-base font-bold text-neutral-900">
                         {pillar.title}
                       </h3>
-                      <p className="mt-2 text-xs text-[#666666] leading-relaxed font-normal">
+                      <p className="mt-2 text-xs text-neutral-600 leading-relaxed font-normal">
                         {pillar.description}
                       </p>
                     </div>
 
-                    <div className="mt-5 pt-4 border-t border-[#ddddd9]/60 flex items-center gap-1.5 text-[11px] font-bold text-[#244f31]">
-                      <CheckCircle2 className="size-3.5 text-[#80a03c]" />
+                    <div className="mt-5 pt-4 border-t border-neutral-200 flex items-center gap-1.5 text-[11px] font-bold text-[#023915]">
+                      <CheckCircle2 className="size-3.5 text-[#023915]" />
                       <span>Verified Standard</span>
                     </div>
                   </div>
@@ -434,12 +446,12 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
 
         {/* Founder / Medical Director Quote */}
         {content.founderMessage && (
-          <section className="py-14 sm:py-20 bg-white border-b border-[#ddddd9]">
+          <section className="py-14 sm:py-20 bg-white border-b border-neutral-200">
             <div className="mx-auto max-w-[1440px] px-4 sm:px-6 md:px-8">
-              <div className="max-w-4xl mx-auto bg-gradient-to-br from-[#f8faf1] to-white rounded-3xl border border-[#ddddd9] p-8 sm:p-12 shadow-sm relative overflow-hidden">
+              <div className="max-w-4xl mx-auto bg-gradient-to-br from-[#f8f9fa] to-white rounded-3xl border border-neutral-200 p-8 sm:p-12 shadow-sm relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                   {content.founderImage && (
-                    <div className="size-28 sm:size-36 rounded-full overflow-hidden border-4 border-[#244f31] shadow-md shrink-0 relative">
+                    <div className="size-28 sm:size-36 rounded-full overflow-hidden border-4 border-[#023915] shadow-md shrink-0 relative">
                       <Image
                         src={content.founderImage}
                         alt={content.founderName || "Ayurvedic Doctor"}
@@ -450,17 +462,17 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
                     </div>
                   )}
                   <div className="space-y-4 text-center md:text-left">
-                    <span className="text-[10px] font-black tracking-widest uppercase text-[#80a03c] block">
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-[#023915] block">
                       CHIEF VAIDYA&apos;S PLEDGE
                     </span>
-                    <blockquote className="text-sm sm:text-base md:text-lg font-bold text-[#17231b] leading-relaxed italic">
+                    <blockquote className="text-sm sm:text-base md:text-lg font-bold text-neutral-900 leading-relaxed italic">
                       &ldquo;{content.founderMessage}&rdquo;
                     </blockquote>
                     <div>
-                      <div className="text-sm font-black text-[#244f31]">
+                      <div className="text-sm font-bold text-[#023915]">
                         {content.founderName || "Dr. Ananya Sharma (BAMS)"}
                       </div>
-                      <div className="text-xs text-[#666666]">
+                      <div className="text-xs text-neutral-500">
                         {content.founderTitle || "Senior Ayurvedic Vaidya & Chief Research Director"}
                       </div>
                     </div>
@@ -472,9 +484,9 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
         )}
 
         {/* Clinical & Quality Badges Grid */}
-        <section className="py-12 bg-[#f8faf1] border-b border-[#ddddd9]">
+        <section className="py-12 bg-[#f8f9fa] border-b border-neutral-200">
           <div className="mx-auto max-w-[1440px] px-4 sm:px-6 md:px-8 text-center">
-            <div className="text-xs font-bold uppercase tracking-widest text-[#666666] mb-6">
+            <div className="text-xs font-bold uppercase tracking-widest text-neutral-500 mb-6">
               Certified by India&apos;s Leading Herbal Laboratories & Regulatory Councils
             </div>
 
@@ -487,10 +499,10 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
                 { icon: "🧪", label: "Zero Heavy Metals", sub: "NABL Certified Safe" },
                 { icon: "🇮🇳", label: "Made in India", sub: "Vedic Heritage" },
               ].map((badge, i) => (
-                <div key={i} className="bg-white rounded-xl border border-[#ddddd9] p-3.5 shadow-2xs">
+                <div key={i} className="bg-white rounded-xl border border-neutral-200 p-3.5 shadow-2xs">
                   <div className="text-2xl mb-1">{badge.icon}</div>
-                  <div className="text-xs font-black text-[#17231b]">{badge.label}</div>
-                  <div className="text-[10px] text-[#666666]">{badge.sub}</div>
+                  <div className="text-xs font-bold text-neutral-900">{badge.label}</div>
+                  <div className="text-[10px] text-neutral-500">{badge.sub}</div>
                 </div>
               ))}
             </div>
@@ -498,12 +510,12 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
         </section>
 
         {/* Bottom CTA Banner */}
-        <section className="py-16 sm:py-20 bg-gradient-to-r from-[#1d3b24] via-[#244f31] to-[#122c1b] text-white text-center">
+        <section className="py-16 sm:py-20 bg-[#023915] text-white text-center">
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
-            <span className="inline-block bg-[#80a03c] text-white text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full mb-4">
+            <span className="inline-block bg-[#c2d4c5]/40 text-white text-[11px] font-bold uppercase tracking-widest px-3.5 py-1 rounded-full mb-4">
               EMBRACE TOTAL WELLNESS
             </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
               {content.ctaTitle || "Begin Your Natural Healing Journey Today"}
             </h2>
             <p className="mt-3 text-xs sm:text-sm text-neutral-200 max-w-xl mx-auto leading-relaxed">
@@ -514,7 +526,7 @@ export default function AboutUsClient({ initialAboutData }: AboutUsClientProps) 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href={content.ctaButtonLink || "/#products"}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#f2c94c] hover:bg-[#e0b83b] text-[#17231b] px-8 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-lg cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-100 text-[#023915] px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-lg cursor-pointer"
               >
                 <span>{content.ctaButtonText || "Shop All Remedies"}</span>
                 <ArrowRight className="size-4" />

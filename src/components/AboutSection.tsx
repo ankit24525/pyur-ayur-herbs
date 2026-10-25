@@ -128,21 +128,21 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
   }, [data.storyImage]);
 
   return (
-    <section id="about" className="relative bg-[#f8faf1] py-14 sm:py-20 border-t border-[#ddddd9] overflow-hidden">
+    <section id="about" className="relative bg-white py-14 sm:py-20 border-t border-neutral-200/80 overflow-hidden">
       {/* Subtle Background Glow */}
-      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-emerald-100/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-emerald-50/40 rounded-full blur-3xl pointer-events-none" />
 
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 md:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eef5df] text-[#244f31] border border-[#80a03c]/30 text-[11px] font-black uppercase tracking-widest mb-3">
-            <Sparkles className="size-3 text-[#80a03c]" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#c2d4c5]/40 text-[#023915] text-[11px] font-bold uppercase tracking-widest mb-3">
+            <Sparkles className="size-3 text-[#023915]" />
             <span>{data.badge || "OUR HERITAGE & PHILOSOPHY"}</span>
           </span>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#17231b] leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 leading-tight">
             {data.title || "Rooted in Ancient Ayurveda, Perfected for Modern Living"}
           </h2>
-          <p className="mt-3 text-xs sm:text-sm text-[#555555] leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-3 text-xs sm:text-sm text-neutral-600 leading-relaxed max-w-2xl mx-auto">
             {data.subtitle || "At Pure Ayur Herbs, we bridge time-tested Vedic herbal wisdom with rigorous clinical purity to bring you 100% natural, potent, and safe Ayurvedic remedies."}
           </p>
         </div>
@@ -152,12 +152,12 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
           {stats.slice(0, 4).map((st: any, idx: number) => (
             <div
               key={idx}
-              className="bg-white rounded-2xl border border-[#ddddd9] p-4 sm:p-6 text-center shadow-xs hover:shadow-md transition hover:-translate-y-0.5"
+              className="bg-[#f8f9fa] rounded-2xl border border-neutral-200/80 p-4 sm:p-6 text-center shadow-2xs hover:shadow-xs transition hover:-translate-y-0.5"
             >
-              <div className="text-xl sm:text-2xl md:text-3xl font-black text-[#244f31] tracking-tight">
+              <div className="text-xl sm:text-2xl md:text-3xl font-bold text-[#023915] tracking-tight">
                 {st.value}
               </div>
-              <div className="text-[11px] sm:text-xs text-[#666666] font-semibold mt-1">
+              <div className="text-[11px] sm:text-xs text-neutral-600 font-semibold mt-1">
                 {st.label}
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mb-12 sm:mb-16">
           {/* Left Column: Image with Floating Vaidya Badge */}
           <div className="lg:col-span-5 relative">
-            <div className="relative rounded-3xl overflow-hidden border border-[#ddddd9] shadow-lg aspect-4/3 sm:aspect-5/4">
+            <div className="relative rounded-3xl overflow-hidden border border-neutral-200/80 shadow-md aspect-4/3 sm:aspect-5/4">
               <Image
                 src={imgSrc}
                 alt="Pure Ayur Herbs Ayurvedic Botanical Extraction"
@@ -184,7 +184,7 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 text-white">
-                <span className="inline-block bg-[#80a03c] text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-1">
+                <span className="inline-block bg-[#023915] text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full mb-1">
                   {data.extractionBadge || "100% AYUSH CERTIFIED"}
                 </span>
                 <h4 className="text-sm sm:text-base font-bold text-white drop-shadow-sm">
@@ -197,15 +197,15 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
             </div>
 
             {/* Floating Quality Guarantee Seal */}
-            <div className="absolute -bottom-5 -right-3 sm:-right-5 bg-white border border-[#244f31]/20 rounded-2xl p-3 sm:p-4 shadow-xl flex items-center gap-3 max-w-[220px]">
-              <div className="size-10 rounded-full bg-[#eef5df] flex items-center justify-center text-[#244f31] shrink-0 font-bold">
-                <ShieldCheck className="size-5 text-[#244f31]" />
+            <div className="absolute -bottom-5 -right-3 sm:-right-5 bg-white border border-neutral-200/80 rounded-2xl p-3 sm:p-4 shadow-xl flex items-center gap-3 max-w-[220px]">
+              <div className="size-10 rounded-full bg-[#c2d4c5]/40 flex items-center justify-center text-[#023915] shrink-0 font-bold">
+                <ShieldCheck className="size-5 text-[#023915]" />
               </div>
               <div>
-                <div className="text-xs font-black text-[#17231b]">
+                <div className="text-xs font-bold text-neutral-900">
                   {data.guaranteeTitle || "Zero Heavy Metals"}
                 </div>
-                <div className="text-[10px] text-[#666666]">
+                <div className="text-[10px] text-neutral-500">
                   {data.guaranteeSubtitle || "NABL Lab Tested & Certified Safe"}
                 </div>
               </div>
@@ -218,15 +218,15 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
               {pillars.map((pillar: any, idx: number) => (
                 <div
                   key={idx}
-                  className="bg-white rounded-2xl border border-[#ddddd9] p-5 shadow-xs hover:border-[#80a03c] transition group"
+                  className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-2xs hover:border-[#023915] transition group"
                 >
-                  <div className="size-10 rounded-xl bg-[#f8faf1] border border-[#ddddd9] flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+                  <div className="size-10 rounded-xl bg-[#f5f5f5] border border-neutral-200 flex items-center justify-center text-xl mb-3 group-hover:scale-105 transition">
                     {pillar.icon || "🌿"}
                   </div>
-                  <h4 className="text-sm font-black text-[#17231b]">
+                  <h4 className="text-sm font-bold text-neutral-900">
                     {pillar.title}
                   </h4>
-                  <p className="mt-1.5 text-xs text-[#666666] leading-relaxed">
+                  <p className="mt-1.5 text-xs text-neutral-600 leading-relaxed">
                     {pillar.description}
                   </p>
                 </div>
@@ -235,9 +235,9 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
 
             {/* Founder / Vaidya Quote Highlight */}
             {data.founderMessage && (
-              <div className="mt-6 bg-[#eef5df]/70 rounded-2xl border border-[#80a03c]/30 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="mt-6 bg-[#c2d4c5]/20 rounded-2xl border border-[#023915]/20 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 {data.founderImage && (
-                  <div className="relative size-14 rounded-full overflow-hidden border-2 border-[#80a03c] shrink-0 shadow-xs">
+                  <div className="relative size-14 rounded-full overflow-hidden border-2 border-[#023915] shrink-0 shadow-xs">
                     <Image
                       src={data.founderImage}
                       alt={data.founderName || "Chief Vaidya"}
@@ -249,12 +249,12 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
                   </div>
                 )}
                 <div className="flex-1">
-                  <p className="text-xs italic text-[#244f31] font-medium leading-relaxed">
+                  <p className="text-xs italic text-[#023915] font-medium leading-relaxed">
                     &ldquo;{data.founderMessage}&rdquo;
                   </p>
-                  <div className="mt-2 text-xs font-black text-[#17231b]">
+                  <div className="mt-2 text-xs font-bold text-neutral-900">
                     {data.founderName || "Dr. Ananya Sharma (BAMS)"}
-                    <span className="text-[10px] font-normal text-[#666666] block sm:inline sm:ml-2">
+                    <span className="text-[10px] font-normal text-neutral-500 block sm:inline sm:ml-2">
                       {data.founderTitle || "Chief Research Vaidya"}
                     </span>
                   </div>
@@ -268,7 +268,7 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
         <div className="text-center pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/about-us"
-            className="inline-flex items-center gap-2 bg-[#244f31] hover:bg-[#1a3a23] text-white px-7 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm hover:shadow-md cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#023915] hover:bg-black text-white px-7 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm hover:shadow-md cursor-pointer"
           >
             <span>Explore Our Full Heritage & Story</span>
             <ArrowRight className="size-4" />
@@ -276,7 +276,7 @@ export default function AboutSection({ cmsAboutUs }: AboutSectionProps) {
 
           <Link
             href="/#products"
-            className="inline-flex items-center gap-2 bg-white hover:bg-[#f8faf1] text-[#244f31] border border-[#244f31] px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+            className="inline-flex items-center gap-2 bg-white hover:bg-[#f5f5f5] text-[#023915] border border-[#023915] px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
           >
             <span>Browse All Remedies</span>
           </Link>

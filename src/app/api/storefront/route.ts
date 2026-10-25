@@ -41,16 +41,16 @@ export async function GET(request: Request) {
             rest = rest.slice(vIndex + 1);
           }
           let trans = "f_auto,q_auto";
-          if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
-          else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+          if (preset === "desktop") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
+          else if (preset === "mobile") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
           else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
           return `${parts[0]}/image/upload/${trans}/${rest}`;
         }
         return url;
       }
       let trans = "f_auto,q_auto";
-      if (preset === "desktop") trans = "c_pad,w_1920,h_600,b_auto,f_auto,q_auto";
-      else if (preset === "mobile") trans = "c_pad,w_1080,h_1080,b_auto,f_auto,q_auto";
+      if (preset === "desktop") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
+      else if (preset === "mobile") trans = "c_fill,g_auto,w_1200,h_800,f_auto,q_auto";
       else if (preset === "product") trans = "c_pad,w_1000,h_1000,b_white,f_auto,q_auto";
       return `${match[1]}${trans}/${match[2]}`;
     };
@@ -83,33 +83,42 @@ export async function GET(request: Request) {
     const rawContent = db.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
     const sanitizedContent = {
       ...rawContent,
-      heroSlides: Array.isArray(rawContent.heroSlides)
-        ? rawContent.heroSlides.map((slide: any) => {
-            const rawImg = sanitizeImage(
-              slide.image,
-              "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80"
-            );
-            const desktopImage = applyCloudinaryAiCrop(rawImg, "desktop");
-            let mobileImage = typeof slide.mobileImage === "string" && slide.mobileImage.trim()
-              ? sanitizeImage(slide.mobileImage, "")
-              : "";
-            if (mobileImage) {
-              mobileImage = applyCloudinaryAiCrop(mobileImage, "mobile");
-            } else if (desktopImage.includes("res.cloudinary.com")) {
-              mobileImage = applyCloudinaryAiCrop(desktopImage, "mobile");
-            }
-            return {
-              ...slide,
-              image: desktopImage,
-              mobileImage,
-            };
-          })
-        : [],
+      heroSlides: (() => {
+        const rawList = Array.isArray(rawContent.heroSlides) ? rawContent.heroSlides : [];
+        return rawList.map((slide: any) => {
+          const rawImg = sanitizeImage(
+            slide.image,
+            "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80"
+          );
+          const desktopImage = rawImg.startsWith("/brand/")
+            ? rawImg
+            : applyCloudinaryAiCrop(rawImg, "desktop");
+          let mobileImage = typeof slide.mobileImage === "string" && slide.mobileImage.trim()
+            ? sanitizeImage(slide.mobileImage, "")
+            : "";
+          if (mobileImage && !mobileImage.startsWith("/brand/")) {
+            mobileImage = applyCloudinaryAiCrop(mobileImage, "mobile");
+          } else if (!mobileImage && desktopImage.includes("res.cloudinary.com")) {
+            mobileImage = applyCloudinaryAiCrop(desktopImage, "mobile");
+          }
+          return {
+            ...slide,
+            image: desktopImage,
+            mobileImage: mobileImage || desktopImage,
+          };
+        });
+      })(),
       consultationBanner: {
         ...(rawContent.consultationBanner || {}),
         doctorImage: sanitizeImage(
           rawContent.consultationBanner?.doctorImage,
           "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80"
+        ),
+      },
+      trustSection: {
+        image: sanitizeImage(
+          rawContent.trustSection?.image,
+          "/brand/why-pure-ayur-banner.jpg"
         ),
       },
     };

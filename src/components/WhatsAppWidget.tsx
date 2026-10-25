@@ -50,15 +50,14 @@ export default function WhatsAppWidget() {
   }
 
   // Dynamic positioning so widget NEVER covers sticky BUY NOW / COMPLETE PURCHASE buttons:
-  // - On product pages: mobile action bar is at bottom-3 (~68px height). Widget sits at bottom-[5.25rem] (84px).
-  //   On desktop: when scrolled, sticky bar is at bottom-0 (~72px height). Widget lifts smoothly to lg:bottom-24 (96px).
+  // - On product pages: completely removed/hidden in mobile view (hidden lg:flex)
   // - On checkout: mobile has complete purchase bar. Widget sits at bottom-20.
-  // - On general pages: default bottom-5 right-4 sm:bottom-6 sm:right-6.
-  let positionClass = "bottom-5 right-4 sm:bottom-6 sm:right-6";
+  // - On general pages: default bottom-18 right-4 on mobile (above bottom nav) and sm:bottom-6 sm:right-6 on desktop.
+  let positionClass = "bottom-18 right-4 sm:bottom-6 sm:right-6";
   if (isProductPage) {
     positionClass = isScrolled
-      ? "bottom-[5.25rem] right-4 lg:bottom-24 lg:right-6"
-      : "bottom-[5.25rem] right-4 lg:bottom-6 lg:right-6";
+      ? "hidden lg:flex lg:bottom-24 lg:right-6"
+      : "hidden lg:flex lg:bottom-6 lg:right-6";
   } else if (isCheckoutPage) {
     positionClass = "bottom-20 right-4 sm:bottom-6 sm:right-6";
   }
@@ -103,7 +102,9 @@ export default function WhatsAppWidget() {
 
   return (
     <div
-      className={`fixed z-50 flex flex-col items-end transition-all duration-300 ease-in-out ${positionClass}`}
+      className={`fixed z-50 flex-col items-end transition-all duration-300 ease-in-out ${
+        isProductPage ? "hidden lg:flex" : "flex"
+      } ${positionClass}`}
     >
       {/* Interactive WhatsApp Business Drawer */}
       {isOpen && (

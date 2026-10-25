@@ -6,11 +6,23 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const productId = (searchParams.get("productId") || searchParams.get("slug") || "").trim().toLowerCase();
+    const paramProductId = (searchParams.get("productId") || "").trim().toLowerCase();
+    const paramSlug = (searchParams.get("slug") || "").trim().toLowerCase();
 
     const db = await readDB();
     const allReviews = Array.isArray(db.reviews) ? db.reviews : [];
     const allTestimonials = Array.isArray(db.testimonials) ? db.testimonials : [];
+    const allProducts = Array.isArray(db.products) ? db.products : [];
+
+    const matchedProduct = allProducts.find(
+      (p: any) =>
+        (paramProductId && String(p.id).toLowerCase() === paramProductId) ||
+        (paramSlug && String(p.slug).toLowerCase() === paramSlug)
+    );
+
+    const targetSlug = paramSlug || (matchedProduct?.slug || "").toLowerCase();
+    const targetId = paramProductId || (matchedProduct?.id || "").toLowerCase();
+    const targetName = (matchedProduct?.name || "").toLowerCase();
 
     // Transform approved testimonials into review records
     const mappedTestimonials = allTestimonials
@@ -52,19 +64,38 @@ export async function GET(request: Request) {
 
     let reviews = Array.from(combinedMap.values());
 
-    if (productId) {
-      reviews = reviews.filter((r: any) => {
-        const rProdId = String(r.productId || "").toLowerCase();
-        const rProdName = String(r.product || r.productName || "").toLowerCase();
-        const cleanQuery = productId.replace(/-/g, " ");
+    const isProductMatch = (r: any) => {
+      const rProdId = String(r.productId || "").toLowerCase();
+      const rProdName = String(r.product || r.productName || "").toLowerCase();
 
-        return (
-          rProdId === productId ||
-          rProdId.includes(productId) ||
-          rProdName.includes(productId) ||
-          rProdName.includes(cleanQuery)
-        );
-      });
+      if (targetId && (rProdId === targetId || rProdName === targetId)) return true;
+      if (targetSlug) {
+        const cleanSlug = targetSlug.replace(/-/g, " ");
+        if (rProdId.includes(targetSlug) || rProdName.includes(targetSlug)) return true;
+        if (rProdId.includes(cleanSlug) || rProdName.includes(cleanSlug)) return true;
+      }
+      if (targetName && (rProdId.includes(targetName) || rProdName.includes(targetName))) return true;
+
+      if (targetSlug.includes("fat-burner") || targetName.includes("fat burner")) {
+        if (rProdId.includes("fat burn") || rProdName.includes("fat burn")) return true;
+      }
+      if (targetSlug.includes("madhunashi") || targetName.includes("madhunashi")) {
+        if (rProdId.includes("madhunashi") || rProdName.includes("madhunashi") || rProdName.includes("sugar care")) return true;
+      }
+      if (targetSlug.includes("virja") || targetName.includes("virja")) {
+        if (rProdId.includes("virja") || rProdName.includes("virja")) return true;
+      }
+      if (targetSlug.includes("perfect-36") || targetName.includes("perfect 36")) {
+        if (rProdId.includes("perfect 36") || rProdName.includes("perfect 36")) return true;
+      }
+
+      return false;
+    };
+
+    if (targetSlug || targetId) {
+      const matchingReviews = reviews.filter(isProductMatch);
+      const otherReviews = reviews.filter((r: any) => !isProductMatch(r));
+      reviews = [...matchingReviews, ...otherReviews];
     }
 
     // Calculate rating distribution

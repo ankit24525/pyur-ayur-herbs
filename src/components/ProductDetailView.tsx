@@ -140,21 +140,96 @@ export const TAITVA_DEFAULT_UGC_REVIEWS = [
     title: "Lost 4.5 kgs in 5 weeks with zero digestive weakness",
     comment:
       "Helped reduce my stubborn bloating and belly fat. The taste is natural herbal and gives great gut digestive relief. Feeling 10 years lighter!",
-    photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80",
+    photo: "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792928575/pure_ayur_herbs/testimonials/yr5pgln5otoawl9gzg0w.jpg",
+    image: "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792928575/pure_ayur_herbs/testimonials/yr5pgln5otoawl9gzg0w.jpg",
     verifiedBuyer: true,
     location: "Indore, Madhya Pradesh",
   },
 ];
+
+export function organizeReviewsForProduct(rawReviews: any[], rawTestimonials: any[], product: ProductDetail) {
+  const targetSlug = (product.slug || "").toLowerCase();
+  const targetId = (product.id || "").toLowerCase();
+  const targetName = (product.name || "").toLowerCase();
+
+  const mappedTestimonials = (rawTestimonials || []).map((t: any) => ({
+    id: t.id,
+    productId: t.productTagged || t.product || "",
+    product: t.productTagged || t.product || "Ayurvedic Formulation",
+    productName: t.productTagged || t.product || "Ayurvedic Formulation",
+    customer: t.name,
+    name: t.name,
+    rating: Number(t.rating) || 5,
+    title: t.title || "Authentic Ayurvedic Formulation",
+    comment: t.comment || "",
+    location: t.location || "India",
+    verifiedBuyer: t.verifiedBuyer !== false,
+    image: t.photo || t.image || t.avatar || "/reviews/review-customer-1.jpg",
+    photo: t.photo || t.image || t.avatar || "/reviews/review-customer-1.jpg",
+    images: [t.photo || t.image || t.avatar].filter(Boolean),
+    date: t.date || "Recent",
+    status: t.status || "Approved",
+  }));
+
+  const allPool = [...(rawReviews || []), ...mappedTestimonials];
+  const combinedMap = new Map<string, any>();
+  allPool.forEach((item) => {
+    const key = `${item.name || item.customer}-${(item.comment || "").slice(0, 30)}`.toLowerCase();
+    if (!combinedMap.has(key)) {
+      combinedMap.set(key, item);
+    }
+  });
+
+  const pool = Array.from(combinedMap.values());
+
+  const isMatch = (r: any) => {
+    const rProdId = String(r.productId || "").toLowerCase();
+    const rProdName = String(r.product || r.productName || "").toLowerCase();
+
+    if (targetId && (rProdId === targetId || rProdName === targetId)) return true;
+    if (targetSlug) {
+      const cleanSlug = targetSlug.replace(/-/g, " ");
+      if (rProdId.includes(targetSlug) || rProdName.includes(targetSlug)) return true;
+      if (rProdId.includes(cleanSlug) || rProdName.includes(cleanSlug)) return true;
+    }
+    if (targetName && (rProdId.includes(targetName) || rProdName.includes(targetName))) return true;
+
+    if (targetSlug.includes("fat-burner") || targetName.includes("fat burner")) {
+      if (rProdId.includes("fat burn") || rProdName.includes("fat burn")) return true;
+    }
+    if (targetSlug.includes("madhunashi") || targetName.includes("madhunashi")) {
+      if (rProdId.includes("madhunashi") || rProdName.includes("madhunashi") || rProdName.includes("sugar care")) return true;
+    }
+    if (targetSlug.includes("virja") || targetName.includes("virja")) {
+      if (rProdId.includes("virja") || rProdName.includes("virja")) return true;
+    }
+    if (targetSlug.includes("perfect-36") || targetName.includes("perfect 36")) {
+      if (rProdId.includes("perfect 36") || rProdName.includes("perfect 36")) return true;
+    }
+
+    return false;
+  };
+
+  const matching = pool.filter(isMatch);
+  const others = pool.filter((r) => !isMatch(r));
+  return [...matching, ...others];
+}
 
 interface ProductDetailViewProps {
   product: ProductDetail;
   coupons?: any[];
   settings?: any;
   allProducts?: Product[];
+  initialTestimonials?: any[];
 }
 
-export function ProductDetailView({ product, coupons, settings, allProducts }: ProductDetailViewProps) {
+export function ProductDetailView({
+  product,
+  coupons,
+  settings,
+  allProducts,
+  initialTestimonials,
+}: ProductDetailViewProps) {
   // Admin Panel Live State & Real-time Offers
   const [adminCoupons, setAdminCoupons] = useState<any[]>(() =>
     Array.isArray(coupons) && coupons.length > 0 ? coupons : []
@@ -304,13 +379,11 @@ export function ProductDetailView({ product, coupons, settings, allProducts }: P
       Array.isArray(product.customerReviews) && product.customerReviews.length > 0
         ? product.customerReviews
         : [];
-    const hasUgcPhotos = existing.some(
-      (r: any) => r.photo || r.image || (Array.isArray(r.images) && r.images.length > 0)
-    );
-    if (!hasUgcPhotos) {
-      return [...existing, ...TAITVA_DEFAULT_UGC_REVIEWS];
-    }
-    return existing;
+    const sourceTestimonials =
+      Array.isArray(initialTestimonials) && initialTestimonials.length > 0
+        ? initialTestimonials
+        : TAITVA_DEFAULT_UGC_REVIEWS;
+    return organizeReviewsForProduct(existing, sourceTestimonials, product);
   });
   const [expandedReviewIds, setExpandedReviewIds] = useState<Record<string | number, boolean>>({});
 
@@ -422,13 +495,27 @@ export function ProductDetailView({ product, coupons, settings, allProducts }: P
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isSortDropdownOpen]);
 
+  // Sync prop changes from Server Component
+  useEffect(() => {
+    if (Array.isArray(initialTestimonials) && initialTestimonials.length > 0) {
+      setReviewsList((prev) => {
+        const userSubmitted = prev.filter((r) => r.isUserSubmitted);
+        const existing = [
+          ...userSubmitted,
+          ...(Array.isArray(product.customerReviews) ? product.customerReviews : []),
+        ];
+        return organizeReviewsForProduct(existing, initialTestimonials, product);
+      });
+    }
+  }, [initialTestimonials, product]);
+
   // Fetch reviews from API
   useEffect(() => {
     fetch(`/api/reviews?productId=${encodeURIComponent(product.id)}&slug=${encodeURIComponent(product.slug)}`)
       .then((res) => res.json())
       .then((data) => {
         if (data && data.success && Array.isArray(data.reviews) && data.reviews.length > 0) {
-          setReviewsList([...data.reviews, ...TAITVA_DEFAULT_UGC_REVIEWS]);
+          setReviewsList(data.reviews);
         }
       })
       .catch((e) => console.error("Error loading product reviews:", e));

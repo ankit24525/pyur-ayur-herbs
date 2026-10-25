@@ -41,6 +41,7 @@ interface HomeClientProps {
   initialCategories?: any[];
   initialCmsData?: any;
   initialMarketingData?: any;
+  initialTestimonials?: any[];
 }
 
 export default function HomeClient({
@@ -48,6 +49,7 @@ export default function HomeClient({
   initialCategories = [],
   initialCmsData = null,
   initialMarketingData = null,
+  initialTestimonials = [],
 }: HomeClientProps) {
   const router = useRouter();
   const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
@@ -74,6 +76,9 @@ export default function HomeClient({
       notifications: [],
     }
   );
+  const [testimonials, setTestimonials] = useState<any[]>(() =>
+    Array.isArray(initialTestimonials) && initialTestimonials.length > 0 ? initialTestimonials : []
+  );
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(true);
 
   // Sync prop changes from Server Component on navigation or SSR updates
@@ -92,6 +97,10 @@ export default function HomeClient({
   useEffect(() => {
     if (initialMarketingData) setMarketingData(initialMarketingData);
   }, [initialMarketingData]);
+
+  useEffect(() => {
+    if (initialTestimonials && initialTestimonials.length > 0) setTestimonials(initialTestimonials);
+  }, [initialTestimonials]);
 
   // Load real-time database products and layout from /api/storefront + Instant Local Cache
   useEffect(() => {
@@ -118,6 +127,9 @@ export default function HomeClient({
           if (data && data.marketing) {
             setMarketingData(data.marketing);
           }
+          if (data && data.testimonials && Array.isArray(data.testimonials) && data.testimonials.length > 0) {
+            setTestimonials(data.testimonials);
+          }
           setIsDataLoaded(true);
         })
         .catch((e) => {
@@ -141,6 +153,9 @@ export default function HomeClient({
       }
       if (e?.detail?.key === "marketing" && e.detail.value) {
         setMarketingData(e.detail.value);
+      }
+      if (e?.detail?.key === "testimonials" && Array.isArray(e.detail.value)) {
+        setTestimonials(e.detail.value);
       }
       loadStorefrontData();
     };
@@ -518,7 +533,7 @@ export default function HomeClient({
 
       {/* Customer Reviews & Transformations */}
       {isSectionVisible("testimonials") && (
-        <TestimonialsSection />
+        <TestimonialsSection initialReviews={testimonials} />
       )}
 
       {/* Main Footer */}

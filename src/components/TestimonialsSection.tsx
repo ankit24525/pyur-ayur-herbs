@@ -73,7 +73,7 @@ export const TAITVA_DEFAULT_REVIEWS: TaitvaReview[] = [
     product: "FAT BURNER-Metabolism Support Juice",
     comment:
       "Mujhe to isske bdia result mile mera kafi weigt kamm hua h mere liye best product hai. Bilkul natural herbal taste aur koi acidity nahi hoti.",
-    photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
+    photo: "/reviews/review-customer-1.jpg",
     verified: true,
   },
   {
@@ -109,7 +109,7 @@ export const TAITVA_DEFAULT_REVIEWS: TaitvaReview[] = [
     product: "Pure Ayur Fat Burner Tonic",
     comment:
       "Helped reduce my stubborn bloating and belly fat. The taste is natural herbal and gives great gut digestive relief. Feeling 10 years lighter!",
-    photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80",
+    photo: "https://res.cloudinary.com/dwadcfj3b/image/upload/f_auto,q_auto/v1792928575/pure_ayur_herbs/testimonials/yr5pgln5otoawl9gzg0w.jpg",
     verified: true,
   },
   {
@@ -147,8 +147,56 @@ const POPULAR_PRODUCTS = [
   "Liver Cleanse & Detox Syrup",
 ];
 
-export default function TestimonialsSection() {
-  const [reviews, setReviews] = useState<TaitvaReview[]>(TAITVA_DEFAULT_REVIEWS);
+interface TestimonialsSectionProps {
+  initialReviews?: any[];
+}
+
+export function normalizeTestimonial(t: any, idx = 0): TaitvaReview {
+  const photo =
+    t.photo ||
+    t.avatar ||
+    t.image ||
+    (Array.isArray(t.images) && t.images[0]) ||
+    TAITVA_DEFAULT_REVIEWS[idx % TAITVA_DEFAULT_REVIEWS.length]?.photo ||
+    "/reviews/review-customer-1.jpg";
+
+  return {
+    id: t.id || `test-${idx}`,
+    name: t.name || t.customer || t.customerName || "Verified Customer",
+    rating: Math.min(5, Math.max(1, Number(t.rating) || 5)),
+    date: t.date || "Recent",
+    product: t.productTagged || t.product || t.productName || "Ayurvedic Formulation",
+    comment: t.comment || t.content || "",
+    photo,
+    location: t.location || "",
+    verified: t.verifiedBuyer !== false,
+  };
+}
+
+export default function TestimonialsSection({ initialReviews }: TestimonialsSectionProps = {}) {
+  const [reviews, setReviews] = useState<TaitvaReview[]>(() => {
+    if (Array.isArray(initialReviews) && initialReviews.length > 0) {
+      return initialReviews.map((t, idx) => normalizeTestimonial(t, idx));
+    }
+    return TAITVA_DEFAULT_REVIEWS;
+  });
+
+  useEffect(() => {
+    if (Array.isArray(initialReviews) && initialReviews.length > 0) {
+      const normalized = initialReviews.map((t, idx) => normalizeTestimonial(t, idx));
+      setReviews((prev) => {
+        const isDifferent =
+          prev.length !== normalized.length ||
+          normalized.some(
+            (u, i) =>
+              u.id !== prev[i]?.id ||
+              u.photo !== prev[i]?.photo ||
+              u.comment !== prev[i]?.comment
+          );
+        return isDifferent ? normalized : prev;
+      });
+    }
+  }, [initialReviews]);
   const [expandedReviewIds, setExpandedReviewIds] = useState<Record<string | number, boolean>>({});
 
   // Review submission modal state
@@ -272,7 +320,17 @@ export default function TestimonialsSection() {
         TAITVA_DEFAULT_REVIEWS.forEach(registerReview);
 
         if (uniqueReviews.length > 0) {
-          setReviews(uniqueReviews);
+          setReviews((prev) => {
+            const isDifferent =
+              prev.length !== uniqueReviews.length ||
+              uniqueReviews.some(
+                (u, i) =>
+                  u.id !== prev[i]?.id ||
+                  u.photo !== prev[i]?.photo ||
+                  u.comment !== prev[i]?.comment
+              );
+            return isDifferent ? uniqueReviews : prev;
+          });
         }
       } catch (err) {
         console.warn("Could not load testimonials feed:", err);
@@ -549,7 +607,8 @@ export default function TestimonialsSection() {
                         src={rev.photo}
                         alt={`${rev.name} holding Pure Ayur Herbs formulation`}
                         className="size-full object-cover object-center"
-                        loading="lazy"
+                        loading={idx === 0 ? "eager" : "lazy"}
+                        fetchPriority={idx === 0 ? "high" : "auto"}
                         onError={(e) => {
                           e.currentTarget.src =
                             "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80";

@@ -13,6 +13,7 @@ export default async function HomePage() {
   const initialCategories = Array.isArray(db.categories) && db.categories.length > 0 ? db.categories : concerns;
   const initialCmsData = db.content || { announcement: {}, heroSlides: [], consultationBanner: {} };
   const initialMarketingData = db.marketing || { banners: [], popups: [], notifications: [] };
+  const initialTestimonials = Array.isArray(db.testimonials) && db.testimonials.length > 0 ? db.testimonials : [];
 
   return (
     <HomeClient
@@ -20,6 +21,7 @@ export default async function HomePage() {
       initialCategories={initialCategories}
       initialCmsData={initialCmsData}
       initialMarketingData={initialMarketingData}
+      initialTestimonials={initialTestimonials}
     />
   );
 }

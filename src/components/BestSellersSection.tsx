@@ -73,9 +73,9 @@ export const DEFAULT_BEST_SELLERS: BestSellerItem[] = [
     id: "bs-5",
     name: "VIRJA POWDER MEN'S STAMINA & ENERGY BOOSTER",
     slug: "virja-powder",
-    price: 1199,
+    price: 749,
     compareAt: 1499,
-    discount: "20% OFF",
+    discount: "50% OFF",
     badge: "BESTSELLER",
     images: [
       "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg",
@@ -85,9 +85,9 @@ export const DEFAULT_BEST_SELLERS: BestSellerItem[] = [
     id: "bs-6",
     name: "MADHUNASHI SYRUP 500ML - SUGAR MANAGEMENT",
     slug: "madhunashi-syp",
-    price: 410,
+    price: 349,
     compareAt: 499,
-    discount: "18% OFF",
+    discount: "30% OFF",
     badge: "POPULAR",
     images: [
       "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381365/pure_ayur_herbs/products/ospkjprkxo1rzsb6ghmy.jpg",

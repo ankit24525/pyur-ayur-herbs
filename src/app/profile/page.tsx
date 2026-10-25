@@ -35,6 +35,7 @@ import {
 import SiteHeader from "@/components/SiteHeader";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import { products, Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 
 function ProfileDashboard() {
   const searchParams = useSearchParams();
@@ -404,10 +405,20 @@ function ProfileDashboard() {
       if (stored) {
         try {
           const slugs: string[] = JSON.parse(stored);
-          const matched = slugs
-            .map((slug) => products.find((p) => p.slug === slug))
-            .filter(Boolean) as Product[];
-          setRecentlyViewed(matched);
+          const resolveWith = (catalog: Product[]) => {
+            const matched = slugs
+              .map((slug) => catalog.find((p) => p.slug === slug || p.id === slug))
+              .filter(Boolean) as Product[];
+            setRecentlyViewed(matched);
+          };
+          resolveWith(products);
+          getStorefrontData()
+            .then((data) => {
+              if (data?.products && Array.isArray(data.products) && data.products.length > 0) {
+                resolveWith(data.products);
+              }
+            })
+            .catch(() => {});
         } catch (e) {
           // ignore
         }

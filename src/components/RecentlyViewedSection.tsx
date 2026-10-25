@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { products as defaultProducts, Product } from "@/lib/store";
+import { getStorefrontData } from "@/lib/storefront-client";
 import { trackMetaEvent } from "@/components/MetaPixel";
 
 export interface RecentlyViewedItem {
@@ -21,12 +22,12 @@ export interface RecentlyViewedItem {
 
 export const DEFAULT_RECENTLY_VIEWED: RecentlyViewedItem[] = [
   {
-    id: "rv-1",
+    id: "prod_1788511912600",
     name: "MADHUNASHI SYP 500ML",
     slug: "madhunashi-syp",
-    price: 410,
+    price: 349,
     compareAt: 499,
-    discount: "18% OFF",
+    discount: "30% OFF",
     badge: "POPULAR",
     image:
       "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381365/pure_ayur_herbs/products/ospkjprkxo1rzsb6ghmy.jpg",
@@ -35,12 +36,40 @@ export const DEFAULT_RECENTLY_VIEWED: RecentlyViewedItem[] = [
     ],
   },
   {
-    id: "rv-2",
+    id: "prod_1788511819071",
+    name: "MADHUNASHI POWDER",
+    slug: "madhunashi-powder",
+    price: 769,
+    compareAt: 2199,
+    discount: "65% OFF",
+    badge: "AYUSH CERTIFIED",
+    image:
+      "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381364/pure_ayur_herbs/products/kleuwprcuiyj1duvlojh.jpg",
+    images: [
+      "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381364/pure_ayur_herbs/products/kleuwprcuiyj1duvlojh.jpg",
+    ],
+  },
+  {
+    id: "prod_1789129223995",
+    name: "VIRJA GOLD MAJUN",
+    slug: "virja-gold-majun",
+    price: 399,
+    compareAt: 499,
+    discount: "20% OFF",
+    badge: "POPULAR",
+    image:
+      "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381369/pure_ayur_herbs/products/x2yhpnwfcsesqdjjmzll.jpg",
+    images: [
+      "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381369/pure_ayur_herbs/products/x2yhpnwfcsesqdjjmzll.jpg",
+    ],
+  },
+  {
+    id: "prod_1788511960374",
     name: "FAT BURNER - METABOLISM SUPPORT JUICE",
     slug: "fat-burner",
-    price: 499,
+    price: 399,
     compareAt: 599,
-    discount: "17% OFF",
+    discount: "33% OFF",
     badge: "TOP RATED",
     image:
       "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381366/pure_ayur_herbs/products/xemjcovn6mbh6edriszp.jpg",
@@ -49,12 +78,12 @@ export const DEFAULT_RECENTLY_VIEWED: RecentlyViewedItem[] = [
     ],
   },
   {
-    id: "rv-3",
+    id: "prod_1788947560528",
     name: "VIRJA POWDER 100% PURE MEN'S POWER",
     slug: "virja-powder",
-    price: 1199,
+    price: 749,
     compareAt: 1499,
-    discount: "20% OFF",
+    discount: "50% OFF",
     badge: "BESTSELLER",
     image:
       "https://res.cloudinary.com/dwadcfj3b/image/upload/v1791381368/pure_ayur_herbs/products/hmlzvpwldh0zgunukmxk.jpg",
@@ -63,7 +92,7 @@ export const DEFAULT_RECENTLY_VIEWED: RecentlyViewedItem[] = [
     ],
   },
   {
-    id: "rv-4",
+    id: "prod_1788512010828",
     name: "PERFECT 36 HERBAL TONING CREAM",
     slug: "perfect-36-cream",
     price: 598,
@@ -81,74 +110,141 @@ export const DEFAULT_RECENTLY_VIEWED: RecentlyViewedItem[] = [
 interface RecentlyViewedSectionProps {
   currentProductSlug?: string;
   items?: RecentlyViewedItem[];
+  allProducts?: Product[];
   onAddToCart?: (product: Product) => void;
 }
 
 export default function RecentlyViewedSection({
   currentProductSlug,
   items,
+  allProducts,
   onAddToCart,
 }: RecentlyViewedSectionProps) {
+  const [liveProducts, setLiveProducts] = useState<Product[]>(() =>
+    Array.isArray(allProducts) && allProducts.length > 0 ? allProducts : []
+  );
   const [displayItems, setDisplayItems] = useState<RecentlyViewedItem[]>(
     () => items || DEFAULT_RECENTLY_VIEWED
   );
   const [activeImageIndices, setActiveImageIndices] = useState<Record<string, number>>({});
   const [addedIds, setAddedIds] = useState<string[]>([]);
 
+  // Keep live catalog synced from props or storefront API
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("pyur_recently_viewed");
-        if (stored) {
-          const slugs: string[] = JSON.parse(stored);
-          if (Array.isArray(slugs) && slugs.length > 0) {
-            // Filter out current product
-            const filteredSlugs = slugs.filter((s) => s && s !== currentProductSlug);
-
-            // Match stored products
-            const matched: RecentlyViewedItem[] = [];
-            filteredSlugs.forEach((slug) => {
-              const found = defaultProducts.find((p) => p.slug === slug);
-              if (found) {
-                const price = Number(found.price) || 0;
-                const compareAt = Number(found.compareAt) || Math.round(price * 1.3);
-                const discount =
-                  compareAt > price
-                    ? `${Math.round(((compareAt - price) / compareAt) * 100)}% OFF`
-                    : "SPECIAL";
-                matched.push({
-                  id: found.id,
-                  name: found.name.toUpperCase(),
-                  slug: found.slug,
-                  price,
-                  compareAt,
-                  discount,
-                  image: found.image,
-                  images:
-                    found.images && found.images.length > 0
-                      ? found.images
-                      : [found.image],
-                  badge: found.badge,
-                });
-              }
-            });
-
-            // Backfill with defaults if fewer than 4
-            const backfill = DEFAULT_RECENTLY_VIEWED.filter(
-              (def) =>
-                def.slug !== currentProductSlug &&
-                !matched.some((m) => m.slug === def.slug)
-            );
-
-            const combined = [...matched, ...backfill].slice(0, 4);
-            if (combined.length > 0) {
-              setDisplayItems(combined);
-            }
+    if (Array.isArray(allProducts) && allProducts.length > 0) {
+      setLiveProducts(allProducts);
+    } else {
+      getStorefrontData()
+        .then((data) => {
+          if (data?.products && Array.isArray(data.products) && data.products.length > 0) {
+            setLiveProducts(data.products);
           }
-        }
-      } catch {}
+        })
+        .catch(() => {});
     }
-  }, [currentProductSlug]);
+  }, [allProducts]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (items && items.length > 0) {
+      const filtered = currentProductSlug
+        ? items.filter((i) => i.slug !== currentProductSlug)
+        : items;
+      setDisplayItems(filtered.length > 0 ? filtered : items);
+      return;
+    }
+
+    try {
+      const productCatalog = liveProducts.length > 0 ? liveProducts : defaultProducts;
+      const stored = localStorage.getItem("pyur_recently_viewed");
+      let slugs: string[] = [];
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            slugs = parsed.filter(Boolean);
+          }
+        } catch {}
+      }
+
+      // Filter out current product slug
+      const filteredSlugs = slugs.filter((s) => s && s !== currentProductSlug);
+
+      // Match stored products with real-time prices
+      const matched: RecentlyViewedItem[] = [];
+      const seenSlugs = new Set<string>();
+
+      filteredSlugs.forEach((slug) => {
+        const found = productCatalog.find(
+          (p) =>
+            p.slug === slug ||
+            p.id === slug ||
+            p.slug?.toLowerCase() === slug.toLowerCase()
+        );
+        if (found && !seenSlugs.has(found.slug)) {
+          seenSlugs.add(found.slug);
+          const price = Number(found.price) || 0;
+          const compareAt = Number(found.compareAt) || Math.round(price * 1.3);
+          const discount =
+            compareAt > price
+              ? `${Math.round(((compareAt - price) / compareAt) * 100)}% OFF`
+              : "SPECIAL";
+          matched.push({
+            id: found.id,
+            name: (found.name || "").toUpperCase(),
+            slug: found.slug,
+            price,
+            compareAt,
+            discount,
+            image: found.image,
+            images:
+              found.images && found.images.length > 0
+                ? found.images
+                : [found.image],
+            badge: found.badge,
+          });
+        }
+      });
+
+      // Backfill with other products from productCatalog
+      const catalogBackfill: RecentlyViewedItem[] = [];
+      productCatalog.forEach((p) => {
+        if (p.slug !== currentProductSlug && !seenSlugs.has(p.slug)) {
+          seenSlugs.add(p.slug);
+          const price = Number(p.price) || 0;
+          const compareAt = Number(p.compareAt) || Math.round(price * 1.3);
+          const discount =
+            compareAt > price
+              ? `${Math.round(((compareAt - price) / compareAt) * 100)}% OFF`
+              : "SPECIAL";
+          catalogBackfill.push({
+            id: p.id,
+            name: (p.name || "").toUpperCase(),
+            slug: p.slug,
+            price,
+            compareAt,
+            discount,
+            image: p.image,
+            images:
+              p.images && p.images.length > 0 ? p.images : [p.image],
+            badge: p.badge,
+          });
+        }
+      });
+
+      // Fallback defaults if still needed
+      const defaultBackfill = DEFAULT_RECENTLY_VIEWED.filter(
+        (def) => def.slug !== currentProductSlug && !seenSlugs.has(def.slug)
+      );
+
+      const combined = [...matched, ...catalogBackfill, ...defaultBackfill].slice(0, 4);
+      if (combined.length > 0) {
+        setDisplayItems(combined);
+      }
+    } catch {}
+  }, [currentProductSlug, liveProducts, items]);
 
   const handlePrevImage = (e: React.MouseEvent, id: string, total: number) => {
     e.preventDefault();
@@ -175,23 +271,27 @@ export default function RecentlyViewedSection({
     const itemImages = item.images && item.images.length > 0 ? item.images : [item.image];
     const currentImg = itemImages[activeImageIndices[item.id] || 0] || item.image;
 
+    const fullProduct = (liveProducts.length > 0 ? liveProducts : defaultProducts).find(
+      (p) => p.id === item.id || p.slug === item.slug
+    );
+
     const cartProduct: Product = {
       id: item.id,
-      name: item.name,
+      name: fullProduct?.name || item.name,
       slug: item.slug,
       price: item.price,
       compareAt: item.compareAt,
       image: currentImg,
       images: itemImages,
-      concern: "Ayurvedic Care",
-      rating: 5,
-      reviews: 142,
-      badge: item.badge || "",
-      ingredients: ["100% Himalayan Herbs"],
-      description: item.name,
-      coinsEarned: Math.round(item.price * 0.05),
+      concern: fullProduct?.concern || "Ayurvedic Care",
+      rating: fullProduct?.rating || 5,
+      reviews: fullProduct?.reviews || 142,
+      badge: item.badge || fullProduct?.badge || "",
+      ingredients: fullProduct?.ingredients || ["100% Himalayan Herbs"],
+      description: fullProduct?.description || item.name,
+      coinsEarned: fullProduct?.coinsEarned || Math.round(item.price * 0.05),
       showCoins: true,
-      deliveryDays: "3 - 5 Days",
+      deliveryDays: fullProduct?.deliveryDays || "3 - 5 Days",
       inStock: true,
     };
 

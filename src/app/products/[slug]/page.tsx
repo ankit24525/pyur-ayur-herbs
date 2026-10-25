@@ -237,6 +237,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           product={detailProduct}
           coupons={Array.isArray(db.coupons) ? db.coupons : []}
           settings={db.settings || {}}
+          allProducts={db.products || []}
         />
       </>
     );

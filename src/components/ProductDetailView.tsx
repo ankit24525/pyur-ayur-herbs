@@ -151,9 +151,10 @@ interface ProductDetailViewProps {
   product: ProductDetail;
   coupons?: any[];
   settings?: any;
+  allProducts?: Product[];
 }
 
-export function ProductDetailView({ product, coupons, settings }: ProductDetailViewProps) {
+export function ProductDetailView({ product, coupons, settings, allProducts }: ProductDetailViewProps) {
   // Admin Panel Live State & Real-time Offers
   const [adminCoupons, setAdminCoupons] = useState<any[]>(() =>
     Array.isArray(coupons) && coupons.length > 0 ? coupons : []
@@ -1844,7 +1845,11 @@ export function ProductDetailView({ product, coupons, settings }: ProductDetailV
       {/* ========================================================================= */}
       {/* 3. RECENTLY VIEWED SECTION (Taitva Exact Layout: Immediately After Reviews)*/}
       {/* ========================================================================= */}
-      <RecentlyViewedSection currentProductSlug={product.slug} onAddToCart={handleAddToCart as any} />
+      <RecentlyViewedSection
+        currentProductSlug={product.slug}
+        allProducts={allProducts}
+        onAddToCart={handleAddToCart as any}
+      />
 
       {/* ========================================================================= */}
       {/* 4. BEST SELLERS SECTION (Taitva PDP Style)                               */}

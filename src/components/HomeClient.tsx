@@ -529,7 +529,7 @@ export default function HomeClient({
       )}
 
       {/* Recently Viewed Remedies */}
-      <RecentlyViewedSection />
+      <RecentlyViewedSection allProducts={catalog} onAddToCart={handleAddToCart} />
 
       {/* Customer Reviews & Transformations */}
       {isSectionVisible("testimonials") && (

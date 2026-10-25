@@ -9668,6 +9668,148 @@ export default function AdminDashboard() {
 
                 {subTab === "coupons" && (
                   <div className="space-y-6">
+                    {/* Live Storefront Announcement Bar Discount Connection Card */}
+                    {(() => {
+                      const announcement = dbData.content?.announcement || {
+                        visible: true,
+                        text: "Minimum 30% off on all products.",
+                        code: "PURE30",
+                      };
+                      const activeCode = (announcement.code || "PURE30").toUpperCase();
+                      const isConnected = dbData.coupons.some((c: any) => c.code === activeCode && c.status === "Active");
+
+                      return (
+                        <div className="border-2 border-emerald-300/80 bg-gradient-to-r from-[#f8faf1] to-emerald-50/40 p-5 rounded-2xl shadow-xs space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className="size-9 rounded-xl bg-[#244f31] text-white flex items-center justify-center text-base shrink-0 shadow-xs">
+                                📢
+                              </span>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-black text-[#17231b] text-sm uppercase tracking-wide">
+                                    Storefront Top Announcement Bar Discount
+                                  </h4>
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                    announcement.visible !== false
+                                      ? "bg-emerald-100 text-emerald-800"
+                                      : "bg-gray-100 text-gray-700"
+                                  }`}>
+                                    {announcement.visible !== false ? "Live on Storefront" : "Hidden"}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-gray-600 mt-0.5">
+                                  Connected Coupon: <strong className="font-mono text-[#244f31] bg-white px-2 py-0.5 rounded border border-emerald-200">{activeCode}</strong>
+                                  {" "}— Displays prominently on the header banner across all customer pages.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const updatedContent = {
+                                    ...(dbData.content || {}),
+                                    announcement: {
+                                      ...(dbData.content?.announcement || {}),
+                                      visible: announcement.visible === false ? true : false,
+                                    },
+                                  };
+                                  await saveKey("content", updatedContent);
+                                  showToast(
+                                    announcement.visible === false
+                                      ? "Top Announcement Bar published live!"
+                                      : "Top Announcement Bar hidden."
+                                  );
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                                  announcement.visible !== false
+                                    ? "bg-white border border-[#ddddd9] text-gray-700 hover:bg-gray-50"
+                                    : "bg-[#244f31] text-white hover:bg-[#1c3e26]"
+                                }`}
+                              >
+                                {announcement.visible !== false ? "Hide Top Bar" : "Show Top Bar"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Quick Edit Headline & Connected Coupon */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-emerald-200/60 text-xs">
+                            <div className="sm:col-span-2">
+                              <label className="block font-bold text-gray-600 mb-1">
+                                Top Bar Promotional Text
+                              </label>
+                              <input
+                                type="text"
+                                value={announcement.text || ""}
+                                onChange={(e) => {
+                                  const updatedContent = {
+                                    ...(dbData.content || {}),
+                                    announcement: {
+                                      ...(dbData.content?.announcement || {}),
+                                      text: e.target.value,
+                                    },
+                                  };
+                                  setDbData((prev: any) => ({ ...prev, content: updatedContent }));
+                                }}
+                                placeholder="e.g. Minimum 30% off on all products."
+                                className="w-full rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white font-medium text-xs"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block font-bold text-gray-600 mb-1">
+                                Connected Coupon Code
+                              </label>
+                              <div className="flex items-center gap-1.5">
+                                <select
+                                  value={activeCode}
+                                  onChange={async (e) => {
+                                    const selectedCode = e.target.value;
+                                    const matchCoupon = dbData.coupons.find((c: any) => c.code === selectedCode);
+                                    const discountText = matchCoupon
+                                      ? (matchCoupon.type === "Percentage"
+                                          ? `Minimum ${matchCoupon.value}% off on all products.`
+                                          : `Flat ₹${matchCoupon.value} off on all products.`)
+                                      : announcement.text;
+
+                                    const updatedContent = {
+                                      ...(dbData.content || {}),
+                                      announcement: {
+                                        ...(dbData.content?.announcement || {}),
+                                        code: selectedCode,
+                                        text: discountText,
+                                      },
+                                    };
+                                    await saveKey("content", updatedContent);
+                                    showToast(`Connected coupon ${selectedCode} to Announcement Bar!`);
+                                  }}
+                                  className="flex-1 rounded-xl border border-[#ddddd9] p-2 outline-none focus:border-[#244f31] bg-white font-mono font-bold text-xs cursor-pointer"
+                                >
+                                  {dbData.coupons.map((c: any) => (
+                                    <option key={c.code} value={c.code}>
+                                      {c.code} ({c.type === "Flat" ? `₹${c.value}` : `${c.value}%`} off)
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    await saveKey("content", dbData.content);
+                                    showToast("Top Announcement Bar offer saved!");
+                                  }}
+                                  className="px-3 py-2 rounded-xl bg-[#244f31] hover:bg-[#1c3e26] text-white font-bold text-xs transition cursor-pointer shrink-0"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <form onSubmit={handleAddCoupon} className="space-y-4 text-xs border-b pb-6 bg-[#f8faf1]/40 border border-[#ddddd9] p-5 rounded-2xl">
                       <h4 className="font-black text-[#17231b] text-[13px] uppercase tracking-wider mb-2">Create Discount Coupon</h4>
                       
@@ -9819,7 +9961,16 @@ export default function AdminDashboard() {
 
                               return (
                                 <tr key={c.code} className="hover:bg-[#f8faf1]/20 transition">
-                                  <td className="p-3 font-bold text-[#17231b]">{c.code}</td>
+                                  <td className="p-3 font-bold text-[#17231b]">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span>{c.code}</span>
+                                      {((dbData.content?.announcement?.code || "PURE30").toUpperCase() === c.code.toUpperCase()) && (
+                                        <span className="px-1.5 py-0.5 rounded-full bg-[#244f31] text-white text-[9px] font-black uppercase tracking-wider">
+                                          📢 Top Bar
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
                                   <td className="p-3 font-semibold text-[#17231b]">
                                     {c.type === "Flat" ? `₹${c.value}` : `${c.value}%`}
                                   </td>
@@ -9835,13 +9986,40 @@ export default function AdminDashboard() {
                                     </span>
                                   </td>
                                   <td className="p-3 text-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => void handleDeleteCoupon(c.code)}
-                                      className="text-red-600 font-bold hover:underline"
-                                    >
-                                      Delete
-                                    </button>
+                                    <div className="flex items-center justify-center gap-2">
+                                      {((dbData.content?.announcement?.code || "PURE30").toUpperCase() !== c.code.toUpperCase()) && (
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            const discountText = c.type === "Percentage"
+                                              ? `Minimum ${c.value}% off on all products.`
+                                              : `Flat ₹${c.value} off on all products.`;
+                                            const updatedContent = {
+                                              ...(dbData.content || {}),
+                                              announcement: {
+                                                ...(dbData.content?.announcement || {}),
+                                                code: c.code,
+                                                text: discountText,
+                                                visible: true,
+                                              },
+                                            };
+                                            await saveKey("content", updatedContent);
+                                            showToast(`Coupon ${c.code} connected to Top Announcement Bar!`);
+                                          }}
+                                          className="text-[#244f31] font-bold hover:underline cursor-pointer text-xs"
+                                          title="Connect this coupon to top announcement bar"
+                                        >
+                                          📢 Connect
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => void handleDeleteCoupon(c.code)}
+                                        className="text-red-600 font-bold hover:underline cursor-pointer"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
                                   </td>
                                 </tr>
                               );
@@ -10443,8 +10621,17 @@ export default function AdminDashboard() {
                     <button
                       onClick={async () => {
                         await handleSaveSettings("flashSaleTimer", flashSaleTimer);
+                        const updatedContent = {
+                          ...(dbData.content || {}),
+                          announcement: {
+                            ...(dbData.content?.announcement || {}),
+                            timerDuration: flashSaleTimer,
+                          },
+                        };
+                        await saveKey("content", updatedContent);
+                        showToast("Flash Sale Countdown Timer saved!");
                       }}
-                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2"
+                      className="w-full rounded-xl bg-[#244f31] hover:bg-[#1d3b24] text-white font-black text-xs py-3 shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
                     >
                       Save Countdown Timer
                     </button>

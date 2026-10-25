@@ -127,6 +127,7 @@ export async function GET(request: Request) {
       products: sanitizedProducts,
       categories: Array.isArray(db.categories) && db.categories.length > 0 ? db.categories : concerns,
       content: sanitizedContent,
+      coupons: Array.isArray(db.coupons) ? db.coupons.filter((c: any) => c.status === "Active") : [],
       reviews: db.reviews || [],
       testimonials: db.testimonials || [],
       faqs: cleanFaqs.length > 0 ? cleanFaqs : defaultFaqs,

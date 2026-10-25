@@ -25,7 +25,7 @@ interface AnnouncementBarProps {
 const DEFAULT_ANNOUNCEMENT: AnnouncementData = {
   visible: true,
   text: "Minimum 30% off on all products.",
-  code: "",
+  code: "PURE30",
   btnText: "",
   link: "/#shop",
   bgImage: "/brand/top-botanical-banner.jpg",
@@ -38,6 +38,7 @@ export default function AnnouncementBar({
   marketingBanners = [],
 }: AnnouncementBarProps) {
   const [dismissed, setDismissed] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
   const [liveData, setLiveData] = useState<AnnouncementData | null>(null);
   const [settings, setSettings] = useState<any>(null);
 
@@ -221,6 +222,41 @@ export default function AnnouncementBar({
     return () => clearInterval(interval);
   }, [activeAnnouncement.timerDuration, settings?.flashSaleTimer]);
 
+  const handleCopyCode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const code = activeAnnouncement.code?.trim();
+    if (!code) return;
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(code).catch(() => {});
+    }
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("pyur_applied_coupon", code);
+        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(
+          new CustomEvent("pyur_storefront_updated", {
+            detail: { key: "applied_coupon", value: code },
+          })
+        );
+      } catch {}
+    }
+
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleBarClick = () => {
+    const code = activeAnnouncement.code?.trim();
+    if (code && typeof window !== "undefined") {
+      try {
+        localStorage.setItem("pyur_applied_coupon", code);
+      } catch {}
+    }
+  };
+
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -248,21 +284,27 @@ export default function AnnouncementBar({
         {/* Left Spacer for absolute center alignment on desktop */}
         <div className="hidden md:block w-8 shrink-0" />
 
-        {/* Center: Taitva Promotional Text */}
-        <Link
-          href={targetLink}
-          className="flex-1 flex items-center justify-center gap-2 text-center group cursor-pointer"
-        >
-          <span className="text-xs sm:text-[13px] font-semibold tracking-wide text-white group-hover:text-[#c2d4c5] transition-colors">
-            {activeAnnouncement.text || "Minimum 30% off on all products."}
-          </span>
+        {/* Center: Promotional Text & Clickable Coupon */}
+        <div className="flex-1 flex flex-wrap items-center justify-center gap-2 text-center">
+          <Link
+            href={targetLink}
+            onClick={handleBarClick}
+            className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-semibold tracking-wide text-white hover:text-[#c2d4c5] transition-colors"
+          >
+            <span>{activeAnnouncement.text || "Minimum 30% off on all products."}</span>
+          </Link>
 
           {activeAnnouncement.code && (
-            <span className="rounded bg-white/15 px-2 py-0.5 font-mono text-[11px] font-bold text-white border border-white/20">
-              {activeAnnouncement.code}
-            </span>
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              title="Click to copy & auto-apply coupon code"
+              className="inline-flex items-center gap-1 rounded bg-white/15 hover:bg-white/25 active:scale-95 px-2 py-0.5 font-mono text-[11px] font-bold text-white border border-white/20 transition cursor-pointer shadow-2xs"
+            >
+              <span>{copied ? "✓ COPIED & APPLIED" : activeAnnouncement.code}</span>
+            </button>
           )}
-        </Link>
+        </div>
 
         {/* Right: Close / Dismiss Button (Hidden on Mobile for Clean Centered View) */}
         <div className="hidden sm:flex items-center justify-end shrink-0 pl-2">

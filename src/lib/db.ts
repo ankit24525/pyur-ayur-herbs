@@ -339,12 +339,26 @@ function sanitizeDBData(data: any): DBData {
   if (!Array.isArray(data.orders)) data.orders = [];
   if (!Array.isArray(data.coupons) || data.coupons.length === 0) {
     data.coupons = [
+      { code: "PURE30", type: "Percentage", value: "30", status: "Active", minCartValue: 0, applicableType: "All", applicableValue: "", used: 240 },
       { code: "PYUR10", type: "Percentage", value: "10", status: "Active", minCartValue: 0, applicableType: "All", applicableValue: "", used: 142 },
       { code: "PREPAID5", type: "Percentage", value: "5", status: "Active", minCartValue: 0, applicableType: "All", applicableValue: "", used: 64 },
       { code: "AYUR100", type: "Flat", value: "100", status: "Active", minCartValue: 999, applicableType: "All", applicableValue: "", used: 89 },
       { code: "PURE99", type: "Flat", value: "99", status: "Active", minCartValue: 400, applicableType: "All", applicableValue: "", used: 35 },
       { code: "FREESHIP", type: "Free Shipping", value: "0", status: "Active", minCartValue: 0, applicableType: "All", applicableValue: "", used: 84 },
     ];
+  } else {
+    if (!data.coupons.some((c: any) => c.code === "PURE30")) {
+      data.coupons.unshift({
+        code: "PURE30",
+        type: "Percentage",
+        value: "30",
+        status: "Active",
+        minCartValue: 0,
+        applicableType: "All",
+        applicableValue: "",
+        used: 240,
+      });
+    }
   }
   if (!Array.isArray(data.leads)) data.leads = [];
   if (!Array.isArray(data.blogs)) data.blogs = [];
@@ -454,8 +468,8 @@ function sanitizeDBData(data: any): DBData {
     if (!data.content.announcement || Object.keys(data.content.announcement).length === 0 || !data.content.announcement.text) {
       data.content.announcement = {
         visible: true,
-        text: "Free Kesar Sale Ends in",
-        code: "FREEKESAR",
+        text: "Minimum 30% off on all products.",
+        code: "PURE30",
         btnText: "Claim Gift",
         link: "/#shop",
         bgImage: "/brand/top-botanical-banner.jpg",
@@ -464,13 +478,35 @@ function sanitizeDBData(data: any): DBData {
     } else {
       data.content.announcement = {
         visible: data.content.announcement.visible !== false,
-        text: data.content.announcement.text || "Free Kesar Sale Ends in",
-        code: data.content.announcement.code || "FREEKESAR",
+        text: data.content.announcement.text || "Minimum 30% off on all products.",
+        code: data.content.announcement.code || "PURE30",
         btnText: data.content.announcement.btnText || "Claim Gift",
         link: data.content.announcement.link || "/#shop",
         bgImage: data.content.announcement.bgImage || "/brand/top-botanical-banner.jpg",
         timerDuration: data.content.announcement.timerDuration || "07:34:59",
       };
+    }
+
+    // Ensure coupon in top announcement is always active and registered in coupons table
+    if (data.content.announcement.code) {
+      const topCode = String(data.content.announcement.code).trim().toUpperCase();
+      const existing = data.coupons.find((c: any) => c.code === topCode);
+      if (!existing) {
+        const percentMatch = (data.content.announcement.text || "").match(/(\d+)%/);
+        const discountVal = percentMatch ? percentMatch[1] : "30";
+        data.coupons.unshift({
+          code: topCode,
+          type: "Percentage",
+          value: discountVal,
+          status: "Active",
+          minCartValue: 0,
+          applicableType: "All",
+          applicableValue: "",
+          used: 0,
+        });
+      } else {
+        existing.status = "Active";
+      }
     }
     if (!Array.isArray(data.content.heroSlides)) data.content.heroSlides = [];
 

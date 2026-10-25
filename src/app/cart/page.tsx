@@ -412,7 +412,9 @@ export default function CartPage() {
                         const priceParam = p.price ? `&price=${p.price}` : "";
                         const nameParam = p.name ? `&variantName=${encodeURIComponent(p.name)}` : "";
                         const imgParam = p.image ? `&variantImage=${encodeURIComponent(p.image)}` : "";
-                        window.location.href = `/checkout?productId=${encodeURIComponent(p.id)}&quantity=${q}${priceParam}${nameParam}${imgParam}`;
+                        const storedCoupon = typeof window !== "undefined" ? localStorage.getItem("pyur_applied_coupon") : null;
+                        const couponParam = storedCoupon ? `&coupon=${encodeURIComponent(storedCoupon)}` : "";
+                        window.location.href = `/checkout?productId=${encodeURIComponent(p.id)}&quantity=${q}${priceParam}${nameParam}${imgParam}${couponParam}`;
                       }
                     }}
                     className="mt-5 w-full rounded-xl bg-[#023915] py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:bg-black cursor-pointer"

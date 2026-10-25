@@ -269,6 +269,16 @@
   ],
   "coupons": [
     {
+      "code": "PURE30",
+      "type": "Percentage",
+      "value": "30",
+      "status": "Active",
+      "minCartValue": 0,
+      "applicableType": "All",
+      "applicableValue": "",
+      "used": 240
+    },
+    {
       "code": "PYUR10",
       "type": "Percentage",
       "value": "10",

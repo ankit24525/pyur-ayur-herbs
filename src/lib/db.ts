@@ -466,46 +466,38 @@ function sanitizeDBData(data: any): DBData {
   if (!data.content || typeof data.content !== "object") {
     data.content = { announcement: {}, heroSlides: [], consultationBanner: {}, footer: {}, aboutUs: {} };
   } else {
-    if (!data.content.announcement || Object.keys(data.content.announcement).length === 0 || !data.content.announcement.text) {
+    const isExplicitlyHidden =
+      data.content.announcement?.visible === false ||
+      data.content.sectionsVisibility?.announcement === false;
+
+    if (!data.content.announcement || Object.keys(data.content.announcement).length === 0) {
       data.content.announcement = {
-        visible: true,
-        text: "Minimum 30% off on all products.",
-        code: "PURE30",
-        btnText: "Claim Gift",
+        visible: !isExplicitlyHidden,
+        text: isExplicitlyHidden ? "" : "Minimum 30% off on all products.",
+        code: isExplicitlyHidden ? "" : "PURE30",
+        btnText: isExplicitlyHidden ? "" : "Claim Gift",
         link: "/#shop",
         bgImage: "/brand/top-botanical-banner.jpg",
         timerDuration: "07:34:59",
       };
     } else {
       data.content.announcement = {
-        visible: data.content.announcement.visible !== false,
-        text: data.content.announcement.text || "Minimum 30% off on all products.",
-        code: data.content.announcement.code || "PURE30",
-        btnText: data.content.announcement.btnText || "Claim Gift",
+        ...data.content.announcement,
+        visible: isExplicitlyHidden ? false : (data.content.announcement.visible !== false),
+        text: data.content.announcement.text || "",
+        code: data.content.announcement.code || "",
+        btnText: data.content.announcement.btnText || "",
         link: data.content.announcement.link || "/#shop",
         bgImage: data.content.announcement.bgImage || "/brand/top-botanical-banner.jpg",
         timerDuration: data.content.announcement.timerDuration || "07:34:59",
       };
     }
 
-    // Ensure coupon in top announcement is always active and registered in coupons table
-    if (data.content.announcement.code) {
+    // Only activate existing coupon; NEVER resurrect a deleted coupon
+    if (data.content.announcement.visible && data.content.announcement.code) {
       const topCode = String(data.content.announcement.code).trim().toUpperCase();
       const existing = data.coupons.find((c: any) => c.code === topCode);
-      if (!existing) {
-        const percentMatch = (data.content.announcement.text || "").match(/(\d+)%/);
-        const discountVal = percentMatch ? percentMatch[1] : "30";
-        data.coupons.unshift({
-          code: topCode,
-          type: "Percentage",
-          value: discountVal,
-          status: "Active",
-          minCartValue: 0,
-          applicableType: "All",
-          applicableValue: "",
-          used: 0,
-        });
-      } else {
+      if (existing) {
         existing.status = "Active";
       }
     }

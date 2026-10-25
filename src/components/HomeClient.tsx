@@ -265,14 +265,20 @@ export default function HomeClient({
 
   // Dynamic Homepage Section Visibility Control
   const isSectionVisible = (sectionKey: string): boolean => {
+    // Top Announcement Bar: Check BOTH sectionsVisibility AND announcement.visible
+    if (sectionKey === "announcement") {
+      if (cmsData?.sectionsVisibility?.announcement === false) return false;
+      if (cmsData?.announcement?.visible === false) return false;
+      if (cmsData?.sectionsVisibility?.announcement === true) return true;
+      if (cmsData?.announcement?.visible === true) return true;
+      return false;
+    }
+
     const visibility = cmsData?.sectionsVisibility || {};
     if (visibility[sectionKey] !== undefined) {
       return Boolean(visibility[sectionKey]);
     }
     // Backward compatibility checks for legacy properties
-    if (sectionKey === "announcement" && cmsData?.announcement?.visible !== undefined) {
-      return Boolean(cmsData.announcement.visible);
-    }
     if (sectionKey === "consultationBanner" && cmsData?.consultationBanner?.visible !== undefined) {
       return Boolean(cmsData.consultationBanner.visible);
     }

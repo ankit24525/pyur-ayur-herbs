@@ -239,6 +239,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           settings={db.settings || {}}
           allProducts={db.products || []}
           initialTestimonials={db.testimonials || []}
+          announcementData={db.content?.announcement}
         />
       </>
     );

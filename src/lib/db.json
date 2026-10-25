@@ -277,16 +277,6 @@
       "applicableType": "All",
       "applicableValue": "",
       "used": 240
-    },
-    {
-      "code": "PYUR10",
-      "type": "Percentage",
-      "value": "10",
-      "status": "Active",
-      "minCartValue": 0,
-      "applicableType": "All",
-      "applicableValue": "",
-      "used": 142
     }
   ],
   "leads": [
@@ -1091,10 +1081,10 @@
   ],
   "content": {
     "announcement": {
-      "visible": true,
-      "text": "Minimum 30% off on all products.",
-      "code": "PURE30",
-      "btnText": "Claim Gift",
+      "visible": false,
+      "text": "",
+      "code": "",
+      "btnText": "",
       "link": "/#shop",
       "bgImage": "/brand/top-botanical-banner.jpg",
       "timerDuration": "07:34:59"
@@ -1276,7 +1266,7 @@
       "visible": false
     },
     "sectionsVisibility": {
-      "announcement": true,
+      "announcement": false,
       "heroSlider": true,
       "mobileCategoryRail": true,
       "categoryFilter": true,

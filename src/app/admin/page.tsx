@@ -2572,6 +2572,26 @@ export default function AdminDashboard() {
       try {
         const updated = dbData.coupons.filter((c: any) => c.code !== code);
         await saveKey("coupons", updated);
+
+        // If this coupon was connected to the top announcement bar, automatically clear & hide the bar
+        const currentTopCode = (dbData.content?.announcement?.code || "").trim().toUpperCase();
+        if (currentTopCode === code.trim().toUpperCase()) {
+          const updatedContent = {
+            ...(dbData.content || {}),
+            announcement: {
+              ...(dbData.content?.announcement || {}),
+              code: "",
+              text: "",
+              visible: false,
+            },
+            sectionsVisibility: {
+              ...(dbData.content?.sectionsVisibility || {}),
+              announcement: false,
+            },
+          };
+          await saveKey("content", updatedContent);
+        }
+
         showToast("Coupon deleted successfully!");
       } catch {
         alert("Error deleting coupon.");
@@ -9678,6 +9698,8 @@ export default function AdminDashboard() {
                       const activeCode = (announcement.code || "PURE30").toUpperCase();
                       const isConnected = dbData.coupons.some((c: any) => c.code === activeCode && c.status === "Active");
 
+                      const isLive = announcement.visible !== false && (dbData.content?.sectionsVisibility?.announcement !== false);
+
                       return (
                         <div className="border-2 border-emerald-300/80 bg-gradient-to-r from-[#f8faf1] to-emerald-50/40 p-5 rounded-2xl shadow-xs space-y-3">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -9691,11 +9713,11 @@ export default function AdminDashboard() {
                                     Storefront Top Announcement Bar Discount
                                   </h4>
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                                    announcement.visible !== false
+                                    isLive
                                       ? "bg-emerald-100 text-emerald-800"
                                       : "bg-gray-100 text-gray-700"
                                   }`}>
-                                    {announcement.visible !== false ? "Live on Storefront" : "Hidden"}
+                                    {isLive ? "Live on Storefront" : "Hidden"}
                                   </span>
                                 </div>
                                 <p className="text-[11px] text-gray-600 mt-0.5">
@@ -9709,27 +9731,58 @@ export default function AdminDashboard() {
                               <button
                                 type="button"
                                 onClick={async () => {
+                                  const newVisible = isLive ? false : true;
                                   const updatedContent = {
                                     ...(dbData.content || {}),
                                     announcement: {
                                       ...(dbData.content?.announcement || {}),
-                                      visible: announcement.visible === false ? true : false,
+                                      visible: newVisible,
+                                    },
+                                    sectionsVisibility: {
+                                      ...(dbData.content?.sectionsVisibility || {}),
+                                      announcement: newVisible,
                                     },
                                   };
                                   await saveKey("content", updatedContent);
                                   showToast(
-                                    announcement.visible === false
+                                    newVisible
                                       ? "Top Announcement Bar published live!"
                                       : "Top Announcement Bar hidden."
                                   );
                                 }}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                                  announcement.visible !== false
+                                  isLive
                                     ? "bg-white border border-[#ddddd9] text-gray-700 hover:bg-gray-50"
                                     : "bg-[#244f31] text-white hover:bg-[#1c3e26]"
                                 }`}
                               >
-                                {announcement.visible !== false ? "Hide Top Bar" : "Show Top Bar"}
+                                {isLive ? "Hide Top Bar" : "Show Top Bar"}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (confirm("Are you sure you want to delete and hide the Top Announcement Bar?")) {
+                                    const updatedContent = {
+                                      ...(dbData.content || {}),
+                                      announcement: {
+                                        ...(dbData.content?.announcement || {}),
+                                        code: "",
+                                        text: "",
+                                        visible: false,
+                                      },
+                                      sectionsVisibility: {
+                                        ...(dbData.content?.sectionsVisibility || {}),
+                                        announcement: false,
+                                      },
+                                    };
+                                    await saveKey("content", updatedContent);
+                                    showToast("Top Announcement Bar deleted & hidden.");
+                                  }
+                                }}
+                                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition cursor-pointer"
+                              >
+                                Delete Bar
                               </button>
                             </div>
                           </div>

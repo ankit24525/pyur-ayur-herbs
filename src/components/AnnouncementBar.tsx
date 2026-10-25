@@ -92,6 +92,11 @@ export default function AnnouncementBar({
               bgImage: activeTopBanner.image || "/brand/top-botanical-banner.jpg",
               timerDuration: "07:34:59",
             });
+          } else if (
+            resp.content?.sectionsVisibility?.announcement === false ||
+            resp.content?.announcement?.visible === false
+          ) {
+            setLiveData({ visible: false, text: "", code: "" });
           } else if (resp.content?.announcement && Object.keys(resp.content.announcement).length > 0) {
             setLiveData(resp.content.announcement);
           }
@@ -113,6 +118,16 @@ export default function AnnouncementBar({
 
   // 2. Resolve final announcement data safely with guaranteed fallbacks
   const activeAnnouncement: AnnouncementData = useMemo(() => {
+    // 1. If liveData explicitly says visible: false, HIDE!
+    if (liveData && liveData.visible === false) {
+      return { visible: false };
+    }
+
+    // 2. If initialData explicitly says visible: false, HIDE!
+    if (initialData && initialData.visible === false) {
+      return { visible: false };
+    }
+
     // A. Direct banner prop priority
     const topPropBanner = (marketingBanners || []).find(
       (b: any) =>
@@ -147,10 +162,10 @@ export default function AnnouncementBar({
     }
 
     // C. Initial data from SSR/parent if valid
-    if (initialData && Object.keys(initialData).length > 0 && initialData.text) {
+    if (initialData && Object.keys(initialData).length > 0) {
       return {
         visible: initialData.visible !== false,
-        text: initialData.text,
+        text: initialData.text || DEFAULT_ANNOUNCEMENT.text,
         code: initialData.code || DEFAULT_ANNOUNCEMENT.code,
         btnText: initialData.btnText || DEFAULT_ANNOUNCEMENT.btnText,
         link: initialData.link || DEFAULT_ANNOUNCEMENT.link,

@@ -221,6 +221,7 @@ interface ProductDetailViewProps {
   settings?: any;
   allProducts?: Product[];
   initialTestimonials?: any[];
+  announcementData?: any;
 }
 
 export function ProductDetailView({
@@ -229,6 +230,7 @@ export function ProductDetailView({
   settings,
   allProducts,
   initialTestimonials,
+  announcementData,
 }: ProductDetailViewProps) {
   // Admin Panel Live State & Real-time Offers
   const [adminCoupons, setAdminCoupons] = useState<any[]>(() =>
@@ -886,7 +888,7 @@ export function ProductDetailView({
       {/* ========================================================================= */}
       {/* 1. TOP ANNOUNCEMENT BAR (Global across Mobile & Desktop)                  */}
       {/* ========================================================================= */}
-      <AnnouncementBar onOpenAppModal={() => setAppModalOpen(true)} />
+      <AnnouncementBar data={announcementData} onOpenAppModal={() => setAppModalOpen(true)} />
 
       {/* ========================================================================= */}
       {/* 2. MAIN STICKY HEADER (Taitva Header: Bag+Badge Left, Logo, Search Right)  */}

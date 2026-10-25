@@ -69,7 +69,7 @@ export default function WhatsAppWidget() {
 
   // Pre-defined chatbot quick replies
   const options = [
-    { label: "🌿 Free Doctor Consultation", keyword: "Namaste! I would like a personalized Ayurvedic consultation." },
+    { label: "🌿 Ayurvedic Consultation", keyword: "Namaste! I would like a personalized Ayurvedic consultation." },
     { label: "📦 Track My Order", keyword: "Namaste! I want to track the status of my order." },
     { label: "💊 Dosage & Guidance", keyword: "Namaste! I need dosage guidance and product recommendations." },
     { label: "💬 Speak to Support Agent", keyword: "Namaste! I would like to speak with a customer care agent." },
@@ -165,7 +165,7 @@ export default function WhatsAppWidget() {
                 <p className="font-semibold text-[#128C7E] mb-1 flex items-center gap-1">
                   <span>Namaste!</span> 🌿
                 </p>
-                Welcome to <strong>Pure Ayur Herbs</strong>. How may our certified Ayurvedic doctors assist you today?
+                Welcome to <strong>Pure Ayur Herbs</strong>. How may our certified Ayurvedic specialists assist you today?
                 <div className="flex justify-end items-center gap-1 mt-1 text-[9px] text-neutral-400">
                   <span>Just now</span>
                   <CheckCheck className="size-3 text-[#53bdeb]" />
@@ -245,28 +245,6 @@ export default function WhatsAppWidget() {
 
       {/* Floating Trigger Row */}
       <div className="flex items-center gap-2.5">
-        {/* Luxury Floating Teaser Pill (visible when drawer is closed) */}
-        {!isOpen && (
-          <button
-            onClick={() => {
-              setIsOpen(true);
-              setSelectedOption(null);
-            }}
-            className="hidden sm:inline-flex items-center gap-2 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.12)] border border-neutral-200/70 text-xs font-bold text-neutral-800 hover:border-emerald-300 hover:shadow-lg transition-all duration-300 hover:scale-105 group active:scale-95 text-left"
-          >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#25D366]"></span>
-            </span>
-            <span className="text-neutral-800 font-bold group-hover:text-[#128C7E] transition-colors">
-              Chat with Doctor
-            </span>
-            <span className="bg-emerald-50 text-[#128C7E] text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200/60">
-              Online
-            </span>
-          </button>
-        )}
-
         {/* Circular Floating Trigger Button */}
         <div className="relative">
           {/* Subtle Ambient Radar Pulse Halo */}

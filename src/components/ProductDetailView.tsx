@@ -706,13 +706,17 @@ export function ProductDetailView({
     });
 
     if (mapped.length === 0) {
-      return [
-        {
-          code: "PREPAID5",
-          discount: `${storeSettings?.prepaidDiscount || 5}% Instant Off`,
-          description: "Get 5% instant discount on UPI / Online Prepaid orders",
+      const prepaidRate = Number(storeSettings?.prepaidDiscount ?? 0);
+      const list: any[] = [];
+      if (prepaidRate > 0) {
+        list.push({
+          code: "PREPAID",
+          discount: `${prepaidRate}% Instant Off`,
+          description: `Get ${prepaidRate}% instant discount on UPI / Online Prepaid orders`,
           badge: "RECOMMENDED",
-        },
+        });
+      }
+      list.push(
         {
           code: "AYUR100",
           discount: "₹100 Flat Off",
@@ -724,8 +728,9 @@ export function ProductDetailView({
           discount: "10% Instant Off",
           description: "Special seasonal Ayurvedic wellness discount",
           badge: "POPULAR",
-        },
-      ];
+        }
+      );
+      return list;
     }
 
     return mapped;

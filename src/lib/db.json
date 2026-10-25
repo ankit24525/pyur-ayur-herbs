@@ -708,7 +708,7 @@
     "whatsappNumber": "",
     "whatsappMessage": "",
     "codOtpEnabled": true,
-    "prepaidDiscount": 5,
+    "prepaidDiscount": 0,
     "taxRate": 18,
     "shipping": {
       "freeThreshold": 899,

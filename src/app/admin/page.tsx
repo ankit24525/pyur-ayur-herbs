@@ -10092,18 +10092,25 @@ export default function AdminDashboard() {
                     <div className="space-y-4">
                       {/* Prepaid Discount */}
                       <div>
-                        <label className="block font-bold text-[#666666] mb-1">Prepaid Online Order Discount (%)</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block font-bold text-[#666666]">Prepaid Online Order Discount (%)</label>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                            Number(dbData.settings.prepaidDiscount) > 0 ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {Number(dbData.settings.prepaidDiscount) > 0 ? `Active: ${dbData.settings.prepaidDiscount}% OFF` : "Hidden / Disabled (0%)"}
+                          </span>
+                        </div>
                         <input
                           type="number"
-                          placeholder="e.g. 5"
-                          value={dbData.settings.prepaidDiscount || 0}
+                          placeholder="Set to 0 to completely hide"
+                          value={dbData.settings.prepaidDiscount ?? 0}
                           onChange={(e) => setDbData({
                             ...dbData,
-                            settings: { ...dbData.settings, prepaidDiscount: parseInt(e.target.value) || 0 }
+                            settings: { ...dbData.settings, prepaidDiscount: e.target.value === "" ? 0 : parseInt(e.target.value) || 0 }
                           })}
                           className="w-full rounded-xl border border-[#ddddd9] p-2.5 outline-none focus:border-[#244f31] bg-white font-semibold"
                         />
-                        <p className="mt-1 text-[10px] text-gray-400">Discount percentage applied automatically to prepaid/UPI orders during checkout.</p>
+                        <p className="mt-1 text-[10px] text-gray-500">Set to <strong>0</strong> to completely hide and disable the online payment discount from checkout. Enter <strong>5</strong> to offer 5% off.</p>
                       </div>
 
                       {/* Free Shipping Threshold */}

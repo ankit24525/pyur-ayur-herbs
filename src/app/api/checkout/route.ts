@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const discount = paymentMethod === "prepaid" ? Math.round(subtotal * ((db.settings?.prepaidDiscount ?? 5) / 100)) : 0;
+    const discount = paymentMethod === "prepaid" ? Math.round(subtotal * ((Number(db.settings?.prepaidDiscount ?? 0)) / 100)) : 0;
     const couponDiscount = parseFloat(incomingCouponDiscount) || 0;
     const coinsDiscount = parseFloat(coinsRedeemed) || 0;
     const freeThreshold = db.settings?.shipping?.freeThreshold ?? 999;

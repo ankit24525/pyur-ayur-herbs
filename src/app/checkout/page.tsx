@@ -1491,13 +1491,21 @@ function CheckoutForm() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-neutral-900">UPI / Cards / Net Banking</span>
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                      {settings.prepaidDiscount || 5}% Extra Discount
-                    </span>
+                    {Number(settings?.prepaidDiscount) > 0 && (
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                        {settings.prepaidDiscount}% Extra Discount
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[11px] text-emerald-800 font-semibold block mt-0.5">
-                    Instant 1-Click Pay • Save ₹{prepaidDiscountValue}
-                  </span>
+                  {Number(settings?.prepaidDiscount) > 0 ? (
+                    <span className="text-[11px] text-emerald-800 font-semibold block mt-0.5">
+                      Instant 1-Click Pay • Save ₹{prepaidDiscountValue}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-neutral-500 font-normal block mt-0.5">
+                      Instant 1-Click Pay
+                    </span>
+                  )}
                 </div>
               </div>
             </button>

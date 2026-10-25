@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     const sessionUser = await resolveSession(sessionToken);
 
     // Compute order price values
-    const prepaidDiscountPercent = db.settings?.prepaidDiscount ?? 5;
+    const prepaidDiscountPercent = Number(db.settings?.prepaidDiscount ?? 0);
     const prepaidDiscount = Math.round((subtotal * prepaidDiscountPercent) / 100);
     const couponDiscount = Number(incomingCouponDiscount) || 0;
     const coinsDiscount = Number(incomingCoinsRedeemed) || 0;

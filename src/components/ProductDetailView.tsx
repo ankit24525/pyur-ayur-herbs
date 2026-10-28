@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { trackMetaEvent } from "./MetaPixel";
 import Image from "next/image";
 import Link from "next/link";
@@ -853,32 +853,77 @@ export function ProductDetailView({
     }
   };
 
-  // Mobile Gallery Touch and Navigation Helpers
+  // Mobile Gallery Touch and 4-Second Auto-Slider Navigation Helpers
   const touchStartXRef = useRef<number | null>(null);
+  const touchEndXRef = useRef<number | null>(null);
+  const [isMobileSliderPaused, setIsMobileSliderPaused] = useState(false);
+  const mobileInteractionTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handlePrevImage = () => {
+  const pauseMobileSliderTemporarily = useCallback(() => {
+    setIsMobileSliderPaused(true);
+    if (mobileInteractionTimerRef.current) {
+      clearTimeout(mobileInteractionTimerRef.current);
+    }
+    mobileInteractionTimerRef.current = setTimeout(() => {
+      setIsMobileSliderPaused(false);
+    }, 6000);
+  }, []);
+
+  const activeGalleryIndex = Math.max(0, gallery.indexOf(selectedImage));
+
+  const handlePrevImage = useCallback(() => {
     if (gallery.length <= 1) return;
+    pauseMobileSliderTemporarily();
     const currentIndex = gallery.indexOf(selectedImage);
     const prevIndex = currentIndex <= 0 ? gallery.length - 1 : currentIndex - 1;
     setSelectedImage(gallery[prevIndex]);
-  };
+  }, [gallery, selectedImage, pauseMobileSliderTemporarily]);
 
-  const handleNextImage = () => {
+  const handleNextImage = useCallback(() => {
     if (gallery.length <= 1) return;
+    pauseMobileSliderTemporarily();
     const currentIndex = gallery.indexOf(selectedImage);
     const nextIndex = currentIndex >= gallery.length - 1 ? 0 : currentIndex + 1;
     setSelectedImage(gallery[nextIndex]);
-  };
+  }, [gallery, selectedImage, pauseMobileSliderTemporarily]);
+
+  // Automatic 4-Second Gap Image Slider for Mobile View
+  useEffect(() => {
+    if (gallery.length <= 1 || isMobileSliderPaused) return;
+
+    const timer = setInterval(() => {
+      setSelectedImage((prevImage: any) => {
+        const curIdx = gallery.indexOf(prevImage);
+        const nextIdx = curIdx >= gallery.length - 1 ? 0 : curIdx + 1;
+        return gallery[nextIdx];
+      });
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [gallery, isMobileSliderPaused]);
+
+  useEffect(() => {
+    return () => {
+      if (mobileInteractionTimerRef.current) {
+        clearTimeout(mobileInteractionTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    pauseMobileSliderTemporarily();
     touchStartXRef.current = e.touches[0].clientX;
+    touchEndXRef.current = null;
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartXRef.current - touchEndX;
-    if (Math.abs(diff) > 40) {
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartXRef.current === null || touchEndXRef.current === null) return;
+    const diff = touchStartXRef.current - touchEndXRef.current;
+    if (Math.abs(diff) > 35) {
       if (diff > 0) {
         handleNextImage();
       } else {
@@ -886,6 +931,7 @@ export function ProductDetailView({
       }
     }
     touchStartXRef.current = null;
+    touchEndXRef.current = null;
   };
 
   return (
@@ -930,36 +976,51 @@ export function ProductDetailView({
       </div>
 
       {/* ========================================================================= */}
-      {/* MOBILE HERO FOLD (Exact match to uploaded design)                          */}
+      {/* MOBILE HERO FOLD (Exact match to uploaded design with 4s Auto-Slider)      */}
       {/* ========================================================================= */}
       <section className="bg-white pb-6 lg:hidden border-b border-[#e5e5e5]">
-        {/* Product Image Stage (Full-bleed Packshot with Swipe) */}
+        {/* Product Image Stage (Full-bleed Packshot with Smooth 4s Auto-Slider & Touch Swipe) */}
         <div
-          className="relative bg-white aspect-square w-full overflow-hidden select-none flex items-center justify-center"
+          className="relative bg-white aspect-square w-full overflow-hidden select-none"
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <Image
-            src={selectedImage || product.image}
-            alt={`${product.name} - Pure Ayur Herbs`}
-            width={600}
-            height={600}
-            unoptimized
-            priority
-            className="size-full object-contain transition-all duration-300"
-          />
+          <div
+            className="flex w-full h-full transition-transform duration-500 ease-out will-change-transform"
+            style={{
+              transform: `translateX(-${activeGalleryIndex * 100}%)`,
+            }}
+          >
+            {gallery.map((imgUrl, idx) => (
+              <div key={idx} className="w-full h-full shrink-0 flex items-center justify-center p-2 bg-white">
+                <Image
+                  src={imgUrl}
+                  alt={`${product.name} - View ${idx + 1}`}
+                  width={600}
+                  height={600}
+                  unoptimized
+                  priority={idx === 0}
+                  className="size-full object-contain pointer-events-none select-none"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Mobile Centered Image Pagination Dots (Exact Match to Screenshot) */}
         {gallery.length > 1 && (
           <div className="flex items-center justify-center gap-2 mt-4 mb-3">
             {gallery.map((imgUrl, idx) => {
-              const isSelected = (selectedImage || product.image) === imgUrl;
+              const isSelected = activeGalleryIndex === idx;
               return (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => setSelectedImage(imgUrl)}
+                  onClick={() => {
+                    pauseMobileSliderTemporarily();
+                    setSelectedImage(imgUrl);
+                  }}
                   aria-label={`Go to product image ${idx + 1}`}
                   className={`rounded-full transition-all duration-300 cursor-pointer ${
                     isSelected

@@ -47,12 +47,15 @@ export default function HeroSlider({
   // Temporarily set to false during infinite-loop boundary resets for invisible jumps.
   const [isTransitioning, setIsTransitioning] = useState(true);
 
-  // Autoplay pause flag (triggered by mouse hover, touch interaction, or hidden tab).
+  // Autoplay pause flag (triggered by active interaction or hidden tab).
   const [isPaused, setIsPaused] = useState(false);
 
-  // Touch tracking refs for mobile swipe calculations
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
+  // Dragging and swipe tracking refs (supports both touch and mouse drag on desktop)
+  const pointerStartX = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragDistanceRef = useRef(0);
+  const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
 
   // --------------------------------------------------------------------------
   // Slide Data Normalization & Infinite Loop Buffer
@@ -128,15 +131,27 @@ export default function HeroSlider({
     if (slideCount <= 1) return;
 
     if (slideIndex <= 0) {
-      // Reached left clone (Slide C) -> instantly snap to real Slide C (index = slideCount)
+      // Reached left clone -> instantly snap to real last slide
       setIsTransitioning(false);
       setSlideIndex(slideCount);
     } else if (slideIndex >= slideCount + 1) {
-      // Reached right clone (Slide A) -> instantly snap to real Slide A (index = 1)
+      // Reached right clone -> instantly snap to real first slide
       setIsTransitioning(false);
       setSlideIndex(1);
     }
   };
+
+  /**
+   * Seamlessly re-arms transition on the very next animation frame after an instant boundary jump
+   */
+  useEffect(() => {
+    if (!isTransitioning) {
+      const raf = requestAnimationFrame(() => {
+        setIsTransitioning(true);
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [isTransitioning]);
 
   /**
    * Safety Watchdog:
@@ -194,16 +209,27 @@ export default function HeroSlider({
    * Temporarily pauses autoplay for 7 seconds whenever the user manually interacts
    * (clicking arrows, swiping, or pressing pagination dots)
    */
-  const handleInteraction = () => {
+  const handleInteraction = useCallback(() => {
     setIsPaused(true);
-    const resumeTimer = setTimeout(() => {
+    if (interactionTimeoutRef.current) {
+      clearTimeout(interactionTimeoutRef.current);
+    }
+    interactionTimeoutRef.current = setTimeout(() => {
       setIsPaused(false);
     }, 7000);
-    return () => clearTimeout(resumeTimer);
-  };
+  }, []);
+
+  // Clean up interaction timer on unmount
+  useEffect(() => {
+    return () => {
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // --------------------------------------------------------------------------
-  // User Input Listeners (Keyboard & Touch Swiping)
+  // User Input Listeners (Keyboard & Pointer Drag / Swipe for Desktop & Mobile)
   // --------------------------------------------------------------------------
 
   /** Keyboard arrow navigation for accessibility */
@@ -217,27 +243,52 @@ export default function HeroSlider({
     }
   };
 
-  /** Touch event handlers for mobile swipe gestures */
-  const handleTouchStart = (e: React.TouchEvent) => {
-    handleInteraction();
-    touchStartX.current = e.touches[0].clientX;
+  /** Unified Pointer Drag Handlers (Smooth mouse drag on desktop & swipe on mobile) */
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return; // Only primary button
+    pointerStartX.current = e.clientX;
+    isDraggingRef.current = true;
+    dragDistanceRef.current = 0;
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current || pointerStartX.current === null) return;
+    const diff = e.clientX - pointerStartX.current;
+    dragDistanceRef.current = diff;
   };
 
-  const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
-    const diffX = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 35; // Minimum horizontal drag distance to register a swipe
-    if (diffX > minSwipeDistance) {
-      nextSlide(); // Swiped left -> show next
-    } else if (diffX < -minSwipeDistance) {
-      prevSlide(); // Swiped right -> show prev
+  const handlePointerUp = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    const diff = dragDistanceRef.current;
+    const minSwipeDistance = 35;
+
+    if (diff < -minSwipeDistance) {
+      handleInteraction();
+      nextSlide();
+    } else if (diff > minSwipeDistance) {
+      handleInteraction();
+      prevSlide();
     }
-    touchStartX.current = null;
-    touchEndX.current = null;
+
+    pointerStartX.current = null;
+    setTimeout(() => {
+      dragDistanceRef.current = 0;
+    }, 100);
+  };
+
+  const handlePointerCancel = () => {
+    isDraggingRef.current = false;
+    pointerStartX.current = null;
+    dragDistanceRef.current = 0;
+  };
+
+  /** Prevent link click if the user was dragging the slide horizontally */
+  const handleLinkClick = (e: React.MouseEvent) => {
+    if (Math.abs(dragDistanceRef.current) > 10) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
   };
 
   // --------------------------------------------------------------------------
@@ -282,18 +333,19 @@ export default function HeroSlider({
       aria-roledescription="carousel"
       aria-label="Pure Ayur Herbs Storefront Hero Banner"
       onKeyDown={handleKeyDown}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       className="w-full bg-white pt-0 pb-1 select-none outline-none"
     >
       {/* Container: Strict 1200x800 Canvas (max-w-[1200px] mx-auto) */}
       <div className="w-full md:mx-auto md:max-w-[1200px] px-0">
         
         {/* Banner Frame: Exact 1200x800 px Container (3:2 Aspect Ratio) */}
-        <div className="relative w-full max-w-[1200px] mx-auto aspect-[1200/800] overflow-hidden rounded-none bg-[#023915]/5 shadow-none">
+        <div
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
+          className="relative w-full max-w-[1200px] mx-auto aspect-[1200/800] overflow-hidden rounded-none bg-[#023915]/5 shadow-none cursor-grab active:cursor-grabbing touch-pan-y"
+        >
           
           {/* Sliding Track: Moves horizontally via CSS translateX */}
           <div
@@ -330,23 +382,26 @@ export default function HeroSlider({
                   <Link
                     href={slide.href || slide.link || "/products"}
                     tabIndex={isSlideActive ? 0 : -1}
-                    className="block size-full focus:outline-none cursor-pointer relative flex items-center justify-center"
+                    onClick={handleLinkClick}
+                    draggable={false}
+                    className="block size-full focus:outline-none cursor-pointer relative flex items-center justify-center select-none"
                   >
                     {/* HTML5 Picture Element for Responsive Mobile/Desktop Image Switching */}
-                    <picture className="size-full flex items-center justify-center">
+                    <picture className="size-full flex items-center justify-center pointer-events-none">
                       {/* Mobile viewport source (under 640px) */}
                       <source media="(max-width: 639px)" srcSet={mobileImage} />
                       {/* Default Desktop & Tablet Image */}
                       <img
                         src={slideImage}
                         alt={slide.title || "Pure Ayur Herbs Ayurvedic Formulation Banner"}
+                        draggable={false}
                         onError={(e) => {
                           // Automatic fallback protection if image fails to load
                           if (typeof window !== "undefined" && !e.currentTarget.src.endsWith("/brand/hero-wild-authentic-pure.jpg")) {
                             e.currentTarget.src = "/brand/hero-wild-authentic-pure.jpg";
                           }
                         }}
-                        className="size-full object-cover object-center"
+                        className="size-full object-cover object-center pointer-events-none"
                         loading={idx === 1 ? "eager" : "lazy"}
                         fetchPriority={idx === 1 ? "high" : "auto"}
                         decoding={idx === 1 ? "sync" : "async"}
@@ -364,7 +419,9 @@ export default function HeroSlider({
               {/* Previous Slide Button */}
               <button
                 type="button"
-                onClick={() => {
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleInteraction();
                   prevSlide();
                 }}
@@ -377,7 +434,9 @@ export default function HeroSlider({
               {/* Next Slide Button */}
               <button
                 type="button"
-                onClick={() => {
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleInteraction();
                   nextSlide();
                 }}

@@ -771,7 +771,8 @@
     "chatwootAccountId": "191283",
     "chatwootApiToken": "JJU8VbdBZwfdqfr3GtwGj1ra",
     "chatwootBaseUrl": "https://app.chatwoot.com",
-    "chatwootWebhookSecret": "xJdcB34uCfHSdpaxXoAHPBqF"
+    "chatwootWebhookSecret": "xJdcB34uCfHSdpaxXoAHPBqF",
+    "chatwootWhatsAppWebhookUrl": "https://app.chatwoot.com/webhooks/whatsapp/+917247824101"
   },
   "reviews": [
     {

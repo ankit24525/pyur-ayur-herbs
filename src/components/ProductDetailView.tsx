@@ -2116,13 +2116,14 @@ export function ProductDetailView({
             )}
           </button>
 
-          {/* Right: BUY NOW */}
+          {/* Right: BUY NOW (COD) */}
           <button
             type="button"
             onClick={handleBuyNow}
-            className="flex-1 rounded-lg bg-[#023915] hover:bg-black text-white py-3 px-3 text-xs font-bold uppercase tracking-wider shadow-md active:scale-98 transition flex items-center justify-center cursor-pointer"
+            className="flex-1 rounded-lg bg-[#023915] hover:bg-black text-white py-3 px-3 text-xs font-bold uppercase tracking-wider shadow-md active:scale-98 transition flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span>BUY NOW</span>
+            <Zap className="size-4 fill-amber-300 text-amber-300" />
+            <span>BUY NOW (COD)</span>
           </button>
         </aside>
       )}
@@ -2160,7 +2161,7 @@ export function ProductDetailView({
               className="bg-[#023915] hover:bg-black text-white px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider shadow-md active:scale-95 transition cursor-pointer flex items-center gap-1.5"
             >
               <Zap className="size-4 fill-amber-300 text-amber-300" />
-              <span>BUY NOW (CASH ON DELIVERY)</span>
+              <span>BUY NOW (COD)</span>
             </button>
           </div>
         </aside>

@@ -181,7 +181,7 @@ function CheckoutForm() {
     city: "",
     state: "",
     country: "India",
-    paymentMethod: "prepaid", // prepaid or cod
+    paymentMethod: "cod", // default to cod; user can manually select prepaid / upi if preferred
   });
 
   const [maskPhone, setMaskPhone] = useState(false);

@@ -545,19 +545,19 @@ function sanitizeDBData(data: any): DBData {
 
   if (!data.settings || typeof data.settings !== "object") {
     data.settings = {
-      storeName: "Pure Ayur Herbs Store",
-      companyLegalName: "Pure Ayur Herbs Private Limited",
-      registeredAddress: "12, Botanical Enclave, Sector 62, Noida, UP - 201301",
-      gstin: "09AAPCP8765A1Z5",
+      storeName: "Pure Ayur Herbs",
+      companyLegalName: "Pure Ayur Herbs",
+      registeredAddress: "Main Market Sitarganj, Uttarakhand 262405",
+      gstin: "05FXPPS9137B1Z2",
       socialLinks: {
-        instagram: "https://instagram.com",
-        facebook: "https://facebook.com",
-        youtube: "https://youtube.com",
-        twitter: "https://twitter.com",
+        instagram: "https://www.instagram.com/pureayur_herbs/",
+        facebook: "https://www.facebook.com/profile.php?id=61594189929604",
+        youtube: "",
+        twitter: "",
         linkedin: "",
       },
-      supportEmail: "support@pureayurherbs.com",
-      whatsappNumber: "",
+      supportEmail: "info@pureayurherbs.com",
+      whatsappNumber: "91 7409979110",
       whatsappMessage: "नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।",
       codOtpEnabled: true,
       prepaidDiscount: 5,
@@ -591,9 +591,9 @@ function sanitizeDBData(data: any): DBData {
       }
     };
   } else {
-    if (!data.settings.companyLegalName) data.settings.companyLegalName = "Pure Ayur Herbs Private Limited";
-    if (!data.settings.registeredAddress) data.settings.registeredAddress = "12, Botanical Enclave, Sector 62, Noida, UP - 201301";
-    if (!data.settings.gstin) data.settings.gstin = "09AAPCP8765A1Z5";
+    if (!data.settings.companyLegalName) data.settings.companyLegalName = "Pure Ayur Herbs";
+    if (!data.settings.registeredAddress) data.settings.registeredAddress = "Main Market Sitarganj, Uttarakhand 262405";
+    if (!data.settings.gstin) data.settings.gstin = "05FXPPS9137B1Z2";
     if (!data.settings.socialLinks || typeof data.settings.socialLinks !== "object") {
       data.settings.socialLinks = {
         instagram: "https://instagram.com",

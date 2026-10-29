@@ -656,8 +656,8 @@ export function ProductDetailView({
   };
 
   // Dynamic contact channels from storeSettings
-  const rawAdminPhone = storeSettings?.whatsappNumber || "917247824101";
-  const whatsappNum = rawAdminPhone.replace(/\D/g, "") || "917247824101";
+  const rawAdminPhone = storeSettings?.whatsappNumber || "917409979110";
+  const whatsappNum = rawAdminPhone.replace(/\D/g, "") || "917409979110";
   const supportPhone = storeSettings?.supportPhone || whatsappNum;
 
   // Real-time calculation of applicable offers

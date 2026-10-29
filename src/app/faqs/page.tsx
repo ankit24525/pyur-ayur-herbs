@@ -44,7 +44,7 @@ export default function FaqsPage() {
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [appModalOpen, setAppModalOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [whatsappNumber, setWhatsappNumber] = useState("917247824101");
+  const [whatsappNumber, setWhatsappNumber] = useState("917409979110");
 
   useEffect(() => {
     // 1. Check localStorage cache first with strict legacy filter to prevent old data flash

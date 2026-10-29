@@ -981,10 +981,10 @@
     }
   ],
   "settings": {
-    "storeName": "",
-    "supportEmail": "",
-    "whatsappNumber": "",
-    "whatsappMessage": "",
+    "storeName": "Pure Ayur Herbs",
+    "supportEmail": "info@pureayurherbs.com",
+    "whatsappNumber": "91 7409979110",
+    "whatsappMessage": "Namaste!",
     "codOtpEnabled": true,
     "prepaidDiscount": 0,
     "taxRate": 18,
@@ -1015,8 +1015,8 @@
       "clientId": "SU2609091756465945859220",
       "clientSecret": "b5b68ea8-e763-4066-b64a-b980d439961c"
     },
-    "companyLegalName": "Pure Ayur Herbs ",
-    "registeredAddress": "Main Market Sitarganj Uttrakhand \n262405",
+    "companyLegalName": "Pure Ayur Herbs",
+    "registeredAddress": "Main Market Sitarganj, Uttarakhand 262405",
     "gstin": "05FXPPS9137B1Z2",
     "socialLinks": {
       "instagram": "https://www.instagram.com/pureayur_herbs/",
@@ -1430,10 +1430,10 @@
       "visible": false
     },
     "footer": {
-      "companyLegalName": "Pure Ayur Herbs ",
-      "registeredAddress": "Main Market Sitarganj Uttrakhand \n262405",
+      "companyLegalName": "Pure Ayur Herbs",
+      "registeredAddress": "Main Market Sitarganj, Uttarakhand 262405",
       "gstin": "05FXPPS9137B1Z2",
-      "supportWhatsapp": "91 7247824101",
+      "supportWhatsapp": "91 7409979110",
       "supportEmail": "info@pureayurherbs.com",
       "column1Title": "Shop All",
       "column1Links": [

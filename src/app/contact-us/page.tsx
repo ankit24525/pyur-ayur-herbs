@@ -14,8 +14,8 @@ export default function ContactUsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [settings, setSettings] = useState<any>({
-    supportEmail: "support@pureayurherbs.com",
-    whatsappNumber: "917247824101",
+    supportEmail: "info@pureayurherbs.com",
+    whatsappNumber: "917409979110",
   });
 
   useEffect(() => {
@@ -133,12 +133,12 @@ export default function ContactUsPage() {
                   <h4 className="text-xs font-bold text-neutral-900">Call & WhatsApp</h4>
                   <a
                     href={`https://api.whatsapp.com/send?phone=${(() => {
-                      let num = (settings.whatsappNumber || "917247824101").replace(/\D/g, "");
+                      let num = (settings.whatsappNumber || "917409979110").replace(/\D/g, "");
                       return num.length === 10 ? "91" + num : num;
                     })()}`}
                     className="text-xs text-neutral-600 hover:underline"
                   >
-                    +{settings.whatsappNumber || "917247824101"} (Business Desk)
+                    +{settings.whatsappNumber || "917409979110"} (Business Desk)
                   </a>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function ContactUsPage() {
                 <div>
                   <h4 className="text-xs font-bold text-neutral-900">Corporate Address</h4>
                   <p className="text-xs text-neutral-600">
-                    {settings.companyLegalName ? `${settings.companyLegalName}, ` : ""}{settings.registeredAddress || "12, Botanical Enclave, Sector 62, Noida, UP - 201301"}
+                    {settings.companyLegalName ? `${settings.companyLegalName}, ` : ""}{settings.registeredAddress || "Main Market Sitarganj, Uttarakhand 262405"}
                   </p>
                 </div>
               </div>

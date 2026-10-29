@@ -569,7 +569,7 @@ export default function MediaHubPage() {
             </div>
 
             <a
-              href="https://wa.me/917247824101?text=Namaste!%20I%20would%20like%20to%20consult%20with%20an%20Ayurvedic%20Doctor."
+              href="https://wa.me/917409979110?text=Namaste!%20I%20would%20like%20to%20consult%20with%20an%20Ayurvedic%20Doctor."
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white hover:bg-[#f4f7f2] text-[#244f31] px-6 py-3.5 rounded-xl font-black text-xs uppercase tracking-wider transition shrink-0 shadow-md flex items-center gap-2"

@@ -212,7 +212,7 @@ function ProfileDashboard() {
     } else if (type === "return") {
       msg = `Hello Pure Ayur Herbs Support, I need assistance with return/replacement for Order #${order.id} (${order.items || "Remedy"}).`;
     }
-    return `https://api.whatsapp.com/send?phone=917247824101&text=${encodeURIComponent(msg)}`;
+    return `https://api.whatsapp.com/send?phone=917409979110&text=${encodeURIComponent(msg)}`;
   };
 
   const isOrderCancelled = (order: any) => {

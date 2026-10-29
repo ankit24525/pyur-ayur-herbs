@@ -12,7 +12,7 @@ interface GetAppModalProps {
 export default function GetAppModal({
   isOpen,
   onClose,
-  whatsappNumber = "917247824101",
+  whatsappNumber = "917409979110",
 }: GetAppModalProps) {
   // Close on Escape key press
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function GetAppModal({
 
   if (!isOpen) return null;
 
-  const cleanNumber = whatsappNumber.replace(/\D/g, "") || "917247824101";
+  const cleanNumber = whatsappNumber.replace(/\D/g, "") || "917409979110";
   const notifyUrl = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(
     "Namaste! Please notify me when the Pure Ayur mobile app is launched on Android & iOS. 🌿"
   )}`;

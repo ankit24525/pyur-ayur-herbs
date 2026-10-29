@@ -93,16 +93,15 @@ export default function SiteFooter() {
   const [footerData, setFooterData] = useState<any>(null);
   const [settings, setSettings] = useState<any>({
     storeName: "Pure Ayur Herbs",
-    supportEmail: "anshv799@gmail.com",
-    whatsappNumber: "91 - 8588011038",
-    companyLegalName: "Pure Ayur Herbs Private Limited",
-    registeredAddress:
-      "H. NO-A-10/1, F/F, Sonia Vihar, Opp NEAR BR PUBLIC SCHOOL, BLOCK -A , PART-2, Shahdara, Delhi, New Delhi, 110094",
+    supportEmail: "info@pureayurherbs.com",
+    whatsappNumber: "91 7409979110",
+    companyLegalName: "Pure Ayur Herbs",
+    registeredAddress: "Main Market Sitarganj, Uttarakhand 262405",
     socialLinks: {
-      facebook: "https://facebook.com",
-      instagram: "https://instagram.com",
-      youtube: "https://youtube.com",
-      twitter: "https://twitter.com",
+      facebook: "https://www.facebook.com/profile.php?id=61594189929604",
+      instagram: "https://www.instagram.com/pureayur_herbs/",
+      youtube: "",
+      twitter: "",
     },
   });
 
@@ -143,9 +142,9 @@ export default function SiteFooter() {
   }, []);
 
   const displayPhone =
-    footerData?.supportWhatsapp ||
-    settings?.whatsappNumber ||
-    "+91 - 8588011038";
+    footerData?.supportWhatsapp?.trim() ||
+    settings?.whatsappNumber?.trim() ||
+    "91 7409979110";
 
   let cleanPhone = displayPhone.replace(/[^\d+]/g, "");
   if (!cleanPhone.startsWith("+") && cleanPhone.length === 10) {
@@ -153,19 +152,19 @@ export default function SiteFooter() {
   }
 
   const displayEmail =
-    footerData?.supportEmail ||
-    settings?.supportEmail ||
-    "anshv799@gmail.com";
+    footerData?.supportEmail?.trim() ||
+    settings?.supportEmail?.trim() ||
+    "info@pureayurherbs.com";
 
   const displayAddress =
-    footerData?.registeredAddress ||
-    settings?.registeredAddress ||
-    "H. NO-A-10/1, F/F, Sonia Vihar, Opp NEAR BR PUBLIC SCHOOL, BLOCK -A , PART-2, Shahdara, Delhi, New Delhi, 110094";
+    footerData?.registeredAddress?.trim() ||
+    settings?.registeredAddress?.trim() ||
+    "Main Market Sitarganj, Uttarakhand 262405";
 
   const social = footerData?.socialLinks ||
     settings?.socialLinks || {
-      facebook: "https://facebook.com",
-      instagram: "https://instagram.com",
+      facebook: "https://www.facebook.com/profile.php?id=61594189929604",
+      instagram: "https://www.instagram.com/pureayur_herbs/",
     };
 
   const usefulLinks =

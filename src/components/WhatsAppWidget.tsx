@@ -7,7 +7,9 @@ import { getStorefrontData } from "@/lib/storefront-client";
 
 export default function WhatsAppWidget() {
   const pathname = usePathname();
-  const [whatsappNumber, setWhatsappNumber] = useState("917247824101");
+  // Set to false for direct manual WhatsApp contact; set to true when ready to use the automated chatbot drawer
+  const ENABLE_CHATBOT_DRAWER = false;
+  const [whatsappNumber, setWhatsappNumber] = useState("917409979110");
   const [whatsappMessage, setWhatsappMessage] = useState("नमस्ते! मुझे आपकी वेबसाइट से ऑर्डर करने में मदद चाहिए।");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -106,8 +108,8 @@ export default function WhatsAppWidget() {
         isProductPage ? "hidden lg:flex" : "flex"
       } ${positionClass}`}
     >
-      {/* Interactive WhatsApp Business Drawer */}
-      {isOpen && (
+      {/* Interactive WhatsApp Business Drawer (Preserved for future chatbot use) */}
+      {ENABLE_CHATBOT_DRAWER && isOpen && (
         <div className="mb-4 w-[calc(100vw-2rem)] max-w-[360px] bg-white rounded-3xl border border-neutral-200/80 shadow-[0_16px_48px_rgba(0,0,0,0.22)] overflow-hidden animate-in slide-in-from-bottom-5 zoom-in-95 duration-200 origin-bottom-right">
           {/* Official WhatsApp Business Header */}
           <div className="bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white p-4 flex items-center justify-between shadow-md">
@@ -252,21 +254,33 @@ export default function WhatsAppWidget() {
             <span className="absolute -inset-1 rounded-full bg-[#25D366] opacity-35 animate-ping pointer-events-none" />
           )}
 
-          <button
-            onClick={() => {
-              setIsOpen(!isOpen);
-              if (!isOpen) setSelectedOption(null);
-            }}
-            className="relative flex size-14 items-center justify-center rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-[0_8px_24px_rgba(37,211,102,0.45)] hover:shadow-[0_12px_32px_rgba(37,211,102,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 group"
-            aria-label="Toggle WhatsApp Chatbot Panel"
-          >
-            {/* Dynamic Icon */}
-            {isOpen ? (
-              <X className="size-6 text-white transition-transform rotate-0 group-hover:rotate-90 duration-200" />
-            ) : (
+          {ENABLE_CHATBOT_DRAWER ? (
+            <button
+              onClick={() => {
+                setIsOpen(!isOpen);
+                if (!isOpen) setSelectedOption(null);
+              }}
+              className="relative flex size-14 items-center justify-center rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-[0_8px_24px_rgba(37,211,102,0.45)] hover:shadow-[0_12px_32px_rgba(37,211,102,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 group"
+              aria-label="Toggle WhatsApp Chatbot Panel"
+            >
+              {/* Dynamic Icon */}
+              {isOpen ? (
+                <X className="size-6 text-white transition-transform rotate-0 group-hover:rotate-90 duration-200" />
+              ) : (
+                <WhatsAppIcon className="size-8 transition-transform group-hover:scale-110 duration-200" />
+              )}
+            </button>
+          ) : (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative flex size-14 items-center justify-center rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-[0_8px_24px_rgba(37,211,102,0.45)] hover:shadow-[0_12px_32px_rgba(37,211,102,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 group"
+              aria-label="Chat on WhatsApp"
+            >
               <WhatsAppIcon className="size-8 transition-transform group-hover:scale-110 duration-200" />
-            )}
-          </button>
+            </a>
+          )}
         </div>
       </div>
     </div>
